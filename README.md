@@ -1,5 +1,3 @@
-Here’s the README with icons added for better visual representation:
-
 # 🌐 EGS Installer Script
 
 This README provides a comprehensive guide to using the EGS Installer Script, which automates the deployment of EGS components such as Kubeslice controllers, UIs, and workers within a Kubernetes environment.
