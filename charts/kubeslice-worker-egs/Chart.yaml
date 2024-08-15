@@ -1,0 +1,42 @@
+apiVersion: v2
+appVersion: 0.1.1
+dependencies:
+- condition: kubesliceNetworking.enabled
+  name: nsm
+  repository: file://./charts/nsm
+  version: 0.6.4
+- condition: kubesliceNetworking.enabled
+  name: netop
+  repository: file://./charts/netop
+  version: 0.2.0
+description: KubeSlice operator - A Helm chart for managing life-cycle management
+  of KubeSlice
+home: https://avesha.io/products/product-slice
+keywords:
+- multicloud
+- multi cloud
+- multitenant
+- multitenancy
+- multi tenant
+- multi tenancy
+- federated mesh
+- federated clusters
+- federated k8s
+- federated kubernetes
+- cluster sprawl
+- sprawl
+- namespace sprawl
+- network policy
+- overlay network
+- mesh network
+- security
+- networking
+- infrastructure
+- application
+kubeVersion: '>= 1.19.0-0'
+maintainers:
+- email: support@avesha.io
+  name: Avesha
+name: kubeslice-worker-egs
+type: application
+version: 0.1.1

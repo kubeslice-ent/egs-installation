@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: slice-user-config
+  namespace: kubeslice-controller
+data:
+  users: "{}"
+
+---
+

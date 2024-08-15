@@ -1,0 +1,221 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Values schema for Kubeslice Helm chart",
+  "type": "object",
+  "properties": {
+    "kubeslice": {
+      "type": "object",
+      "properties": {
+        "rbacproxy": {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            }
+          }
+        },
+        "controller": {
+          "type": "object",
+          "properties": {
+            "logLevel": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rbacResourcePrefix": {
+              "type": "string"
+            },
+            "projectnsPrefix": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "image": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tag": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pullPolicy": {
+              "type": "string",
+              "pattern": "^(Always|Never|IfNotPresent)$",
+              "minLength": 1
+            }
+          },
+          "required": ["image","tag","pullPolicy","logLevel"]
+        },
+        "ovpnJob": {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            }
+          }
+        },
+        "prometheus": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "url": {
+              "type": "string"
+            }
+          },
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": ["url"]
+          }
+        },
+        "license": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["kubeslice-trial-license", "kubeslice-trial-license-1d", "kubeslice-trial-license-7d", "kubeslice-trial-license-30d", "kubeslice-vcpu-license"]
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["auto", "manual","air-gap"]
+            },
+            "customerName": {
+              "type": "string",
+              "description": "Name of the customer"
+            }
+          }
+        }
+      }
+    },
+    "global": {
+      "type": "object",
+      "properties": {
+        "imageRegistry": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "object",
+          "properties": {
+            "openshift": {
+              "type": "boolean"
+            }
+          },
+          "required": ["openshift"],
+          "errorMessage": {
+            "required": {
+              "openshift": "The 'openshift' field must be specified as true or false."
+            }
+          }
+        },
+        "kubeTally": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "postgresAddr": {
+              "type": ["string", "null"],
+              "minLength": 1
+            },
+            "postgresPort": {
+              "type": ["integer","null"],
+              "minLength": 1
+            },
+            "postgresUser": {
+              "type": ["string", "null"],
+              "minLength": 1
+            },
+            "postgresPassword": {
+              "type": ["string", "null"],
+              "minLength": 1
+            },
+            "postgresDB": {
+              "type": ["string", "null"],
+              "minLength": 1
+            },
+            "priceUpdaterWorkers": {
+              "type": ["integer"],
+              "default": 5
+            }
+          },
+          "required": ["enabled"],
+          "dependencies": {
+            "enabled": {
+              "oneOf": [
+                {
+                  "properties": {
+                    "enabled": {
+                      "enum": [false]
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "enabled": {
+                      "enum": [true]
+                    },
+                    "postgresAddr": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "postgresPort": {
+                      "type": "integer",
+                      "minLength": 1
+                    },
+                    "postgresUser": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "postgresPassword": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "postgresDB": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["postgresAddr","postgresPort", "postgresUser", "postgresPassword", "postgresDB"]
+                }
+              ]
+            }
+          },
+          "errorMessage": {
+            "required": {
+              "enabled": "The 'enabled' field must be specified as true or false.",
+              "postgresAddr": "The 'postgresAddr' field is required when KubeTally is enabled.",
+              "postgresUser": "The 'postgresUser' field is required when KubeTally is enabled.",
+              "postgresPassword": "The 'postgresPassword' field is required when KubeTally is enabled.",
+              "postgresDB": "The 'postgresDB' field is required when KubeTally is enabled."
+            },
+            "dependencies": {
+              "enabled": "If KubeTally is enabled, all related PostgreSQL fields must be provided."
+            },
+            "oneOf": "You must choose either enabled or disabled for KubeTally."
+          }
+        }
+      },
+      "required": ["profile", "kubeTally"],
+      "errorMessage": "The 'global' object must include 'imageRegistry', 'profile', and 'KubeTally' properties."
+    }
+  }
+}
+
+
+
+
+
+

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aiops-config
+data:
+  GRAFANA_DASHBOARD_URL: {{ .Values.egs.gafanaDashboardBaseUrl }}
+  PROMETHEUS_SERVICE_ENDPOINT: {{ .Values.egs.prometheusEndpoint }}
+  gpu-config.yaml: |
+    - type: "NVIDIA A10"
+      powerThreshold: "140"
+      tempThreshold: "87"
+    - type: "NVIDIA A100"
+      powerThreshold: "150"
+      tempThreshold: "87"

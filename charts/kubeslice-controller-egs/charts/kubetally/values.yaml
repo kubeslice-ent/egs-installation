@@ -1,0 +1,16 @@
+global:
+  imageRegistry: docker.io/aveshasystems
+kubetally:
+  pricingService:
+    image: pricing-service
+    tag: 1.2.0
+    imagePullPolicy: IfNotPresent
+  chargeUpdater:
+    image: price-updater
+    tag: 1.1.0
+    imagePullPolicy: IfNotPresent
+  kubeTallyReport:
+    image: kubetally-report
+    tag: 1.1.0
+    imagePullPolicy: IfNotPresent
+  imagePullSecretName: kubeslice-image-pull-secret

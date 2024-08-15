@@ -1,0 +1,168 @@
+{{/*{{- define "controller.licensemode" -}}*/}}
+  {{/*{{- $values := list "auto" "manual" "air-gap" -}}*/}}
+  {{/*{{- if not (contains $values .) }}*/}}
+  {{/*{{- fail (printf "Invalid value '%s' for license mode" .) -}}*/}}
+  {{/*{{- end }}*/}}
+  {{/*{{- . }}*/}}
+  {{/*{{- end }}*/}}
+
+  {{/*{{- define "controller.licensetype" -}}*/}}
+  {{/*{{- $values := list "kubeslice-trial-license" -}}*/}}
+  {{/*{{- if not (contains $values .) }}*/}}
+  {{/*{{- fail (printf "Invalid value '%s' for license type" .) -}}*/}}
+  {{/*{{- end }}*/}}
+  {{/*{{- . }}*/}}
+  {{/*{{- end }}*/}}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubeslice-controller-license-config
+  namespace: kubeslice-controller
+  labels:
+    app.kubernetes.io/managed-by: kubeslice-controller
+data:
+  apiURL: ekoHKf8dlzfc30xoaC4jmDK-b4WYXY71mKTBOd6MLzhUsGMtBFD8Mfu7shZeJcCN81zidFXGb9ESkbZ5T_wbxTnx0Q==
+  apiKey: k7EBV5gneKNrH6D4ere0Eyr-Q3F-Y7bnW3rRUQItUU-3rJ7s_AqbRZXTh0C6E6uJ2tsf
+  publicKey: 92nLf2u8ic58t8Oo3ZXayY6S5TDf4SxqhG8U_VH4Xzu5LX90Q092FscOseqgjwNxLnaZcQseTqfdNshQP-azq7MGCpbFbT81iwppV8rLlVk=
+  maxSamples: Y9hz2m-_gUS3hMFpDTmhSO5A
+  sampleInterval: 6jEhxl11PVq7GnELEgjUYtq2
+binaryData: {}
+
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: kubeslice-controller-license-job-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - delete
+      - escalate
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - escalate
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - create
+      - delete
+      - escalate
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - delete
+      - escalate
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - rolebindings
+      - roles
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - escalate
+      - get
+      - list
+      - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubeslice-controller-license-job-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name:  kubeslice-controller-license-job-role
+subjects:
+  - kind: ServiceAccount
+    name: kubeslice-controller-license-job-manager
+    namespace: kubeslice-controller
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubeslice-controller-license-job-manager
+  namespace: kubeslice-controller

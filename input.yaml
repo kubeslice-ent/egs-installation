@@ -1,0 +1,122 @@
+#base_path: "/home/richie/egs-installation"  # Set to the root directory of your cloned repository
+precheck: true
+kubeslice_precheck: true
+verify_install: true  # Global level VerifyInstall flag
+verify_install_timeout: 600  # Global level timeout in seconds (10 minutes)
+skip_on_verify_fail: false  # Global level flag to decide whether to skip or error out if verification fails
+global_helm_repo_url: "https://smartscaler.nexus.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod"
+global_helm_username: ""
+global_helm_password: ""
+readd_helm_repos: true  # Flag to remove and re-add Helm repos if they already exist
+required_binaries:
+  - yq
+  - helm
+  - kubectl
+  - kubectx
+
+global_image_pull_secret:
+  repository: "https://index.docker.io/v1/"
+  username: ""
+  password: 
+
+# Add node label setting
+add_node_label: true
+global_kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to base_path
+use_local_charts: true
+local_charts_path: "charts"  # Relative path to base_path
+global_kubecontext: ""
+use_global_context: true # Use global kubecontext by default
+
+# Enable/Disable stages
+enable_fetch_controller_secrets: false
+enable_prepare_worker_values_file: true
+enable_install_controller: true
+enable_install_ui: true
+enable_install_worker: true
+
+kubeslice_controller_egs:
+  skip_installation: false
+  use_global_kubeconfig: true
+  kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to base_path
+  kubecontext: ""
+  namespace: "kubeslice-controller"
+  release: "kubeslice-controller-release"
+  chart: "kubeslice-controller-egs"
+    #repo_url: "https://controller.example.com/chart-helm-charts"  # Overrides global
+    #username: "chart-controller-user"  # Overrides global
+    #password: "chart-controller-pass"  # Overrides global
+    #values_file: "values/controller/controller-values.yaml"
+  inline_values:
+    kubeslice:
+     controller:
+       endpoint: ""
+    imagePullSecrets:
+      repository: https://index.docker.io/v1/
+      username: 
+      password: 
+  # No need to define imagePullSecrets unless they need to be different from global settings
+  helm_flags: "--timeout 10m --atomic"
+  verify_install: true  # Chart level VerifyInstall flag
+  verify_install_timeout: 30  # Chart level timeout in seconds (10 minutes)
+  skip_on_verify_fail: false  # Chart level flag to decide whether to skip or error out if verification fails
+
+kubeslice_ui_egs:
+  skip_installation: false
+  use_global_kubeconfig: true
+  #kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to base_path
+  #kubecontext: "lke212586-ctx"
+  namespace: "kubeslice-controller"
+  release: "kubeslice-ui"
+  chart: "kubeslice-ui-egs"
+    #values_file: ""  # Relative path to base_path
+    #inline_values:
+    #meter: true
+  # No need to define imagePullSecrets unless they need to be different from global settings
+  helm_flags: "--atomic"
+  verify_install: true  # Chart level VerifyInstall flag
+  verify_install_timeout: 50  # Chart level timeout in seconds (5 minutes)
+  skip_on_verify_fail: true  # Chart level flag to decide whether to skip or error out if verification fails
+
+kubeslice_worker_egs:
+  - name: "worker-1"
+    use_global_kubeconfig: true
+    skip_installation: false
+      #kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to base_path
+      #kubecontext: "lke212586-ctx"
+    namespace: "kubeslice-system"
+    release: "kubeslice-worker1-release"
+    chart: "kubeslice-worker-egs"
+      #values_file: "values/worker1/values.yaml"  # Relative path to base_path
+    inline_values:
+      kubesliceNetworking:
+        enabled: false
+      egs:
+        prometheusEndpoint: http://prometheus-test
+        grafanaDashboardBaseUrl: http://grafana-test # Replace with actual URL
+      metrics:
+        insecure: true
+    # No need to define imagePullSecrets unless they need to be different from global settings
+    helm_flags: ""
+    # No repo_url, username, or password provided, will fall back to global values
+    verify_install: true  # Chart level VerifyInstall flag
+    verify_install_timeout: 60  # Chart level timeout in seconds (10 minutes)
+    skip_on_verify_fail: false  # Chart level flag to decide whether to skip or error out if verification fails
+
+
+enable_project_creation: true
+enable_cluster_registration: true
+
+projects:
+  - name: "avesha"
+    username: "jupiter"
+
+cluster_registration:
+  - cluster_name: "worker-1"
+    project_name: "avesha"
+    telemetry:
+      enabled: true
+      endpoint: ""
+      telemetryProvider: "prometheus"
+    geoLocation:
+      cloudProvider: "GCP"
+      cloudRegion: "us-central1"

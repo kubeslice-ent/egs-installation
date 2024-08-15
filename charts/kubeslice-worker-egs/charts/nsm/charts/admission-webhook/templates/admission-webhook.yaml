@@ -1,0 +1,164 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.nsmNs }}
+---
+{{- $ca := genCA "admission-controller-ca" 3650 -}}
+{{- $cn := printf "admission-webhook-svc"  -}}
+{{- $altName1 := printf "%s.%s.svc" $cn .Values.nsmNs }}
+{{- $altName2 := printf "%s.%s.svc.cluster.local" $cn .Values.nsmNs }}
+{{- $cert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nsm-admission-webhook-certs
+  namespace: {{ .Values.nsmNs }}
+type: Opaque
+data:
+  tls.key: {{ $cert.Key | b64enc }}
+  tls.crt: {{ $cert.Cert | b64enc }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nsm-admission-webhook-k8s
+  namespace: {{ .Values.nsmNs }}
+  labels:
+    app: kubeslice-nsm-webhook
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kubeslice-nsm-webhook
+  template:
+    metadata:
+      labels:
+        app: kubeslice-nsm-webhook
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - kubeslice-nsm-webhook
+              topologyKey: kubernetes.io/hostname
+      serviceAccountName: admission-webhook-sa
+      imagePullSecrets:
+      - name: {{ template "imagePullSecrets.secretName" . }}
+      priorityClassName: nsm-webhook-high-priority
+      containers:
+        - name: admission-webhook-k8s
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.webhookImageRegistry }}:{{ .Values.webhookImageTag }}'
+          imagePullPolicy: IfNotPresent
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 443
+              scheme: HTTPS
+          env:
+            - name: SPIFFE_ENDPOINT_SOCKET
+              value: unix:///run/spire/sockets/agent.sock
+            - name: NSM_SERVICE_NAME
+              value: admission-webhook-svc
+            - name: NSM_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NSM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NSM_ANNOTATION
+              value: networkservicemesh.io
+            - name: NSM_CONTAINER_IMAGES
+              value: "{{ .Values.global.imageRegistry }}/{{ .Values.nsmInjectContainerImageRegistry }}:{{ .Values.nsmInjectContainerImageTag }}"
+            - name: NSM_INIT_CONTAINER_IMAGES
+              value: "{{ .Values.global.imageRegistry }}/{{ .Values.nsmInjectInitContainerImageRegistry }}:{{ .Values.nsmInjectInitContainerImageTag }}"
+            - name: NSM_LABELS
+              value: spiffe.io/spiffe-id:true
+            - name: NSM_ENVS
+              value: NSM_CONNECT_TO=tcp://nsmgr.kubeslice-system.svc.cluster.local:5001,NSM_LOG_LEVEL=TRACE,NSM_LIVENESSCHECKENABLED=false,NSM_REQUEST_TIMEOUT=60s
+            - name: PROFILE_OPENSHIFT
+              value: "{{ .Values.global.profile.openshift | default false }}"
+            - name: NSM_REGISTER_WEBHOOK_CLIENT
+              value: "false"
+            - name: NSM_CA_BUNDLE
+              value: "{{ $ca.Cert | b64enc }}"
+            - name: NSM_CERT_FILE_PATH
+              value: /etc/webhook/certs/tls.crt
+            - name: NSM_KEY_FILE_PATH
+              value: /etc/webhook/certs/tls.key
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /etc/webhook/certs
+              readOnly: true
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: nsm-admission-webhook-certs
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nsm-webhook-pdb
+  namespace: {{ .Values.nsmNs }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: kubeslice-nsm-webhook
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: nsm-mutating-webhook-configuration
+  namespace: {{ .Values.nsmNs }}
+  labels:
+    app: kubeslice-nsm-webhook
+webhooks:
+  - name: webhook.networkservicemesh.io
+    sideEffects: None
+    admissionReviewVersions: 
+    - "v1"
+    failurePolicy: Fail
+    matchPolicy: Equivalent
+    clientConfig:
+      service:
+        name: admission-webhook-svc
+        namespace: {{ .Values.nsmNs }}
+        path: "/mutate"
+      caBundle: {{ $ca.Cert | b64enc }}
+    rules:
+      - apiGroups:
+        - ""
+        - apps
+        apiVersions:
+        - v1
+        operations: 
+        - CREATE
+        - UPDATE
+        resources:
+        - pods
+        - deployments
+        - statefulsets
+        - daemonsets
+        - replicasets
+    namespaceSelector:
+      matchExpressions:
+      - key: kubeslice.io/inject
+        operator: In
+        values:
+        - "true"
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+        - kube-system
+        - spire
+        - kubeslice-controller
+        - {{ .Values.nsmNs }}

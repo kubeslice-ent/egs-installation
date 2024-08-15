@@ -1,0 +1,125 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: gpuprovisioningrequests.aiops.kubeslice.io
+spec:
+  group: aiops.kubeslice.io
+  names:
+    kind: GPUProvisioningRequest
+    listKind: GPUProvisioningRequestList
+    plural: gpuprovisioningrequests
+    singular: gpuprovisioningrequest
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: GPUProvisioningRequest is the Schema for the gpuprovisioningrequests
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: GPUProvisioningRequestSpec defines the desired state of GPUProvisioningRequest
+            type: object
+          status:
+            description: GPUProvisioningRequestStatus defines the observed state of
+              GPUProvisioningRequest
+            properties:
+              applicationNamespaces:
+                description: Slice Application Namespace list
+                items:
+                  type: string
+                type: array
+              clusterName:
+                description: Name of the worker cluster on which the GPUs are requested
+                type: string
+              dedicatedNodes:
+                description: |-
+                  Specify if an entire GPU node should be assigned
+                  even if the requested number of GPUs is less than the allocatable GPUs on a node
+                type: boolean
+              enableRDMA:
+                description: RDMA capable GPU nodes applicable only if multiNode is
+                  true
+                type: boolean
+              enableSecondaryNetwork:
+                description: setup secondary network for workloads
+                type: boolean
+              exitDuration:
+                description: estimated usage duration of the GPUs; optional
+                type: string
+              gpuSharingMode:
+                description: desired type of GPU sharing mechanism
+                type: string
+              labeled:
+                description: Labeled indicates whether the nodes have been labeled
+                type: boolean
+              labeledTimestamp:
+                description: LabeledTimestamp is the timestamp to track when the node
+                  labeling occurred
+                format: date-time
+                type: string
+              multiNode:
+                description: specify if the requested GPUs may be spread across multiple
+                  nodes on a cluster
+                type: boolean
+              nodeList:
+                description: GPU nodes list - contains list of gpu nodes which got
+                  reconciled by operator
+                items:
+                  description: Node defines the GPU nodes reserved for slice
+                  properties:
+                    nodeName:
+                      description: NodeName is the name of the GPU node
+                      type: string
+                    numGPUsAllocated:
+                      description: NumGPUsAllocated is the number of GPUs allocated
+                        from the node
+                      type: integer
+                  required:
+                  - nodeName
+                  - numGPUsAllocated
+                  type: object
+                type: array
+              numberOfGPUNodes:
+                description: Number of GPU nodes needed
+                type: integer
+              numberOfGPUs:
+                description: Number of GPUs needed
+                type: integer
+              provisioningStatus:
+                description: status of provisioning
+                type: string
+              sliceName:
+                description: Name of the slice
+                type: string
+            required:
+            - clusterName
+            - exitDuration
+            - numberOfGPUNodes
+            - sliceName
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

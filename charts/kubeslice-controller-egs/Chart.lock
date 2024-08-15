@@ -1,0 +1,9 @@
+dependencies:
+- name: kubetally
+  repository: file://./charts/kubetally
+  version: 1.1.0
+- name: prometheus
+  repository: file://./charts/prometheus
+  version: 25.20.1
+digest: sha256:6d254aeb9d27571a5b59a0a867f5c11f2def56993bbeee250ac0fe4b398e9c66
+generated: "2024-08-13T08:51:49.961751275Z"

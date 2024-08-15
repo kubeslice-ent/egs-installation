@@ -1,0 +1,252 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pricing-service
+  name: {{ .Release.Name }}-kubetally-pricing-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pricing-service
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: pricing-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - image: '{{ .Values.global.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
+          imagePullPolicy: {{.Values.kubetally.pricingService.imagePullPolicy}}
+          name: pricing-service
+          ports:
+            - containerPort: 5000
+          env:
+            - name: APP_ENV
+              value: Production
+            - name: PRICE_DATABASE_ADDR
+              value: {{.Values.global.kubeTally.postgresAddr}}
+            - name: PRICE_DATABASE_PORT
+              value: "{{.Values.global.kubeTally.postgresPort}}"
+            - name: PRICE_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kubetally-db-credentials
+                  key: username
+            - name: PRICE_DATABASE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: kubetally-db-credentials
+                  key: password
+            - name: PRICE_DATABASE_NAME
+              value: {{.Values.global.kubeTally.postgresDB}}
+            - name: PORT
+              value: "8088"
+            - name: PROM_HOST
+              value: {{ .Values.global.kubeTally.prometheusUrl }}
+            - name: CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      imagePullSecrets:
+        - name: {{ .Values.kubetally.imagePullSecretName }}
+      tolerations:
+        - operator: "Exists"
+
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-kubetally-pricing-updater
+  namespace: {{ .Release.Namespace }}
+spec:
+  schedule: "{{ .Values.global.kubeTally.pricingUpdaterSchedule }}"
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            prometheus.io/port: '9999'
+            prometheus.io/scrape: 'true'
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+          containers:
+            - name: pricing-updater
+              imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
+              image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+              env:
+                - name: APP_ENV
+                  value: Production
+                - name: PRICE_DATABASE_ADDR
+                  value: {{.Values.global.kubeTally.postgresAddr}}
+                - name: PRICE_DATABASE_PORT
+                  value: "{{.Values.global.kubeTally.postgresPort}}"
+                - name: PRICE_DATABASE_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: kubetally-db-credentials
+                      key: username
+                - name: PRICE_DATABASE_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: kubetally-db-credentials
+                      key: password
+                - name: PRICE_DATABASE_NAME
+                  value: {{.Values.global.kubeTally.postgresDB}}
+                - name: NUM_AWS_PULL_WORKERS
+                  value: "{{.Values.global.kubeTally.priceUpdaterWorkers}}"
+                - name: JOB_MODE
+                  value: PRICE_UPDATE
+                - name: PROMETHEUS_ENDPOINT
+                  value: {{ .Values.global.kubeTally.prometheusUrl }}
+                - name: CONTROLLER_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      apiVersion: v1
+                      fieldPath: metadata.namespace
+          imagePullSecrets:
+            - name: {{ .Values.kubetally.imagePullSecretName }}
+          restartPolicy: Never
+      backoffLimit: 4
+      ttlSecondsAfterFinished: 86400
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: report-service
+  name: {{ .Release.Name }}-kubetally-report
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: report-service
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: report-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: report-service
+          imagePullPolicy: {{ .Values.kubetally.kubeTallyReport.imagePullPolicy }}
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
+          env:
+            - name: APP_ENV
+              value: production
+            - name: PRICE_DATABASE_ADDR
+              value: {{.Values.global.kubeTally.postgresAddr}}
+            - name: PRICE_DATABASE_PORT
+              value: "{{.Values.global.kubeTally.postgresPort}}"
+            - name: PRICE_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kubetally-db-credentials
+                  key: username
+            - name: PRICE_DATABASE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: kubetally-db-credentials
+                  key: password
+            - name: PRICE_DATABASE_NAME
+              value: {{.Values.global.kubeTally.postgresDB}}
+            - name: HOURS_AGO
+              value: '{{ .Values.global.kubeTally.dataProcessingHoursAgo }}'
+            - name: PROMETHEUS_ENDPOINT
+              value: {{ .Values.global.kubeTally.prometheusUrl }}
+            - name: NUM_AWS_PULL_WORKERS
+              value: "{{.Values.global.kubeTally.priceUpdaterWorkers}}"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      imagePullSecrets:
+        - name: {{ .Values.kubetally.imagePullSecretName }}
+      tolerations:
+        - operator: "Exists"
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-kubetally-pricing-updater-job
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook-weight": "-1"
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: '9999'
+        prometheus.io/scrape: 'true'
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: pricing-updater
+          imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+          env:
+            - name: APP_ENV
+              value: Production
+            - name: PRICE_DATABASE_ADDR
+              value: {{.Values.global.kubeTally.postgresAddr}}
+            - name: PRICE_DATABASE_PORT
+              value: "{{.Values.global.kubeTally.postgresPort}}"
+            - name: PRICE_DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kubetally-db-credentials
+                  key: username
+            - name: PRICE_DATABASE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: kubetally-db-credentials
+                  key: password
+            - name: PRICE_DATABASE_NAME
+              value: {{.Values.global.kubeTally.postgresDB}}
+            - name: NUM_AWS_PULL_WORKERS
+              value: "{{.Values.global.kubeTally.priceUpdaterWorkers}}"
+            - name: JOB_MODE
+              value: PRICE_UPDATE
+            - name: PROMETHEUS_ENDPOINT
+              value: {{ .Values.global.kubeTally.prometheusUrl }}
+            - name: CONTROLLER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+      imagePullSecrets:
+        - name: {{ .Values.kubetally.imagePullSecretName }}
+      restartPolicy: Never
+  ttlSecondsAfterFinished: 86400
