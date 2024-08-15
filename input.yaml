@@ -1,122 +1,123 @@
-#base_path: "/home/richie/egs-installation"  # Set to the root directory of your cloned repository
-precheck: true
-kubeslice_precheck: true
-verify_install: true  # Global level VerifyInstall flag
-verify_install_timeout: 600  # Global level timeout in seconds (10 minutes)
-skip_on_verify_fail: false  # Global level flag to decide whether to skip or error out if verification fails
+# Base path to the root directory of your cloned repository
+base_path: "/home/richie/egs-installation"
+
+# Precheck options
+precheck: true  # Run prechecks before installation
+kubeslice_precheck: true  # Specific precheck for Kubeslice components
+
+# Global installation verification settings
+verify_install: true  # Enable installation verification globally
+verify_install_timeout: 600  # Global timeout for verification (in seconds)
+skip_on_verify_fail: false  # Decide whether to skip or error out if verification fails globally
+
+# Helm repository settings
 global_helm_repo_url: "https://smartscaler.nexus.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod"
-global_helm_username: ""
-global_helm_password: ""
-readd_helm_repos: true  # Flag to remove and re-add Helm repos if they already exist
+global_helm_username: ""  # Global Helm repository username
+global_helm_password: ""  # Global Helm repository password
+readd_helm_repos: true  # Re-add Helm repositories if they already exist
+
+# List of required binaries for the installation process
 required_binaries:
   - yq
   - helm
   - kubectl
   - kubectx
 
+# Global image pull secret settings
 global_image_pull_secret:
   repository: "https://index.docker.io/v1/"
-  username: ""
-  password: 
+  username: ""  # Global Docker registry username
+  password: ""  # Global Docker registry password
 
-# Add node label setting
-add_node_label: true
-global_kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to base_path
-use_local_charts: true
-local_charts_path: "charts"  # Relative path to base_path
-global_kubecontext: ""
-use_global_context: true # Use global kubecontext by default
+# Node labeling settings
+add_node_label: true  # Enable node labeling during installation
 
-# Enable/Disable stages
-enable_fetch_controller_secrets: false
-enable_prepare_worker_values_file: true
-enable_install_controller: true
-enable_install_ui: true
-enable_install_worker: true
+# Kubeconfig settings
+global_kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to global kubeconfig file
+use_local_charts: true  # Use local charts instead of pulling from a repository
+local_charts_path: "charts"  # Relative path to local charts directory
+global_kubecontext: ""  # Global kubecontext, if empty, the default context will be used
+use_global_context: true  # Use global kubecontext by default for all operations
 
+# Enable or disable specific stages of the installation
+enable_fetch_controller_secrets: false  # Disable fetching controller secrets
+enable_prepare_worker_values_file: true  # Enable preparing worker values file
+enable_install_controller: true  # Enable installation of the controller
+enable_install_ui: true  # Enable installation of the UI
+enable_install_worker: true  # Enable installation of the worker
+
+# Kubeslice controller installation settings
 kubeslice_controller_egs:
-  skip_installation: false
-  use_global_kubeconfig: true
-  kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to base_path
-  kubecontext: ""
-  namespace: "kubeslice-controller"
-  release: "kubeslice-controller-release"
-  chart: "kubeslice-controller-egs"
-    #repo_url: "https://controller.example.com/chart-helm-charts"  # Overrides global
-    #username: "chart-controller-user"  # Overrides global
-    #password: "chart-controller-pass"  # Overrides global
-    #values_file: "values/controller/controller-values.yaml"
-  inline_values:
+  skip_installation: false  # Do not skip the installation of the controller
+  use_global_kubeconfig: true  # Use global kubeconfig for the controller
+  kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to controller kubeconfig file
+  kubecontext: ""  # Controller-specific kubecontext, uses global if empty
+  namespace: "kubeslice-controller"  # Kubernetes namespace for the controller
+  release: "kubeslice-controller-release"  # Helm release name for the controller
+  chart: "kubeslice-controller-egs"  # Helm chart name for the controller
+  inline_values:  # Inline values for the Helm chart
     kubeslice:
-     controller:
-       endpoint: ""
+      controller:
+        endpoint: ""  # Controller endpoint, should be set during installation
     imagePullSecrets:
-      repository: https://index.docker.io/v1/
-      username: 
-      password: 
-  # No need to define imagePullSecrets unless they need to be different from global settings
-  helm_flags: "--timeout 10m --atomic"
-  verify_install: true  # Chart level VerifyInstall flag
-  verify_install_timeout: 30  # Chart level timeout in seconds (10 minutes)
-  skip_on_verify_fail: false  # Chart level flag to decide whether to skip or error out if verification fails
+      repository: "https://index.docker.io/v1/"
+      username: ""  # Controller-specific Docker registry username
+      password: ""  # Controller-specific Docker registry password
+  helm_flags: "--timeout 10m --atomic"  # Additional Helm flags for installation
+  verify_install: true  # Verify controller installation
+  verify_install_timeout: 30  # Timeout for controller installation verification (in seconds)
+  skip_on_verify_fail: false  # Do not skip if verification fails
 
+# Kubeslice UI installation settings
 kubeslice_ui_egs:
-  skip_installation: false
-  use_global_kubeconfig: true
-  #kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to base_path
-  #kubecontext: "lke212586-ctx"
-  namespace: "kubeslice-controller"
-  release: "kubeslice-ui"
-  chart: "kubeslice-ui-egs"
-    #values_file: ""  # Relative path to base_path
-    #inline_values:
-    #meter: true
-  # No need to define imagePullSecrets unless they need to be different from global settings
-  helm_flags: "--atomic"
-  verify_install: true  # Chart level VerifyInstall flag
-  verify_install_timeout: 50  # Chart level timeout in seconds (5 minutes)
-  skip_on_verify_fail: true  # Chart level flag to decide whether to skip or error out if verification fails
+  skip_installation: false  # Do not skip the installation of the UI
+  use_global_kubeconfig: true  # Use global kubeconfig for the UI
+  namespace: "kubeslice-controller"  # Kubernetes namespace for the UI
+  release: "kubeslice-ui"  # Helm release name for the UI
+  chart: "kubeslice-ui-egs"  # Helm chart name for the UI
+  helm_flags: "--atomic"  # Additional Helm flags for installation
+  verify_install: true  # Verify UI installation
+  verify_install_timeout: 50  # Timeout for UI installation verification (in seconds)
+  skip_on_verify_fail: true  # Skip if UI verification fails
 
+# Kubeslice worker installation settings
 kubeslice_worker_egs:
   - name: "worker-1"
-    use_global_kubeconfig: true
-    skip_installation: false
-      #kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to base_path
-      #kubecontext: "lke212586-ctx"
-    namespace: "kubeslice-system"
-    release: "kubeslice-worker1-release"
-    chart: "kubeslice-worker-egs"
-      #values_file: "values/worker1/values.yaml"  # Relative path to base_path
-    inline_values:
+    use_global_kubeconfig: true  # Use global kubeconfig for this worker
+    skip_installation: false  # Do not skip the installation of the worker
+    namespace: "kubeslice-system"  # Kubernetes namespace for the worker
+    release: "kubeslice-worker1-release"  # Helm release name for the worker
+    chart: "kubeslice-worker-egs"  # Helm chart name for the worker
+    inline_values:  # Inline values for the worker Helm chart
       kubesliceNetworking:
-        enabled: false
+        enabled: false  # Disable Kubeslice networking for this worker
       egs:
-        prometheusEndpoint: http://prometheus-test
-        grafanaDashboardBaseUrl: http://grafana-test # Replace with actual URL
+        prometheusEndpoint: "http://prometheus-test"  # Prometheus endpoint
+        grafanaDashboardBaseUrl: "http://grafana-test"  # Grafana dashboard base URL
       metrics:
-        insecure: true
-    # No need to define imagePullSecrets unless they need to be different from global settings
-    helm_flags: ""
-    # No repo_url, username, or password provided, will fall back to global values
-    verify_install: true  # Chart level VerifyInstall flag
-    verify_install_timeout: 60  # Chart level timeout in seconds (10 minutes)
-    skip_on_verify_fail: false  # Chart level flag to decide whether to skip or error out if verification fails
+        insecure: true  # Allow insecure connections for metrics
+    helm_flags: ""  # Additional Helm flags for worker installation
+    verify_install: true  # Verify worker installation
+    verify_install_timeout: 60  # Timeout for worker installation verification (in seconds)
+    skip_on_verify_fail: false  # Do not skip if worker verification fails
 
+# Project and cluster registration settings
+enable_project_creation: true  # Enable project creation
+enable_cluster_registration: true  # Enable cluster registration
 
-enable_project_creation: true
-enable_cluster_registration: true
-
+# Define projects
 projects:
   - name: "avesha"
-    username: "jupiter"
+    username: "jupiter"  # Username associated with the project
 
+# Define cluster registration
 cluster_registration:
   - cluster_name: "worker-1"
     project_name: "avesha"
     telemetry:
-      enabled: true
-      endpoint: ""
-      telemetryProvider: "prometheus"
+      enabled: true  # Enable telemetry for this cluster
+      endpoint: ""  # Telemetry endpoint, should be set during registration
+      telemetryProvider: "prometheus"  # Telemetry provider
     geoLocation:
-      cloudProvider: "GCP"
-      cloudRegion: "us-central1"
+      cloudProvider: "GCP"  # Cloud provider for this cluster
+      cloudRegion: "us-central1"  # Cloud region for this cluster
