@@ -108,7 +108,7 @@ enable_cluster_registration: true  # Enable cluster registration
 # Define projects
 projects:
   - name: "avesha"
-    username: "jupiter"  # Username associated with the project
+    username: "admin"  # Username associated with the project
 
 # Define cluster registration
 cluster_registration:
