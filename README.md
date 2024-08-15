@@ -325,5 +325,3 @@ Replace `<yaml_file>` with the path to your YAML configuration file. For example
 The EGS Installer Script is a powerful tool for automating the deployment of Kubeslice components across multiple Kubernetes clusters. With proper configuration and usage, it can significantly simplify the installation and management of complex Kubernetes environments. 🌟
 
 ---
-
-This README now includes icons to improve readability and make key points stand out.
