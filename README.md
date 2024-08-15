@@ -1,30 +1,32 @@
-# EGS Installer Script
+Here’s the README with icons added for better visual representation:
+
+# 🌐 EGS Installer Script
 
 This README provides a comprehensive guide to using the EGS Installer Script, which automates the deployment of EGS components such as Kubeslice controllers, UIs, and workers within a Kubernetes environment.
 
-## Overview
+## 🚀 Overview
 
 The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
 
-## Prerequisites
+## ✅ Prerequisites
 
 Before using the EGS Installer Script, ensure that the following prerequisites are met:
 
 - **Binaries**: The following binaries must be installed and available in your system's `PATH`:
-  - `yq`
-  - `helm`
-  - `kubectl`
-  - `kubectx`
+  - `yq` 📄
+  - `helm` 🛠️
+  - `kubectl` ⚙️
+  - `kubectx` 🔀
 - **Kubernetes**: Ensure that you have access to the necessary Kubernetes clusters with the appropriate kubeconfig files.
 
-## Configuration
+## 🛠️ Configuration
 
 The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installation-config.yaml`) with descriptions for each section.
 
-### YAML Configuration File
+### 📝 YAML Configuration File
 
 ```yaml
-base_path: "/home/richie/egs-installation"  # Set to the root directory of your cloned repository
+base_path: ""  # Set to the root directory, if empty will take relative path to script
 
 precheck: true  # Run prechecks before installation
 kubeslice_precheck: true  # Perform pre-checks specific to Kubeslice components
@@ -130,7 +132,7 @@ cluster_registration:  # Define clusters to be registered in the Kubeslice contr
       cloudRegion: "us-central1"
 ```
 
-### Script Usage
+### 🧑‍💻 Script Usage
 
 To run the script, use the following command:
 
@@ -144,43 +146,47 @@ Replace `<yaml_file>` with the path to your YAML configuration file. For example
 ./egs-installer.sh --input-yaml egs-installation-config.yaml
 ```
 
-### Command-Line Options
+### 💡 Command-Line Options
 
 - `--input-yaml <yaml_file>`: Specifies the YAML configuration file to be used.
 - `--help`: Displays usage information.
 
-### Key Features
+### 🔑 Key Features
 
-1. **Prerequisite Checks**: Ensures that required binaries are installed.
-2. **Kubeslice Pre-Checks**: Validates access to clusters and labels nodes if required.
-3. **Helm Chart Management**: Adds, updates, or removes Helm repositories and manages chart installations.
-4. **Project and Cluster Management**: Automates the creation of projects and registration of clusters in the Kubeslice controller.
-5. **Worker Configuration**: Fetches secrets from the controller cluster, prepares worker-specific values files, and manages worker installations.
+1. **Prerequisite Checks**: Ensures that required binaries are installed. 🛠️
+2. **Kubeslice Pre-Checks**: Validates access to clusters and labels nodes if required. ✅
+3. **Helm Chart Management**: Adds, updates, or removes Helm repositories and manages chart installations. 📦
+4. **Project and Cluster Management**: Automates the creation of projects and registration of clusters in the Kubeslice controller. 🗂️
+5. **Worker Configuration**: Fetches secrets from the controller cluster, prepares worker-specific values files, and manages worker installations. ⚙️
 
-### Example Workflow
+### 📜 Example Workflow
 
-1. **Run Pre-checks**: The script first validates that all prerequisites are met.
-2. **Kubeslice Pre-Checks**: Validates that the script can access all necessary clusters.
+1. **Run Pre-checks**: The script first validates that all prerequisites are met. ✅
+2. **Kubeslice Pre-Checks**: Validates that the script can access all necessary clusters. 🔍
 3. **Install or Upgrade Helm Charts**:
-   - Installs or upgrades the Kubeslice controller.
-   - Installs or upgrades the Kubeslice UI.
+   - Installs or upgrades the Kubeslice controller. 📦
+   - Installs or upgrades the Kubeslice UI. 💻
 4. **Project and Cluster Management**:
-   - Creates defined projects in the Kubeslice controller.
-   - Registers defined clusters within these projects.
-5. **Worker Installation**: Installs or upgrades worker nodes, applying the necessary configuration.
+   - Creates defined projects in the Kubeslice controller. 🗂️
+   - Registers defined clusters within these projects. 🌍
+5. **Worker Installation**: Installs or upgrades worker nodes, applying the necessary configuration. ⚙️
 
-### Notes
+### 📝 Notes
 
-- Ensure the YAML configuration file is correctly formatted and contains all necessary fields.
-- The script will exit with an error if any critical steps fail unless configured to skip on failure.
-- Paths specified in the YAML file should be relative to the `base_path` unless absolute paths are used.
+- Ensure the YAML configuration file is correctly formatted and contains all necessary fields. 📄
+- The script will exit with an error if any critical steps fail unless configured to skip on failure. ❌
+- Paths specified in the YAML file should be relative to the `base_path` unless absolute paths are used. 📁
 
-### Troubleshooting
+### 🛠️ Troubleshooting
 
-- **Missing Binaries**: Ensure all required binaries are installed and accessible in your system's `PATH`.
-- **Cluster Access Issues**: Verify that kubeconfig files are correctly configured and that the script can access the clusters specified in the YAML configuration.
-- **Timeouts**: If a component fails to install within the specified timeout, increase the `verify_install_timeout` in the YAML file.
+- **Missing Binaries**: Ensure all required binaries are installed and accessible in your system's `PATH`. ⚠️
+- **Cluster Access Issues**: Verify that kubeconfig files are correctly configured and that the script can access the clusters specified in the YAML configuration. 🔧
+- **Timeouts**: If a component fails to install within the specified timeout, increase the `verify_install_timeout` in the YAML file. ⏳
 
-### Conclusion
+### 📌 Conclusion
 
-The EGS Installer Script is a powerful tool for automating the deployment of Kubeslice components across multiple Kubernetes clusters. With proper configuration and usage, it can significantly simplify the installation and management of complex Kubernetes environments.
+The EGS Installer Script is a powerful tool for automating the deployment of Kubeslice components across multiple Kubernetes clusters. With proper configuration and usage, it can significantly simplify the installation and management of complex Kubernetes environments. 🌟
+
+---
+
+This README now includes icons to improve readability and make key points stand out.
