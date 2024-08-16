@@ -18,7 +18,7 @@ Before using the EGS Installer Script, ensure that the following prerequisites a
 
 ## 🛠️ Configuration
 
-The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installation-config.yaml`) with descriptions for each section.
+The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installer-config.yaml`) with descriptions for each section.
 
 ### 📝 YAML Configuration File
 
@@ -278,7 +278,7 @@ To run the script, use the following command:
 Replace `<yaml_file>` with the path to your YAML configuration file. For example:
 
 ```bash
-./egs-installer.sh --input-yaml egs-installation-config.yaml
+./egs-installer.sh --input-yaml egs-installer-config.yaml
 ```
 
 ### 💡 Command-Line Options
