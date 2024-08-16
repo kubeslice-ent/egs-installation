@@ -257,6 +257,87 @@ cluster_registration:
     geoLocation:
       cloudProvider: "GCP"  # Cloud provider for this cluster (e.g., GCP, AWS).
       cloudRegion: "us-central1"  # Cloud region for this cluster.
+
+enable_install_additional_apps: true  # or false
+
+additional_apps:
+  - name: "gpu-operator"
+    skip_installation: false
+    use_global_kubeconfig: true
+    namespace: "gpu-operator"
+    release: "gpu-operator-release"
+    chart: "gpu-operator"
+    repo_url: "https://helm.ngc.nvidia.com/nvidia"
+    version: "v24.6.0"
+    specific_use_local_charts: false  # Override to use the remote chart instead of local
+    inline_values:
+      hostPaths:
+        driverInstallDir: "/home/kubernetes/bin/nvidia"
+      toolkit:
+        installDir: "/home/kubernetes/bin/nvidia"
+      cdi:
+        enabled: true
+        default: true
+      driver:
+        enabled: false
+    helm_flags: "--wait"
+    verify_install: true
+    verify_install_timeout: 600
+    skip_on_verify_fail: false
+
+  - name: "prometheus"
+    skip_installation: false
+    use_global_kubeconfig: true
+    namespace: "monitoring"
+    release: "prometheus"
+    chart: "kube-prometheus-stack"
+    repo_url: "https://prometheus-community.github.io/helm-charts"
+    version: "v45.0.0"  
+    specific_use_local_charts: false  
+    values_file: ""  
+    inline_values:
+      prometheus:
+        service:
+          type: LoadBalancer
+          port: 32270
+        prometheusSpec:
+          additionalScrapeConfigs:
+          - job_name: tgi
+            kubernetes_sd_configs:
+            - role: endpoints
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod_name
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              target_label: container_name
+            static_configs:
+              - targets: ["llm-inference.demo.svc.cluster.local:80"]
+          - job_name: gpu-metrics
+            scrape_interval: 1s
+            metrics_path: /metrics
+            scheme: http
+            kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names:
+                - gpu-operator
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_endpoints_name]
+              action: drop
+              regex: .*-node-feature-discovery-master
+            - source_labels: [__meta_kubernetes_pod_node_name]
+              action: replace
+              target_label: kubernetes_node
+      grafana:
+        enabled: true
+        persistence:
+          enabled: true
+          size: 1Gi
+    helm_flags: "--wait"
+    verify_install: true
+    verify_install_timeout: 600
+    skip_on_verify_fail: false
+
 ```
 
 ### Summary of Added Comments:
