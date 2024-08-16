@@ -1,5 +1,5 @@
 # Base path to the root directory of your cloned repository
-base_path: "" if empty it will take relative path to script as base path
+base_path: "" #if empty it will take relative path to script as base path
 
 # Precheck options
 precheck: true  # Run prechecks before installation
