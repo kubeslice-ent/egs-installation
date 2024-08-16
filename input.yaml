@@ -21,7 +21,6 @@ required_binaries:
   - yq
   - helm
   - kubectl
-  - kubectx
 
 # Global image pull secret settings
 global_image_pull_secret:
