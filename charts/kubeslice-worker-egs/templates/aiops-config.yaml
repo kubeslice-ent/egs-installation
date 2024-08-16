@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: aiops-config
 data:
-  GRAFANA_DASHBOARD_URL: {{ .Values.egs.gafanaDashboardBaseUrl }}
+  GRAFANA_DASHBOARD_URL: {{ .Values.egs.grafanaDashboardBaseUrl }}
   PROMETHEUS_SERVICE_ENDPOINT: {{ .Values.egs.prometheusEndpoint }}
   gpu-config.yaml: |
     - type: "NVIDIA A10"
