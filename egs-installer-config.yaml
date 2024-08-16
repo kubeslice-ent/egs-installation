@@ -32,7 +32,7 @@ global_image_pull_secret:
 add_node_label: true  # Enable node labeling during installation
 
 # Kubeconfig settings
-global_kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to global kubeconfig file
+global_kubeconfig: ""  # Relative path to global kubeconfig file
 use_local_charts: true  # Use local charts instead of pulling from a repository
 local_charts_path: "charts"  # Relative path to local charts directory
 global_kubecontext: ""  # Global kubecontext, if empty, the default context will be used
