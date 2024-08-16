@@ -18,6 +18,7 @@ metadata:
 type: kubernetes.io/dockerconfigjson
   {{- end }}
 ---
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -205,21 +206,21 @@ spec:
                         gpuUtilization:
                           properties:
                             allocated:
-                              type: integer
+                              type: string
                             free:
-                              type: integer
+                              type: string
+                            memory:
+                              type: string
                             reserved:
                               items:
                                 properties:
                                   numReservedGPUs:
-                                    type: integer
+                                    type: string
                                   sliceName:
                                     type: string
                                 type: object
                               type: array
                             totalGPUs:
-                              type: integer
-                            memory:
                               type: string
                           type: object
                       type: object
