@@ -1,5 +1,5 @@
 # Base path to the root directory of your cloned repository
-base_path: "" #if empty it will take relative path to script as base path
+base_path: "" # if empty it will take relative path to script as base path
 
 # Precheck options
 precheck: true  # Run prechecks before installation
@@ -39,7 +39,6 @@ global_kubecontext: ""  # Global kubecontext, if empty, the default context will
 use_global_context: true  # Use global kubecontext by default for all operations
 
 # Enable or disable specific stages of the installation
-enable_fetch_controller_secrets: false  # Disable fetching controller secrets
 enable_prepare_worker_values_file: true  # Enable preparing worker values file
 enable_install_controller: true  # Enable installation of the controller
 enable_install_ui: true  # Enable installation of the UI
@@ -49,7 +48,7 @@ enable_install_worker: true  # Enable installation of the worker
 kubeslice_controller_egs:
   skip_installation: false  # Do not skip the installation of the controller
   use_global_kubeconfig: true  # Use global kubeconfig for the controller
-  kubeconfig: "config/global/kubeconfig.yaml"  # Relative path to controller kubeconfig file
+  kubeconfig: ""  # Relative path to controller kubeconfig file
   kubecontext: ""  # Controller-specific kubecontext, uses global if empty
   namespace: "kubeslice-controller"  # Kubernetes namespace for the controller
   release: "kubeslice-controller-release"  # Helm release name for the controller
@@ -58,10 +57,6 @@ kubeslice_controller_egs:
     kubeslice:
       controller:
         endpoint: ""  # Controller endpoint, should be set during installation
-    imagePullSecrets:
-      repository: "https://index.docker.io/v1/"
-      username: ""  # Controller-specific Docker registry username
-      password: ""  # Controller-specific Docker registry password
   helm_flags: "--timeout 10m --atomic"  # Additional Helm flags for installation
   verify_install: true  # Verify controller installation
   verify_install_timeout: 30  # Timeout for controller installation verification (in seconds)
@@ -77,7 +72,7 @@ kubeslice_ui_egs:
   helm_flags: "--atomic"  # Additional Helm flags for installation
   verify_install: true  # Verify UI installation
   verify_install_timeout: 50  # Timeout for UI installation verification (in seconds)
-  skip_on_verify_fail: true  # Skip if UI verification fails
+  skip_on_verify_fail: false  # Skip if UI verification fails
 
 # Kubeslice worker installation settings
 kubeslice_worker_egs:
@@ -95,7 +90,7 @@ kubeslice_worker_egs:
         grafanaDashboardBaseUrl: "http://grafana-test"  # Grafana dashboard base URL
       metrics:
         insecure: true  # Allow insecure connections for metrics
-    helm_flags: ""  # Additional Helm flags for worker installation
+    helm_flags: "--atomic"  # Additional Helm flags for worker installation
     verify_install: true  # Verify worker installation
     verify_install_timeout: 60  # Timeout for worker installation verification (in seconds)
     skip_on_verify_fail: false  # Do not skip if worker verification fails
@@ -120,3 +115,83 @@ cluster_registration:
     geoLocation:
       cloudProvider: "GCP"  # Cloud provider for this cluster
       cloudRegion: "us-central1"  # Cloud region for this cluster
+
+enable_install_additional_apps: true  # or false
+
+additional_apps:
+  - name: "gpu-operator-1"
+    skip_installation: false
+    use_global_kubeconfig: true
+    namespace: "gpu-operator"
+    release: "gpu-operator-release"
+    chart: "gpu-operator"
+    repo_url: "https://helm.ngc.nvidia.com/nvidia"
+    version: "v24.6.0"
+    specific_use_local_charts: false  # Override to use the remote chart instead of local
+    inline_values:
+      hostPaths:
+        driverInstallDir: "/home/kubernetes/bin/nvidia"
+      toolkit:
+        installDir: "/home/kubernetes/bin/nvidia"
+      cdi:
+        enabled: true
+        default: true
+      driver:
+        enabled: false
+    helm_flags: "--wait"
+    verify_install: true
+    verify_install_timeout: 600
+    skip_on_verify_fail: false
+
+  - name: "prometheus"
+    skip_installation: false
+    use_global_kubeconfig: true
+    namespace: "monitoring"
+    release: "prometheus"
+    chart: "kube-prometheus-stack"
+    repo_url: "https://prometheus-community.github.io/helm-charts"
+    version: "v45.0.0"  
+    specific_use_local_charts: false  
+    values_file: ""  
+    inline_values:
+      prometheus:
+        service:
+          type: LoadBalancer
+          port: 32270
+        prometheusSpec:
+          additionalScrapeConfigs:
+          - job_name: tgi
+            kubernetes_sd_configs:
+            - role: endpoints
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod_name
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              target_label: container_name
+            static_configs:
+              - targets: ["llm-inference.demo.svc.cluster.local:80"]
+          - job_name: gpu-metrics
+            scrape_interval: 1s
+            metrics_path: /metrics
+            scheme: http
+            kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names:
+                - gpu-operator
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_endpoints_name]
+              action: drop
+              regex: .*-node-feature-discovery-master
+            - source_labels: [__meta_kubernetes_pod_node_name]
+              action: replace
+              target_label: kubernetes_node
+      grafana:
+        enabled: true
+        persistence:
+          enabled: true
+          size: 1Gi
+    helm_flags: "--wait"
+    verify_install: true
+    verify_install_timeout: 600
+    skip_on_verify_fail: false
