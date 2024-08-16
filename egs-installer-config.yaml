@@ -12,7 +12,7 @@ skip_on_verify_fail: false  # Decide whether to skip or error out if verificatio
 
 # Helm repository settings
 global_helm_repo_url: "https://smartscaler.nexus.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod"
-global_helm_username: "kubeslice-egs-user-1"  # Global Helm repository username
+global_helm_username: ""  # Global Helm repository username
 global_helm_password: ""  # Global Helm repository password
 readd_helm_repos: true  # Re-add Helm repositories if they already exist
 
