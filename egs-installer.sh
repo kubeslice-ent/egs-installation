@@ -1021,6 +1021,16 @@ EOF
         echo "🔧 Additional Helm flags: $helm_flags"
     fi
 
+
+    # Use the merged values file
+    if [ -n "$values_file" ] && [ "$values_file" != "null" ] && [ -f "$values_file" ]; then
+        helm_cmd="$helm_cmd -f $values_file"
+        echo "Using merged values file: $values_file"
+    else
+        echo "Skipping values file as it is not valid: $values_file"
+    fi
+
+
     # Print the final Helm command to be executed
     echo "🔧 Final Helm command: $helm_cmd"
 
@@ -1296,55 +1306,89 @@ fi
 #    fetch_controller_secrets
 #fi
 
-# Prepare worker values files using the fetched secrets if enabled
-if [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "true" ]; then
-    prepare_worker_values_file
-fi
 
-# Function to parse YAML using yq and extract the inline values
-extract_inline_values() {
-    local yaml_file=$1
-    local worker_index=$2
+# Function to merge inline values and handle any missing flags
 
-    # Extract the inline_values for the specified worker
-    inline_values=$(yq e ".kubeslice_worker_egs[$worker_index].inline_values" "$yaml_file")
-    echo "$inline_values"
+# Function to create a unique directory for each run
+create_unique_run_dir() {
+    local base_dir="$INSTALLATION_FILES_PATH/run"
+    local release_name=$1
+    local run_dir="$base_dir/helm_run_$(date +%Y%m%d_%H%M%S)_${release_name}"
+
+    mkdir -p "$run_dir"
+    echo "$run_dir"
 }
 
-# Process worker installations if enabled
+# Function to merge prepared values and inline values into the final combined file
+
+merge_inline_values() {
+    local prepared_values_file=$1
+    local inline_values=$2
+    local base_name=$3
+    local run_dir=$4
+    local combined_values_file="$run_dir/${base_name}_combined_values.yaml"
+
+    # Copy the prepared values file to the combined file
+    if [ -n "$prepared_values_file" ] && [ -f "$prepared_values_file" ]; then
+        cp "$prepared_values_file" "$combined_values_file"
+    else
+        touch "$combined_values_file"
+    fi
+
+    # Merge the inline values into the combined values file
+    if [ -n "$inline_values" ]; then
+        echo "$inline_values" | yq eval -P - >> "$combined_values_file"
+    fi
+
+    echo "$combined_values_file"
+}
+
+# Inside the loop where you process each worker
 if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
         IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<< "${KUBESLICE_WORKERS[$worker_index]}"
-        
+
+
+        if [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "true" ]; then
+             prepare_worker_values_file
+         fi	
         # Prepare the path to the prepared values file
         prepared_values_file="$INSTALLATION_FILES_PATH/${worker_name}_final_values.yaml"
 
-        # Debug: Extract and output inline values
-        inline_values=$(extract_inline_values "$EGS_INPUT_YAML" "$worker_index")
+        # Extract and output inline values
+        inline_values=$(yq e ".kubeslice_worker_egs[$worker_index].inline_values | select(. != null)" "$EGS_INPUT_YAML")
         echo "Inline values extracted for worker $worker_name:"
         echo "$inline_values"
 
-        # Create the final combined values file
-        combined_values_file="$INSTALLATION_FILES_PATH/${worker_name}_combined_values.yaml"
-        
-        # Copy the contents of the prepared values file to the combined file
-        cp "$prepared_values_file" "$combined_values_file"
+    worker=$(yq e ".kubeslice_worker_egs[$worker_index]" "$EGS_INPUT_YAML")
+    worker_name=$(echo "$worker" | yq e '.name' -)
+    skip_installation=$(echo "$worker" | yq e '.skip_installation' -)
+    use_global_kubeconfig=$(echo "$worker" | yq e '.use_global_kubeconfig' -)
+    namespace=$(echo "$worker" | yq e '.namespace' -)
+    release_name=$(echo "$worker" | yq e '.release' -)
+    chart_name=$(echo "$worker" | yq e '.chart' -)
+    values_file=$(echo "$worker" | yq e '.values_file' -)
+    helm_flags=$(echo "$worker" | yq e '.helm_flags' -)
+    verify_install=$(echo "$worker" | yq e '.verify_install' -)
+    verify_install_timeout=$(echo "$worker" | yq e '.verify_install_timeout' -)
+    skip_on_verify_fail=$(echo "$worker" | yq e '.skip_on_verify_fail' -)
 
-        # Merge the inline values directly into the combined file
-        if [ -n "$inline_values" ] && [ "$inline_values" != "null" ]; then
-            echo "Merging inline values into the combined values file..."
-            echo "$inline_values" >> "$combined_values_file"
-        fi
+
+
+        # Create a unique directory for this worker's run
+        run_dir=$(create_unique_run_dir "$release_name")
+
+        # Merge the prepared values and inline values
+        combined_values_file=$(merge_inline_values "$prepared_values_file" "$inline_values" "$worker_name" "$run_dir")
 
         # Debugging: Output the combined values file to check the contents
-        echo "Generated combined values file:"
+        echo "Generated combined values file for $worker_name:"
         cat "$combined_values_file"
 
         # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
         install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$combined_values_file" "" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
     done
 fi
-
 
 echo "========================================="
 echo "    EGS Installer Script Complete        "
