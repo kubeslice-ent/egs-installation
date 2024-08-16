@@ -48,6 +48,7 @@ enable_install_worker: true  # Enable installation of the worker
 kubeslice_controller_egs:
   skip_installation: false  # Do not skip the installation of the controller
   use_global_kubeconfig: true  # Use global kubeconfig for the controller
+  specific_use_local_charts: true
   kubeconfig: ""  # Relative path to controller kubeconfig file
   kubecontext: ""  # Controller-specific kubecontext, uses global if empty
   namespace: "kubeslice-controller"  # Kubernetes namespace for the controller
@@ -73,12 +74,14 @@ kubeslice_ui_egs:
   verify_install: true  # Verify UI installation
   verify_install_timeout: 50  # Timeout for UI installation verification (in seconds)
   skip_on_verify_fail: false  # Skip if UI verification fails
+  specific_use_local_charts: true
 
 # Kubeslice worker installation settings
 kubeslice_worker_egs:
   - name: "worker-1"
     use_global_kubeconfig: true  # Use global kubeconfig for this worker
     skip_installation: false  # Do not skip the installation of the worker
+    specific_use_local_charts: true
     namespace: "kubeslice-system"  # Kubernetes namespace for the worker
     release: "kubeslice-worker1-release"  # Helm release name for the worker
     chart: "kubeslice-worker-egs"  # Helm chart name for the worker
