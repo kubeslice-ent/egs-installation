@@ -14,7 +14,6 @@ Before using the EGS Installer Script, ensure that the following prerequisites a
   - `yq` 📄
   - `helm` 🛠️
   - `kubectl` ⚙️
-  - `kubectx` 🔀
 - **Kubernetes**: Ensure that you have access to the necessary Kubernetes clusters with the appropriate kubeconfig files.
 
 ## 🛠️ Configuration
@@ -70,7 +69,6 @@ required_binaries:
   - yq       # YAML processor used for parsing and processing YAML files.
   - helm     # Helm package manager used for deploying Kubernetes applications.
   - kubectl  # Command-line tool for controlling Kubernetes clusters.
-  - kubectx  # Utility for fast switching between Kubernetes contexts.
 
 # Global image pull secret settings for accessing private Docker registries.
 # These settings can be overridden at the component level if different credentials are needed.
