@@ -105,4 +105,4 @@ global:
 
 # enable/disable network component installation
 kubesliceNetworking:
-  enabled: true
+  enabled: false
