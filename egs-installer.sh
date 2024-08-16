@@ -738,6 +738,100 @@ parse_yaml() {
         KUBESLICE_CLUSTER_REGISTRATIONS+=("$CLUSTER_NAME|$PROJECT_NAME|$TELEMETRY_ENABLED|$TELEMETRY_ENDPOINT|$TELEMETRY_PROVIDER|$GEO_LOCATION_PROVIDER|$GEO_LOCATION_REGION")
     done
 
+
+
+# Extract global enable/disable flag for additional apps installation
+    ENABLE_INSTALL_ADDITIONAL_APPS=$(yq e '.enable_install_additional_apps' "$yaml_file")
+    if [ -z "$ENABLE_INSTALL_ADDITIONAL_APPS" ] || [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "null" ]; then
+        ENABLE_INSTALL_ADDITIONAL_APPS="true"  # Default to true if not specified
+    fi
+
+ # Extract values for additional applications
+    ADDITIONAL_APPS_COUNT=$(yq e '.additional_apps | length' "$yaml_file")
+
+    ADDITIONAL_APPS=()
+    for ((i=0; i<ADDITIONAL_APPS_COUNT; i++)); do
+        APP_NAME=$(yq e ".additional_apps[$i].name" "$yaml_file")
+        APP_SKIP_INSTALLATION=$(yq e ".additional_apps[$i].skip_installation" "$yaml_file")
+        APP_USE_GLOBAL_KUBECONFIG=$(yq e ".additional_apps[$i].use_global_kubeconfig" "$yaml_file")
+        if [ -z "$APP_USE_GLOBAL_KUBECONFIG" ] || [ "$APP_USE_GLOBAL_KUBECONFIG" = "null" ]; then
+            APP_USE_GLOBAL_KUBECONFIG="true"
+        fi
+        APP_KUBECONFIG=$(yq e ".additional_apps[$i].kubeconfig" "$yaml_file")
+        APP_KUBECONFIG="${APP_KUBECONFIG:-$GLOBAL_KUBECONFIG}"
+
+        APP_KUBECONTEXT=$(yq e ".additional_apps[$i].kubecontext" "$yaml_file")
+        if [ -z "$APP_KUBECONTEXT" ] || [ "$APP_KUBECONTEXT" = "null" ]; then
+            APP_KUBECONTEXT="$GLOBAL_KUBECONTEXT"
+        fi
+
+        APP_NAMESPACE=$(yq e ".additional_apps[$i].namespace" "$yaml_file")
+        APP_RELEASE_NAME=$(yq e ".additional_apps[$i].release" "$yaml_file")
+        APP_CHART_NAME=$(yq e ".additional_apps[$i].chart" "$yaml_file")
+        APP_REPO_URL=$(yq e ".additional_apps[$i].repo_url" "$yaml_file")
+        if [ -z "$APP_REPO_URL" ] || [ "$APP_REPO_URL" = "null" ]; then
+            APP_REPO_URL="$GLOBAL_HELM_REPO_URL"
+        fi
+
+        APP_USERNAME=$(yq e ".additional_apps[$i].username" "$yaml_file")
+        if [ -z "$APP_USERNAME" ] || [ "$APP_USERNAME" = "null" ]; then
+            APP_USERNAME="$GLOBAL_HELM_USERNAME"
+        fi
+
+        APP_PASSWORD=$(yq e ".additional_apps[$i].password" "$yaml_file")
+        if [ -z "$APP_PASSWORD" ] || [ "$APP_PASSWORD" = "null" ]; then
+            APP_PASSWORD="$GLOBAL_HELM_PASSWORD"
+        fi
+
+        APP_VALUES_FILE=$(yq e ".additional_apps[$i].values_file" "$yaml_file")
+        APP_VALUES_FILE="$BASE_PATH/$APP_VALUES_FILE"
+
+        APP_INLINE_VALUES=$(yq e ".additional_apps[$i].inline_values // {}" "$yaml_file")
+
+        APP_IMAGE_PULL_SECRET_REPO=$(yq e ".additional_apps[$i].imagePullSecrets.repository" "$yaml_file")
+        if [ -z "$APP_IMAGE_PULL_SECRET_REPO" ] || [ "$APP_IMAGE_PULL_SECRET_REPO" = "null" ]; then
+            APP_IMAGE_PULL_SECRET_REPO="$GLOBAL_IMAGE_PULL_SECRET_REPO"
+        fi
+
+        APP_IMAGE_PULL_SECRET_USERNAME=$(yq e ".additional_apps[$i].imagePullSecrets.username" "$yaml_file")
+        if [ -z "$APP_IMAGE_PULL_SECRET_USERNAME" ] || [ "$APP_IMAGE_PULL_SECRET_USERNAME" = "null" ]; then
+            APP_IMAGE_PULL_SECRET_USERNAME="$GLOBAL_IMAGE_PULL_SECRET_USERNAME"
+        fi
+
+        APP_IMAGE_PULL_SECRET_PASSWORD=$(yq e ".additional_apps[$i].imagePullSecrets.password" "$yaml_file")
+        if [ -z "$APP_IMAGE_PULL_SECRET_PASSWORD" ] || [ "$APP_IMAGE_PULL_SECRET_PASSWORD" = "null" ]; then
+            APP_IMAGE_PULL_SECRET_PASSWORD="$GLOBAL_IMAGE_PULL_SECRET_PASSWORD"
+        fi
+
+        APP_IMAGE_PULL_SECRET_EMAIL=$(yq e ".additional_apps[$i].imagePullSecrets.email" "$yaml_file")
+        if [ -z "$APP_IMAGE_PULL_SECRET_EMAIL" ] || [ "$APP_IMAGE_PULL_SECRET_EMAIL" = "null" ]; then
+            APP_IMAGE_PULL_SECRET_EMAIL="$GLOBAL_IMAGE_PULL_SECRET_EMAIL"
+        fi
+
+        APP_HELM_FLAGS=$(yq e ".additional_apps[$i].helm_flags" "$yaml_file")
+
+        APP_VERIFY_INSTALL=$(yq e ".additional_apps[$i].verify_install" "$yaml_file")
+        if [ -z "$APP_VERIFY_INSTALL" ] || [ "$APP_VERIFY_INSTALL" = "null" ]; then
+            APP_VERIFY_INSTALL="$GLOBAL_VERIFY_INSTALL"
+        fi
+
+        APP_VERIFY_INSTALL_TIMEOUT=$(yq e ".additional_apps[$i].verify_install_timeout" "$yaml_file")
+        if [ -z "$APP_VERIFY_INSTALL_TIMEOUT" ] || [ "$APP_VERIFY_INSTALL_TIMEOUT" = "null" ]; then
+            APP_VERIFY_INSTALL_TIMEOUT="$GLOBAL_VERIFY_INSTALL_TIMEOUT"
+        fi
+
+        if [ -z "$APP_SKIP_INSTALLATION" ] || [ "$APP_SKIP_INSTALLATION" = "null" ]; then
+            APP_SKIP_INSTALLATION="false"
+        fi
+
+        APP_SKIP_ON_VERIFY_FAIL=$(yq e ".additional_apps[$i].skip_on_verify_fail" "$yaml_file")
+        if [ -z "$APP_SKIP_ON_VERIFY_FAIL" ] || [ "$APP_SKIP_ON_VERIFY_FAIL" = "null" ]; then
+            APP_SKIP_ON_VERIFY_FAIL="$GLOBAL_SKIP_ON_VERIFY_FAIL"
+        fi
+
+        ADDITIONAL_APPS+=("$APP_NAME|$APP_SKIP_INSTALLATION|$APP_USE_GLOBAL_KUBECONFIG|$APP_KUBECONFIG|$APP_KUBECONTEXT|$APP_NAMESPACE|$APP_RELEASE_NAME|$APP_CHART_NAME|$APP_REPO_URL|$APP_USERNAME|$APP_PASSWORD|$APP_VALUES_FILE|$APP_INLINE_VALUES|$APP_IMAGE_PULL_SECRET_REPO|$APP_IMAGE_PULL_SECRET_USERNAME|$APP_IMAGE_PULL_SECRET_PASSWORD|$APP_IMAGE_PULL_SECRET_EMAIL|$APP_HELM_FLAGS|$APP_VERIFY_INSTALL|$APP_VERIFY_INSTALL_TIMEOUT|$APP_SKIP_ON_VERIFY_FAIL")
+    done
+
     echo "✔️ Parsing completed."
 }
 
@@ -850,11 +944,12 @@ install_or_upgrade_helm_chart() {
     local image_pull_secret_password=${15}
     local image_pull_secret_email=${16}
     local helm_flags=${17}
-    local use_local_charts=${18}
+    local specific_use_local_charts=${18}
     local local_charts_path=${19}
-    local verify_install=${20}
-    local verify_install_timeout=${21}
-    local skip_on_verify_fail=${22}
+    local version=${20}
+    local verify_install=${21}
+    local verify_install_timeout=${22}
+    local skip_on_verify_fail=${23}
 
     echo "-----------------------------------------"
     echo "🚀 Processing Helm chart installation"
@@ -904,8 +999,9 @@ install_or_upgrade_helm_chart() {
     echo "  image_pull_secret_password=$image_pull_secret_password"
     echo "  image_pull_secret_email=$image_pull_secret_email"
     echo "  helm_flags=$helm_flags"
-    echo "  use_local_charts=$use_local_charts"
+    echo "  specific_use_local_charts=$specific_use_local_charts"
     echo "  local_charts_path=$local_charts_path"
+    echo "  version=$version"
     echo "  verify_install=$verify_install"
     echo "  verify_install_timeout=$verify_install_timeout"
     echo "  skip_on_verify_fail=$skip_on_verify_fail"
@@ -918,7 +1014,8 @@ install_or_upgrade_helm_chart() {
     fi
 
     # Determine the chart path based on whether local charts are used
-    if [ "$use_local_charts" = "true" ]; then
+    local use_local_charts_effective="${specific_use_local_charts:-$USE_LOCAL_CHARTS}"
+    if [ "$use_local_charts_effective" = "true" ]; then
         chart_name="$local_charts_path/$chart_name"
         echo "🗂️  Using local chart at path '$chart_name'..."
     elif [ -n "$repo_url" ]; then
@@ -993,6 +1090,12 @@ EOF
     # Construct the Helm command
     helm_cmd="$helm_cmd $operation $release_name $chart_name"
 
+    # Add chart version if specified
+    if [ -n "$version" ] && [ "$version" != "null" ]; then
+        helm_cmd="$helm_cmd --version $version"
+        echo "🗂️  Using chart version: $version"
+    fi
+
     # Add the primary values file if specified and valid
     if [ -n "$values_file" ] && [ "$values_file" != "null" ] && [ -f "$values_file" ]; then
         helm_cmd="$helm_cmd -f $values_file"
@@ -1015,12 +1118,6 @@ EOF
         echo "🗂  Using inline values file: $inline_values_file"
     fi
 
-    # Append additional Helm flags
-    if [ -n "$helm_flags" ] && [ "$helm_flags" != "null" ]; then
-        helm_cmd="$helm_cmd $helm_flags"
-        echo "🔧 Additional Helm flags: $helm_flags"
-    fi
-
 
     # Use the merged values file
     if [ -n "$values_file" ] && [ "$values_file" != "null" ] && [ -f "$values_file" ]; then
@@ -1030,6 +1127,11 @@ EOF
         echo "Skipping values file as it is not valid: $values_file"
     fi
 
+    # Append additional Helm flags
+    if [ -n "$helm_flags" ] && [ "$helm_flags" != "null" ]; then
+        helm_cmd="$helm_cmd $helm_flags"
+        echo "🔧 Additional Helm flags: $helm_flags"
+    fi
 
     # Print the final Helm command to be executed
     echo "🔧 Final Helm command: $helm_cmd"
@@ -1046,7 +1148,7 @@ EOF
     echo ""
 
     # Remove the temporary Helm repository if added
-    if [ "$use_local_charts" != "true" ] && [ -n "$repo_url" ]; then
+    if [ "$use_local_charts_effective" != "true" ] && [ -n "$repo_url" ]; then
         helm repo remove temp-repo
     fi
 
@@ -1060,7 +1162,6 @@ EOF
     echo "-----------------------------------------"
     echo "✔️ Helm chart installation or upgrade complete."
 }
-
 
 create_projects_in_controller() {
     echo "🚀 Starting project creation in controller cluster..."
@@ -1281,15 +1382,19 @@ if [ "$KUBESLICE_PRECHECK" = "true" ]; then
     kubeslice_pre_check
 fi
 
+
 # Process kubeslice-controller installation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
-    install_or_upgrade_helm_chart "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_CHART_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_REPO_URL" "$KUBESLICE_CONTROLLER_USERNAME" "$KUBESLICE_CONTROLLER_PASSWORD" "$KUBESLICE_CONTROLLER_VALUES_FILE" "$KUBESLICE_CONTROLLER_INLINE_VALUES" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_CONTROLLER_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
+    install_or_upgrade_helm_chart "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_CHART_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_REPO_URL" "$KUBESLICE_CONTROLLER_USERNAME" "$KUBESLICE_CONTROLLER_PASSWORD" "$KUBESLICE_CONTROLLER_VALUES_FILE" "$KUBESLICE_CONTROLLER_INLINE_VALUES" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_CONTROLLER_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_CONTROLLER_VERSION" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
 fi
+
 
 # Process kubeslice-ui installation if enabled
 if [ "$ENABLE_INSTALL_UI" = "true" ]; then
-    install_or_upgrade_helm_chart "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_CHART_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_REPO_URL" "$KUBESLICE_UI_USERNAME" "$KUBESLICE_UI_PASSWORD" "$KUBESLICE_UI_VALUES_FILE" "$KUBESLICE_UI_INLINE_VALUES" "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_UI_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_UI_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_UI_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_UI_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
+    install_or_upgrade_helm_chart "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_CHART_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_REPO_URL" "$KUBESLICE_UI_USERNAME" "$KUBESLICE_UI_PASSWORD" "$KUBESLICE_UI_VALUES_FILE" "$KUBESLICE_UI_INLINE_VALUES" "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_UI_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_UI_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_UI_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_UI_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_UI_VERSION" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
 fi
+
+
 
 # Create projects in the controller cluster before deploying workers
 if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
@@ -1321,6 +1426,8 @@ create_unique_run_dir() {
 
 # Function to merge prepared values and inline values into the final combined file
 
+
+
 merge_inline_values() {
     local prepared_values_file=$1
     local inline_values=$2
@@ -1348,10 +1455,10 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
         IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<< "${KUBESLICE_WORKERS[$worker_index]}"
 
-
         if [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "true" ]; then
              prepare_worker_values_file
-         fi	
+         fi
+         
         # Prepare the path to the prepared values file
         prepared_values_file="$INSTALLATION_FILES_PATH/${worker_name}_final_values.yaml"
 
@@ -1360,20 +1467,21 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         echo "Inline values extracted for worker $worker_name:"
         echo "$inline_values"
 
-    worker=$(yq e ".kubeslice_worker_egs[$worker_index]" "$EGS_INPUT_YAML")
-    worker_name=$(echo "$worker" | yq e '.name' -)
-    skip_installation=$(echo "$worker" | yq e '.skip_installation' -)
-    use_global_kubeconfig=$(echo "$worker" | yq e '.use_global_kubeconfig' -)
-    namespace=$(echo "$worker" | yq e '.namespace' -)
-    release_name=$(echo "$worker" | yq e '.release' -)
-    chart_name=$(echo "$worker" | yq e '.chart' -)
-    values_file=$(echo "$worker" | yq e '.values_file' -)
-    helm_flags=$(echo "$worker" | yq e '.helm_flags' -)
-    verify_install=$(echo "$worker" | yq e '.verify_install' -)
-    verify_install_timeout=$(echo "$worker" | yq e '.verify_install_timeout' -)
-    skip_on_verify_fail=$(echo "$worker" | yq e '.skip_on_verify_fail' -)
-
-
+        # Extract worker-specific values for the new parameters
+        worker=$(yq e ".kubeslice_worker_egs[$worker_index]" "$EGS_INPUT_YAML")
+        worker_name=$(echo "$worker" | yq e '.name' -)
+        skip_installation=$(echo "$worker" | yq e '.skip_installation' -)
+        use_global_kubeconfig=$(echo "$worker" | yq e '.use_global_kubeconfig' -)
+        namespace=$(echo "$worker" | yq e '.namespace' -)
+        release_name=$(echo "$worker" | yq e '.release' -)
+        chart_name=$(echo "$worker" | yq e '.chart' -)
+        values_file=$(echo "$worker" | yq e '.values_file' -)
+        helm_flags=$(echo "$worker" | yq e '.helm_flags' -)
+        verify_install=$(echo "$worker" | yq e '.verify_install' -)
+        verify_install_timeout=$(echo "$worker" | yq e '.verify_install_timeout' -)
+        skip_on_verify_fail=$(echo "$worker" | yq e '.skip_on_verify_fail' -)
+        version=$(echo "$worker" | yq e '.version' -)
+        specific_use_local_charts=$(echo "$worker" | yq e '.specific_use_local_charts' -)
 
         # Create a unique directory for this worker's run
         run_dir=$(create_unique_run_dir "$release_name")
@@ -1386,9 +1494,82 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         cat "$combined_values_file"
 
         # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
-        install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$combined_values_file" "" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+        install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$combined_values_file" "" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$LOCAL_CHARTS_PATH" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
     done
 fi
+
+
+# Function to create a values file from inline values, ensuring uniqueness
+create_values_file() {
+    local inline_values=$1
+    local base_name=$2
+    local values_file_path="$run_dir/${base_name}_values.yaml"
+    local counter=1
+
+    # Ensure the file name is unique by appending an incremental number if needed
+    while [ -f "$values_file_path" ]; do
+        values_file_path="$run_dir/${base_name}_$counter.yaml"
+        counter=$((counter + 1))
+    done
+
+    # Use yq to parse and create a valid YAML file
+    echo "$inline_values" | yq eval -P - > "$values_file_path"
+    
+    # Return the file path to be used in Helm command
+    echo "$values_file_path"
+}
+
+
+
+# Process additional applications if any are defined and installation is enabled
+if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" -gt 0 ]; then
+    echo "🚀 Starting installation of additional applications..."
+    for app_index in $(seq 0 $((${#ADDITIONAL_APPS[@]} - 1))); do
+        # Extracting application configuration from YAML using yq
+        app=$(yq e ".additional_apps[$app_index]" "$EGS_INPUT_YAML")
+        app_name=$(echo "$app" | yq e '.name' -)
+        skip_installation=$(echo "$app" | yq e '.skip_installation' -)
+        use_global_kubeconfig=$(echo "$app" | yq e '.use_global_kubeconfig' -)
+        namespace=$(echo "$app" | yq e '.namespace' -)
+        release_name=$(echo "$app" | yq e '.release' -)
+        chart_name=$(echo "$app" | yq e '.chart' -)
+        values_file=$(echo "$app" | yq e '.values_file' -)
+        helm_flags=$(echo "$app" | yq e '.helm_flags' -)
+        verify_install=$(echo "$app" | yq e '.verify_install' -)
+        verify_install_timeout=$(echo "$app" | yq e '.verify_install_timeout' -)
+        skip_on_verify_fail=$(echo "$app" | yq e '.skip_on_verify_fail' -)
+        repo_url=$(echo "$app" | yq e '.repo_url' -)
+        username=$(echo "$app" | yq e '.username' -)
+        password=$(echo "$app" | yq e '.password' -)
+        inline_values=$(echo "$app" | yq e '.inline_values // {}' -)
+        version=$(echo "$app" | yq e '.version' -)
+        specific_use_local_charts=$(echo "$app" | yq e '.specific_use_local_charts' -)
+
+
+        # Create a unique directory for this app's run
+        run_dir=$(create_unique_run_dir "$release_name")
+
+        # Merge the inline values and the values file
+        if [ -n "$inline_values" ] && [ "$inline_values" != "null" ]; then
+            inline_values_file=$(create_values_file "$inline_values" "$app_name-inline")
+            merged_values_file="$inline_values_file"
+            echo "Using inline values file: $inline_values_file"
+        elif [ -n "$values_file" ] && [ "$values_file" != "null" ] && [ -f "$values_file" ]; then
+            merged_values_file="$values_file"
+            echo "Using values file: $values_file"
+        else
+            merged_values_file=""
+        fi
+
+        # Now call the install_or_upgrade_helm_chart function
+	install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$values_file" "$inline_values" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$local_charts_path" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+
+    done
+    echo "✔️ Installation of additional applications complete."
+else
+    echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
+fi
+
 
 echo "========================================="
 echo "    EGS Installer Script Complete        "
