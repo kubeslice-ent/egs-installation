@@ -119,7 +119,7 @@ cluster_registration:
 enable_install_additional_apps: true  # or false
 
 additional_apps:
-  - name: "gpu-operator-1"
+  - name: "gpu-operator"
     skip_installation: false
     use_global_kubeconfig: true
     namespace: "gpu-operator"
