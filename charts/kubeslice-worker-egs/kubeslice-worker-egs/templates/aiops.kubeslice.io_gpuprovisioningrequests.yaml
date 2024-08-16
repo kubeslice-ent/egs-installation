@@ -52,6 +52,10 @@ spec:
               clusterName:
                 description: Name of the worker cluster on which the GPUs are requested
                 type: string
+              completionTimestamp:
+                description: GPR completion timestamp
+                format: date-time
+                type: string
               dedicatedNodes:
                 description: |-
                   Specify if an entire GPU node should be assigned
@@ -66,6 +70,9 @@ spec:
                 type: boolean
               exitDuration:
                 description: estimated usage duration of the GPUs; optional
+                type: string
+              gpuNodeShape:
+                description: Shape of the GPU Node
                 type: string
               gpuSharingMode:
                 description: desired type of GPU sharing mechanism
@@ -115,6 +122,7 @@ spec:
             required:
             - clusterName
             - exitDuration
+            - gpuNodeShape
             - numberOfGPUNodes
             - sliceName
             type: object

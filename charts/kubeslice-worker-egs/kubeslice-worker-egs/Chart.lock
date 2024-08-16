@@ -6,4 +6,4 @@ dependencies:
   repository: file://./charts/netop
   version: 0.2.0
 digest: sha256:9944b6eaac87f368a92e57dc3ec594de3618ff545c5f1ddf0fc7751e5191d0ad
-generated: "2024-08-13T10:47:07.209036988Z"
+generated: "2024-08-16T08:36:26.064992297Z"

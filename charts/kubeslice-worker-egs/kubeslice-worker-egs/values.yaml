@@ -1,7 +1,7 @@
 operator:
   image: worker-operator-ent-egs
-  tag: 1.0.0
-  pullPolicy: IfNotPresent
+  tag: latest-feature-workloads
+  pullPolicy: Always
   logLevel: INFO
 
 ## Base64 encoded secret values from controller cluster
@@ -24,7 +24,7 @@ aiops:
 
 egs:
   prometheusEndpoint: ""
-  gafanaDashboardBaseUrl: ""
+  grafanaDashboardBaseUrl: ""
 
 router:
   image: cmd-nse-vl3
@@ -105,4 +105,4 @@ global:
 
 # enable/disable network component installation
 kubesliceNetworking:
-  enabled: false
+  enabled: true
