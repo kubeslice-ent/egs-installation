@@ -1309,6 +1309,144 @@ install_additional_apps() {
     # kubectl apply -f path-to-$app_name.yaml
     echo "✅ Additional app $app_name deployed successfully."
 }
+run_k8s_commands_from_yaml() {
+    local yaml_file=$1
+    local global_kubeconfig_path="${KUBECONFIG:-$GLOBAL_KUBECONFIG}"
+    local global_kubecontext="${KUBECONTEXT:-$GLOBAL_KUBECONTEXT}"
+    local base_path=$(yq e '.base_path' "$yaml_file")
+
+    # Ensure base_path is absolute
+    base_path=$(realpath "${base_path:-.}")
+
+    # Check if the run_commands flag is set to true
+    local run_commands=$(yq e '.run_commands // "false"' "$yaml_file")
+
+    if [ "$run_commands" != "true" ]; then
+        echo "⏩ Command execution is disabled (run_commands is not true). Skipping."
+        return
+    fi
+
+    echo "🚀 Starting execution of Kubernetes commands from YAML file: $yaml_file"
+    echo "🔧 Global Variables:"
+    echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
+    echo "  🌐 global_kubecontext=$global_kubecontext"
+    echo "  🗂️  base_path=$base_path"
+    echo "-----------------------------------------"
+
+    # Check if the commands section exists
+    commands_exist=$(yq e '.commands' "$yaml_file")
+
+    if [ "$commands_exist" == "null" ]; then
+        echo "⚠️  Warning: No 'commands' section found in the YAML file. Skipping command execution."
+        return
+    fi
+
+    # Extract commands from the YAML file
+    commands_length=$(yq e '.commands | length' "$yaml_file")
+
+    if [ "$commands_length" -eq 0 ]; then
+        echo "⚠️  Warning: 'commands' section is defined, but no commands found. Skipping command execution."
+        return
+    fi
+
+    for index in $(seq 0 $((commands_length - 1))); do
+        echo "🔄 Executing command set $((index + 1)) of $commands_length"
+
+        command_stream=$(yq e ".commands[$index].command_stream" "$yaml_file")
+        use_global_kubeconfig=$(yq e ".commands[$index].use_global_kubeconfig // false" "$yaml_file")
+        skip_installation=$(yq e ".commands[$index].skip_installation // false" "$yaml_file")
+        verify_install=$(yq e ".commands[$index].verify_install // false" "$yaml_file")
+        verify_install_timeout=$(yq e ".commands[$index].verify_install_timeout // 200" "$yaml_file")
+        skip_on_verify_fail=$(yq e ".commands[$index].skip_on_verify_fail // false" "$yaml_file")
+        namespace=$(yq e ".commands[$index].namespace // default" "$yaml_file")
+
+        # Print all variables
+        echo "🔧 Command Set Variables:"
+        echo "  📜 command_stream=$command_stream"
+        echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"
+        echo "  🚫 skip_installation=$skip_installation"
+        echo "  🔍 verify_install=$verify_install"
+        echo "  ⏰ verify_install_timeout=$verify_install_timeout"
+        echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
+        echo "  🏷️  namespace=$namespace"
+        echo "-----------------------------------------"
+
+        # Validate command_stream
+        if [ -z "$command_stream" ] || [ "$command_stream" == "null" ]; then
+            echo "⚠️  Warning: No commands provided in command_stream for set $((index + 1)). Skipping."
+            continue
+        fi
+
+        # Skip installation if required
+        if [ "$skip_installation" = true ]; then
+            echo "⏩ Skipping command execution as per configuration."
+            continue
+        fi
+
+        # Determine kubeconfig path and context
+        local kubeconfig_path=""
+        local context_arg=""
+        
+        if [ "$use_global_kubeconfig" = true ]; then
+            kubeconfig_path="$global_kubeconfig_path"
+            context_arg="--context $global_kubecontext"
+        else
+            kubeconfig=$(yq e ".commands[$index].kubeconfig" "$yaml_file")
+            kubecontext=$(yq e ".commands[$index].kubecontext" "$yaml_file")
+            if [ -n "$kubeconfig" ] && [ "$kubeconfig" != "null" ]; then
+                kubeconfig_path="$base_path/$kubeconfig"
+            fi
+            if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+                context_arg="--context $kubecontext"
+            fi
+        fi
+
+        # Split the command_stream by separator (assuming ';' as the separator)
+        IFS=';' read -r -a commands <<< "$command_stream"
+
+        for cmd in "${commands[@]}"; do
+            echo "🔄 Executing command: $cmd"
+            eval "$cmd --namespace \"$namespace\" --kubeconfig \"$kubeconfig_path\" $context_arg"
+            if [ $? -ne 0 ]; then
+                echo "❌ Error: Command failed: $cmd"
+                if [ "$skip_on_verify_fail" = true ]; then
+                    echo "⚠️  Skipping further commands in this set due to failure."
+                    break
+                else
+                    echo "❌ Exiting due to command failure."
+                    exit 1
+                fi
+            fi
+        done
+
+        if [ "$verify_install" = true ]; then
+            echo "🔍 Verifying installation in namespace: $namespace"
+            end_time=$((SECONDS + verify_install_timeout))
+            while [ $SECONDS -lt $end_time ]; do
+                non_running_pods=$(kubectl get pods -n "$namespace" --kubeconfig "$kubeconfig_path" $context_arg --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
+                if [ "$non_running_pods" -eq 0 ]; then
+                    echo "✔️ All pods are running in namespace: $namespace."
+                    break
+                else
+                    echo "⏳ Waiting for all pods to be running in namespace: $namespace..."
+                    sleep 5
+                fi
+            done
+
+            if [ "$non_running_pods" -ne 0 ]; then
+                if [ "$skip_on_verify_fail" = true ]; then
+                    echo "⚠️  Warning: Verification failed, but skipping as per configuration."
+                else
+                    echo "❌ Error: Verification failed in namespace: $namespace. Exiting."
+                    exit 1
+                fi
+            fi
+        fi
+    done
+
+    echo "✅ All commands executed successfully."
+    echo "-----------------------------------------"
+}
 
 install_or_upgrade_helm_chart() {
     local skip_installation=$1
@@ -2015,6 +2153,16 @@ if [ -n "$CLOUD_INSTALL" ]; then
     fi
 else
     echo "⏩ Cloud-specific installations are disabled or not defined."
+fi
+
+# Validate the run_commands flag before invoking the function
+run_commands=$(yq e '.run_commands // "false"' "$EGS_INPUT_YAML")
+
+if [ "$run_commands" != "true" ]; then
+    echo "⏩ Command execution is disabled (run_commands is not true). Skipping."
+else
+    # Call the function if validation passes
+    run_k8s_commands_from_yaml "$EGS_INPUT_YAML"
 fi
 
 echo "========================================="
