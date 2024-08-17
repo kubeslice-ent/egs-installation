@@ -40,6 +40,7 @@ prerequisite_check() {
     # Minimum required versions
     local MIN_YQ_VERSION="4.0.0"
     local MIN_HELM_VERSION="3.5.0"
+    local MIN_JQ_VERSION="1.6"
     local MIN_KUBECTL_VERSION="1.20.0"
 
     # Iterate over the list and check if each binary is available and has the correct version
@@ -54,29 +55,38 @@ prerequisite_check() {
             case $binary in
                 yq)
                     installed_version=$($binary --version | awk '{print $NF}')
-                    if [[ $(echo -e "$installed_version\n$MIN_YQ_VERSION" | sort -V | head -n1) != "$MIN_YQ_VERSION" ]]; then
+                    if [[ $(echo -e "$MIN_YQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_YQ_VERSION" ]]; then
                         echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_YQ_VERSION."
                         prerequisites_met=false
                     else
-                        echo "✔️ $binary version $installed_version meets the requirement."
+                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
                     fi
                     ;;
                 helm)
                     installed_version=$($binary version --short | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | tr -d 'v')
-                    if [[ $(echo -e "$installed_version\n$MIN_HELM_VERSION" | sort -V | head -n1) != "$MIN_HELM_VERSION" ]]; then
+                    if [[ $(echo -e "$MIN_HELM_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_HELM_VERSION" ]]; then
                         echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_HELM_VERSION."
                         prerequisites_met=false
                     else
-                        echo "✔️ $binary version $installed_version meets the requirement."
+                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
+                    fi
+                    ;;
+                jq)
+                    installed_version=$($binary --version | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?')
+                    if [[ $(echo -e "$MIN_JQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_JQ_VERSION" ]]; then
+                        echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_JQ_VERSION."
+                        prerequisites_met=false
+                    else
+                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
                     fi
                     ;;
                 kubectl)
                     installed_version=$($binary version --client --output=json | jq -r .clientVersion.gitVersion | tr -d 'v')
-                    if [[ $(echo -e "$installed_version\n$MIN_KUBECTL_VERSION" | sort -V | head -n1) != "$MIN_KUBECTL_VERSION" ]]; then
+                    if [[ $(echo -e "$MIN_KUBECTL_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_KUBECTL_VERSION" ]]; then
                         echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_KUBECTL_VERSION."
                         prerequisites_met=false
                     else
-                        echo "✔️ $binary version $installed_version meets the requirement."
+                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
                     fi
                     ;;
             esac
@@ -92,6 +102,7 @@ prerequisite_check() {
     echo "✔️ Prerequisite check complete."
     echo ""
 }
+
 
 
 # Function to validate if a given kubecontext is valid
