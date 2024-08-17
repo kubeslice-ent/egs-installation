@@ -227,7 +227,7 @@ additional_apps:
     verify_install_timeout: 600  # Timeout for additional app installation verification (in seconds).
     skip_on_verify_fail: false  # Do not skip if additional app verification fails.
 
-######### custom manifest for cloud specific driver apps ##################
+######### input section for custom manifest for cloud specific driver apps ##################
 
 # - appname: "nginx-deployment"
 #   manifest: "nginx/deployment.yaml"  # Path to the manifest file (relative to base_path)
