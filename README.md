@@ -310,10 +310,10 @@ additional_apps:
 
 
 ```
-
+```
 ### 🧑‍💻 Script Usage
 To run the script, use the following command:
-
+```
 ```bash
 ./egs-installer.sh --input-yaml <yaml_file>
 ```
