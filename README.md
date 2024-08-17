@@ -312,7 +312,7 @@ skip_on_verify_fail`       | Skip further steps or exit if the worker verificati
 
 ---
 
-This formatted table includes detailed descriptions of all the YAML fields and their subfields, making it easy to reference and configure the installation process.
+
 
 ### 🧑‍💻 Script Usage
 
