@@ -229,7 +229,6 @@ additional_apps:
 
 ```
 
-##########################################################################################################################################################################
 ### Explanation of YAML Fields
 
 | **Field**                           | **Description**                                                                                                   | **Default/Example**                                                                                 |
@@ -305,8 +304,10 @@ additional_apps:
 | `helm_flags`                | Additional Helm flags for the worker installation, such as atomic deployment.                           | `"--atomic"`                                                                                                |
 | `verify_install`            | Verify the installation of the worker after deployment.                                                 | `true`                                                                                                      |
 | `verify_install_timeout`    | Timeout for verifying the installation of the worker, in seconds.                                       | `60` (60 seconds)                                                                                           |
-| `skip_on_verify_fail`       | Skip further steps or exit if the worker verification fails.                                            | `false`
-##########################################################################################################################################################################
+| `
+
+skip_on_verify_fail`       | Skip further steps or exit if the worker verification fails.                                            | `false`                                                                                                     |
+
 
 ```
 
