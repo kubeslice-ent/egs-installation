@@ -1919,6 +1919,45 @@ else
     echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
 fi
 
+# Check if the enable_custom_apps flag is defined and set to true
+enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
+
+if [ "$enable_custom_apps" = "true" ]; then
+    echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."
+    
+    # Check if the manifests section is defined
+    manifests_exist=$(yq e '.manifests // "null"' "$EGS_INPUT_YAML")
+
+    if [ "$manifests_exist" = "null" ]; then
+        echo "⚠️  No 'manifests' section found in the YAML file. Skipping manifest application."
+    else
+        manifests_length=$(yq e '.manifests | length' "$EGS_INPUT_YAML")
+        
+        if [ "$manifests_length" -eq 0 ]; then
+            echo "⚠️  'manifests' section is defined but contains no entries. Skipping manifest application."
+        else
+            for index in $(seq 0 $((manifests_length - 1))); do
+                echo "🔄 Applying manifest $((index + 1)) of $manifests_length..."
+                appname=$(yq e ".manifests[$index].appname" "$EGS_INPUT_YAML")
+                manifest=$(yq e ".manifests[$index].manifest" "$EGS_INPUT_YAML")
+                overrides_yaml=$(yq e ".manifests[$index].overrides_yaml" "$EGS_INPUT_YAML")
+                inline_yaml=$(yq e ".manifests[$index].inline_yaml" "$EGS_INPUT_YAML")
+                use_global_kubeconfig=$(yq e ".manifests[$index].use_global_kubeconfig" "$EGS_INPUT_YAML")
+                skip_installation=$(yq e ".manifests[$index].skip_installation" "$EGS_INPUT_YAML")
+                verify_install=$(yq e ".manifests[$index].verify_install" "$EGS_INPUT_YAML")
+                verify_install_timeout=$(yq e ".manifests[$index].verify_install_timeout" "$EGS_INPUT_YAML")
+                skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$EGS_INPUT_YAML")
+                namespace=$(yq e ".manifests[$index].namespace" "$EGS_INPUT_YAML")
+
+                # Call apply_manifests_from_yaml function for each manifest
+                apply_manifests_from_yaml "$EGS_INPUT_YAML"
+            done
+        fi
+    fi
+else
+    echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."
+fi
+
 # Identify the cloud provider and perform cloud-specific installations if cloud_install is defined
 if [ -n "$CLOUD_INSTALL" ]; then
     cloud_provider=$(identify_cloud_provider)
