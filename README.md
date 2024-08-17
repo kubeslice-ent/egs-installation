@@ -24,7 +24,9 @@ The script requires a YAML configuration file to define various parameters and s
 ## ⚠️ Warning
 **Do not copy the YAML configuration directly from this README.** Hash characters (`#`) used for comments may not be interpreted correctly. Always refer to the actual `egs-installer-config.yaml` file available in the repository for accurate configuration.
 
-### YAML Configuration File
+## YAML Configuration File
+
+---yaml
 # Base path to the root directory of your cloned repository
 base_path: ""  # If empty, the script will take the relative path to the script as the base path.
 
@@ -226,7 +228,7 @@ additional_apps:
     verify_install: true  # Verify installation of the additional app.
     verify_install_timeout: 600  # Timeout for additional app installation verification (in seconds).
     skip_on_verify_fail: false  # Do not skip if additional app verification fails.
-
+---
 
 ### Explanation of YAML Fields
 
