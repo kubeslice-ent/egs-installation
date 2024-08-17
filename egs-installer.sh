@@ -71,7 +71,7 @@ prerequisite_check() {
                     fi
                     ;;
                 kubectl)
-                    installed_version=$($binary version --client --short | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | tr -d 'v')
+                    installed_version=$($binary version --client --output=json | jq -r .clientVersion.gitVersion | tr -d 'v')
                     if [[ $(echo -e "$installed_version\n$MIN_KUBECTL_VERSION" | sort -V | head -n1) != "$MIN_KUBECTL_VERSION" ]]; then
                         echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_KUBECTL_VERSION."
                         prerequisites_met=false
