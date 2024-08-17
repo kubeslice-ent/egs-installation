@@ -230,6 +230,8 @@ additional_apps:
     skip_on_verify_fail: false  # Do not skip if additional app verification fails.
 ---
 
+
+
 ### Explanation of YAML Fields
 
 | **Field**                             | **Description**                                                                                   | **Default/Example**                                 |
@@ -265,6 +267,7 @@ additional_apps:
 | `cluster_registration`                | List of clusters to be registered in the Kubeslice controller.                                     | Cluster Name, Project Name, Telemetry, GeoLocation  |
 | `enable_install_additional_apps`      | Enable installation of additional apps.                                                            | `true`                                              |
 | `additional_apps`                     | Configuration for installing additional apps like GPU operator and Prometheus.                     | See YAML section above                              |
+
 
 ### 🧑‍💻 Script Usage
 
