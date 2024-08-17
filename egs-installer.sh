@@ -433,7 +433,7 @@ parse_yaml() {
  # Extract cloud_install configuration
     CLOUD_INSTALL=$(yq e '.cloud_install' "$yaml_file")
     if [ -z "$CLOUD_INSTALL" ] || [ "$CLOUD_INSTALL" = "null" ]; then
-        echo "⚠️  CLOUD_INSTALL not specified. Skipping cloud-specific installations."
+       # echo "⚠️  CLOUD_INSTALL not specified. Skipping cloud-specific installations."
         CLOUD_INSTALL=""
     fi
 
@@ -2156,7 +2156,7 @@ if [ -n "$CLOUD_INSTALL" ]; then
     if [ ${#cloud_install_array[@]} -gt 0 ]; then
         handle_cloud_installation "$cloud_provider" "${cloud_install_array[@]}"
     else
-        echo "⚠️  No cloud-specific installations found for $cloud_provider. Skipping."
+       echo "⚠️  No cloud-specific installations found for $cloud_provider. Skipping."
     fi
 else
     echo "⏩ Cloud-specific installations are disabled or not defined."
