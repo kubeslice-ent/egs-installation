@@ -309,9 +309,13 @@ additional_apps:
 
 skip_on_verify_fail`       | Skip further steps or exit if the worker verification fails.                                            | `false`                                                                                                     |
 
----
+### 🧑‍💻 Script Usage
 
+To run the script, use the following command:
 
+```bash
+./egs-installer.sh --input-yaml <yaml_file>
+```
 
 
 Replace `<yaml_file>` with the path to your YAML configuration file. For example:
