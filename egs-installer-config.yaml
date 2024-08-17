@@ -252,13 +252,11 @@ manifests:
 run_commands: true
 commands:
   - command_stream: |
+      kubectl get nodes
       kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
-      
     use_global_kubeconfig: true
     skip_installation: false
     verify_install: true
     verify_install_timeout: 200
     skip_on_verify_fail: true
     namespace: kube-system
-    kubeconfig: ""
-    kubecontext: ""
