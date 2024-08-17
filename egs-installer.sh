@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Check if the script is running in Bash
+if [ -z "$BASH_VERSION" ]; then
+    echo "❌ Error: This script must be run in a Bash shell."
+    echo "Please run the script using: bash script_name.sh"
+    exit 1
+else
+    echo "✅ Bash shell detected. Version: $BASH_VERSION"
+fi
+
 # Exit immediately if a command exits with a non-zero status
 set -e
 
