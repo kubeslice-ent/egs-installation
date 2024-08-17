@@ -40,6 +40,7 @@ prerequisite_check() {
     # Minimum required versions
     local MIN_YQ_VERSION="4.0.0"
     local MIN_HELM_VERSION="3.5.0"
+    local MIN_JQ_VERSION="1.6"
     local MIN_KUBECTL_VERSION="1.20.0"
 
     # Iterate over the list and check if each binary is available and has the correct version
@@ -54,29 +55,38 @@ prerequisite_check() {
             case $binary in
                 yq)
                     installed_version=$($binary --version | awk '{print $NF}')
-                    if [[ $(echo -e "$installed_version\n$MIN_YQ_VERSION" | sort -V | head -n1) != "$MIN_YQ_VERSION" ]]; then
+                    if [[ $(echo -e "$MIN_YQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_YQ_VERSION" ]]; then
                         echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_YQ_VERSION."
                         prerequisites_met=false
                     else
-                        echo "✔️ $binary version $installed_version meets the requirement."
+                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
                     fi
                     ;;
                 helm)
                     installed_version=$($binary version --short | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | tr -d 'v')
-                    if [[ $(echo -e "$installed_version\n$MIN_HELM_VERSION" | sort -V | head -n1) != "$MIN_HELM_VERSION" ]]; then
+                    if [[ $(echo -e "$MIN_HELM_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_HELM_VERSION" ]]; then
                         echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_HELM_VERSION."
                         prerequisites_met=false
                     else
-                        echo "✔️ $binary version $installed_version meets the requirement."
+                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
+                    fi
+                    ;;
+                jq)
+                    installed_version=$($binary --version | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?')
+                    if [[ $(echo -e "$MIN_JQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_JQ_VERSION" ]]; then
+                        echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_JQ_VERSION."
+                        prerequisites_met=false
+                    else
+                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
                     fi
                     ;;
                 kubectl)
-                    installed_version=$($binary version --client --short | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | tr -d 'v')
-                    if [[ $(echo -e "$installed_version\n$MIN_KUBECTL_VERSION" | sort -V | head -n1) != "$MIN_KUBECTL_VERSION" ]]; then
+                    installed_version=$($binary version --client --output=json | jq -r .clientVersion.gitVersion | tr -d 'v')
+                    if [[ $(echo -e "$MIN_KUBECTL_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_KUBECTL_VERSION" ]]; then
                         echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_KUBECTL_VERSION."
                         prerequisites_met=false
                     else
-                        echo "✔️ $binary version $installed_version meets the requirement."
+                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
                     fi
                     ;;
             esac
@@ -95,7 +105,29 @@ prerequisite_check() {
 
 
 
-# Function to perform Kubeslice pre-checks for controller, UI, and workers
+# Function to validate if a given kubecontext is valid
+validate_kubecontext() {
+    local kubeconfig_path=$1
+    local kubecontext=$2
+
+    # Check if the context exists in the kubeconfig file
+    if ! kubectl config get-contexts --kubeconfig "$kubeconfig_path" -o name | grep -q "^$kubecontext$"; then
+        echo "❌ Error: Kubecontext '$kubecontext' does not exist in the kubeconfig file '$kubeconfig_path'."
+        exit 1
+    fi
+
+    # Try to use the context to connect to the cluster
+    cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" --context "$kubecontext" 2>&1)
+    if [[ $? -ne 0 ]]; then
+        echo "❌ Error: Kubecontext '$kubecontext' is invalid or cannot connect to the cluster."
+        echo "Details: $cluster_info"
+        exit 1
+    fi
+
+    echo "✔️ Kubecontext '$kubecontext' is valid and can connect to the cluster."
+}
+
+# Kubeslice pre-checks function with context validation
 kubeslice_pre_check() {
     echo "🚀 Starting Kubeslice pre-checks..."
 
@@ -111,6 +143,10 @@ kubeslice_pre_check() {
             kubecontext="$GLOBAL_KUBECONTEXT"
         elif [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ] && [ "$KUBESLICE_CONTROLLER_KUBECONTEXT" != "null" ]; then
             kubecontext="$KUBESLICE_CONTROLLER_KUBECONTEXT"
+        fi
+
+        if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+            validate_kubecontext "$kubeconfig_path" "$kubecontext"
         fi
 
         local context_arg=""
@@ -158,6 +194,10 @@ kubeslice_pre_check() {
             kubecontext="$KUBESLICE_UI_KUBECONTEXT"
         fi
 
+        if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+            validate_kubecontext "$kubeconfig_path" "$kubecontext"
+        fi
+
         local context_arg=""
         if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
             context_arg="--context $kubecontext"
@@ -202,6 +242,10 @@ kubeslice_pre_check() {
             local kubecontext="$kubecontext"
             if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
                 kubecontext="$GLOBAL_KUBECONTEXT"
+            fi
+
+            if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+                validate_kubecontext "$kubeconfig_path" "$kubecontext"
             fi
 
             local context_arg=""
@@ -280,6 +324,9 @@ kubeslice_pre_check() {
     echo "✔️ Kubeslice pre-checks completed successfully."
     echo ""
 }
+
+
+
 
 validate_paths() {
     echo "🚀 Validating paths..."
