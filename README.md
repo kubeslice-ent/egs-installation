@@ -1,6 +1,7 @@
+---
 # 🌐 EGS Installer Script
 
-This README provides a comprehensive guide to using the EGS Installer Script, which automates the deployment of EGS components such as Kubeslice controller, UI, and and array of worker within a Kubernetes environment.
+This README provides a comprehensive guide to using the EGS Installer Script, which automates the deployment of EGS components such as Kubeslice controller, UI, and an array of workers within a Kubernetes environment.
 
 ## 🚀 Overview
 
@@ -11,263 +12,155 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 Before using the EGS Installer Script, ensure that the following prerequisites are met:
 
 - **Binaries**: The following binaries must be installed and available in your system's `PATH`:
-  - `yq` 📄
-  - `helm` 🛠️
-  - `kubectl` ⚙️
-- **Kubernetes**: Ensure that you have access to the necessary Kubernetes clusters with the appropriate kubeconfig files.
+  - `yq` 📄 (minimum version: 4.0.0)
+  - `helm` 🛠️ (minimum version: 3.5.0)
+  - `kubectl` ⚙️ (minimum version: 1.20.0)
+- **Kubernetes Access**: Ensure you have administrative access to the necessary Kubernetes clusters with the appropriate kubeconfig files.
 
 ## 🛠️ Configuration
 
 The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installer-config.yaml`) with descriptions for each section.
 
+## ⚠️ Warning
+**Do not copy the YAML configuration directly from this README.** Hash characters (`#`) used for comments may not be interpreted correctly. Always refer to the actual `egs-installer-config.yaml` file available in the repository for accurate configuration.
+
 ### 📝 YAML Configuration File
 
-```yaml
-# The base path to the root directory of your cloned repository.
-# This will be used as a reference for all relative paths in the script, if empty it will use relative path to script.
-base_path: ""
+# Base path to the root directory of your cloned repository
+base_path: ""  # if empty it will take relative path to script as base path
 
-# Whether to run a pre-check before starting the installation process.
-# This check validates the environment and required binaries.
-precheck: true
+# Precheck options
+precheck: true  # Run prechecks before installation
+kubeslice_precheck: true  # Specific precheck for Kubeslice components
 
-# Whether to perform pre-checks specific to Kubeslice components.
-# This includes verifying access to the clusters and checking node labels.
-kubeslice_precheck: true
+# Global installation verification settings
+verify_install: true  # Enable installation verification globally
+verify_install_timeout: 600  # Global timeout for verification (in seconds)
+skip_on_verify_fail: false  # Decide whether to skip or error out if verification fails globally
 
-# Global setting to enable or disable installation verification.
-# If set to true, the script will verify that all installed components are running.
-verify_install: true
-
-# Global timeout for installation verification, in seconds.
-# This sets the maximum time the script will wait for all components to be verified as running.
-verify_install_timeout: 600  # 10 minutes
-
-# Global flag to decide whether to skip further steps if verification fails.
-# If set to false, the script will exit on verification failure.
-skip_on_verify_fail: false
-
-# The URL of the global Helm repository from which charts will be pulled.
-# This can be overridden at the individual component level if needed.
+# Helm repository settings
 global_helm_repo_url: "https://smartscaler.nexus.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod"
-
-# Credentials for accessing the global Helm repository.
-# These are optional and can be left empty if not required.
 global_helm_username: ""  # Global Helm repository username
 global_helm_password: ""  # Global Helm repository password
+readd_helm_repos: true  # Re-add Helm repositories if they already exist
 
-# Whether to remove and re-add Helm repositories if they already exist.
-# This ensures that the latest repository configuration is always used.
-readd_helm_repos: true
-
-# A list of binaries that are required for the installation process.
-# The script will check for these and exit if any are missing.
+# List of required binaries for the installation process
 required_binaries:
-  - yq       # YAML processor used for parsing and processing YAML files.
-  - helm     # Helm package manager used for deploying Kubernetes applications.
-  - kubectl  # Command-line tool for controlling Kubernetes clusters.
+  - yq
+  - helm
+  - kubectl
 
-# Global image pull secret settings for accessing private Docker registries.
-# These settings can be overridden at the component level if different credentials are needed.
+# Global image pull secret settings
 global_image_pull_secret:
   repository: "https://index.docker.io/v1/"
   username: ""  # Global Docker registry username
   password: ""  # Global Docker registry password
 
-# Whether to automatically label nodes in worker clusters.
-# This is useful for ensuring that certain nodes are reserved for specific tasks.
-add_node_label: true
+# Node labeling settings
+add_node_label: true  # Enable node labeling during installation
 
-# Path to the global kubeconfig file used to access Kubernetes clusters.
-# This path is relative to the base_path and is used for all cluster interactions unless overridden.
-global_kubeconfig: "config/global/kubeconfig.yaml"
+# Kubeconfig settings
+global_kubeconfig: ""  # Relative path to global kubeconfig file
+use_local_charts: true  # Use local charts instead of pulling from a repository
+local_charts_path: "charts"  # Relative path to local charts directory
+global_kubecontext: ""  # Global kubecontext, if empty, the default context will be used
+use_global_context: true  # Use global kubecontext by default for all operations
 
-# Whether to use local Helm charts instead of pulling them from a repository.
-# This is useful for testing or when access to the remote repository is restricted.
-use_local_charts: true
+# Enable or disable specific stages of the installation
+enable_prepare_worker_values_file: true  # Enable preparing worker values file
+enable_install_controller: true  # Enable installation of the controller
+enable_install_ui: true  # Enable installation of the UI
+enable_install_worker: true  # Enable installation of the worker
 
-# Path to the local Helm charts directory, relative to base_path.
-# This is used only if use_local_charts is set to true.
-local_charts_path: "charts"
-
-# Global kubecontext to be used across all Kubernetes interactions.
-# If empty, the default context will be used.
-global_kubecontext: ""
-
-# Whether to use the global kubecontext by default.
-# If set to true, the global context will be used unless a specific context is provided for a component.
-use_global_context: true
-
-# Whether to fetch controller secrets from the worker clusters.
-# This is typically used for advanced configurations and is disabled by default.
-enable_fetch_controller_secrets: false
-
-# Whether to prepare the worker values file before installation.
-# This step is necessary if the worker configuration depends on dynamic values.
-enable_prepare_worker_values_file: true
-
-# Whether to install the Kubeslice controller.
-# Set this to false if the controller is already installed and does not need to be updated.
-enable_install_controller: true
-
-# Whether to install the Kubeslice UI.
-# Set this to false if the UI is already installed and does not need to be updated.
-enable_install_ui: true
-
-# Whether to install the Kubeslice workers.
-# Set this to false if the workers are already installed and do not need to be updated.
-enable_install_worker: true
-
-# Configuration settings for installing the Kubeslice controller.
+# Kubeslice controller installation settings
 kubeslice_controller_egs:
-  # Whether to skip the installation of the Kubeslice controller.
-  skip_installation: false
-  
-  # Whether to use the global kubeconfig for the Kubeslice controller installation.
-  use_global_kubeconfig: true
-  
-  # Path to the kubeconfig file for the Kubeslice controller.
-  # This is relative to base_path and can be overridden if a different kubeconfig is needed.
-  kubeconfig: "config/global/kubeconfig.yaml"
-  
-  # Kubernetes namespace where the Kubeslice controller will be installed.
-  namespace: "kubeslice-controller"
-  
-  # Name of the Helm release for the Kubeslice controller.
-  release: "kubeslice-controller-release"
-  
-  # Name of the Helm chart used for installing the Kubeslice controller.
-  chart: "kubeslice-controller-egs"
-  
-  # Inline values to be passed to the Helm chart during installation.
-  # These settings can override values in the chart's default values.yaml file.
-  inline_values:
+  skip_installation: false  # Do not skip the installation of the controller
+  use_global_kubeconfig: true  # Use global kubeconfig for the controller
+  specific_use_local_charts: true  # Use local charts specifically for controller installation
+  kubeconfig: ""  # Relative path to controller kubeconfig file
+  kubecontext: ""  # Controller-specific kubecontext, uses global if empty
+  namespace: "kubeslice-controller"  # Kubernetes namespace for the controller
+  release: "kubeslice-controller-release"  # Helm release name for the controller
+  chart: "kubeslice-controller-egs"  # Helm chart name for the controller
+  inline_values:  # Inline values for the Helm chart
     kubeslice:
       controller:
-        endpoint: ""  # Endpoint for the Kubeslice controller (should be set during installation).
-    imagePullSecrets:
-      repository: "https://index.docker.io/v1/"
-      username: ""  # Docker registry username for pulling controller images.
-      password: ""  # Docker registry password for pulling controller images.
-  
-  # Additional flags to be passed to the Helm command during installation.
-  helm_flags: "--timeout 10m --atomic"
-  
-  # Whether to verify the installation of the Kubeslice controller.
-  verify_install: true
-  
-  # Timeout for verifying the installation, in seconds.
-  verify_install_timeout: 30  # 30 seconds
-  
-  # Whether to skip further steps if the verification fails.
-  skip_on_verify_fail: false
+        endpoint: ""  # Controller endpoint, should be set during installation
+  helm_flags: "--timeout 10m --atomic"  # Additional Helm flags for installation
+  verify_install: true  # Verify controller installation
+  verify_install_timeout: 30  # Timeout for controller installation verification (in seconds)
+  skip_on_verify_fail: false  # Do not skip if verification fails
 
-# Configuration settings for installing the Kubeslice UI.
+# Kubeslice UI installation settings
 kubeslice_ui_egs:
-  # Whether to skip the installation of the Kubeslice UI.
-  skip_installation: false
-  
-  # Whether to use the global kubeconfig for the Kubeslice UI installation.
-  use_global_kubeconfig: true
-  
-  # Kubernetes namespace where the Kubeslice UI will be installed.
-  namespace: "kubeslice-controller"
-  
-  # Name of the Helm release for the Kubeslice UI.
-  release: "kubeslice-ui"
-  
-  # Name of the Helm chart used for installing the Kubeslice UI.
-  chart: "kubeslice-ui-egs"
-  
-  # Additional flags to be passed to the Helm command during installation.
-  helm_flags: "--atomic"
-  
-  # Whether to verify the installation of the Kubeslice UI.
-  verify_install: true
-  
-  # Timeout for verifying the installation, in seconds.
-  verify_install_timeout: 50  # 50 seconds
-  
-  # Whether to skip further steps if the verification fails.
-  skip_on_verify_fail: true
+  skip_installation: false  # Do not skip the installation of the UI
+  use_global_kubeconfig: true  # Use global kubeconfig for the UI
+  specific_use_local_charts: true  # Use local charts specifically for UI installation
+  namespace: "kubeslice-controller"  # Kubernetes namespace for the UI
+  release: "kubeslice-ui"  # Helm release name for the UI
+  chart: "kubeslice-ui-egs"  # Helm chart name for the UI
+  helm_flags: "--atomic"  # Additional Helm flags for installation
+  verify_install: true  # Verify UI installation
+  verify_install_timeout: 50  # Timeout for UI installation verification (in seconds)
+  skip_on_verify_fail: false  # Do not skip if verification fails
 
-# Configuration settings for installing the Kubeslice workers.
+# Kubeslice worker installation settings
 kubeslice_worker_egs:
-  - name: "worker-1"  # Name of the worker node configuration.
-    
-    # Whether to use the global kubeconfig for the worker installation.
-    use_global_kubeconfig: true
-    
-    # Whether to skip the installation of this worker.
-    skip_installation: false
-    
-    # Kubernetes namespace where this worker will be installed.
-    namespace: "kubeslice-system"
-    
-    # Name of the Helm release for this worker.
-    release: "kubeslice-worker1-release"
-    
-    # Name of the Helm chart used for installing this worker.
-    chart: "kubeslice-worker-egs"
-    
-    # Inline values to be passed to the Helm chart during installation.
-    inline_values:
+  - name: "worker-1"
+    use_global_kubeconfig: true  # Use global kubeconfig for this worker
+    skip_installation: false  # Do not skip the installation of the worker
+    specific_use_local_charts: true  # Use local charts specifically for worker installation
+    namespace: "kubeslice-system"  # Kubernetes namespace for the worker
+    release: "kubeslice-worker1-release"  # Helm release name for the worker
+    chart: "kubeslice-worker-egs"  # Helm chart name for the worker
+    inline_values:  # Inline values for the worker Helm chart
       kubesliceNetworking:
-        enabled: false  # Disable Kubeslice networking for this worker.
+        enabled: false  # Disable Kubeslice networking for this worker
       egs:
-        prometheusEndpoint: http://prometheus-test  # Prometheus endpoint for this worker.
-        grafanaDashboardBaseUrl: http://grafana-test  # Grafana dashboard URL for this worker.
+        prometheusEndpoint: "http://prometheus-test"  # Prometheus endpoint
+        grafanaDashboardBaseUrl: "http://grafana-test"  # Grafana dashboard base URL
       metrics:
-        insecure: true  # Allow insecure connections for metrics.
-    
-    # Whether to verify the installation of this worker.
-    verify_install: true
-    
-    # Timeout for verifying the installation, in seconds.
-    verify_install_timeout: 60  # 60 seconds
-    
-    # Whether to skip further steps if the verification fails.
-    skip_on_verify_fail: false
+        insecure: true  # Allow insecure connections for metrics
+    helm_flags: "--atomic"  # Additional Helm flags for worker installation
+    verify_install: true  # Verify worker installation
+    verify_install_timeout: 60  # Timeout for worker installation verification (in seconds)
+    skip_on_verify_fail: false  # Do not skip if worker verification fails
 
-# Whether to create projects in the Kubeslice controller before deploying workers.
-# This step ensures that the necessary projects exist in the controller.
-enable_project_creation: true
+# Project and cluster registration settings
+enable_project_creation: true  # Enable project creation
+enable_cluster_registration: true  # Enable cluster registration
 
-# Whether to register clusters in the Kubeslice controller after projects have been created.
-# This step adds the clusters to the appropriate projects.
-enable_cluster_registration: true
-
-# Define projects to be created in the Kubeslice controller.
+# Define projects
 projects:
-  - name: "avesha"  # Name of the project to be created in the controller.
-    username: "jupiter"  # Username associated with this project.
+  - name: "avesha"
+    username: "admin"  # Username associated with the project
 
-# Define clusters to be registered in the Kubeslice controller.
+# Define cluster registration
 cluster_registration:
-  - cluster_name: "worker-1"  # Name of the cluster to be registered.
-    project_name: "avesha"  # Name of the project to which this cluster belongs.
+  - cluster_name: "worker-1"
+    project_name: "avesha"
     telemetry:
-      enabled: true  # Enable telemetry for this cluster.
-      telemetryProvider: "prometheus"  #
-
- Telemetry provider for this cluster.
+      enabled: true  # Enable telemetry for this cluster
+      endpoint: ""  # Telemetry endpoint, should be set during registration
+      telemetryProvider: "prometheus"  # Telemetry provider
     geoLocation:
-      cloudProvider: "GCP"  # Cloud provider for this cluster (e.g., GCP, AWS).
-      cloudRegion: "us-central1"  # Cloud region for this cluster.
+      cloudProvider: "GCP"  # Cloud provider for this cluster
+      cloudRegion: "us-central1"  # Cloud region for this cluster
 
-enable_install_additional_apps: true  # or false
+# Additional application installation settings
+enable_install_additional_apps: true  # Enable installation of additional apps
 
 additional_apps:
   - name: "gpu-operator"
     skip_installation: false
-    use_global_kubeconfig: true
-    namespace: "gpu-operator"
-    release: "gpu-operator-release"
-    chart: "gpu-operator"
-    repo_url: "https://helm.ngc.nvidia.com/nvidia"
-    version: "v24.6.0"
+    use_global_kubeconfig: true  # Use global kubeconfig for this additional app
+    namespace: "gpu-operator"  # Kubernetes namespace for the additional app
+    release: "gpu-operator-release"  # Helm release name for the additional app
+    chart: "gpu-operator"  # Helm chart name for the additional app
+    repo_url: "https://helm.ngc.nvidia.com/nvidia"  # Repository URL for the Helm chart
+    version: "v24.6.0"  # Specific version of the Helm chart to be installed
     specific_use_local_charts: false  # Override to use the remote chart instead of local
-    inline_values:
+    inline_values:  # Inline values for the Helm chart
       hostPaths:
         driverInstallDir: "/home/kubernetes/bin/nvidia"
       toolkit:
@@ -277,22 +170,22 @@ additional_apps:
         default: true
       driver:
         enabled: false
-    helm_flags: "--wait"
-    verify_install: true
-    verify_install_timeout: 600
-    skip_on_verify_fail: false
+    helm_flags: "--wait"  # Additional Helm flags for installation
+    verify_install: true  # Verify installation of the additional app
+    verify_install_timeout: 600  # Timeout for additional app installation verification (in seconds)
+    skip_on_verify_fail: false  # Do not skip if additional app verification fails
 
   - name: "prometheus"
     skip_installation: false
-    use_global_kubeconfig: true
-    namespace: "monitoring"
-    release: "prometheus"
-    chart: "kube-prometheus-stack"
-    repo_url: "https://prometheus-community.github.io/helm-charts"
-    version: "v45.0.0"  
-    specific_use_local_charts: false  
-    values_file: ""  
-    inline_values:
+    use_global_kubeconfig: true  # Use global kubeconfig for this additional app
+    namespace: "monitoring"  # Kubernetes namespace for the additional app
+    release: "prometheus"  # Helm release name for the additional app
+    chart: "kube-prometheus-stack"  # Helm chart name for the additional app
+    repo_url: "https://prometheus-community.github.io/helm-charts"  # Repository URL for the Helm chart
+    version: "v45.0.0"  # Specific version of the Helm chart to be installed
+    specific_use_local_charts: false  # Override to use the remote chart instead of local
+    values_file: ""  # Path to the values file for the additional app (if any)
+    inline_values:  # Inline values for the Helm chart
       prometheus:
         service:
           type: LoadBalancer
@@ -330,19 +223,10 @@ additional_apps:
         persistence:
           enabled: true
           size: 1Gi
-    helm_flags: "--wait"
-    verify_install: true
-    verify_install_timeout: 600
-    skip_on_verify_fail: false
-
-```
-
-### Summary of Added Comments:
-- **Explanation of each key**: Detailed comments explain the purpose and usage of each key and section within the YAML configuration file.
-- **Default values**: For fields where defaults are commonly applied or where a value should be specified during runtime, notes have been added to indicate this.
-- **Clarification of settings**: Each block of the YAML file is clarified with comments to make it easier to understand the intended configuration and to help avoid common pitfalls.
-
-This should make the YAML configuration file much easier to understand and customize, especially for users who are new to the script or the specific technologies involved.
+    helm_flags: "--wait"  # Additional Helm flags for installation
+    verify_install: true  # Verify installation of the additional app
+    verify_install_timeout: 600  # Timeout for additional app installation verification (in seconds)
+    skip_on_verify_fail: false  # Do not skip if additional app verification fails
 ```
 
 ### 🧑‍💻 Script Usage
