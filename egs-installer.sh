@@ -28,18 +28,54 @@ prerequisite_check() {
     echo "Checking prerequisites..."
     local prerequisites_met=true
 
-    # Iterate over the list and check if each binary is available
+    # Minimum required versions
+    local MIN_YQ_VERSION="4.0.0"
+    local MIN_HELM_VERSION="3.5.0"
+    local MIN_KUBECTL_VERSION="1.20.0"
+
+    # Iterate over the list and check if each binary is available and has the correct version
     for binary in "${REQUIRED_BINARIES[@]}"; do
         if ! command -v $binary &> /dev/null; then
             echo -e "\n❌ Error: $binary is not installed or not available in PATH."
             prerequisites_met=false
         else
             echo "✔️ $binary is installed."
+
+            # Version checks
+            case $binary in
+                yq)
+                    installed_version=$($binary --version | awk '{print $NF}')
+                    if [[ $(echo -e "$installed_version\n$MIN_YQ_VERSION" | sort -V | head -n1) != "$MIN_YQ_VERSION" ]]; then
+                        echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_YQ_VERSION."
+                        prerequisites_met=false
+                    else
+                        echo "✔️ $binary version $installed_version meets the requirement."
+                    fi
+                    ;;
+                helm)
+                    installed_version=$($binary version --short | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | tr -d 'v')
+                    if [[ $(echo -e "$installed_version\n$MIN_HELM_VERSION" | sort -V | head -n1) != "$MIN_HELM_VERSION" ]]; then
+                        echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_HELM_VERSION."
+                        prerequisites_met=false
+                    else
+                        echo "✔️ $binary version $installed_version meets the requirement."
+                    fi
+                    ;;
+                kubectl)
+                    installed_version=$($binary version --client --short | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | tr -d 'v')
+                    if [[ $(echo -e "$installed_version\n$MIN_KUBECTL_VERSION" | sort -V | head -n1) != "$MIN_KUBECTL_VERSION" ]]; then
+                        echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_KUBECTL_VERSION."
+                        prerequisites_met=false
+                    else
+                        echo "✔️ $binary version $installed_version meets the requirement."
+                    fi
+                    ;;
+            esac
         fi
     done
 
     if [ "$prerequisites_met" = false ]; then
-        echo "❌ Please install the missing prerequisites and try again."
+        echo "❌ Please install the missing prerequisites or update to the required versions and try again."
         exit 1
     fi
 
@@ -47,6 +83,8 @@ prerequisite_check() {
     echo "✔️ Prerequisite check complete."
     echo ""
 }
+
+
 
 # Function to perform Kubeslice pre-checks for controller, UI, and workers
 kubeslice_pre_check() {
