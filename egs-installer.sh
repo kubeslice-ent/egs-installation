@@ -325,7 +325,27 @@ kubeslice_pre_check() {
     echo ""
 }
 
+# Function to install manifest-based apps
+install_manifest() {
+    local manifest_name="$1"
+    echo "🚀 Applying manifest: $manifest_name"
+    # Placeholder for applying the manifest
+    echo "⚠️  Placeholder: Add commands to apply manifest $manifest_name here."
+    # Example:
+    # kubectl apply -f path-to-$manifest_name.yaml
+    echo "✅ Manifest $manifest_name applied successfully."
+}
 
+# Function to install additional apps
+install_additional_apps() {
+    local app_name="$1"
+    echo "🚀 Deploying additional app: $app_name"
+    # Placeholder for deploying additional apps
+    echo "⚠️  Placeholder: Add commands to deploy additional app $app_name here."
+    # Example:
+    # kubectl apply -f path-to-$app_name.yaml
+    echo "✅ Additional app $app_name deployed successfully."
+}
 
 
 validate_paths() {
