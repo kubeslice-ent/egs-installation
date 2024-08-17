@@ -360,8 +360,4 @@ Replace `<yaml_file>` with the path to your YAML configuration file. For example
 - **Cluster Access Issues**: Verify that kubeconfig files are correctly configured and that the script can access the clusters specified in the YAML configuration. 🔧
 - **Timeouts**: If a component fails to install within the specified timeout, increase the `verify_install_timeout` in the YAML file. ⏳
 
-### 📌 Conclusion
-
-The EGS Installer Script is a powerful tool for automating the deployment of Kubeslice components across multiple Kubernetes clusters. With proper configuration and usage, it can significantly simplify the installation and management of complex Kubernetes environments. 🌟
-
 ---
