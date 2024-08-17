@@ -1309,6 +1309,8 @@ install_additional_apps() {
     # kubectl apply -f path-to-$app_name.yaml
     echo "✅ Additional app $app_name deployed successfully."
 }
+
+
 run_k8s_commands_from_yaml() {
     local yaml_file=$1
     local global_kubeconfig_path="${KUBECONFIG:-$GLOBAL_KUBECONFIG}"
@@ -1360,10 +1362,30 @@ run_k8s_commands_from_yaml() {
         skip_on_verify_fail=$(yq e ".commands[$index].skip_on_verify_fail // false" "$yaml_file")
         namespace=$(yq e ".commands[$index].namespace // default" "$yaml_file")
 
+        # Determine kubeconfig path and context
+        local kubeconfig_path=""
+        local context_arg=""
+        
+        if [ "$use_global_kubeconfig" = true ]; then
+            kubeconfig_path="$global_kubeconfig_path"
+            context_arg="--context $global_kubecontext"
+        else
+            kubeconfig=$(yq e ".commands[$index].kubeconfig" "$yaml_file")
+            kubecontext=$(yq e ".commands[$index].kubecontext" "$yaml_file")
+            if [ -n "$kubeconfig" ] && [ "$kubeconfig" != "null" ]; then
+                kubeconfig_path="$base_path/$kubeconfig"
+            fi
+            if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+                context_arg="--context $kubecontext"
+            fi
+        fi
+
         # Print all variables
         echo "🔧 Command Set Variables:"
         echo "  📜 command_stream=$command_stream"
         echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"
+        echo "  🗂️  kubeconfig_path=$kubeconfig_path"
+        echo "  🌐 context_arg=$context_arg"
         echo "  🚫 skip_installation=$skip_installation"
         echo "  🔍 verify_install=$verify_install"
         echo "  ⏰ verify_install_timeout=$verify_install_timeout"
@@ -1381,24 +1403,6 @@ run_k8s_commands_from_yaml() {
         if [ "$skip_installation" = true ]; then
             echo "⏩ Skipping command execution as per configuration."
             continue
-        fi
-
-        # Determine kubeconfig path and context
-        local kubeconfig_path=""
-        local context_arg=""
-        
-        if [ "$use_global_kubeconfig" = true ]; then
-            kubeconfig_path="$global_kubeconfig_path"
-            context_arg="--context $global_kubecontext"
-        else
-            kubeconfig=$(yq e ".commands[$index].kubeconfig" "$yaml_file")
-            kubecontext=$(yq e ".commands[$index].kubecontext" "$yaml_file")
-            if [ -n "$kubeconfig" ] && [ "$kubeconfig" != "null" ]; then
-                kubeconfig_path="$base_path/$kubeconfig"
-            fi
-            if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
-                context_arg="--context $kubecontext"
-            fi
         fi
 
         # Split the command_stream by separator (assuming ';' as the separator)
@@ -1447,6 +1451,7 @@ run_k8s_commands_from_yaml() {
     echo "✅ All commands executed successfully."
     echo "-----------------------------------------"
 }
+
 
 install_or_upgrade_helm_chart() {
     local skip_installation=$1
