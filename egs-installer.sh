@@ -988,11 +988,24 @@ load_cloud_install_config() {
     local yaml_file="$2"
     local installs=()
 
+    # Check if the cloud_install section exists
+    cloud_install_exists=$(yq e '.cloud_install' "$yaml_file")
+
+    if [ "$cloud_install_exists" == "null" ]; then
+        echo "⚠️  No 'cloud_install' section found in the YAML file. Skipping cloud-specific installations."
+        return  # Return empty array
+    fi
+
     # Get installs array for the specific cloud provider
     installs=($(yq e ".cloud_install[] | select(.provider == \"$cloud_provider\") | .installs[] | .type + \":\" + .name" "$yaml_file"))
 
+    if [ ${#installs[@]} -eq 0 ]; then
+        echo "⚠️  No installations defined for cloud provider '$cloud_provider' in 'cloud_install'. Skipping cloud-specific installations."
+    fi
+
     echo "${installs[@]}"
 }
+
 
 
 # Function to verify all pods in a namespace are running
@@ -1897,6 +1910,18 @@ else
     echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
 fi
 
+# Identify the cloud provider and perform cloud-specific installations if cloud_install is defined
+if [ -n "$CLOUD_INSTALL" ]; then
+    cloud_provider=$(identify_cloud_provider)
+    cloud_install_array=($(load_cloud_install_config "$cloud_provider" "$EGS_INPUT_YAML"))
+    if [ ${#cloud_install_array[@]} -gt 0 ]; then
+        handle_cloud_installation "$cloud_provider" "${cloud_install_array[@]}"
+    else
+        echo "⚠️  No cloud-specific installations found for $cloud_provider. Skipping."
+    fi
+else
+    echo "⏩ Cloud-specific installations are disabled or not defined."
+fi
 
 echo "========================================="
 echo "    EGS Installer Script Complete        "
