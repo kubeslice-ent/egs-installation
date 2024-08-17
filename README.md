@@ -229,7 +229,6 @@ additional_apps:
     verify_install_timeout: 600  # Timeout for additional app installation verification (in seconds).
     skip_on_verify_fail: false  # Do not skip if additional app verification fails.
 ---
-To ensure that the table formatting appears correctly in a GitHub `README.md` file, it's crucial to use consistent spacing and avoid line breaks within table cells. Here's how you can structure it:
 
 ### Explanation of YAML Fields
 
@@ -314,13 +313,6 @@ skip_on_verify_fail`       | Skip further steps or exit if the worker verificati
 
 
 
-### 🧑‍💻 Script Usage
-
-To run the script, use the following command:
-
-```bash
-./egs-installer.sh --input-yaml <yaml_file>
-```
 
 Replace `<yaml_file>` with the path to your YAML configuration file. For example:
 
