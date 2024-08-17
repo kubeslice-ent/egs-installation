@@ -229,45 +229,90 @@ additional_apps:
     verify_install_timeout: 600  # Timeout for additional app installation verification (in seconds).
     skip_on_verify_fail: false  # Do not skip if additional app verification fails.
 ---
-
-
+To ensure that the table formatting appears correctly in a GitHub `README.md` file, it's crucial to use consistent spacing and avoid line breaks within table cells. Here's how you can structure it:
 
 ### Explanation of YAML Fields
 
-| **Field**                             | **Description**                                                                                   | **Default/Example**                                 |
-|---------------------------------------|---------------------------------------------------------------------------------------------------|-----------------------------------------------------|
-| `base_path`                           | Base path to the root directory of the cloned repository.                                          | `""` (If empty, uses relative path to script)       |
-| `precheck`                            | Run prechecks before installation.                                                                 | `true`                                              |
-| `kubeslice_precheck`                  | Run specific prechecks for Kubeslice components.                                                   | `true`                                              |
-| `verify_install`                      | Enable installation verification globally.                                                         | `true`                                              |
-| `verify_install_timeout`              | Global timeout for verification (in seconds).                                                      | `600` (10 minutes)                                  |
-| `skip_on_verify_fail`                 | Decide whether to skip or error out if verification fails globally.                                | `false`                                             |
-| `global_helm_repo_url`                | Global Helm repository URL.                                                                        | `https://smartscaler.nexus.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod` |
-| `global_helm_username`                | Global Helm repository username.                                                                   | `""`                                                |
-| `global_helm_password`                | Global Helm repository password.                                                                   | `""`                                                |
-| `readd_helm_repos`                    | Re-add Helm repositories if they already exist.                                                    | `true`                                              |
-| `required_binaries`                   | List of required binaries for the installation process.                                             | `yq`, `helm`, `kubectl`                             |
-| `global_image_pull_secret`            | Global image pull secret settings for accessing private Docker registries.                         | Repository, Username, Password                      |
-| `add_node_label`                      | Enable node labeling during installation.                                                          | `true`                                              |
-| `global_kubeconfig`                   | Relative path to global kubeconfig file.                                                           | `""`                                                |
-| `use_local_charts`                    | Use local charts instead of pulling from a repository.                                             | `true`                                              |
-| `local_charts_path`                   | Relative path to local charts directory.                                                           | `"charts"`                                          |
-| `global_kubecontext`                  | Global kubecontext, if empty, the default context will be used.                                    | `""`                                                |
-| `use_global_context`                  | Use global kubecontext by default for all operations.                                              | `true`                                              |
-| `enable_prepare_worker_values_file`   | Enable preparing worker values file.                                                               | `true`                                              |
-| `enable_install_controller`           | Enable installation of the controller.                                                             | `true`                                              |
-| `enable_install_ui`                   | Enable installation of the UI.                                                                     | `true`                                              |
-| `enable_install_worker`               | Enable installation of the worker.                                                                 | `true`                                              |
-| `kubeslice_controller_egs`            | Configuration for installing the Kubeslice controller.                                             | See YAML section above                              |
-| `kubeslice_ui_egs`                    | Configuration for installing the Kubeslice UI.                                                     | See YAML section above                              |
-| `kubeslice_worker_egs`                | Configuration for installing Kubeslice workers.                                                    | See YAML section above                              |
-| `enable_project_creation`             | Enable project creation in Kubeslice controller.                                                   | `true`                                              |
-| `enable_cluster_registration`         | Enable cluster registration in Kubeslice controller.                                               | `true`                                              |
-| `projects`                            | List of projects to be created in the Kubeslice controller.                                        | Name, Username                                      |
-| `cluster_registration`                | List of clusters to be registered in the Kubeslice controller.                                     | Cluster Name, Project Name, Telemetry, GeoLocation  |
-| `enable_install_additional_apps`      | Enable installation of additional apps.                                                            | `true`                                              |
-| `additional_apps`                     | Configuration for installing additional apps like GPU operator and Prometheus.                     | See YAML section above                              |
+| **Field**                           | **Description**                                                                                                   | **Default/Example**                                                                                 |
+|-------------------------------------|-------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| `base_path`                         | Base path to the root directory of the cloned repository. If empty, the script uses the relative path to the script as the base path. | `""` (empty string)                                                                                 |
+| `precheck`                          | Run prechecks before installation to validate the environment and required binaries.                              | `true`                                                                                              |
+| `kubeslice_precheck`                | Run specific prechecks for Kubeslice components, including cluster access validation and node label checks.       | `true`                                                                                              |
+| `verify_install`                    | Enable installation verification globally, ensuring that all installed components are running as expected.        | `true`                                                                                              |
+| `verify_install_timeout`            | Global timeout for verification in seconds. Determines how long the script waits for all components to be verified as running. | `600` (10 minutes)                                                                                  |
+| `skip_on_verify_fail`               | Decide whether to skip further steps or exit the script if verification fails globally.                            | `false`                                                                                             |
+| `global_helm_repo_url`              | URL of the global Helm repository from which charts will be pulled.                                               | `https://smartscaler.nexus.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod`                     |
+| `global_helm_username`              | Username for accessing the global Helm repository, if required.                                                   | `""`                                                                                                |
+| `global_helm_password`              | Password for accessing the global Helm repository, if required.                                                   | `""`                                                                                                |
+| `readd_helm_repos`                  | Re-add Helm repositories if they already exist to ensure the latest repository configuration is used.             | `true`                                                                                              |
+| `required_binaries`                 | List of binaries that are required for the installation process. The script will check for these binaries and exit if any are missing. | `yq`, `helm`, `kubectl`                                                                             |
+| `global_image_pull_secret`          | Global image pull secret settings for accessing private Docker registries.                                         | Repository: `https://index.docker.io/v1/`, Username: `""`, Password: `""`                           |
+| `add_node_label`                    | Enable node labeling during installation, useful for reserving nodes for specific tasks.                           | `true`                                                                                              |
+| `global_kubeconfig`                 | Relative path to the global kubeconfig file used to access Kubernetes clusters.                                    | `""` (empty string)                                                                                 |
+| `use_local_charts`                  | Use local Helm charts instead of pulling them from a repository, useful for testing or restricted access scenarios. | `true`                                                                                              |
+| `local_charts_path`                 | Relative path to the local Helm charts directory, used only if `use_local_charts` is set to `true`.               | `"charts"`                                                                                          |
+| `global_kubecontext`                | Global kubecontext to be used across all Kubernetes interactions. If empty, the default context will be used.     | `""` (empty string)                                                                                 |
+| `use_global_context`                | Use the global kubecontext by default for all operations unless a specific context is provided for a component.   | `true`                                                                                              |
+| `enable_prepare_worker_values_file` | Enable the preparation of the worker values file before installation, necessary if the worker configuration depends on dynamic values. | `true`                                                                                              |
+| `enable_install_controller`         | Enable the installation of the Kubeslice controller.                                                               | `true`                                                                                              |
+| `enable_install_ui`                 | Enable the installation of the Kubeslice UI.                                                                       | `true`                                                                                              |
+| `enable_install_worker`             | Enable the installation of the Kubeslice worker.                                                                   | `true`                                                                                              |
 
+#### `kubeslice_controller_egs` Subfields
+
+| **Subfield**                  | **Description**                                                                                         | **Default/Example**                                                             |
+|-------------------------------|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `skip_installation`           | Skip the installation of the Kubeslice controller if it's already installed or not needed.               | `false`                                                                         |
+| `use_global_kubeconfig`       | Use the global kubeconfig file for the controller installation.                                          | `true`                                                                          |
+| `specific_use_local_charts`   | Use local charts specifically for the controller installation, overriding the global `use_local_charts` setting. | `true`                                                                          |
+| `kubeconfig`                  | Relative path to the kubeconfig file for the controller. Overrides the global kubeconfig if specified.    | `""` (empty string)                                                             |
+| `kubecontext`                 | Specific kubecontext for the controller installation, uses the global context if empty.                  | `""` (empty string)                                                             |
+| `namespace`                   | Kubernetes namespace where the Kubeslice controller will be installed.                                   | `"kubeslice-controller"`                                                        |
+| `release`                     | Helm release name for the Kubeslice controller.                                                          | `"kubeslice-controller-release"`                                                |
+| `chart`                       | Helm chart name used for installing the Kubeslice controller.                                            | `"kubeslice-controller-egs"`                                                    |
+| `inline_values`               | Inline values passed to the Helm chart during installation. For example, setting the controller endpoint. | `kubeslice.controller.endpoint: ""`                                             |
+| `helm_flags`                  | Additional Helm flags for the controller installation, such as timeout and atomic deployment.            | `"--timeout 10m --atomic"`                                                      |
+| `verify_install`              | Verify the installation of the Kubeslice controller after deployment.                                    | `true`                                                                          |
+| `verify_install_timeout`      | Timeout for verifying the installation of the controller, in seconds.                                    | `30` (30 seconds)                                                               |
+| `skip_on_verify_fail`         | Skip further steps or exit if the controller verification fails.                                         | `false`                                                                         |
+
+#### `kubeslice_ui_egs` Subfields
+
+| **Subfield**                | **Description**                                                                                           | **Default/Example**                                           |
+|-----------------------------|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| `skip_installation`         | Skip the installation of the Kubeslice UI if it's already installed or not needed.                         | `false`                                                       |
+| `use_global_kubeconfig`     | Use the global kubeconfig file for the UI installation.                                                   | `true`                                                        |
+| `specific_use_local_charts` | Use local charts specifically for the UI installation, overriding the global `use_local_charts` setting.  | `true`                                                        |
+| `namespace`                 | Kubernetes namespace where the Kubeslice UI will be installed.                                            | `"kubeslice-controller"`                                      |
+| `release`                   | Helm release name for the Kubeslice UI.                                                                   | `"kubeslice-ui"`                                              |
+| `chart`                     | Helm chart name used for installing the Kubeslice UI.                                                     | `"kubeslice-ui-egs"`                                          |
+| `helm_flags`                | Additional Helm flags for the UI installation, such as atomic deployment.                                 | `"--atomic"`                                                  |
+| `verify_install`            | Verify the installation of the Kubeslice UI after deployment.                                             | `true`                                                        |
+| `verify_install_timeout`    | Timeout for verifying the installation of the UI, in seconds.                                             | `50` (50 seconds)                                             |
+| `skip_on_verify_fail`       | Skip further steps or exit if the UI verification fails.                                                  | `false`                                                       |
+
+#### `kubeslice_worker_egs` Subfields
+
+| **Subfield**                | **Description**                                                                                         | **Default/Example**                                                                                         |
+|-----------------------------|---------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| `name`                      | Name of the worker node configuration.                                                                  | `"worker-1"`                                                                                                |
+| `use_global_kubeconfig`     | Use the global kubeconfig file for the worker installation.                                             | `true`                                                                                                      |
+| `skip_installation`         | Skip the installation of the worker if it's already installed or not needed.                            | `false`                                                                                                     |
+| `specific_use_local_charts` | Use local charts specifically for the worker installation, overriding the global `use_local_charts` setting. | `true`                                                                                                      |
+| `namespace`                 | Kubernetes namespace where the worker will be installed.                                                | `"kubeslice-system"`                                                                                        |
+| `release`                   | Helm release name for the worker.                                                                       | `"kubeslice-worker1-release"`                                                                               |
+| `chart`                     | Helm chart name used for installing the worker.                                                         | `"kubeslice-worker-egs"`                                                                                    |
+| `inline_values`             | Inline values passed to the Helm chart during installation. For example, disabling networking and setting Prometheus endpoints. | `kubesliceNetworking.enabled: false`, `egs.prometheusEndpoint: "http://prometheus-test"`, `egs.grafanaDashboardBaseUrl: "http://grafana-test"`, `metrics.insecure: true` |
+| `helm_flags`                | Additional Helm flags for the worker installation, such as atomic deployment.                           | `"--atomic"`                                                                                                |
+| `verify_install`            | Verify the installation of the worker after deployment.                                                 | `true`                                                                                                      |
+| `verify_install_timeout`    | Timeout for verifying the installation of the worker, in seconds.                                       | `60` (60 seconds)                                                                                           |
+| `
+
+skip_on_verify_fail`       | Skip further steps or exit if the worker verification fails.                                            | `false`                                                                                                     |
+
+---
+
+This formatted table includes detailed descriptions of all the YAML fields and their subfields, making it easy to reference and configure the installation process.
 
 ### 🧑‍💻 Script Usage
 
