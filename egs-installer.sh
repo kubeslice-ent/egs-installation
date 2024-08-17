@@ -433,7 +433,12 @@ parse_yaml() {
     	ADD_NODE_LABEL="false"  # Default to false if not specified
 	fi
 
-
+ # Extract cloud_install configuration
+    CLOUD_INSTALL=$(yq e '.cloud_install' "$yaml_file")
+    if [ -z "$CLOUD_INSTALL" ] || [ "$CLOUD_INSTALL" = "null" ]; then
+        echo "⚠️  CLOUD_INSTALL not specified. Skipping cloud-specific installations."
+        CLOUD_INSTALL=""
+    fi
 
     # Extract global Helm repo settings
     GLOBAL_HELM_REPO_URL=$(yq e '.global_helm_repo_url' "$yaml_file")
@@ -927,6 +932,66 @@ parse_yaml() {
     done
 
     echo "✔️ Parsing completed."
+}
+
+# Function to identify the cloud provider
+identify_cloud_provider() {
+    local cloud_provider=""
+    local node_labels=$(kubectl get nodes -o json | jq -r '.items[].metadata.labels')
+
+    if echo "$node_labels" | grep -q "eks.amazonaws.com"; then
+        cloud_provider="AWS EKS"
+    elif echo "$node_labels" | grep -q "cloud.google.com/gke-nodepool"; then
+        cloud_provider="Google GKE"
+    elif echo "$node_labels" | grep -q "kubernetes.azure.com"; then
+        cloud_provider="Azure AKS"
+    elif echo "$node_labels" | grep -q "oke.oraclecloud.com"; then
+        cloud_provider="Oracle OKE"
+    else
+        echo "⚠️  Cloud provider not identified. Exiting..."
+        exit 1
+    fi
+
+    echo "$cloud_provider"
+}
+
+# Function to handle the cloud-specific installation process
+handle_cloud_installation() {
+    local cloud_provider="$1"
+    shift
+    local cloud_install_array=("$@")
+
+    echo "🌩️  Handling installation for $cloud_provider..."
+
+    # Iterate over the cloud_install array
+    for item in "${cloud_install_array[@]}"; do
+        local type=$(echo "$item" | cut -d':' -f1)
+        local name=$(echo "$item" | cut -d':' -f2)
+
+        case "$type" in
+            "manifest")
+                install_manifest "$name"
+                ;;
+            "app")
+                install_additional_apps "$name"
+                ;;
+            *)
+                echo "⚠️  Unrecognized installation type: $type"
+                ;;
+        esac
+    done
+}
+
+# Function to load cloud_install configuration from YAML
+load_cloud_install_config() {
+    local cloud_provider="$1"
+    local yaml_file="$2"
+    local installs=()
+
+    # Get installs array for the specific cloud provider
+    installs=($(yq e ".cloud_install[] | select(.provider == \"$cloud_provider\") | .installs[] | .type + \":\" + .name" "$yaml_file"))
+
+    echo "${installs[@]}"
 }
 
 
