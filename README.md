@@ -13,6 +13,7 @@ Before using the EGS Installer Script, ensure that the following prerequisites a
   - `yq` 📄 (minimum version: 4.0.0)
   - `helm` 🛠️ (minimum version: 3.5.0)
   - `kubectl` ⚙️ (minimum version: 1.20.0)
+  - `jq` ⚙️ (minimum version: 1.6.0)
 - **Kubernetes Access**: Ensure you have administrative access to the necessary Kubernetes clusters with the appropriate kubeconfig files.
 
 ## 🛠️ Configuration
