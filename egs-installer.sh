@@ -94,8 +94,29 @@ prerequisite_check() {
 }
 
 
+# Function to validate if a given kubecontext is valid
+validate_kubecontext() {
+    local kubeconfig_path=$1
+    local kubecontext=$2
 
-# Function to perform Kubeslice pre-checks for controller, UI, and workers
+    # Check if the context exists in the kubeconfig file
+    if ! kubectl config get-contexts --kubeconfig "$kubeconfig_path" -o name | grep -q "^$kubecontext$"; then
+        echo "❌ Error: Kubecontext '$kubecontext' does not exist in the kubeconfig file '$kubeconfig_path'."
+        exit 1
+    fi
+
+    # Try to use the context to connect to the cluster
+    cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" --context "$kubecontext" 2>&1)
+    if [[ $? -ne 0 ]]; then
+        echo "❌ Error: Kubecontext '$kubecontext' is invalid or cannot connect to the cluster."
+        echo "Details: $cluster_info"
+        exit 1
+    fi
+
+    echo "✔️ Kubecontext '$kubecontext' is valid and can connect to the cluster."
+}
+
+# Kubeslice pre-checks function with context validation
 kubeslice_pre_check() {
     echo "🚀 Starting Kubeslice pre-checks..."
 
@@ -111,6 +132,10 @@ kubeslice_pre_check() {
             kubecontext="$GLOBAL_KUBECONTEXT"
         elif [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ] && [ "$KUBESLICE_CONTROLLER_KUBECONTEXT" != "null" ]; then
             kubecontext="$KUBESLICE_CONTROLLER_KUBECONTEXT"
+        fi
+
+        if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+            validate_kubecontext "$kubeconfig_path" "$kubecontext"
         fi
 
         local context_arg=""
@@ -158,6 +183,10 @@ kubeslice_pre_check() {
             kubecontext="$KUBESLICE_UI_KUBECONTEXT"
         fi
 
+        if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+            validate_kubecontext "$kubeconfig_path" "$kubecontext"
+        fi
+
         local context_arg=""
         if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
             context_arg="--context $kubecontext"
@@ -202,6 +231,10 @@ kubeslice_pre_check() {
             local kubecontext="$kubecontext"
             if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
                 kubecontext="$GLOBAL_KUBECONTEXT"
+            fi
+
+            if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+                validate_kubecontext "$kubeconfig_path" "$kubecontext"
             fi
 
             local context_arg=""
@@ -280,6 +313,9 @@ kubeslice_pre_check() {
     echo "✔️ Kubeslice pre-checks completed successfully."
     echo ""
 }
+
+
+
 
 validate_paths() {
     echo "🚀 Validating paths..."
