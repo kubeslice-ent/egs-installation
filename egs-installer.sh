@@ -325,29 +325,6 @@ kubeslice_pre_check() {
     echo ""
 }
 
-# Function to install manifest-based apps
-install_manifest() {
-    local manifest_name="$1"
-    echo "🚀 Applying manifest: $manifest_name"
-    # Placeholder for applying the manifest
-    echo "⚠️  Placeholder: Add commands to apply manifest $manifest_name here."
-    # Example:
-    # kubectl apply -f path-to-$manifest_name.yaml
-    echo "✅ Manifest $manifest_name applied successfully."
-}
-
-# Function to install additional apps
-install_additional_apps() {
-    local app_name="$1"
-    echo "🚀 Deploying additional app: $app_name"
-    # Placeholder for deploying additional apps
-    echo "⚠️  Placeholder: Add commands to deploy additional app $app_name here."
-    # Example:
-    # kubectl apply -f path-to-$app_name.yaml
-    echo "✅ Additional app $app_name deployed successfully."
-}
-
-
 validate_paths() {
     echo "🚀 Validating paths..."
     local error_found=false
@@ -857,8 +834,6 @@ parse_yaml() {
         KUBESLICE_CLUSTER_REGISTRATIONS+=("$CLUSTER_NAME|$PROJECT_NAME|$TELEMETRY_ENABLED|$TELEMETRY_ENDPOINT|$TELEMETRY_PROVIDER|$GEO_LOCATION_PROVIDER|$GEO_LOCATION_REGION")
     done
 
-
-
 # Extract global enable/disable flag for additional apps installation
     ENABLE_INSTALL_ADDITIONAL_APPS=$(yq e '.enable_install_additional_apps' "$yaml_file")
     if [ -z "$ENABLE_INSTALL_ADDITIONAL_APPS" ] || [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "null" ]; then
@@ -954,6 +929,125 @@ parse_yaml() {
     echo "✔️ Parsing completed."
 }
 
+# Function to verify all pods in a namespace are running
+verify_pods_running() {
+    local namespace=$1
+    local kubeconfig_path=$2
+    local kubecontext=$3
+    local pod_check_timeout=$4
+    local skip_on_fail=$5
+
+    echo "🚀 Starting verification of resources in namespace '$namespace'..."
+    echo "🔧 Variables:"
+    echo "  namespace=$namespace"
+    echo "  kubeconfig_path=$kubeconfig_path"
+    echo "  kubecontext=$kubecontext"
+    echo "  pod_check_timeout=$pod_check_timeout seconds"
+    echo "  skip_on_fail=$skip_on_fail"
+    echo "-----------------------------------------"
+    
+    # Print all resources in the namespace
+    echo "📋 Listing all resources in namespace '$namespace'..."
+    kubectl get all -n $namespace --kubeconfig $kubeconfig_path --context $kubecontext
+    echo "-----------------------------------------"
+
+    echo "Verifying all pods are running in namespace '$namespace' with a timeout of $((pod_check_timeout / 60)) minutes..."
+    local end_time=$((SECONDS + pod_check_timeout))
+
+    while [ $SECONDS -lt $end_time ]; do
+        non_running_pods=$(kubectl get pods -n $namespace --kubeconfig $kubeconfig_path --context $kubecontext --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
+
+        if [ $non_running_pods -eq 0 ]; then
+            echo "✔️ All pods are running in namespace '$namespace'."
+            echo "✔️ Verification of pods in namespace '$namespace' complete."
+            return 0
+        else
+            echo -n "⏳ Waiting for all pods to be running in namespace '$namespace'..."
+            wait_with_dots 5 " "
+        fi
+    done
+
+    if [ "$skip_on_fail" = "true" ]; then
+        echo "⚠️  Warning: Timed out waiting for all pods to be running in namespace '$namespace'. Skipping to the next chart."
+    else
+        echo "❌ Error: Timed out waiting for all pods to be running in namespace '$namespace'."
+        exit 1
+    fi
+}
+
+# Simulated wait_with_dots function for demonstration purposes
+wait_with_dots() {
+    local seconds=$1
+    local message=$2
+    for ((i=0; i<seconds; i++)); do
+        echo -n "⏳"
+        sleep 1
+    done
+    echo " $message"
+}
+
+manage_helm_repo() {
+    echo "🚀 Starting Helm repository management..."
+    local repo_name="temp-repo"
+    local repo_url=$1
+    local username=$2
+    local password=$3
+
+    echo "🔧 Variables:"
+    echo "  repo_name=$repo_name"
+    echo "  repo_url=$repo_url"
+    echo "  username=$username"
+    echo "-----------------------------------------"
+
+    # Function to handle retries
+    retry() {
+        local n=1
+        local max=3
+        local delay=5
+        while true; do
+            "$@" && break || {
+                if [[ $n -lt $max ]]; then
+                    ((n++))
+                    echo "⚠️  Command failed. Attempt $n/$max:"
+                    sleep $delay;
+                else
+                    echo "❌ Command failed after $n attempts."
+                    return 1
+                fi
+            }
+        done
+    }
+
+    # Check if repo already exists
+    if helm repo list | grep -q "$repo_name"; then
+        echo "🔍 Helm repository '$repo_name' already exists."
+        if [ "$READD_HELM_REPOS" = "true" ]; then
+            echo "♻️  Removing and re-adding Helm repository '$repo_name'..."
+            retry helm repo remove $repo_name || {
+                echo "❌ Failed to remove existing Helm repo '$repo_name'. Exiting."
+                exit 1
+            }
+            retry helm repo add $repo_name $repo_url --username $username --password $password || {
+                echo "❌ Failed to re-add Helm repo '$repo_name'. Exiting."
+                exit 1
+            }
+        fi
+    else
+        echo "➕ Adding Helm repository '$repo_name'..."
+        retry helm repo add $repo_name $repo_url --username $username --password $password || {
+            echo "❌ Failed to add Helm repo '$repo_name'. Exiting."
+            exit 1
+        }
+    fi
+
+    echo "🔄 Updating Helm repositories..."
+    retry helm repo update $repo_name || {
+        echo "❌ Failed to update Helm repo '$repo_name'. Exiting."
+        exit 1
+    }
+
+    echo "✔️ Helm repository management complete."
+}
 # Function to identify the cloud provider
 identify_cloud_provider() {
     local cloud_provider=""
@@ -1025,131 +1119,6 @@ load_cloud_install_config() {
 
     echo "${installs[@]}"
 }
-
-
-
-# Function to verify all pods in a namespace are running
-verify_pods_running() {
-    local namespace=$1
-    local kubeconfig_path=$2
-    local kubecontext=$3
-    local pod_check_timeout=$4
-    local skip_on_fail=$5
-
-    echo "🚀 Starting verification of resources in namespace '$namespace'..."
-    echo "🔧 Variables:"
-    echo "  namespace=$namespace"
-    echo "  kubeconfig_path=$kubeconfig_path"
-    echo "  kubecontext=$kubecontext"
-    echo "  pod_check_timeout=$pod_check_timeout seconds"
-    echo "  skip_on_fail=$skip_on_fail"
-    echo "-----------------------------------------"
-    
-    # Print all resources in the namespace
-    echo "📋 Listing all resources in namespace '$namespace'..."
-    kubectl get all -n $namespace --kubeconfig $kubeconfig_path --context $kubecontext
-    echo "-----------------------------------------"
-
-    echo "Verifying all pods are running in namespace '$namespace' with a timeout of $((pod_check_timeout / 60)) minutes..."
-    local end_time=$((SECONDS + pod_check_timeout))
-
-    while [ $SECONDS -lt $end_time ]; do
-        non_running_pods=$(kubectl get pods -n $namespace --kubeconfig $kubeconfig_path --context $kubecontext --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
-
-        if [ $non_running_pods -eq 0 ]; then
-            echo "✔️ All pods are running in namespace '$namespace'."
-            echo "✔️ Verification of pods in namespace '$namespace' complete."
-            return 0
-        else
-            echo -n "⏳ Waiting for all pods to be running in namespace '$namespace'..."
-            wait_with_dots 5 " "
-        fi
-    done
-
-    if [ "$skip_on_fail" = "true" ]; then
-        echo "⚠️  Warning: Timed out waiting for all pods to be running in namespace '$namespace'. Skipping to the next chart."
-    else
-        echo "❌ Error: Timed out waiting for all pods to be running in namespace '$namespace'."
-        exit 1
-    fi
-}
-
-# Simulated wait_with_dots function for demonstration purposes
-wait_with_dots() {
-    local seconds=$1
-    local message=$2
-    for ((i=0; i<seconds; i++)); do
-        echo -n "⏳"
-        sleep 1
-    done
-    echo " $message"
-}
-
-
-
-manage_helm_repo() {
-    echo "🚀 Starting Helm repository management..."
-    local repo_name="temp-repo"
-    local repo_url=$1
-    local username=$2
-    local password=$3
-
-    echo "🔧 Variables:"
-    echo "  repo_name=$repo_name"
-    echo "  repo_url=$repo_url"
-    echo "  username=$username"
-    echo "-----------------------------------------"
-
-    # Function to handle retries
-    retry() {
-        local n=1
-        local max=3
-        local delay=5
-        while true; do
-            "$@" && break || {
-                if [[ $n -lt $max ]]; then
-                    ((n++))
-                    echo "⚠️  Command failed. Attempt $n/$max:"
-                    sleep $delay;
-                else
-                    echo "❌ Command failed after $n attempts."
-                    return 1
-                fi
-            }
-        done
-    }
-
-    # Check if repo already exists
-    if helm repo list | grep -q "$repo_name"; then
-        echo "🔍 Helm repository '$repo_name' already exists."
-        if [ "$READD_HELM_REPOS" = "true" ]; then
-            echo "♻️  Removing and re-adding Helm repository '$repo_name'..."
-            retry helm repo remove $repo_name || {
-                echo "❌ Failed to remove existing Helm repo '$repo_name'. Exiting."
-                exit 1
-            }
-            retry helm repo add $repo_name $repo_url --username $username --password $password || {
-                echo "❌ Failed to re-add Helm repo '$repo_name'. Exiting."
-                exit 1
-            }
-        fi
-    else
-        echo "➕ Adding Helm repository '$repo_name'..."
-        retry helm repo add $repo_name $repo_url --username $username --password $password || {
-            echo "❌ Failed to add Helm repo '$repo_name'. Exiting."
-            exit 1
-        }
-    fi
-
-    echo "🔄 Updating Helm repositories..."
-    retry helm repo update $repo_name || {
-        echo "❌ Failed to update Helm repo '$repo_name'. Exiting."
-        exit 1
-    }
-
-    echo "✔️ Helm repository management complete."
-}
-
 
 apply_manifests_from_yaml() {
     local yaml_file=$1
@@ -1284,7 +1253,27 @@ apply_manifests_from_yaml() {
     echo "-----------------------------------------"
 }
 
+# Function to install manifest-based apps
+install_manifest() {
+    local manifest_name="$1"
+    echo "🚀 Applying manifest: $manifest_name"
+    # Placeholder for applying the manifest
+    echo "⚠️  Placeholder: Add commands to apply manifest $manifest_name here."
+    # Example:
+    # kubectl apply -f path-to-$manifest_name.yaml
+    echo "✅ Manifest $manifest_name applied successfully."
+}
 
+# Function to install additional apps
+install_additional_apps() {
+    local app_name="$1"
+    echo "🚀 Deploying additional app: $app_name"
+    # Placeholder for deploying additional apps
+    echo "⚠️  Placeholder: Add commands to deploy additional app $app_name here."
+    # Example:
+    # kubectl apply -f path-to-$app_name.yaml
+    echo "✅ Additional app $app_name deployed successfully."
+}
 
 install_or_upgrade_helm_chart() {
     local skip_installation=$1
