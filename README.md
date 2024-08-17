@@ -1,8 +1,6 @@
 ---
 # 🌐 EGS Installer Script
 
-This README provides a comprehensive guide to using the EGS Installer Script, which automates the deployment of EGS components such as Kubeslice controller, UI, and an array of workers within a Kubernetes environment.
-
 ## 🚀 Overview
 
 The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
@@ -310,6 +308,7 @@ additional_apps:
 | `skip_on_verify_fail`       | Skip further steps or exit if the worker verification fails.                                            | `false`
 ##########################################################################################################################################################################
 
+```
 
 ### 🧑‍💻 Script Usage
 To run the script, use the following command:
