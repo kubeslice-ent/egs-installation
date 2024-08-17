@@ -39,7 +39,7 @@ prerequisite_check() {
 
     # Minimum required versions
     local MIN_YQ_VERSION="4.0.0"
-    local MIN_HELM_VERSION="3.15.0"
+    local MIN_HELM_VERSION="3.5.0"
     local MIN_JQ_VERSION="1.6"
     local MIN_KUBECTL_VERSION="1.20.0"
 
@@ -1051,6 +1051,141 @@ manage_helm_repo() {
 
     echo "✔️ Helm repository management complete."
 }
+
+
+apply_manifests_from_yaml() {
+    local yaml_file=$1
+    local global_kubeconfig_path="${KUBECONFIG:-$GLOBAL_KUBECONFIG}"
+    local global_kubecontext="${KUBECONTEXT:-$GLOBAL_KUBECONTEXT}"
+    local base_path=$(yq e '.base_path' "$yaml_file")
+
+    # Ensure base_path is absolute
+    base_path=$(realpath "${base_path:-.}")
+
+    echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"
+    echo "🔧 Global Variables:"
+    echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
+    echo "  🌐 global_kubecontext=$global_kubecontext"
+    echo "  🗂️  base_path=$base_path"
+    echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
+    echo "-----------------------------------------"
+
+    # Check if the manifests section exists
+    manifests_exist=$(yq e '.manifests' "$yaml_file")
+
+    if [ "$manifests_exist" == "null" ]; then
+        echo "⚠️  Warning: No 'manifests' section found in the YAML file. Skipping manifest application."
+        return
+    fi
+
+    # Extract manifests from the YAML file
+    manifests_length=$(yq e '.manifests | length' "$yaml_file")
+
+    if [ "$manifests_length" -eq 0 ]; then
+        echo "⚠️  Warning: 'manifests' section is defined, but no manifests found. Skipping manifest application."
+        return
+    fi
+
+    for index in $(seq 0 $((manifests_length - 1))); do
+        echo "🔄 Processing manifest $((index + 1)) of $manifests_length"
+
+        appname=$(yq e ".manifests[$index].appname" "$yaml_file")
+        base_manifest=$(yq e ".manifests[$index].manifest" "$yaml_file")
+        overrides_yaml=$(yq e ".manifests[$index].overrides_yaml" "$yaml_file")
+        inline_yaml=$(yq e ".manifests[$index].inline_yaml" "$yaml_file")
+        use_global_kubeconfig=$(yq e ".manifests[$index].use_global_kubeconfig" "$yaml_file")
+        skip_installation=$(yq e ".manifests[$index].skip_installation" "$yaml_file")
+        verify_install=$(yq e ".manifests[$index].verify_install" "$yaml_file")
+        verify_install_timeout=$(yq e ".manifests[$index].verify_install_timeout" "$yaml_file")
+        skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$yaml_file")
+        namespace=$(yq e ".manifests[$index].namespace" "$yaml_file")
+
+        echo "🔧 App Variables for '$appname':"
+        echo "  🗂️  base_manifest=$base_manifest"
+        echo "  🗂️  overrides_yaml=$overrides_yaml"
+        echo "  📄 inline_yaml=${inline_yaml:+Provided}"
+        echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"
+        echo "  🚫 skip_installation=$skip_installation"
+        echo "  🔍 verify_install=$verify_install"
+        echo "  ⏰ verify_install_timeout=$verify_install_timeout"
+        echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
+        echo "  🏷️  namespace=$namespace"
+        echo "-----------------------------------------"
+
+        # Handle HTTPS file URLs
+        if [[ "$base_manifest" =~ ^https:// ]]; then
+            echo "🌐 Downloading manifest from URL: $base_manifest"
+            temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
+            curl -sL "$base_manifest" -o "$temp_manifest"
+            if [ $? -ne 0 ]; then
+                echo "❌ Error: Failed to download manifest from URL: $base_manifest"
+                exit 1
+            fi
+        else
+            base_manifest="$base_path/$base_manifest"
+            temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
+            cp "$base_manifest" "$temp_manifest"
+        fi
+
+        # Convert overrides_yaml to absolute paths
+        overrides_yaml="$base_path/$overrides_yaml"
+
+        # Merge inline YAML with the base manifest if provided
+        if [ -n "$inline_yaml" ] && [ "$inline_yaml" != "null" ]; then
+            echo "🔄 Merging inline YAML for $appname into the base manifest"
+            echo "$inline_yaml" | yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "-")' - "$temp_manifest" > "${temp_manifest}_merged"
+            mv "${temp_manifest}_merged" "$temp_manifest"
+        fi
+
+        # Merge overrides if provided
+        if [ -f "$overrides_yaml" ]; then
+            echo "🔄 Merging overrides from $overrides_yaml into $temp_manifest"
+            yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "'"$overrides_yaml"'")' "$temp_manifest" "$overrides_yaml" > "${temp_manifest}_merged"
+            mv "${temp_manifest}_merged" "$temp_manifest"
+        else
+            echo "⚠️  No overrides YAML file found for app: $appname. Proceeding with base/inline manifest."
+        fi
+
+        echo "📄 Applying manifest for app: $appname in namespace: $namespace"
+        kubectl apply -f "$temp_manifest" --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
+        if [ $? -ne 0 ]; then
+            echo "❌ Error: Failed to apply manifest for app: $appname"
+            exit 1
+        fi
+        echo "✔️ Successfully applied manifest for app: $appname"
+
+        if [ "$verify_install" = true ]; then
+            echo "🔍 Verifying installation of app: $appname in namespace: $namespace"
+            end_time=$((SECONDS + verify_install_timeout))
+            while [ $SECONDS -lt $end_time ]; do
+                non_running_pods=$(kubectl get pods -n "$namespace" --kubeconfig "$kubeconfig_path" $context_arg --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
+                if [ "$non_running_pods" -eq 0 ]; then
+                    echo "✔️ All pods for app: $appname are running in namespace: $namespace."
+                    break
+                else
+                    echo "⏳ Waiting for all pods to be running in namespace: $namespace for app: $appname..."
+                    sleep 5
+                fi
+            done
+
+            if [ "$non_running_pods" -ne 0 ]; then
+                if [ "$skip_on_verify_fail" = true ]; then
+                    echo "⚠️  Warning: Verification failed for app: $appname, but skipping as per configuration."
+                else
+                    echo "❌ Error: Verification failed for app: $appname in namespace: $namespace."
+                    exit 1
+                fi
+            fi
+        fi
+
+        # Clean up the temporary manifest file
+        rm -f "$temp_manifest"
+    done
+
+    echo "✅ All applicable manifests applied successfully."
+    echo "-----------------------------------------"
+}
+
 
 
 install_or_upgrade_helm_chart() {
