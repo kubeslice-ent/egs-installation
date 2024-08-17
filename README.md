@@ -26,7 +26,7 @@ The script requires a YAML configuration file to define various parameters and s
 
 ## YAML Configuration File
 
----yaml
+```yaml
 # Base path to the root directory of your cloned repository
 base_path: ""  # If empty, the script will take the relative path to the script as the base path.
 
