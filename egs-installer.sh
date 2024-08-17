@@ -1,4 +1,4 @@
-.n#!/bin/bash
+#!/bin/bash
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
@@ -1310,11 +1310,10 @@ install_additional_apps() {
     echo "✅ Additional app $app_name deployed successfully."
 }
 
-
 run_k8s_commands_from_yaml() {
     local yaml_file=$1
     local global_kubeconfig_path="${KUBECONFIG:-$GLOBAL_KUBECONFIG}"
-    local global_kubecontext="${KUBECONTEXT:-$GLOBAL_KUBECONTEXT}"
+    local global_kubecontext="${KUBECONTEXT:-$GLOBAL_KUBE_CONTEXT}"
     local base_path=$(yq e '.base_path' "$yaml_file")
 
     # Ensure base_path is absolute
@@ -1333,6 +1332,7 @@ run_k8s_commands_from_yaml() {
     echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
     echo "  🌐 global_kubecontext=$global_kubecontext"
     echo "  🗂️  base_path=$base_path"
+    echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
     echo "-----------------------------------------"
 
     # Check if the commands section exists
@@ -1354,13 +1354,18 @@ run_k8s_commands_from_yaml() {
     for index in $(seq 0 $((commands_length - 1))); do
         echo "🔄 Executing command set $((index + 1)) of $commands_length"
 
-        command_stream=$(yq e ".commands[$index].command_stream" "$yaml_file")
+        # Write the command stream to a temporary file in the installation files directory
+        command_stream_file="$INSTALLATION_FILES_PATH/command_stream_$index.sh"
+        yq e ".commands[$index].command_stream" "$yaml_file" > "$command_stream_file"
+        command_stream=$(<"$command_stream_file")
+        rm "$command_stream_file"
+
         use_global_kubeconfig=$(yq e ".commands[$index].use_global_kubeconfig // false" "$yaml_file")
         skip_installation=$(yq e ".commands[$index].skip_installation // false" "$yaml_file")
         verify_install=$(yq e ".commands[$index].verify_install // false" "$yaml_file")
         verify_install_timeout=$(yq e ".commands[$index].verify_install_timeout // 200" "$yaml_file")
         skip_on_verify_fail=$(yq e ".commands[$index].skip_on_verify_fail // false" "$yaml_file")
-        namespace=$(yq e ".commands[$index].namespace // default" "$yaml_file")
+        namespace=$(yq e ".commands[$index].namespace // \"default\"" "$yaml_file")
 
         # Determine kubeconfig path and context
         local kubeconfig_path=""
@@ -1405,23 +1410,20 @@ run_k8s_commands_from_yaml() {
             continue
         fi
 
-        # Split the command_stream by separator (assuming ';' as the separator)
-        IFS=';' read -r -a commands <<< "$command_stream"
-
-        for cmd in "${commands[@]}"; do
-            echo "🔄 Executing command: $cmd"
-            eval "$cmd --namespace \"$namespace\" --kubeconfig \"$kubeconfig_path\" $context_arg"
-            if [ $? -ne 0 ]; then
-                echo "❌ Error: Command failed: $cmd"
-                if [ "$skip_on_verify_fail" = true ]; then
-                    echo "⚠️  Skipping further commands in this set due to failure."
-                    break
-                else
-                    echo "❌ Exiting due to command failure."
-                    exit 1
-                fi
+        # Handle the command as a whole without appending namespace or kubeconfig
+        full_cmd="KUBECONFIG=\"$kubeconfig_path\" $command_stream"
+        echo "🔄 Executing command: $full_cmd"
+        eval "$full_cmd"
+        if [ $? -ne 0 ]; then
+            echo "❌ Error: Command failed: $command_stream"
+            if [ "$skip_on_verify_fail" = true ]; then
+                echo "⚠️  Skipping further commands in this set due to failure."
+                break
+            else
+                echo "❌ Exiting due to command failure."
+                exit 1
             fi
-        done
+        fi
 
         if [ "$verify_install" = true ]; then
             echo "🔍 Verifying installation in namespace: $namespace"
