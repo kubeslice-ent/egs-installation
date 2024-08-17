@@ -228,7 +228,6 @@ additional_apps:
     verify_install: true  # Verify installation of the additional app.
     verify_install_timeout: 600  # Timeout for additional app installation verification (in seconds).
     skip_on_verify_fail: false  # Do not skip if additional app verification fails.
----
 
 ### Explanation of YAML Fields
 
