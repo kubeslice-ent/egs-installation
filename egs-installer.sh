@@ -1973,25 +1973,36 @@ if [ "$enable_custom_apps" = "true" ]; then
         else
             for index in $(seq 0 $((manifests_length - 1))); do
                 echo "🔄 Applying manifest $((index + 1)) of $manifests_length..."
+                
                 appname=$(yq e ".manifests[$index].appname" "$EGS_INPUT_YAML")
                 manifest=$(yq e ".manifests[$index].manifest" "$EGS_INPUT_YAML")
                 overrides_yaml=$(yq e ".manifests[$index].overrides_yaml" "$EGS_INPUT_YAML")
                 inline_yaml=$(yq e ".manifests[$index].inline_yaml" "$EGS_INPUT_YAML")
                 use_global_kubeconfig=$(yq e ".manifests[$index].use_global_kubeconfig" "$EGS_INPUT_YAML")
+                kubeconfig=$(yq e ".manifests[$index].kubeconfig" "$EGS_INPUT_YAML")
+                kubecontext=$(yq e ".manifests[$index].kubecontext" "$EGS_INPUT_YAML")
                 skip_installation=$(yq e ".manifests[$index].skip_installation" "$EGS_INPUT_YAML")
                 verify_install=$(yq e ".manifests[$index].verify_install" "$EGS_INPUT_YAML")
                 verify_install_timeout=$(yq e ".manifests[$index].verify_install_timeout" "$EGS_INPUT_YAML")
                 skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$EGS_INPUT_YAML")
                 namespace=$(yq e ".manifests[$index].namespace" "$EGS_INPUT_YAML")
 
+                # Create a temporary YAML with only the current manifest entry
+                temp_yaml="$INSTALLATION_FILES_PATH/temp_manifest_$index.yaml"
+                yq e ".manifests = [ .manifests[$index] ]" "$EGS_INPUT_YAML" > "$temp_yaml"
+
                 # Call apply_manifests_from_yaml function for each manifest
-                apply_manifests_from_yaml "$EGS_INPUT_YAML"
+                apply_manifests_from_yaml "$temp_yaml"
+
+                # Clean up temporary YAML file
+                rm -f "$temp_yaml"
             done
         fi
     fi
 else
     echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."
 fi
+
 
 # Identify the cloud provider and perform cloud-specific installations if cloud_install is defined
 if [ -n "$CLOUD_INSTALL" ]; then
