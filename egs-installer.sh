@@ -942,7 +942,6 @@ wait_with_dots() {
 
 
 
-# Function to add or update Helm repo
 manage_helm_repo() {
     echo "🚀 Starting Helm repository management..."
     local repo_name="temp-repo"
@@ -956,22 +955,56 @@ manage_helm_repo() {
     echo "  username=$username"
     echo "-----------------------------------------"
 
+    # Function to handle retries
+    retry() {
+        local n=1
+        local max=3
+        local delay=5
+        while true; do
+            "$@" && break || {
+                if [[ $n -lt $max ]]; then
+                    ((n++))
+                    echo "⚠️  Command failed. Attempt $n/$max:"
+                    sleep $delay;
+                else
+                    echo "❌ Command failed after $n attempts."
+                    return 1
+                fi
+            }
+        done
+    }
+
+    # Check if repo already exists
     if helm repo list | grep -q "$repo_name"; then
         echo "🔍 Helm repository '$repo_name' already exists."
         if [ "$READD_HELM_REPOS" = "true" ]; then
             echo "♻️  Removing and re-adding Helm repository '$repo_name'..."
-            helm repo remove $repo_name
-            helm repo add $repo_name $repo_url --username $username --password $password
+            retry helm repo remove $repo_name || {
+                echo "❌ Failed to remove existing Helm repo '$repo_name'. Exiting."
+                exit 1
+            }
+            retry helm repo add $repo_name $repo_url --username $username --password $password || {
+                echo "❌ Failed to re-add Helm repo '$repo_name'. Exiting."
+                exit 1
+            }
         fi
     else
         echo "➕ Adding Helm repository '$repo_name'..."
-        helm repo add $repo_name $repo_url --username $username --password $password
+        retry helm repo add $repo_name $repo_url --username $username --password $password || {
+            echo "❌ Failed to add Helm repo '$repo_name'. Exiting."
+            exit 1
+        }
     fi
 
     echo "🔄 Updating Helm repositories..."
-    helm repo update $repo_name
+    retry helm repo update $repo_name || {
+        echo "❌ Failed to update Helm repo '$repo_name'. Exiting."
+        exit 1
+    }
+
     echo "✔️ Helm repository management complete."
 }
+
 
 install_or_upgrade_helm_chart() {
     local skip_installation=$1
@@ -1335,9 +1368,9 @@ prepare_worker_values_file() {
         echo "  namespace=$namespace"
         echo "  release_name=$release_name"
         echo "  chart_name=$chart_name"
-	echo "  controller_kubeconfig_path=$controller_kubeconfig_path"
-	echo "  controller_context_arg=$controller_context_arg"
-	echo "  project_ns=kubeslice-$project_name"
+	    echo "  controller_kubeconfig_path=$controller_kubeconfig_path"
+	    echo "  controller_context_arg=$controller_context_arg"
+	    echo "  project_ns=kubeslice-$project_name"
         echo "-----------------------------------------"
 
         echo "-----------------------------------------"
@@ -1609,7 +1642,7 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         fi
 
         # Now call the install_or_upgrade_helm_chart function
-	install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$values_file" "$inline_values" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$local_charts_path" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+	install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$values_file" "$inline_values" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$LOCAL_CHARTS_PATH" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
 
     done
     echo "✔️ Installation of additional applications complete."

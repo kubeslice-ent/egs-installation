@@ -11,7 +11,9 @@ verify_install_timeout: 600  # Global timeout for verification (in seconds)
 skip_on_verify_fail: false  # Decide whether to skip or error out if verification fails globally
 
 # Helm repository settings
-global_helm_repo_url: "https://smartscaler.nexus.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod"
+use_local_charts: true  # Use local charts instead of pulling from a repository
+local_charts_path: "charts"  # Relative path to local charts directory
+global_helm_repo_url: ""
 global_helm_username: ""  # Global Helm repository username
 global_helm_password: ""  # Global Helm repository password
 readd_helm_repos: true  # Re-add Helm repositories if they already exist
@@ -33,8 +35,6 @@ add_node_label: true  # Enable node labeling during installation
 
 # Kubeconfig settings
 global_kubeconfig: ""  # Relative path to global kubeconfig file
-use_local_charts: true  # Use local charts instead of pulling from a repository
-local_charts_path: "charts"  # Relative path to local charts directory
 global_kubecontext: ""  # Global kubecontext, if empty, the default context will be used
 use_global_context: true  # Use global kubecontext by default for all operations
 
@@ -89,7 +89,7 @@ kubeslice_worker_egs:
       kubesliceNetworking:
         enabled: false  # Disable Kubeslice networking for this worker
       egs:
-        prometheusEndpoint: "http://prometheus-test"  # Prometheus endpoint
+        prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://grafana-test"  # Grafana dashboard base URL
       metrics:
         insecure: true  # Allow insecure connections for metrics
@@ -113,7 +113,7 @@ cluster_registration:
     project_name: "avesha"
     telemetry:
       enabled: true  # Enable telemetry for this cluster
-      endpoint: ""  # Telemetry endpoint, should be set during registration
+      endpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Telemetry endpoint, should be set during registration
       telemetryProvider: "prometheus"  # Telemetry provider
     geoLocation:
       cloudProvider: "GCP"  # Cloud provider for this cluster
@@ -130,7 +130,7 @@ additional_apps:
     chart: "gpu-operator"
     repo_url: "https://helm.ngc.nvidia.com/nvidia"
     version: "v24.6.0"
-    specific_use_local_charts: false  # Override to use the remote chart instead of local
+    specific_use_local_charts: true  # Override to use the remote chart instead of local
     inline_values:
       hostPaths:
         driverInstallDir: "/home/kubernetes/bin/nvidia"
@@ -154,7 +154,7 @@ additional_apps:
     chart: "kube-prometheus-stack"
     repo_url: "https://prometheus-community.github.io/helm-charts"
     version: "v45.0.0"  
-    specific_use_local_charts: false  
+    specific_use_local_charts: true  
     values_file: ""  
     inline_values:
       prometheus:
@@ -191,6 +191,15 @@ additional_apps:
               target_label: kubernetes_node
       grafana:
         enabled: true
+        grafana.ini:
+          auth:
+            disable_login_form: true
+            disable_signout_menu: true
+          auth.anonymous:
+            enabled: true
+            org_role: Viewer
+        service:
+          type: LoadBalancer
         persistence:
           enabled: true
           size: 1Gi
