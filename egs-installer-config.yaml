@@ -240,7 +240,7 @@ manifests:
 
   - appname: nvidia-driver-installer
     manifest: https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/master/nvidia-driver-installer/cos/daemonset-preloaded.yaml
-    overrides_yaml: app2-overrides.yaml
+    overrides_yaml: ""
     inline_yaml: null
     use_global_kubeconfig: true
     skip_installation: false
