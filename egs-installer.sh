@@ -1,4 +1,4 @@
-#!/bin/bash
+.n#!/bin/bash
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
