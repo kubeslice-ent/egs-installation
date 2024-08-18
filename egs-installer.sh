@@ -1454,6 +1454,157 @@ run_k8s_commands_from_yaml() {
     echo "-----------------------------------------"
 }
 
+# Function to fetch and display summary information
+display_summary() {
+    echo "========================================="
+    echo "           📋 Summary - Installations    "
+    echo "========================================="
+
+    # Summary of all Helm chart installations (including controller, UI, workers, and additional apps)
+    echo "🛠️ **Application Installations Summary**:"
+
+    # Helper function to check Helm release status and list Helm releases
+    check_helm_release_status() {
+        local release_name=$1
+        local namespace=$2
+        local kubeconfig=$3
+        local kubecontext=$4
+
+        echo "-----------------------------------------"
+        echo "🚀 **Helm Release: $release_name**"
+        if helm status "$release_name" --namespace "$namespace" --kubeconfig "$kubeconfig" --kube-context "$kubecontext" > /dev/null 2>&1; then
+            echo "✔️ Release '$release_name' in namespace '$namespace' is successfully installed."
+            echo "🔍 **Helm List Output**:"
+            helm list --namespace "$namespace" --kubeconfig "$kubeconfig" --kube-context "$kubecontext" || echo "⚠️ Warning: Failed to list Helm releases in namespace '$namespace'."
+        else
+            echo "⚠️ Warning: Release '$release_name' in namespace '$namespace' encountered an issue."
+        fi
+        echo "-----------------------------------------"
+    }
+
+    # Kubeslice Controller Installation
+    if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ] && [ "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" = "false" ]; then
+        check_helm_release_status "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT"
+    else
+        echo "⏩ **Kubeslice Controller** installation was skipped or disabled."
+    fi
+
+    # Worker Cluster Installations
+    if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
+        for ((i=0; i<${#KUBESLICE_WORKERS[@]}; i++)); do
+            # Extract variables for each worker cluster
+            worker_name=$(yq e ".kubeslice_worker_egs[$i].name" "$EGS_INPUT_YAML")
+            skip_installation=$(yq e ".kubeslice_worker_egs[$i].skip_installation" "$EGS_INPUT_YAML")
+            kubeconfig=$(yq e ".kubeslice_worker_egs[$i].kubeconfig" "$EGS_INPUT_YAML")
+            kubecontext=$(yq e ".kubeslice_worker_egs[$i].kubecontext" "$EGS_INPUT_YAML")
+
+            # Use global kubeconfig and kubecontext if specific ones are null
+            if [ -z "$kubeconfig" ] || [ "$kubeconfig" = "null" ]; then
+                kubeconfig="$GLOBAL_KUBECONFIG"
+            fi
+            if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
+                kubecontext="$GLOBAL_KUBECONTEXT"
+            fi
+
+            namespace=$(yq e ".kubeslice_worker_egs[$i].namespace" "$EGS_INPUT_YAML")
+            release_name=$(yq e ".kubeslice_worker_egs[$i].release" "$EGS_INPUT_YAML")
+            chart_name=$(yq e ".kubeslice_worker_egs[$i].chart" "$EGS_INPUT_YAML")
+
+            if [ "$skip_installation" = "false" ]; then
+                check_helm_release_status "$release_name" "$namespace" "$kubeconfig" "$kubecontext"
+            else
+                echo "⏩ **Worker Cluster '$worker_name'** installation was skipped."
+            fi
+        done
+    else
+        echo "⏩ **Worker installation was skipped or disabled.**"
+    fi
+
+    # Additional Application Installations
+    if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ]; then
+        for ((i=0; i<${#ADDITIONAL_APPS[@]}; i++)); do
+            # Extract variables for each additional application
+            app_name=$(yq e ".additional_apps[$i].name" "$EGS_INPUT_YAML")
+            skip_installation=$(yq e ".additional_apps[$i].skip_installation" "$EGS_INPUT_YAML")
+            kubeconfig=$(yq e ".additional_apps[$i].kubeconfig" "$EGS_INPUT_YAML")
+            kubecontext=$(yq e ".additional_apps[$i].kubecontext" "$EGS_INPUT_YAML")
+
+            # Use global kubeconfig and kubecontext if specific ones are null
+            if [ -z "$kubeconfig" ] || [ "$kubeconfig" = "null" ]; then
+                kubeconfig="$GLOBAL_KUBECONFIG"
+            fi
+            if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
+                kubecontext="$GLOBAL_KUBECONTEXT"
+            fi
+
+            namespace=$(yq e ".additional_apps[$i].namespace" "$EGS_INPUT_YAML")
+            release_name=$(yq e ".additional_apps[$i].release" "$EGS_INPUT_YAML")
+            chart_name=$(yq e ".additional_apps[$i].chart" "$EGS_INPUT_YAML")
+
+            if [ "$skip_installation" = "false" ]; then
+                check_helm_release_status "$release_name" "$namespace" "$kubeconfig" "$kubecontext"
+            else
+                echo "⏩ **Additional Application '$app_name'** installation was skipped."
+            fi
+        done
+    else
+        echo "⏩ **Additional application installation was skipped or disabled.**"
+    fi
+
+    echo "========================================="
+    echo "           📋 Summary - Details          "
+    echo "========================================="
+
+    # Fetch the kubeslice-ui-proxy service LoadBalancer URL using the controller's kubeconfig and context
+    if [ "$ENABLE_INSTALL_UI" = "true" ] && [ "$KUBESLICE_UI_SKIP_INSTALLATION" = "false" ]; then
+        echo "🔍 **Service Information for Kubeslice UI**:"
+        kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" || echo "⚠️ Warning: Failed to get services in namespace '$KUBESLICE_UI_NAMESPACE'."
+
+        ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+        if [ -z "$ui_proxy_url" ]; then
+            ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+        fi
+        if [ -n "$ui_proxy_url" ]; then
+            echo "🔗 **Kubeslice UI Proxy LoadBalancer URL**: $ui_proxy_url"
+        else
+            echo "⚠️ Warning: Kubeslice UI Proxy LoadBalancer URL not available."
+        fi
+    else
+        echo "⏩ **Kubeslice UI installation was skipped or disabled.**"
+    fi
+
+    # Fetch the token for each project provided in the input YAML
+    if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+        for project in "${KUBESLICE_PROJECTS[@]}"; do
+            IFS="|" read -r project_name project_username <<< "$project"
+            token=$(kubectl get secret "kubeslice-rbac-rw-$project_username" -o jsonpath="{.data.token}" -n "kubeslice-$project_name" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" 2>/dev/null | base64 --decode || echo "")
+            if [ -n "$token" ]; then
+                echo "🔑 **Token for project '$project_name' (username: $project_username)**: $token"
+            else
+                echo "⚠️ Warning: Token for project '$project_name' (username: $project_username) not available."
+            fi
+        done
+    else
+        echo "⏩ **Project creation was skipped or disabled.**"
+    fi
+
+    echo "========================================="
+    echo "           📋 Helm List - All Namespaces "
+    echo "========================================="
+
+    # Run helm list -A to list all releases across all namespaces
+    if helm list -A --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --kube-context "$KUBESLICE_CONTROLLER_KUBECONTEXT" > /dev/null 2>&1; then
+        echo "🔍 **Helm List Output (All Namespaces)**:"
+        helm list -A --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --kube-context "$KUBESLICE_CONTROLLER_KUBECONTEXT" || echo "⚠️ Warning: Failed to list Helm releases across all namespaces."
+    else
+        echo "⚠️ Warning: Unable to run helm list -A."
+    fi
+
+    echo "========================================="
+    echo "          🏁 Summary Output Complete      "
+    echo "========================================="
+}
+
 
 install_or_upgrade_helm_chart() {
     local skip_installation=$1
@@ -1817,9 +1968,9 @@ prepare_worker_values_file() {
         echo "  namespace=$namespace"
         echo "  release_name=$release_name"
         echo "  chart_name=$chart_name"
-	    echo "  controller_kubeconfig_path=$controller_kubeconfig_path"
-	    echo "  controller_context_arg=$controller_context_arg"
-	    echo "  project_ns=kubeslice-$project_name"
+	echo "  controller_kubeconfig_path=$controller_kubeconfig_path"
+	echo "  controller_context_arg=$controller_context_arg"
+	echo "  project_ns=kubeslice-$project_name"
         echo "-----------------------------------------"
 
         echo "-----------------------------------------"
@@ -2171,6 +2322,11 @@ else
     # Call the function if validation passes
     run_k8s_commands_from_yaml "$EGS_INPUT_YAML"
 fi
+
+
+trap display_summary EXIT
+
+
 
 echo "========================================="
 echo "    EGS Installer Script Complete        "
