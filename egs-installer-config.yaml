@@ -55,10 +55,13 @@ kubeslice_controller_egs:
   namespace: "kubeslice-controller"  # Kubernetes namespace for the controller
   release: "kubeslice-controller-release"  # Helm release name for the controller
   chart: "kubeslice-controller-egs"  # Helm chart name for the controller
-  inline_values:  # Inline values for the Helm chart
+  inline_values: #Inline values for helm chart
     kubeslice:
-      controller:
-        endpoint: ""  # Controller endpoint, should be set during installation
+      controller: 
+        endpoint: #Controller api server endpoint accessible from worker, incase empty will be auto fetched
+        migration:
+          minio:
+            install: "false"
   helm_flags: "--timeout 10m --atomic"  # Additional Helm flags for installation
   verify_install: true  # Verify controller installation
   verify_install_timeout: 30  # Timeout for controller installation verification (in seconds)
