@@ -1605,6 +1605,67 @@ display_summary() {
     echo "========================================="
 }
 
+fetch_k8s_cluster_endpoint() {
+    local kubeconfig=$1
+    local kubecontext=$2
+
+    echo "🔍 Fetching Kubernetes cluster endpoint..."
+    echo "  kubeconfig: $kubeconfig"
+    echo "  kubecontext: $kubecontext"
+
+    if [ -z "$kubecontext" ]; then
+        echo "⚠️ Warning: kubecontext is empty. Using default context."
+        kubecontext=$(kubectl --kubeconfig="$kubeconfig" config current-context)
+    fi
+
+    echo "  Using kubecontext: $kubecontext"
+
+    # Extract the cluster name associated with the context
+    local cluster_name
+    cluster_name=$(kubectl --kubeconfig="$kubeconfig" --context="$kubecontext" config view -o jsonpath='{.contexts[?(@.name == "'$kubecontext'")].context.cluster}')
+
+    echo "  Extracted cluster name from context: $cluster_name"
+
+    # Now fetch the endpoint for that cluster
+    local endpoint
+    echo "🔍 Attempting to fetch endpoint from kubeconfig..."
+    endpoint=$(kubectl --kubeconfig="$kubeconfig" config view -o jsonpath='{.clusters[?(@.name == "'$cluster_name'")].cluster.server}')
+    echo "  Output from kubectl config view: '$endpoint'"
+
+    if [ -z "$endpoint" ]; then
+        echo "⚠️ Warning: Failed to fetch the Kubernetes cluster endpoint from kubeconfig for cluster '$cluster_name'."
+
+        echo "🔍 Attempting to fetch the endpoint using 'kubectl cluster-info'..."
+        local cluster_info_output
+        cluster_info_output=$(kubectl --kubeconfig="$kubeconfig" --context="$kubecontext" cluster-info)
+        echo "  Full output from kubectl cluster-info: '$cluster_info_output'"
+
+        # Extract the first occurrence of a URL in the cluster-info output
+        endpoint=$(echo "$cluster_info_output" | grep -oP '(?<=Kubernetes control plane is running at )https?://[^ ]+')
+
+        if [ -z "$endpoint" ]; then
+            echo "⚠️ Warning: Failed to fetch the Kubernetes cluster endpoint using 'kubectl cluster-info'."
+
+            # Fallback: Check the first cluster entry in kubeconfig as a last resort
+            echo "🔍 Attempting fallback to first cluster entry in kubeconfig..."
+            endpoint=$(kubectl --kubeconfig="$kubeconfig" config view -o jsonpath='{.clusters[0].cluster.server}')
+            echo "  Fallback kubeconfig view output: '$endpoint'"
+
+            if [ -z "$endpoint" ]; then
+                echo "❌ Critical: All methods to fetch the Kubernetes cluster endpoint have failed."
+            else
+                echo "✔️ Fallback successful: Fetched endpoint: $endpoint"
+            fi
+        else
+            echo "✔️ Successfully fetched endpoint using 'kubectl cluster-info': $endpoint"
+        fi
+    else
+        echo "✔️ Successfully fetched endpoint from kubeconfig: $endpoint"
+    fi
+
+    echo "$endpoint"
+}
+
 
 install_or_upgrade_helm_chart() {
     local skip_installation=$1
@@ -1707,6 +1768,67 @@ install_or_upgrade_helm_chart() {
     echo "🔍 Checking if namespace '$namespace' exists..."
     kubectl get namespace $namespace --kubeconfig $kubeconfig_path --context $kubecontext || kubectl create namespace $namespace --kubeconfig $kubeconfig_path --context $kubecontext
     echo "✔️ Namespace '$namespace' is ready."
+
+
+# Determine if the current release is the KubeSlice controller
+if [[ "$release_name" == *"controller"* ]]; then
+    if [ -z "$inline_values" ] || [ "$inline_values" = "{}" ]; then
+        echo "⚠️ Warning: Inline values are empty or not provided."
+        echo "🔍 Attempting to fetch the cluster endpoint..."
+        
+        local cluster_endpoint
+        cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
+        
+        if [ -z "$cluster_endpoint" ]; then
+            echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
+        else
+            # Clean and sanitize the endpoint
+            cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
+            # Initialize inline_values with the fetched endpoint
+            inline_values=$(echo "{}" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
+            echo "✔️ Inline values created with fetched cluster endpoint: $cluster_endpoint"
+        fi
+    elif [ -z "$(echo "$inline_values" | yq e '.kubeslice.controller.endpoint' -)" ]; then
+        echo "🔍 No endpoint found in inline values. Attempting to fetch the cluster endpoint..."
+        
+        local cluster_endpoint
+        cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
+        
+        if [ -z "$cluster_endpoint" ]; then
+            echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
+        else
+            # Clean and sanitize the endpoint
+            cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
+            # Merge the fetched endpoint into the existing inline_values
+            inline_values=$(echo "$inline_values" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
+            echo "✔️ Inline values updated with fetched cluster endpoint: $cluster_endpoint"
+        fi
+    else
+        # Double-check the endpoint actually exists
+        local existing_endpoint=$(echo "$inline_values" | yq e '.kubeslice.controller.endpoint' -)
+        if [ -z "$existing_endpoint" ]; then
+            echo "⚠️ Warning: Detected an empty endpoint in inline values, fetching again."
+            local cluster_endpoint
+            cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
+            
+            if [ -z "$cluster_endpoint" ]; then
+                echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
+            else
+                # Clean and sanitize the endpoint
+                cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
+                inline_values=$(echo "$inline_values" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
+                echo "✔️ Inline values updated with fetched cluster endpoint: $cluster_endpoint"
+            fi
+        else
+            echo "✔️ Endpoint is already provided in inline values. No need to override."
+        fi
+    fi
+
+    # Final sanity check to ensure inline_values is correctly formed
+    echo "🛠 Final inline_values:"
+    echo "$inline_values" | yq e
+fi
+
 
     # Function to create a values file from inline values, ensuring uniqueness
     create_values_file() {
