@@ -200,6 +200,23 @@ spec:
                     description: sliceName is the name of the slice
                     type: string
                 type: object
+              sliceSATokens:
+                description: CA.crt and token for every serviceaccount we create.
+                  for every namespace
+                items:
+                  properties:
+                    ca_crt:
+                      type: string
+                    endpoint:
+                      type: string
+                    namespace:
+                      type: string
+                    serviceAccountName:
+                      type: string
+                    token:
+                      type: string
+                  type: object
+                type: array
             type: object
         type: object
     served: true

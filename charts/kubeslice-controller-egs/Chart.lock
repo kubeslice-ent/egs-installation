@@ -6,4 +6,4 @@ dependencies:
   repository: file://./charts/prometheus
   version: 25.20.1
 digest: sha256:6d254aeb9d27571a5b59a0a867f5c11f2def56993bbeee250ac0fe4b398e9c66
-generated: "2024-08-14T08:55:09.012569159Z"
+generated: "2024-08-18T11:08:37.705503394Z"
