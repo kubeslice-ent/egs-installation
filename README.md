@@ -13,6 +13,7 @@ Before using the EGS Installer Script, ensure that the following prerequisites a
   - `yq` 📄 (minimum version: 4.0.0)
   - `helm` 🛠️ (minimum version: 3.5.0)
   - `kubectl` ⚙️ (minimum version: 1.20.0)
+  - `jq` 📦 (minimum version: 1.6.0)
 - **Kubernetes Access**: Ensure you have administrative access to the necessary Kubernetes clusters with the appropriate kubeconfig files.
 
 ## 🛠️ Configuration
@@ -227,6 +228,44 @@ additional_apps:
     verify_install_timeout: 600  # Timeout for additional app installation verification (in seconds).
     skip_on_verify_fail: false  # Do not skip if additional app verification fails.
 
+######### input section for custom manifest for cloud specific driver apps ##################
+
+# - appname: "nginx-deployment"
+#   manifest: "nginx/deployment.yaml"  # Path to the manifest file (relative to base_path)
+#   overrides_yaml: "nginx/overrides.yaml"  # Optional overrides to modify the base manifest
+#   use_global_kubeconfig: true  # Use the global kubeconfig and context
+#   skip_installation: false  # Do not skip the installation of this manifest
+#   verify_install: true  # Verify that the deployment was successful
+#   verify_install_timeout: 60  # Timeout for the verification in seconds
+#   skip_on_verify_fail: false  # Do not skip other operations if verification fails
+#   namespace: "nginx-namespace"  # Deploy the resources in this Kubernetes namespace
+
+# - appname: "custom-config"
+#   inline_yaml: |  # Directly define the YAML content to be applied
+#     apiVersion: v1
+#     kind: ConfigMap
+#     metadata:
+#       name: my-config
+#       namespace: custom-namespace
+#     data:
+#       key: value
+#   use_global_kubeconfig: true  # Use the global kubeconfig and context
+#   skip_installation: false  # Apply the inline YAML as a ConfigMap
+#   verify_install: true  # Verify that the ConfigMap was created
+#   verify_install_timeout: 60  # Timeout for verification in seconds
+#   skip_on_verify_fail: false  # Do not skip other operations if verification fails
+#   namespace: "custom-namespace"  # The ConfigMap will be created in this namespace
+
+# - appname: "external-manifest"
+#   manifest: "https://raw.githubusercontent.com/kubernetes/website/main/content/en/examples/application/nginx-app.yaml"
+#   use_global_kubeconfig: true  # Use the global kubeconfig and context
+#   skip_installation: false  # Apply the manifest from the external URL
+#   verify_install: true  # Verify that the resources from the external manifest were created
+#   verify_install_timeout: 120  # Give more time for verification due to potential network delays
+#   skip_on_verify_fail: false  # Do not skip other operations if verification fails
+#   namespace: "external-namespace"  # Deploy the resources in this Kubernetes namespace
+
+
 ```
 
 
@@ -307,6 +346,24 @@ additional_apps:
 | `verify_install`            | Verify the installation of the worker after deployment.                                                 | `true`                                                                                                      |
 | `verify_install_timeout`    | Timeout for verifying the installation of the worker, in seconds.                                       | `60` (60 seconds)                                                                                           |
 | `skip_on_verify_fail`       | Skip further steps or exit if the worker verification fails.                                            | `false`                                                                                                     |
+#### `Custom App Manifests` Subfields
+
+| **Field**                       | **Description**                                                                                                         | **Type**          | **Required** | **Example**                                                                                                         |
+|---------------------------------|-------------------------------------------------------------------------------------------------------------------------|-------------------|--------------|---------------------------------------------------------------------------------------------------------------------|
+| `manifests`                     | A list of manifest configurations. Each entry defines how a specific Kubernetes manifest should be applied.            | `list`            | Yes          | See below for individual fields.                                                                                    |
+| `manifests[].appname`           | The name of the application or resource. Used for logging and identification purposes.                                   | `string`          | Yes          | `nginx-deployment`                                                                                                  |
+| `manifests[].manifest`          | The path to the Kubernetes manifest file. Can be a local file or an HTTPS URL.                                          | `string`          | No           | `nginx/deployment.yaml` or `https://raw.githubusercontent.com/.../nginx-app.yaml`                                   |
+| `manifests[].overrides_yaml`    | The path to a YAML file containing overrides for the base manifest. Merges with the base manifest before applying.      | `string`          | No           | `nginx/overrides.yaml`                                                                                              |
+| `manifests[].inline_yaml`       | Inline YAML content to be merged with the base manifest. Allows for quick, in-line customization without separate files. | `string` (YAML)   | No           | See inline YAML example below.                                                                                      |
+| `manifests[].use_global_kubeconfig` | Determines whether the global kubeconfig and context should be used. If `false`, specific kubeconfig and context must be provided. | `boolean`        | Yes          | `true`                                                                                                              |
+| `manifests[].kubeconfig_path`   | Path to a specific Kubernetes configuration file to be used instead of the global kubeconfig.                           | `string`          | No           | `/path/to/specific/kubeconfig`                                                                                      |
+| `manifests[].kubecontext`       | The context name in the specific Kubernetes configuration file to be used for this manifest.                            | `string`          | No           | `specific-context`                                                                                                  |
+| `manifests[].skip_installation` | Whether to skip the installation of this manifest. Useful for conditional deployments.                                  | `boolean`         | Yes          | `false`                                                                                                             |
+| `manifests[].verify_install`    | Whether to verify that the application or resource was successfully deployed.                                           | `boolean`         | Yes          | `true`                                                                                                              |
+| `manifests[].verify_install_timeout` | The timeout in seconds for the installation verification.                                                        | `integer`         | Yes          | `60`                                                                                                                |
+| `manifests[].skip_on_verify_fail` | Whether to skip the remaining operations if the verification fails.                                                  | `boolean`         | Yes          | `false`                                                                                                             |
+| `manifests[].namespace`         | The Kubernetes namespace where the resources should be applied.                                                        | `string`          | Yes          | `nginx-namespace`                                                                                                   |
+
 
 ```
 ### 🧑‍💻 Script Usage

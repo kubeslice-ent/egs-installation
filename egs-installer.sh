@@ -39,7 +39,7 @@ prerequisite_check() {
 
     # Minimum required versions
     local MIN_YQ_VERSION="4.0.0"
-    local MIN_HELM_VERSION="3.15.0"
+    local MIN_HELM_VERSION="3.5.0"
     local MIN_JQ_VERSION="1.6"
     local MIN_KUBECTL_VERSION="1.20.0"
 
@@ -325,9 +325,6 @@ kubeslice_pre_check() {
     echo ""
 }
 
-
-
-
 validate_paths() {
     echo "🚀 Validating paths..."
     local error_found=false
@@ -433,7 +430,12 @@ parse_yaml() {
     	ADD_NODE_LABEL="false"  # Default to false if not specified
 	fi
 
-
+ # Extract cloud_install configuration
+    CLOUD_INSTALL=$(yq e '.cloud_install' "$yaml_file")
+    if [ -z "$CLOUD_INSTALL" ] || [ "$CLOUD_INSTALL" = "null" ]; then
+       # echo "⚠️  CLOUD_INSTALL not specified. Skipping cloud-specific installations."
+        CLOUD_INSTALL=""
+    fi
 
     # Extract global Helm repo settings
     GLOBAL_HELM_REPO_URL=$(yq e '.global_helm_repo_url' "$yaml_file")
@@ -832,8 +834,6 @@ parse_yaml() {
         KUBESLICE_CLUSTER_REGISTRATIONS+=("$CLUSTER_NAME|$PROJECT_NAME|$TELEMETRY_ENABLED|$TELEMETRY_ENDPOINT|$TELEMETRY_PROVIDER|$GEO_LOCATION_PROVIDER|$GEO_LOCATION_REGION")
     done
 
-
-
 # Extract global enable/disable flag for additional apps installation
     ENABLE_INSTALL_ADDITIONAL_APPS=$(yq e '.enable_install_additional_apps' "$yaml_file")
     if [ -z "$ENABLE_INSTALL_ADDITIONAL_APPS" ] || [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "null" ]; then
@@ -929,7 +929,6 @@ parse_yaml() {
     echo "✔️ Parsing completed."
 }
 
-
 # Function to verify all pods in a namespace are running
 verify_pods_running() {
     local namespace=$1
@@ -986,8 +985,6 @@ wait_with_dots() {
     done
     echo " $message"
 }
-
-
 
 manage_helm_repo() {
     echo "🚀 Starting Helm repository management..."
@@ -1050,6 +1047,562 @@ manage_helm_repo() {
     }
 
     echo "✔️ Helm repository management complete."
+}
+# Function to identify the cloud provider
+identify_cloud_provider() {
+    local cloud_provider=""
+    local node_labels=$(kubectl get nodes -o json | jq -r '.items[].metadata.labels')
+
+    if echo "$node_labels" | grep -q "eks.amazonaws.com"; then
+        cloud_provider="AWS EKS"
+    elif echo "$node_labels" | grep -q "cloud.google.com/gke-nodepool"; then
+        cloud_provider="Google GKE"
+    elif echo "$node_labels" | grep -q "kubernetes.azure.com"; then
+        cloud_provider="Azure AKS"
+    elif echo "$node_labels" | grep -q "oke.oraclecloud.com"; then
+        cloud_provider="Oracle OKE"
+    else
+        echo "⚠️  Cloud provider not identified. Exiting..."
+        exit 1
+    fi
+
+    echo "$cloud_provider"
+}
+
+# Function to handle the cloud-specific installation process
+handle_cloud_installation() {
+    local cloud_provider="$1"
+    shift
+    local cloud_install_array=("$@")
+
+    echo "🌩️  Handling installation for $cloud_provider..."
+
+    # Iterate over the cloud_install array
+    for item in "${cloud_install_array[@]}"; do
+        local type=$(echo "$item" | cut -d':' -f1)
+        local name=$(echo "$item" | cut -d':' -f2)
+
+        case "$type" in
+            "manifest")
+                install_manifest "$name"
+                ;;
+            "app")
+                install_additional_apps "$name"
+                ;;
+            *)
+                echo "⚠️  Unrecognized installation type: $type"
+                ;;
+        esac
+    done
+}
+
+# Function to load cloud_install configuration from YAML
+load_cloud_install_config() {
+    local cloud_provider="$1"
+    local yaml_file="$2"
+    local installs=()
+
+    # Check if the cloud_install section exists
+    cloud_install_exists=$(yq e '.cloud_install' "$yaml_file")
+
+    if [ "$cloud_install_exists" == "null" ]; then
+        echo "⚠️  No 'cloud_install' section found in the YAML file. Skipping cloud-specific installations."
+        return  # Return empty array
+    fi
+
+    # Get installs array for the specific cloud provider
+    installs=($(yq e ".cloud_install[] | select(.provider == \"$cloud_provider\") | .installs[] | .type + \":\" + .name" "$yaml_file"))
+
+    if [ ${#installs[@]} -eq 0 ]; then
+        echo "⚠️  No installations defined for cloud provider '$cloud_provider' in 'cloud_install'. Skipping cloud-specific installations."
+    fi
+
+    echo "${installs[@]}"
+}
+
+apply_manifests_from_yaml() {
+    local yaml_file=$1
+    local global_kubeconfig_path="${KUBECONFIG:-$GLOBAL_KUBECONFIG}"
+    local global_kubecontext="${KUBECONTEXT:-$GLOBAL_KUBECONTEXT}"
+    local base_path=$(yq e '.base_path' "$yaml_file")
+
+    # Ensure base_path is absolute
+    base_path=$(realpath "${base_path:-.}")
+
+    echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"
+    echo "🔧 Global Variables:"
+    echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
+    echo "  🌐 global_kubecontext=$global_kubecontext"
+    echo "  🗂️  base_path=$base_path"
+    echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
+    echo "-----------------------------------------"
+
+    # Check if the manifests section exists
+    manifests_exist=$(yq e '.manifests' "$yaml_file")
+
+    if [ "$manifests_exist" == "null" ]; then
+        echo "⚠️  Warning: No 'manifests' section found in the YAML file. Skipping manifest application."
+        return
+    fi
+
+    # Extract manifests from the YAML file
+    manifests_length=$(yq e '.manifests | length' "$yaml_file")
+
+    if [ "$manifests_length" -eq 0 ]; then
+        echo "⚠️  Warning: 'manifests' section is defined, but no manifests found. Skipping manifest application."
+        return
+    fi
+
+    for index in $(seq 0 $((manifests_length - 1))); do
+        echo "🔄 Processing manifest $((index + 1)) of $manifests_length"
+
+        appname=$(yq e ".manifests[$index].appname" "$yaml_file")
+        base_manifest=$(yq e ".manifests[$index].manifest" "$yaml_file")
+        overrides_yaml=$(yq e ".manifests[$index].overrides_yaml" "$yaml_file")
+        inline_yaml=$(yq e ".manifests[$index].inline_yaml" "$yaml_file")
+        use_global_kubeconfig=$(yq e ".manifests[$index].use_global_kubeconfig" "$yaml_file")
+        kubeconfig=$(yq e ".manifests[$index].kubeconfig" "$yaml_file")
+        kubecontext=$(yq e ".manifests[$index].kubecontext" "$yaml_file")
+        skip_installation=$(yq e ".manifests[$index].skip_installation" "$yaml_file")
+        verify_install=$(yq e ".manifests[$index].verify_install" "$yaml_file")
+        verify_install_timeout=$(yq e ".manifests[$index].verify_install_timeout" "$yaml_file")
+        skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$yaml_file")
+        namespace=$(yq e ".manifests[$index].namespace" "$yaml_file")
+
+        # Determine kubeconfig path and context
+        local kubeconfig_path=""
+        local context_arg=""
+        
+        if [ "$use_global_kubeconfig" = true ]; then
+            kubeconfig_path="$global_kubeconfig_path"
+            context_arg="--context $global_kubecontext"
+        else
+            if [ -n "$kubeconfig" ] && [ "$kubeconfig" != "null" ]; then
+                kubeconfig_path="$base_path/$kubeconfig"
+            fi
+            if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+                context_arg="--context $kubecontext"
+            fi
+        fi
+
+        echo "🔧 App Variables for '$appname':"
+        echo "  🗂️  base_manifest=$base_manifest"
+        echo "  🗂️  overrides_yaml=$overrides_yaml"
+        echo "  📄 inline_yaml=${inline_yaml:+Provided}"
+        echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"
+        echo "  🗂️  kubeconfig_path=$kubeconfig_path"
+        echo "  🌐 kubecontext=$kubecontext"
+        echo "  🚫 skip_installation=$skip_installation"
+        echo "  🔍 verify_install=$verify_install"
+        echo "  ⏰ verify_install_timeout=$verify_install_timeout"
+        echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
+        echo "  🏷️  namespace=$namespace"
+        echo "-----------------------------------------"
+
+        # Handle HTTPS file URLs or local base manifest files
+        if [ -n "$base_manifest" ] && [ "$base_manifest" != "null" ]; then
+            if [[ "$base_manifest" =~ ^https:// ]]; then
+                echo "🌐 Downloading manifest from URL: $base_manifest"
+                temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
+                curl -sL "$base_manifest" -o "$temp_manifest"
+                if [ $? -ne 0 ]; then
+                    echo "❌ Error: Failed to download manifest from URL: $base_manifest"
+                    exit 1
+                fi
+            else
+                base_manifest="$base_path/$base_manifest"
+                temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
+                cp "$base_manifest" "$temp_manifest"
+            fi
+        else
+            # If no base manifest, start with inline YAML if provided
+            if [ -n "$inline_yaml" ] && [ "$inline_yaml" != "null" ]; then
+                echo "📄 Using inline YAML as the base manifest for $appname"
+                temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
+                echo "$inline_yaml" > "$temp_manifest"
+            else
+                echo "❌ Error: Neither base manifest nor inline YAML provided for app: $appname"
+                exit 1
+            fi
+        fi
+
+        # Convert overrides_yaml to absolute paths
+        if [ -n "$overrides_yaml" ] && [ "$overrides_yaml" != "null" ]; then
+            overrides_yaml="$base_path/$overrides_yaml"
+        fi
+
+        # Merge inline YAML with the base manifest if provided
+        if [ -n "$inline_yaml" ] && [ "$inline_yaml" != "null" ] && [ -f "$temp_manifest" ]; then
+            echo "🔄 Merging inline YAML for $appname into the base manifest"
+            echo "$inline_yaml" | yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "-")' - "$temp_manifest" > "${temp_manifest}_merged"
+            mv "${temp_manifest}_merged" "$temp_manifest"
+        fi
+
+        # Merge overrides if provided
+        if [ -f "$overrides_yaml" ]; then
+            echo "🔄 Merging overrides from $overrides_yaml into $temp_manifest"
+            yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "'"$overrides_yaml"'")' "$temp_manifest" "$overrides_yaml" > "${temp_manifest}_merged"
+            mv "${temp_manifest}_merged" "$temp_manifest"
+        else
+            echo "⚠️  No overrides YAML file found for app: $appname. Proceeding with base/inline manifest."
+        fi
+
+        echo "📄 Applying manifest for app: $appname in namespace: ${namespace:-default}"
+        kubectl apply -f "$temp_manifest" --namespace "${namespace:-default}" --kubeconfig "$kubeconfig_path" $context_arg
+        if [ $? -ne 0 ]; then
+            echo "❌ Error: Failed to apply manifest for app: $appname"
+            exit 1
+        fi
+        echo "✔️ Successfully applied manifest for app: $appname"
+
+        if [ "$verify_install" = true ]; then
+            echo "🔍 Verifying installation of app: $appname in namespace: ${namespace:-default}"
+            end_time=$((SECONDS + verify_install_timeout))
+            while [ $SECONDS -lt $end_time ]; do
+                non_running_pods=$(kubectl get pods -n "${namespace:-default}" --kubeconfig "$kubeconfig_path" $context_arg --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
+                if [ "$non_running_pods" -eq 0 ]; then
+                    echo "✔️ All pods for app: $appname are running in namespace: ${namespace:-default}."
+                    break
+                else
+                    echo "⏳ Waiting for all pods to be running in namespace: ${namespace:-default} for app: $appname..."
+                    sleep 5
+                fi
+            done
+
+            if [ "$non_running_pods" -ne 0 ]; then
+                if [ "$skip_on_verify_fail" = true ]; then
+                    echo "⚠️  Warning: Verification failed for app: $appname, but skipping as per configuration."
+                else
+                    echo "❌ Error: Verification failed for app: $appname in namespace: ${namespace:-default}."
+                    exit 1
+                fi
+            fi
+        fi
+
+        # Clean up the temporary manifest file
+        rm -f "$temp_manifest"
+    done
+
+    echo "✅ All applicable manifests applied successfully."
+    echo "-----------------------------------------"
+}
+
+
+# Function to install manifest-based apps
+install_manifest() {
+    local manifest_name="$1"
+    echo "🚀 Applying manifest: $manifest_name"
+    # Placeholder for applying the manifest
+    echo "⚠️  Placeholder: Add commands to apply manifest $manifest_name here."
+    # Example:
+    # kubectl apply -f path-to-$manifest_name.yaml
+    echo "✅ Manifest $manifest_name applied successfully."
+}
+
+# Function to install additional apps
+install_additional_apps() {
+    local app_name="$1"
+    echo "🚀 Deploying additional app: $app_name"
+    # Placeholder for deploying additional apps
+    echo "⚠️  Placeholder: Add commands to deploy additional app $app_name here."
+    # Example:
+    # kubectl apply -f path-to-$app_name.yaml
+    echo "✅ Additional app $app_name deployed successfully."
+}
+
+run_k8s_commands_from_yaml() {
+    local yaml_file=$1
+    local global_kubeconfig_path="${KUBECONFIG:-$GLOBAL_KUBECONFIG}"
+    local global_kubecontext="${KUBECONTEXT:-$GLOBAL_KUBE_CONTEXT}"
+    local base_path=$(yq e '.base_path' "$yaml_file")
+
+    # Ensure base_path is absolute
+    base_path=$(realpath "${base_path:-.}")
+
+    # Check if the run_commands flag is set to true
+    local run_commands=$(yq e '.run_commands // "false"' "$yaml_file")
+
+    if [ "$run_commands" != "true" ]; then
+        echo "⏩ Command execution is disabled (run_commands is not true). Skipping."
+        return
+    fi
+
+    echo "🚀 Starting execution of Kubernetes commands from YAML file: $yaml_file"
+    echo "🔧 Global Variables:"
+    echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
+    echo "  🌐 global_kubecontext=$global_kubecontext"
+    echo "  🗂️  base_path=$base_path"
+    echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
+    echo "-----------------------------------------"
+
+    # Check if the commands section exists
+    commands_exist=$(yq e '.commands' "$yaml_file")
+
+    if [ "$commands_exist" == "null" ]; then
+        echo "⚠️  Warning: No 'commands' section found in the YAML file. Skipping command execution."
+        return
+    fi
+
+    # Extract commands from the YAML file
+    commands_length=$(yq e '.commands | length' "$yaml_file")
+
+    if [ "$commands_length" -eq 0 ]; then
+        echo "⚠️  Warning: 'commands' section is defined, but no commands found. Skipping command execution."
+        return
+    fi
+
+    for index in $(seq 0 $((commands_length - 1))); do
+        echo "🔄 Executing command set $((index + 1)) of $commands_length"
+
+        # Write the command stream to a temporary file in the installation files directory
+        command_stream_file="$INSTALLATION_FILES_PATH/command_stream_$index.sh"
+        yq e ".commands[$index].command_stream" "$yaml_file" > "$command_stream_file"
+        command_stream=$(<"$command_stream_file")
+        rm "$command_stream_file"
+
+        use_global_kubeconfig=$(yq e ".commands[$index].use_global_kubeconfig // false" "$yaml_file")
+        skip_installation=$(yq e ".commands[$index].skip_installation // false" "$yaml_file")
+        verify_install=$(yq e ".commands[$index].verify_install // false" "$yaml_file")
+        verify_install_timeout=$(yq e ".commands[$index].verify_install_timeout // 200" "$yaml_file")
+        skip_on_verify_fail=$(yq e ".commands[$index].skip_on_verify_fail // false" "$yaml_file")
+        namespace=$(yq e ".commands[$index].namespace // \"default\"" "$yaml_file")
+
+        # Determine kubeconfig path and context
+        local kubeconfig_path=""
+        local context_arg=""
+        
+        if [ "$use_global_kubeconfig" = true ]; then
+            kubeconfig_path="$global_kubeconfig_path"
+            context_arg="--context $global_kubecontext"
+        else
+            kubeconfig=$(yq e ".commands[$index].kubeconfig" "$yaml_file")
+            kubecontext=$(yq e ".commands[$index].kubecontext" "$yaml_file")
+            if [ -n "$kubeconfig" ] && [ "$kubeconfig" != "null" ]; then
+                kubeconfig_path="$base_path/$kubeconfig"
+            fi
+            if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+                context_arg="--context $kubecontext"
+            fi
+        fi
+
+        # Print all variables
+        echo "🔧 Command Set Variables:"
+        echo "  📜 command_stream=$command_stream"
+        echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"
+        echo "  🗂️  kubeconfig_path=$kubeconfig_path"
+        echo "  🌐 context_arg=$context_arg"
+        echo "  🚫 skip_installation=$skip_installation"
+        echo "  🔍 verify_install=$verify_install"
+        echo "  ⏰ verify_install_timeout=$verify_install_timeout"
+        echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
+        echo "  🏷️  namespace=$namespace"
+        echo "-----------------------------------------"
+
+        # Validate command_stream
+        if [ -z "$command_stream" ] || [ "$command_stream" == "null" ]; then
+            echo "⚠️  Warning: No commands provided in command_stream for set $((index + 1)). Skipping."
+            continue
+        fi
+
+        # Skip installation if required
+        if [ "$skip_installation" = true ]; then
+            echo "⏩ Skipping command execution as per configuration."
+            continue
+        fi
+
+        # Handle the command as a whole without appending namespace or kubeconfig
+        full_cmd="KUBECONFIG=\"$kubeconfig_path\" $command_stream"
+        echo "🔄 Executing command: $full_cmd"
+        eval "$full_cmd"
+        if [ $? -ne 0 ]; then
+            echo "❌ Error: Command failed: $command_stream"
+            if [ "$skip_on_verify_fail" = true ]; then
+                echo "⚠️  Skipping further commands in this set due to failure."
+                break
+            else
+                echo "❌ Exiting due to command failure."
+                exit 1
+            fi
+        fi
+
+        if [ "$verify_install" = true ]; then
+            echo "🔍 Verifying installation in namespace: $namespace"
+            end_time=$((SECONDS + verify_install_timeout))
+            while [ $SECONDS -lt $end_time ]; do
+                non_running_pods=$(kubectl get pods -n "$namespace" --kubeconfig "$kubeconfig_path" $context_arg --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
+                if [ "$non_running_pods" -eq 0 ]; then
+                    echo "✔️ All pods are running in namespace: $namespace."
+                    break
+                else
+                    echo "⏳ Waiting for all pods to be running in namespace: $namespace..."
+                    sleep 5
+                fi
+            done
+
+            if [ "$non_running_pods" -ne 0 ]; then
+                if [ "$skip_on_verify_fail" = true ]; then
+                    echo "⚠️  Warning: Verification failed, but skipping as per configuration."
+                else
+                    echo "❌ Error: Verification failed in namespace: $namespace. Exiting."
+                    exit 1
+                fi
+            fi
+        fi
+    done
+
+    echo "✅ All commands executed successfully."
+    echo "-----------------------------------------"
+}
+
+# Function to fetch and display summary information
+display_summary() {
+    echo "========================================="
+    echo "           📋 Summary - Installations    "
+    echo "========================================="
+
+    # Summary of all Helm chart installations (including controller, UI, workers, and additional apps)
+    echo "🛠️ **Application Installations Summary**:"
+
+    # Helper function to check Helm release status and list Helm releases
+    check_helm_release_status() {
+        local release_name=$1
+        local namespace=$2
+        local kubeconfig=$3
+        local kubecontext=$4
+
+        echo "-----------------------------------------"
+        echo "🚀 **Helm Release: $release_name**"
+        if helm status "$release_name" --namespace "$namespace" --kubeconfig "$kubeconfig" --kube-context "$kubecontext" > /dev/null 2>&1; then
+            echo "✔️ Release '$release_name' in namespace '$namespace' is successfully installed."
+            echo "🔍 **Helm List Output**:"
+            helm list --namespace "$namespace" --kubeconfig "$kubeconfig" --kube-context "$kubecontext" || echo "⚠️ Warning: Failed to list Helm releases in namespace '$namespace'."
+        else
+            echo "⚠️ Warning: Release '$release_name' in namespace '$namespace' encountered an issue."
+        fi
+        echo "-----------------------------------------"
+    }
+
+    # Kubeslice Controller Installation
+    if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ] && [ "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" = "false" ]; then
+        check_helm_release_status "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT"
+    else
+        echo "⏩ **Kubeslice Controller** installation was skipped or disabled."
+    fi
+
+    # Worker Cluster Installations
+    if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
+        for ((i=0; i<${#KUBESLICE_WORKERS[@]}; i++)); do
+            # Extract variables for each worker cluster
+            worker_name=$(yq e ".kubeslice_worker_egs[$i].name" "$EGS_INPUT_YAML")
+            skip_installation=$(yq e ".kubeslice_worker_egs[$i].skip_installation" "$EGS_INPUT_YAML")
+            kubeconfig=$(yq e ".kubeslice_worker_egs[$i].kubeconfig" "$EGS_INPUT_YAML")
+            kubecontext=$(yq e ".kubeslice_worker_egs[$i].kubecontext" "$EGS_INPUT_YAML")
+
+            # Use global kubeconfig and kubecontext if specific ones are null
+            if [ -z "$kubeconfig" ] || [ "$kubeconfig" = "null" ]; then
+                kubeconfig="$GLOBAL_KUBECONFIG"
+            fi
+            if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
+                kubecontext="$GLOBAL_KUBECONTEXT"
+            fi
+
+            namespace=$(yq e ".kubeslice_worker_egs[$i].namespace" "$EGS_INPUT_YAML")
+            release_name=$(yq e ".kubeslice_worker_egs[$i].release" "$EGS_INPUT_YAML")
+            chart_name=$(yq e ".kubeslice_worker_egs[$i].chart" "$EGS_INPUT_YAML")
+
+            if [ "$skip_installation" = "false" ]; then
+                check_helm_release_status "$release_name" "$namespace" "$kubeconfig" "$kubecontext"
+            else
+                echo "⏩ **Worker Cluster '$worker_name'** installation was skipped."
+            fi
+        done
+    else
+        echo "⏩ **Worker installation was skipped or disabled.**"
+    fi
+
+    # Additional Application Installations
+    if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ]; then
+        for ((i=0; i<${#ADDITIONAL_APPS[@]}; i++)); do
+            # Extract variables for each additional application
+            app_name=$(yq e ".additional_apps[$i].name" "$EGS_INPUT_YAML")
+            skip_installation=$(yq e ".additional_apps[$i].skip_installation" "$EGS_INPUT_YAML")
+            kubeconfig=$(yq e ".additional_apps[$i].kubeconfig" "$EGS_INPUT_YAML")
+            kubecontext=$(yq e ".additional_apps[$i].kubecontext" "$EGS_INPUT_YAML")
+
+            # Use global kubeconfig and kubecontext if specific ones are null
+            if [ -z "$kubeconfig" ] || [ "$kubeconfig" = "null" ]; then
+                kubeconfig="$GLOBAL_KUBECONFIG"
+            fi
+            if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
+                kubecontext="$GLOBAL_KUBECONTEXT"
+            fi
+
+            namespace=$(yq e ".additional_apps[$i].namespace" "$EGS_INPUT_YAML")
+            release_name=$(yq e ".additional_apps[$i].release" "$EGS_INPUT_YAML")
+            chart_name=$(yq e ".additional_apps[$i].chart" "$EGS_INPUT_YAML")
+
+            if [ "$skip_installation" = "false" ]; then
+                check_helm_release_status "$release_name" "$namespace" "$kubeconfig" "$kubecontext"
+            else
+                echo "⏩ **Additional Application '$app_name'** installation was skipped."
+            fi
+        done
+    else
+        echo "⏩ **Additional application installation was skipped or disabled.**"
+    fi
+
+    echo "========================================="
+    echo "           📋 Summary - Details          "
+    echo "========================================="
+
+    # Fetch the kubeslice-ui-proxy service LoadBalancer URL using the controller's kubeconfig and context
+    if [ "$ENABLE_INSTALL_UI" = "true" ] && [ "$KUBESLICE_UI_SKIP_INSTALLATION" = "false" ]; then
+        echo "🔍 **Service Information for Kubeslice UI**:"
+        kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" || echo "⚠️ Warning: Failed to get services in namespace '$KUBESLICE_UI_NAMESPACE'."
+
+        ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+        if [ -z "$ui_proxy_url" ]; then
+            ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+        fi
+        if [ -n "$ui_proxy_url" ]; then
+            echo "🔗 **Kubeslice UI Proxy LoadBalancer URL**: $ui_proxy_url"
+        else
+            echo "⚠️ Warning: Kubeslice UI Proxy LoadBalancer URL not available."
+        fi
+    else
+        echo "⏩ **Kubeslice UI installation was skipped or disabled.**"
+    fi
+
+    # Fetch the token for each project provided in the input YAML
+    if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+        for project in "${KUBESLICE_PROJECTS[@]}"; do
+            IFS="|" read -r project_name project_username <<< "$project"
+            token=$(kubectl get secret "kubeslice-rbac-rw-$project_username" -o jsonpath="{.data.token}" -n "kubeslice-$project_name" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" 2>/dev/null | base64 --decode || echo "")
+            if [ -n "$token" ]; then
+                echo "🔑 **Token for project '$project_name' (username: $project_username)**: $token"
+            else
+                echo "⚠️ Warning: Token for project '$project_name' (username: $project_username) not available."
+            fi
+        done
+    else
+        echo "⏩ **Project creation was skipped or disabled.**"
+    fi
+
+    echo "========================================="
+    echo "           📋 Helm List - All Namespaces "
+    echo "========================================="
+
+    # Run helm list -A to list all releases across all namespaces
+    if helm list -A --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --kube-context "$KUBESLICE_CONTROLLER_KUBECONTEXT" > /dev/null 2>&1; then
+        echo "🔍 **Helm List Output (All Namespaces)**:"
+        helm list -A --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --kube-context "$KUBESLICE_CONTROLLER_KUBECONTEXT" || echo "⚠️ Warning: Failed to list Helm releases across all namespaces."
+    else
+        echo "⚠️ Warning: Unable to run helm list -A."
+    fi
+
+    echo "========================================="
+    echo "          🏁 Summary Output Complete      "
+    echo "========================================="
 }
 
 
@@ -1415,9 +1968,9 @@ prepare_worker_values_file() {
         echo "  namespace=$namespace"
         echo "  release_name=$release_name"
         echo "  chart_name=$chart_name"
-	    echo "  controller_kubeconfig_path=$controller_kubeconfig_path"
-	    echo "  controller_context_arg=$controller_context_arg"
-	    echo "  project_ns=kubeslice-$project_name"
+	echo "  controller_kubeconfig_path=$controller_kubeconfig_path"
+	echo "  controller_context_arg=$controller_context_arg"
+	echo "  project_ns=kubeslice-$project_name"
         echo "-----------------------------------------"
 
         echo "-----------------------------------------"
@@ -1696,6 +2249,83 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
 else
     echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
 fi
+
+# Check if the enable_custom_apps flag is defined and set to true
+enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
+
+if [ "$enable_custom_apps" = "true" ]; then
+    echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."
+    
+    # Check if the manifests section is defined
+    manifests_exist=$(yq e '.manifests // "null"' "$EGS_INPUT_YAML")
+
+    if [ "$manifests_exist" = "null" ]; then
+        echo "⚠️  No 'manifests' section found in the YAML file. Skipping manifest application."
+    else
+        manifests_length=$(yq e '.manifests | length' "$EGS_INPUT_YAML")
+        
+        if [ "$manifests_length" -eq 0 ]; then
+            echo "⚠️  'manifests' section is defined but contains no entries. Skipping manifest application."
+        else
+            for index in $(seq 0 $((manifests_length - 1))); do
+                echo "🔄 Applying manifest $((index + 1)) of $manifests_length..."
+                
+                appname=$(yq e ".manifests[$index].appname" "$EGS_INPUT_YAML")
+                manifest=$(yq e ".manifests[$index].manifest" "$EGS_INPUT_YAML")
+                overrides_yaml=$(yq e ".manifests[$index].overrides_yaml" "$EGS_INPUT_YAML")
+                inline_yaml=$(yq e ".manifests[$index].inline_yaml" "$EGS_INPUT_YAML")
+                use_global_kubeconfig=$(yq e ".manifests[$index].use_global_kubeconfig" "$EGS_INPUT_YAML")
+                kubeconfig=$(yq e ".manifests[$index].kubeconfig" "$EGS_INPUT_YAML")
+                kubecontext=$(yq e ".manifests[$index].kubecontext" "$EGS_INPUT_YAML")
+                skip_installation=$(yq e ".manifests[$index].skip_installation" "$EGS_INPUT_YAML")
+                verify_install=$(yq e ".manifests[$index].verify_install" "$EGS_INPUT_YAML")
+                verify_install_timeout=$(yq e ".manifests[$index].verify_install_timeout" "$EGS_INPUT_YAML")
+                skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$EGS_INPUT_YAML")
+                namespace=$(yq e ".manifests[$index].namespace" "$EGS_INPUT_YAML")
+
+                # Create a temporary YAML with only the current manifest entry
+                temp_yaml="$INSTALLATION_FILES_PATH/temp_manifest_$index.yaml"
+                yq e ".manifests = [ .manifests[$index] ]" "$EGS_INPUT_YAML" > "$temp_yaml"
+
+                # Call apply_manifests_from_yaml function for each manifest
+                apply_manifests_from_yaml "$temp_yaml"
+
+                # Clean up temporary YAML file
+                rm -f "$temp_yaml"
+            done
+        fi
+    fi
+else
+    echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."
+fi
+
+
+# Identify the cloud provider and perform cloud-specific installations if cloud_install is defined
+if [ -n "$CLOUD_INSTALL" ]; then
+    cloud_provider=$(identify_cloud_provider)
+    cloud_install_array=($(load_cloud_install_config "$cloud_provider" "$EGS_INPUT_YAML"))
+    if [ ${#cloud_install_array[@]} -gt 0 ]; then
+        handle_cloud_installation "$cloud_provider" "${cloud_install_array[@]}"
+    else
+       echo "⚠️  No cloud-specific installations found for $cloud_provider. Skipping."
+    fi
+else
+    echo "⏩ Cloud-specific installations are disabled or not defined."
+fi
+
+# Validate the run_commands flag before invoking the function
+run_commands=$(yq e '.run_commands // "false"' "$EGS_INPUT_YAML")
+
+if [ "$run_commands" != "true" ]; then
+    echo "⏩ Command execution is disabled (run_commands is not true). Skipping."
+else
+    # Call the function if validation passes
+    run_k8s_commands_from_yaml "$EGS_INPUT_YAML"
+fi
+
+
+trap display_summary EXIT
+
 
 
 echo "========================================="
