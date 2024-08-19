@@ -87,7 +87,7 @@ Before you begin, ensure the following steps are completed:
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
 
-6. **Update the Worker Values with Grafana LB External IP:**
+6. **Update the inline-values of kubeslice-worker-egs in `egs-installer-config.yaml` with Grafana LB External IP:**
    - Fetch the external IP using the following command:
      ```bash
      kubectl get svc prometheus-grafana -n monitoring
