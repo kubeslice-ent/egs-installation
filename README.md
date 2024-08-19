@@ -70,8 +70,8 @@ Here's how the installation steps should be updated after the third point to inc
    - Replace `<controller_cluster_endpoint>` with the actual endpoint of your controller cluster.
 
 4. **Modify the `kubeslice-worker-egs` Values:**
-   - Update the `kubeslice-worker-egs-values` configuration with the `kube cluster endpoint` or `apiserver endpoint` accessible from the `kubeslice-controller` cluster.
-   - Add or modify the following section in the `egs-installer-config.yaml` file:
+   - Update the `kubeslice-worker-egs` configuration with the `kube cluster endpoint` or `apiserver endpoint` accessible from the `kubeslice-controller` cluster.
+   - Add or modify the following `kubeslice-worker-egs` section in the `egs-installer-config.yaml` file:
 
      ```yaml
      inline_values:  # Inline Helm values for the worker chart
