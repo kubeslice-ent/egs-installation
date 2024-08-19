@@ -18,9 +18,9 @@ Before you begin, ensure the following steps are completed:
 
 2. **Required Binaries:**
    - Verify that the following binaries are installed and available in your system's `PATH`:
-     - **yq** 📄 (minimum version: 4.0.0)
+     - **yq** 📄 (minimum version: 4.44.2)
      - **helm** 🛠️ (minimum version: 3.15.0)
-     - **kubectl** ⚙️ (minimum version: 1.20.0)
+     - **kubectl** ⚙️ (minimum version: 1.23.6)
      - **jq** 📦 (minimum version: 1.6.0)
 
 3. **Kubernetes Access:**
