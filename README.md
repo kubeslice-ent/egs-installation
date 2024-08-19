@@ -9,8 +9,6 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 ## Getting Started
 
-Welcome to the EGS Installation Guide! This document will help you set up your environment and run the EGS installation script successfully.
-
 ### Prerequisites
 
 Before you begin, ensure the following steps are completed:
@@ -73,8 +71,6 @@ Before you begin, ensure the following steps are completed:
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
 ---
-
-This guide now includes instructions for modifying the `kubeslice-controller-egs` values with the correct cluster endpoint, ensuring that everything is configured properly.
 
 ## 🛠️ Configuration details
 
