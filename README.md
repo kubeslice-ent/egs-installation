@@ -106,7 +106,7 @@ Before you begin, ensure the following steps are completed:
        metrics:
          insecure: true  # Allow insecure connections for metrics
      ```
-6. **Run the Installation Script Again to upgrade wokrer:**
+6. **Run the Installation Script Again to apply the patch:**
    - Execute the installation script using the following command:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
