@@ -1364,6 +1364,8 @@ fi
 if [ -n "$EGS_INPUT_YAML" ]; then
     if command -v yq &> /dev/null; then
         parse_yaml "$EGS_INPUT_YAML"
+	echo " calling validate_paths..."
+    	validate_paths
     else
         echo "❌ yq command not found. Please install yq to use the --input-yaml option."
         exit 1
@@ -1372,8 +1374,6 @@ fi
 
 # Run prerequisite checks if precheck is enabled
 if [ "$PRECHECK" = "true" ]; then
-   echo " calling validate_paths..."
-    validate_paths
     prerequisite_check
 fi
 
