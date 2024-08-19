@@ -2260,6 +2260,11 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     fi
 fi
 
+# Run Kubeslice pre-checks if enabled
+if [ "$KUBESLICE_PRECHECK" = "true" ]; then
+    kubeslice_pre_check
+fi
+
 
 # Process kubeslice-controller installation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
