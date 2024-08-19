@@ -74,17 +74,17 @@ Here's how the installation steps should be updated after the third point to inc
    - Add or modify the following section in the `egs-installer-config.yaml` file:
 
      ```yaml
-    inline_values:  # Inline Helm values for the worker chart
-      cluster:
-        name: worker-1  # Name of the worker cluster (MANDATORY)
-        endpoint: "<worker_cluster_endpoint>"  # Kube cluster or API server endpoint accessible from the controller cluster (MANDATORY)
-      kubesliceNetworking:
-        enabled: false  # Disable Kubeslice networking for this worker
-      egs:
-        prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-        grafanaDashboardBaseUrl: "http://grafana-test"  # Grafana dashboard base URL
-      metrics:
-        insecure: true  # Allow insecure connections for metrics
+     inline_values:  # Inline Helm values for the worker chart
+       cluster:
+         name: worker-1  # Name of the worker cluster (MANDATORY)
+         endpoint: "<worker_cluster_endpoint>"  # Kube cluster or API server endpoint accessible from the controller cluster (MANDATORY)
+       kubesliceNetworking:
+         enabled: false  # Disable Kubeslice networking for this worker
+       egs:
+         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+         grafanaDashboardBaseUrl: "http://grafana-test"  # Grafana dashboard base URL
+       metrics:
+         insecure: true  # Allow insecure connections for metrics
      ```
 
 6. **Run the Installation Script:**
