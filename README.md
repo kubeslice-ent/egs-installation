@@ -25,6 +25,8 @@ Before you begin, ensure the following steps are completed:
 
 3. **Kubernetes Access:**
    - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
+   - 
+---
 
 ### Installation Steps
 
@@ -35,7 +37,7 @@ Before you begin, ensure the following steps are completed:
      ```
 
 2. **Modify the Configuration File:**
-   - Navigate to the cloned repository and locate the input configuration YAML file. `egs-installer-config.yaml`
+   - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`.
    - Update the following mandatory parameters:
      - **Image Pull Secrets:**
        - Insert the image pull secrets received via email as part of the registration process:
@@ -49,27 +51,46 @@ Before you begin, ensure the following steps are completed:
        - Set the global `kubeconfig` and `kubecontext` parameters:
          ```yaml
          global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
-         global_kubecontext: ""  # Global kubecontext(MANDATORY)
+         global_kubecontext: ""  # Global kubecontext (MANDATORY)
          ```
 
 3. **Modify the kubeslice-controller-egs Values:**
-   - Navigate to the configuration file where the `inline_values` are defined, typically within the Helm values file for `kubeslice-controller-egs`.
+   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-controller-egs`.
    - Update the `endpoint` field under `kubeslice.controller` with the fetched `cluster_endpoint` value.
 
-   Here’s how the updated section might look:
+     ```yaml
+     inline_values:  # Inline Helm values for the controller chart
+       kubeslice:
+         controller: 
+           endpoint: "<controller_cluster_endpoint>"  # Endpoint of the controller API server (MANDATORY)
+     ```
 
-   ```yaml
-   inline_values:  # Inline Helm values for the controller chart
-     kubeslice:
-       controller: 
-         endpoint: "<cluster_endpoint>"  # Endpoint of the controller API server (MANDATORY)
-   ```
+   - Replace `<controller_cluster_endpoint>` with the actual endpoint of your controller cluster.
 
-4. **Run the Installation Script:**
+4. **Modify the `kubeslice-worker-egs` Values:**
+   - Update the `kubeslice-worker-egs` configuration with the `kube cluster endpoint` or `apiserver endpoint` accessible from the `kubeslice-controller` cluster.
+   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-worker-egs`.
+
+     ```yaml
+     inline_values:  # Inline Helm values for the worker chart
+       cluster:
+         name: worker-1  # Name of the worker cluster (MANDATORY)
+         endpoint: "<worker_cluster_endpoint>"  # Kube cluster or API server endpoint accessible from the controller cluster (MANDATORY)
+       kubesliceNetworking:
+         enabled: false  # Disable Kubeslice networking for this worker
+       egs:
+         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+         grafanaDashboardBaseUrl: "http://grafana-test"  # Grafana dashboard base URL
+       metrics:
+         insecure: true  # Allow insecure connections for metrics
+     ```
+
+6. **Run the Installation Script:**
    - Execute the installation script using the following command:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
+
 ---
 
 ## 🛠️ Configuration details
