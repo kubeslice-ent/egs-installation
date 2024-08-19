@@ -76,7 +76,7 @@ Before you begin, ensure the following steps are completed:
          enabled: false  # Disable Kubeslice networking for this worker
        egs:
          prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-         grafanaDashboardBaseUrl: http://<grafana-lb>/d/Oxed_c6Wz  # Grafana dashboard base URL
+         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
        metrics:
          insecure: true  # Allow insecure connections for metrics
      ```
@@ -102,7 +102,7 @@ Before you begin, ensure the following steps are completed:
          enabled: false  # Disable Kubeslice networking for this worker
        egs:
          prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-         grafanaDashboardBaseUrl: http://<grafana-lb>/d/Oxed_c6Wz
+         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
        metrics:
          insecure: true  # Allow insecure connections for metrics
      ```
