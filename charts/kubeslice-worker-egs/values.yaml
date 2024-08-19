@@ -18,8 +18,8 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: latest-feature-egs-visualization
-  pullPolicy: Always
+  tag: 1.1.0
+  pullPolicy: IfNotPresent
   logLevel: INFO
 
 egs:
@@ -105,4 +105,4 @@ global:
 
 # enable/disable network component installation
 kubesliceNetworking:
-  enabled: true
+  enabled: false

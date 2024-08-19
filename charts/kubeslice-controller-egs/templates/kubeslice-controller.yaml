@@ -5912,38 +5912,59 @@ spec:
     - name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: WorkerSliceRoleBinding is the Schema for the workerslicerolebindings API
+          description: WorkerSliceRoleBinding is the Schema for the workerslicerolebindings
+            API
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
               type: string
             bindings:
               description: RoleBinding references a role, but does not contain it.
               properties:
                 applyTo:
-                  description: ApplyTo contains information about the namespace and the Subjects.
+                  description: ApplyTo contains information about the namespace and
+                    the Subjects.
                   items:
-                    description: ApplyTo contains information about the namespace and the Subjects. It adds who information via Subjects and namespace information by which namespace it exists in.
+                    description: ApplyTo contains information about the namespace and
+                      the Subjects. It adds who information via Subjects and namespace
+                      information by which namespace it exists in.
                     properties:
                       namespace:
-                        description: Namespace of the referenced object.  If the object kind is non-namespace, such as "User" or "Group", and this value is not empty the Authorizer should report an error.
+                        description: Namespace of the referenced object.  If the object
+                          kind is non-namespace, such as "User" or "Group", and this
+                          value is not empty the Authorizer should report an error.
                         type: string
                       subjects:
-                        description: Subjects holds references to the objects the role applies to.
+                        description: Subjects holds references to the objects the role
+                          applies to.
                         items:
-                          description: Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference, or a value for non-objects such as user and group names.
+                          description: Subject contains a reference to the object or
+                            user identities a role binding applies to.  This can either
+                            hold a direct API object reference, or a value for non-objects
+                            such as user and group names.
                           properties:
                             apiGroup:
-                              description: APIGroup holds the API group of the referenced subject. Defaults to "" for ServiceAccount subjects. Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
+                              description: APIGroup holds the API group of the referenced
+                                subject. Defaults to "" for ServiceAccount subjects.
+                                Defaults to "rbac.authorization.k8s.io" for User and
+                                Group subjects.
                               type: string
                             kind:
-                              description: Kind of object being referenced. Values defined by this API group are "User", "Group", and "ServiceAccount". If the Authorizer does not recognized the kind value, the Authorizer should report an error.
+                              description: Kind of object being referenced. Values defined
+                                by this API group are "User", "Group", and "ServiceAccount".
+                                If the Authorizer does not recognized the kind value,
+                                the Authorizer should report an error.
                               type: string
                             name:
                               description: Name of the object being referenced.
                               type: string
                             namespace:
-                              description: Namespace of the referenced object.  If the object kind is non-namespace, such as "User" or "Group", and this value is not empty the Authorizer should report an error.
+                              description: Namespace of the referenced object.  If the
+                                object kind is non-namespace, such as "User" or "Group",
+                                and this value is not empty the Authorizer should report
+                                an error.
                               type: string
                           required:
                             - kind
@@ -5955,30 +5976,45 @@ spec:
                   type: array
                 rules:
                   items:
-                    description: PolicyRule holds information that describes a policy rule, but does not contain information about who the rule applies to or which namespace the rule applies to.
+                    description: PolicyRule holds information that describes a policy
+                      rule, but does not contain information about who the rule applies
+                      to or which namespace the rule applies to.
                     properties:
                       apiGroups:
-                        description: APIGroups is the name of the APIGroup that contains the resources.  If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. "" represents the core API group and "*" represents all API groups.
+                        description: APIGroups is the name of the APIGroup that contains
+                          the resources.  If multiple API groups are specified, any
+                          action requested against one of the enumerated resources in
+                          any API group will be allowed.
                         items:
                           type: string
                         type: array
                       nonResourceURLs:
-                        description: NonResourceURLs is a set of partial urls that a user should have access to.  *s are allowed, but only as the full, final step in the path Since non-resource URLs are not namespaced, this field is only applicable for ClusterRoles referenced from a ClusterRoleBinding. Rules can either apply to API resources (such as "pods" or "secrets") or non-resource URL paths (such as "/api"),  but not both.
+                        description: NonResourceURLs is a set of partial urls that a
+                          user should have access to.  *s are allowed, but only as the
+                          full, final step in the path Since non-resource URLs are not
+                          namespaced, this field is only applicable for ClusterRoles
+                          referenced from a ClusterRoleBinding. Rules can either apply
+                          to API resources (such as "pods" or "secrets") or non-resource
+                          URL paths (such as "/api"),  but not both.
                         items:
                           type: string
                         type: array
                       resourceNames:
-                        description: ResourceNames is an optional white list of names that the rule applies to.  An empty set means that everything is allowed.
+                        description: ResourceNames is an optional white list of names
+                          that the rule applies to.  An empty set means that everything
+                          is allowed.
                         items:
                           type: string
                         type: array
                       resources:
-                        description: Resources is a list of resources this rule applies to. '*' represents all resources.
+                        description: Resources is a list of resources this rule applies
+                          to. '*' represents all resources.
                         items:
                           type: string
                         type: array
                       verbs:
-                        description: Verbs is a list of Verbs that apply to ALL the ResourceKinds contained in this rule. '*' represents all verbs.
+                        description: Verbs is a list of Verbs that apply to ALL the
+                          ResourceKinds contained in this rule. '*' represents all verbs.
                         items:
                           type: string
                         type: array
@@ -5988,7 +6024,9 @@ spec:
                   type: array
               type: object
             kind:
-              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
               type: string
             metadata:
               type: object
@@ -6007,14 +6045,16 @@ spec:
                 roleRefCondition:
                   properties:
                     condition:
-                      description: Condition defines conditions of the RoleRef, one of INVALID_RULE, INVALID_ROLE_BINDING.
+                      description: Condition defines conditions of the RoleRef, one
+                        of INVALID_RULE, INVALID_ROLE_BINDING.
                       type: string
                     lastUpdateTime:
                       description: The last time this condition was updated.
                       format: date-time
                       type: string
                     message:
-                      description: A human-readable message indicating details about the transition.
+                      description: A human-readable message indicating details about
+                        the transition.
                       type: string
                     reason:
                       description: The reason for the condition's last transition.
@@ -6023,7 +6063,10 @@ spec:
                       description: Name, APIGroup and Kind of the RoleRef
                       properties:
                         apiVersion:
-                          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                          description: 'APIVersion defines the versioned schema of this
+                          representation of an object. Servers should convert recognized
+                          schemas to the latest internal value, and may reject unrecognized
+                          values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                           type: string
                         kind:
                           description: Kind is the type of resource being referenced
@@ -6046,7 +6089,6 @@ spec:
                     - roleRef
                     - status
                   type: object
-                type: object
                 sliceSATokens:
                   description: CA.crt and token for every serviceaccount we create.
                     for every namespace
@@ -6064,6 +6106,7 @@ spec:
                         type: string
                     type: object
                   type: array
+              type: object
           type: object
       served: true
       storage: true

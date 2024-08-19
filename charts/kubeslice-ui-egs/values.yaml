@@ -11,12 +11,12 @@ kubeTally:
 kubeslice:
   ui:
     image: kubeslice-ui-ent-egs
-    tag: latest-feature-egs
-    pullPolicy: Always
+    tag: 1.1.0
+    pullPolicy: IfNotPresent
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: latest-feature-egs
-    pullPolicy: Always
+    tag: 1.1.0
+    pullPolicy: IfNotPresent
   dashboard:
     image: kubeslice-kubernetes-dashboard
     tag: v2.5.1
@@ -34,8 +34,8 @@ kubeslice:
       # nodePort:
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: latest-feature-master-egs
-    pullPolicy: Always
+    tag: 1.1.0
+    pullPolicy: IfNotPresent
 
   workerinstaller:
     image: worker-installer
