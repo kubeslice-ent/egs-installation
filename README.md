@@ -90,7 +90,7 @@ Before you begin, ensure the following steps are completed:
 6. **Update the Worker Values with Grafana LB External IP:**
    - Fetch the external IP using the following command:
      ```bash
-     kubectl get svc prometheus-kube-prometheus-prometheus -n monitoring
+     kubectl get svc prometheus-grafana -n monitoring
      ```
    - Update the `kubeslice-worker-egs` configuration with the Grafana LB external IP:
      ```yaml
