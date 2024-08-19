@@ -35,8 +35,8 @@ global_image_pull_secret:
 add_node_label: true  # Enable node labeling during installation
 
 # Kubeconfig settings
-global_kubeconfig: ""  # Path to the global kubeconfig file (used if no specific kubeconfig is provided)
-global_kubecontext: ""  # Global kubecontext to use; if empty, the default context will be used
+global_kubeconfig: ""  # Path to the global kubeconfig file (used if no specific kubeconfig is provided) - Mandatory
+global_kubecontext: ""  # Global kubecontext to use - Mandatory
 use_global_context: true  # If true, use the global kubecontext for all operations by default
 
 # Enable or disable specific stages of the installation

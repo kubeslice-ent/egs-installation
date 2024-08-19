@@ -2235,6 +2235,11 @@ if [ -z "$EGS_INPUT_YAML" ]; then
     exit 1
 fi
 
+# Run prerequisite checks if precheck is enabled
+if [ "$PRECHECK" = "true" ]; then
+    prerequisite_check
+fi
+
 # If an input YAML file is provided, parse it
 if [ -n "$EGS_INPUT_YAML" ]; then
     if command -v yq &> /dev/null; then
@@ -2245,16 +2250,6 @@ if [ -n "$EGS_INPUT_YAML" ]; then
         echo "❌ yq command not found. Please install yq to use the --input-yaml option."
         exit 1
     fi
-fi
-
-# Run prerequisite checks if precheck is enabled
-if [ "$PRECHECK" = "true" ]; then
-    prerequisite_check
-fi
-
-# Run Kubeslice pre-checks if enabled
-if [ "$KUBESLICE_PRECHECK" = "true" ]; then
-    kubeslice_pre_check
 fi
 
 
