@@ -1850,32 +1850,105 @@ fi
         echo "$values_file_path"
     }
 
-    # Determine which image pull secrets to use (global or chart-level)
-    local image_pull_secret_repo_used=${image_pull_secret_repo:-$GLOBAL_IMAGE_PULL_SECRET_REPO}
-    local image_pull_secret_username_used=${image_pull_secret_username:-$GLOBAL_IMAGE_PULL_SECRET_USERNAME}
-    local image_pull_secret_password_used=${image_pull_secret_password:-$GLOBAL_IMAGE_PULL_SECRET_PASSWORD}
-    local image_pull_secret_email_used=${image_pull_secret_email:-$GLOBAL_IMAGE_PULL_SECRET_EMAIL}
 
-    # Chart-level overrides for imagePullSecrets
-    if [ -n "$image_pull_secret_repo" ] || [ -n "$image_pull_secret_username" ] || [ -n "$image_pull_secret_password" ]; then
-        image_pull_secret_repo_used=$image_pull_secret_repo
-        image_pull_secret_username_used=$image_pull_secret_username
-        image_pull_secret_password_used=$image_pull_secret_password
-        image_pull_secret_email_used=$image_pull_secret_email
+
+# Print the entire inline_values for debugging
+echo "🔍 Debugging: Full inline_values content"
+echo "$inline_values"
+
+# Extract the values from inline_values using yq
+image_pull_secret_repo=$(echo "$inline_values" | yq e '.imagePullSecrets.repository' -)
+image_pull_secret_username=$(echo "$inline_values" | yq e '.imagePullSecrets.username' -)
+image_pull_secret_password=$(echo "$inline_values" | yq e '.imagePullSecrets.password' -)
+
+# Handle cases where yq might return 'null' or an empty value
+if [ "$image_pull_secret_repo" = "null" ] || [ -z "$image_pull_secret_repo" ]; then
+    image_pull_secret_repo=""
+fi
+
+if [ "$image_pull_secret_username" = "null" ] || [ -z "$image_pull_secret_username" ]; then
+    image_pull_secret_username=""
+fi
+
+if [ "$image_pull_secret_password" = "null" ] || [ -z "$image_pull_secret_password" ]; then
+    image_pull_secret_password=""
+fi
+
+# Debugging print to confirm parsed inline values
+echo "🔍 Debugging: Parsed inline chart values"
+echo "   Parsed Repository: $image_pull_secret_repo"
+echo "   Parsed Username: $image_pull_secret_username"
+echo "   Parsed Password: [Hidden for security]"
+
+# Determine which image pull secrets to use (global or chart-level)
+# If the inline values exist and are non-empty, use them; otherwise, fall back to global values
+
+# Check and assign the repository URL
+if [ -n "$image_pull_secret_repo" ]; then
+    image_pull_secret_repo_used=$image_pull_secret_repo
+    echo "✔️ Using inline repository URL: $image_pull_secret_repo_used"
+else
+    image_pull_secret_repo_used=$GLOBAL_IMAGE_PULL_SECRET_REPO
+    if [ -n "$image_pull_secret_repo_used" ]; then
+        echo "✔️ Using global repository URL: $image_pull_secret_repo_used"
+    else
+        echo "❌ Error: Repository URL is missing!"
+        echo "🔗 You can generate the required image pull secrets using the following URL:"
+        echo "   https://avesha.io/kubeslice-registration"
+        exit 1
     fi
+fi
 
-    # Create inline values for imagePullSecrets only if they are defined
-    image_pull_secrets_inline=""
-    if [ -n "$image_pull_secret_repo_used" ] && [ -n "$image_pull_secret_username_used" ] && [ -n "$image_pull_secret_password_used" ]; then
-        image_pull_secrets_inline=$(cat <<EOF
+# Check and assign the username
+if [ -n "$image_pull_secret_username" ]; then
+    image_pull_secret_username_used=$image_pull_secret_username
+    echo "✔️ Using inline username: $image_pull_secret_username_used"
+else
+    image_pull_secret_username_used=$GLOBAL_IMAGE_PULL_SECRET_USERNAME
+    if [ -n "$image_pull_secret_username_used" ]; then
+        echo "✔️ Using global username: $image_pull_secret_username_used"
+    else
+        echo "❌ Error: Username is missing!"
+        echo "🔗 You can generate the required image pull secrets using the following URL:"
+	echo "   https://avesha.io/kubeslice-registration"
+        exit 1
+    fi
+fi
+
+# Check and assign the password
+if [ -n "$image_pull_secret_password" ]; then
+    image_pull_secret_password_used=$image_pull_secret_password
+    echo "✔️ Using inline password: [Hidden for security]"
+else
+    image_pull_secret_password_used=$GLOBAL_IMAGE_PULL_SECRET_PASSWORD
+    if [ -n "$image_pull_secret_password_used" ]; then
+        echo "✔️ Using global password: [Hidden for security]"
+    else
+        echo "❌ Error: Password is missing!"
+        echo "🔗 You can generate the required image pull secrets using the following URL:"
+	echo "   https://avesha.io/kubeslice-registration"
+        exit 1
+    fi
+fi
+
+# Final debugging print to confirm values used
+echo "📋 Final values being used:"
+echo "   Repository: $image_pull_secret_repo_used"
+echo "   Username: $image_pull_secret_username_used"
+echo "   Password: [Hidden for security]"
+
+# Create inline values for imagePullSecrets
+image_pull_secrets_inline=$(cat <<EOF
 imagePullSecrets:
   repository: $image_pull_secret_repo_used
   username: $image_pull_secret_username_used
   password: $image_pull_secret_password_used
-  email: $image_pull_secret_email_used
 EOF
 )
-    fi
+
+echo "✅ Image pull secrets configured successfully."
+
+
 
     # Define the base Helm command
     helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path"
