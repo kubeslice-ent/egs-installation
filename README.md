@@ -39,7 +39,7 @@ Before you begin, ensure the following steps are completed:
      ```
 
 2. **Modify the Configuration File:**
-   - Navigate to the cloned repository and locate the input configuration YAML file. i.e `egs-installer-config.yaml`
+   - Navigate to the cloned repository and locate the input configuration YAML file. `egs-installer-config.yaml`
    - Update the following mandatory parameters:
      - **Image Pull Secrets:**
        - Insert the image pull secrets received via email as part of the registration process:
