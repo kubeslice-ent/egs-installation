@@ -2275,6 +2275,57 @@ else
     run_k8s_commands_from_yaml "$EGS_INPUT_YAML"
 fi
 
+
+
+# Check if the enable_custom_apps flag is defined and set to true
+enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
+
+if [ "$enable_custom_apps" = "true" ]; then
+    echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."
+    
+    # Check if the manifests section is defined
+    manifests_exist=$(yq e '.manifests // "null"' "$EGS_INPUT_YAML")
+
+    if [ "$manifests_exist" = "null" ]; then
+        echo "⚠️  No 'manifests' section found in the YAML file. Skipping manifest application."
+    else
+        manifests_length=$(yq e '.manifests | length' "$EGS_INPUT_YAML")
+        
+        if [ "$manifests_length" -eq 0 ]; then
+            echo "⚠️  'manifests' section is defined but contains no entries. Skipping manifest application."
+        else
+            for index in $(seq 0 $((manifests_length - 1))); do
+                echo "🔄 Applying manifest $((index + 1)) of $manifests_length..."
+                
+                appname=$(yq e ".manifests[$index].appname" "$EGS_INPUT_YAML")
+                manifest=$(yq e ".manifests[$index].manifest" "$EGS_INPUT_YAML")
+                overrides_yaml=$(yq e ".manifests[$index].overrides_yaml" "$EGS_INPUT_YAML")
+                inline_yaml=$(yq e ".manifests[$index].inline_yaml" "$EGS_INPUT_YAML")
+                use_global_kubeconfig=$(yq e ".manifests[$index].use_global_kubeconfig" "$EGS_INPUT_YAML")
+                kubeconfig=$(yq e ".manifests[$index].kubeconfig" "$EGS_INPUT_YAML")
+                kubecontext=$(yq e ".manifests[$index].kubecontext" "$EGS_INPUT_YAML")
+                skip_installation=$(yq e ".manifests[$index].skip_installation" "$EGS_INPUT_YAML")
+                verify_install=$(yq e ".manifests[$index].verify_install" "$EGS_INPUT_YAML")
+                verify_install_timeout=$(yq e ".manifests[$index].verify_install_timeout" "$EGS_INPUT_YAML")
+                skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$EGS_INPUT_YAML")
+                namespace=$(yq e ".manifests[$index].namespace" "$EGS_INPUT_YAML")
+
+                # Create a temporary YAML with only the current manifest entry
+                temp_yaml="$INSTALLATION_FILES_PATH/temp_manifest_$index.yaml"
+                yq e ".manifests = [ .manifests[$index] ]" "$EGS_INPUT_YAML" > "$temp_yaml"
+
+                # Call apply_manifests_from_yaml function for each manifest
+                apply_manifests_from_yaml "$temp_yaml"
+
+                # Clean up temporary YAML file
+                rm -f "$temp_yaml"
+            done
+        fi
+    fi
+else
+    echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."
+fi
+
 # Process kubeslice-controller installation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
     install_or_upgrade_helm_chart "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_CHART_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_REPO_URL" "$KUBESLICE_CONTROLLER_USERNAME" "$KUBESLICE_CONTROLLER_PASSWORD" "$KUBESLICE_CONTROLLER_VALUES_FILE" "$KUBESLICE_CONTROLLER_INLINE_VALUES" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_CONTROLLER_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_CONTROLLER_VERSION" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
@@ -2411,54 +2462,6 @@ create_values_file() {
     echo "$values_file_path"
 }
 
-# Check if the enable_custom_apps flag is defined and set to true
-enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
-
-if [ "$enable_custom_apps" = "true" ]; then
-    echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."
-    
-    # Check if the manifests section is defined
-    manifests_exist=$(yq e '.manifests // "null"' "$EGS_INPUT_YAML")
-
-    if [ "$manifests_exist" = "null" ]; then
-        echo "⚠️  No 'manifests' section found in the YAML file. Skipping manifest application."
-    else
-        manifests_length=$(yq e '.manifests | length' "$EGS_INPUT_YAML")
-        
-        if [ "$manifests_length" -eq 0 ]; then
-            echo "⚠️  'manifests' section is defined but contains no entries. Skipping manifest application."
-        else
-            for index in $(seq 0 $((manifests_length - 1))); do
-                echo "🔄 Applying manifest $((index + 1)) of $manifests_length..."
-                
-                appname=$(yq e ".manifests[$index].appname" "$EGS_INPUT_YAML")
-                manifest=$(yq e ".manifests[$index].manifest" "$EGS_INPUT_YAML")
-                overrides_yaml=$(yq e ".manifests[$index].overrides_yaml" "$EGS_INPUT_YAML")
-                inline_yaml=$(yq e ".manifests[$index].inline_yaml" "$EGS_INPUT_YAML")
-                use_global_kubeconfig=$(yq e ".manifests[$index].use_global_kubeconfig" "$EGS_INPUT_YAML")
-                kubeconfig=$(yq e ".manifests[$index].kubeconfig" "$EGS_INPUT_YAML")
-                kubecontext=$(yq e ".manifests[$index].kubecontext" "$EGS_INPUT_YAML")
-                skip_installation=$(yq e ".manifests[$index].skip_installation" "$EGS_INPUT_YAML")
-                verify_install=$(yq e ".manifests[$index].verify_install" "$EGS_INPUT_YAML")
-                verify_install_timeout=$(yq e ".manifests[$index].verify_install_timeout" "$EGS_INPUT_YAML")
-                skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$EGS_INPUT_YAML")
-                namespace=$(yq e ".manifests[$index].namespace" "$EGS_INPUT_YAML")
-
-                # Create a temporary YAML with only the current manifest entry
-                temp_yaml="$INSTALLATION_FILES_PATH/temp_manifest_$index.yaml"
-                yq e ".manifests = [ .manifests[$index] ]" "$EGS_INPUT_YAML" > "$temp_yaml"
-
-                # Call apply_manifests_from_yaml function for each manifest
-                apply_manifests_from_yaml "$temp_yaml"
-
-                # Clean up temporary YAML file
-                rm -f "$temp_yaml"
-            done
-        fi
-    fi
-else
-    echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."
-fi
 
 # Process additional applications if any are defined and installation is enabled
 if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" -gt 0 ]; then
