@@ -2235,6 +2235,12 @@ if [ -z "$EGS_INPUT_YAML" ]; then
     exit 1
 fi
 
+
+# Run prerequisite checks if precheck is enabled
+if [ "$PRECHECK" = "true" ]; then
+    prerequisite_check
+fi
+
 # If an input YAML file is provided, parse it
 if [ -n "$EGS_INPUT_YAML" ]; then
     if command -v yq &> /dev/null; then
@@ -2247,10 +2253,6 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     fi
 fi
 
-# Run prerequisite checks if precheck is enabled
-if [ "$PRECHECK" = "true" ]; then
-    prerequisite_check
-fi
 
 # Process kubeslice-controller installation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
