@@ -54,9 +54,9 @@ Before you begin, ensure the following steps are completed:
          global_kubecontext: ""  # Global kubecontext (MANDATORY)
          ```
 
-3. **Modify the `kubeslice-controller-egs` Values:**
-   - In the `egs-installer-config.yaml` file, update the `inline_values` to set the endpoint for the `kubeslice-controller-egs`.
-   - Add or modify the following section:
+3. **Modify the kubeslice-controller-egs Values:**
+   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-controller-egs`.
+   - Update the `endpoint` field under `kubeslice.controller` with the fetched `cluster_endpoint` value.
 
      ```yaml
      inline_values:  # Inline Helm values for the controller chart
@@ -69,7 +69,7 @@ Before you begin, ensure the following steps are completed:
 
 4. **Modify the `kubeslice-worker-egs` Values:**
    - Update the `kubeslice-worker-egs` configuration with the `kube cluster endpoint` or `apiserver endpoint` accessible from the `kubeslice-controller` cluster.
-   - Add or modify the following `kubeslice-worker-egs` section in the `egs-installer-config.yaml` file:
+   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-worker-egs`.
 
      ```yaml
      inline_values:  # Inline Helm values for the worker chart
