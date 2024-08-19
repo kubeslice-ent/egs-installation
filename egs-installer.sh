@@ -1622,14 +1622,14 @@ fetch_k8s_cluster_endpoint() {
 
     # Extract the cluster name associated with the context
     local cluster_name
-    cluster_name=$(kubectl --kubeconfig="$kubeconfig" --context="$kubecontext" config view -o jsonpath='{.contexts[?(@.name == "'$kubecontext'")].context.cluster}')
+    cluster_name=$(kubectl --kubeconfig="$kubeconfig" config view -o jsonpath='{.contexts[?(@.name == "'$kubecontext'")].context.cluster}')
 
     echo "  Extracted cluster name from context: $cluster_name"
 
     # Now fetch the endpoint for that cluster
     local endpoint
     echo "🔍 Attempting to fetch endpoint from kubeconfig..."
-    endpoint=$(kubectl --kubeconfig="$kubeconfig" config view -o jsonpath='{.clusters[?(@.name == "'$cluster_name'")].cluster.server}')
+    endpoint=$(kubectl config view --kubeconfig "$kubeconfig" -o jsonpath='{.clusters[0].cluster.server}')
     echo "  Output from kubectl config view: '$endpoint'"
 
     if [ -z "$endpoint" ]; then
