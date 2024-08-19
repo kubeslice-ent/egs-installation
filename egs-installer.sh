@@ -43,55 +43,65 @@ prerequisite_check() {
     local MIN_JQ_VERSION="1.6"
     local MIN_KUBECTL_VERSION="1.20.0"
 
-    # Iterate over the list and check if each binary is available and has the correct version
-    for binary in "${REQUIRED_BINARIES[@]}"; do
-        if ! command -v $binary &> /dev/null; then
-            echo -e "\n❌ Error: $binary is not installed or not available in PATH."
+    # Check yq
+    if ! command -v yq &> /dev/null; then
+        echo -e "\n❌ Error: yq is not installed or not available in PATH."
+        prerequisites_met=false
+    else
+        echo "✔️ yq is installed."
+        installed_version=$(yq --version | awk '{print $NF}')
+        if [[ $(echo -e "$MIN_YQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_YQ_VERSION" ]]; then
+            echo -e "\n❌ Error: yq version $installed_version is below the minimum required version $MIN_YQ_VERSION."
             prerequisites_met=false
         else
-            echo "✔️ $binary is installed."
-
-            # Version checks
-            case $binary in
-                yq)
-                    installed_version=$($binary --version | awk '{print $NF}')
-                    if [[ $(echo -e "$MIN_YQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_YQ_VERSION" ]]; then
-                        echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_YQ_VERSION."
-                        prerequisites_met=false
-                    else
-                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
-                    fi
-                    ;;
-                helm)
-                    installed_version=$($binary version --short | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | tr -d 'v')
-                    if [[ $(echo -e "$MIN_HELM_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_HELM_VERSION" ]]; then
-                        echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_HELM_VERSION."
-                        prerequisites_met=false
-                    else
-                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
-                    fi
-                    ;;
-                jq)
-                    installed_version=$($binary --version | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?')
-                    if [[ $(echo -e "$MIN_JQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_JQ_VERSION" ]]; then
-                        echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_JQ_VERSION."
-                        prerequisites_met=false
-                    else
-                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
-                    fi
-                    ;;
-                kubectl)
-                    installed_version=$($binary version --client --output=json | jq -r .clientVersion.gitVersion | tr -d 'v')
-                    if [[ $(echo -e "$MIN_KUBECTL_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_KUBECTL_VERSION" ]]; then
-                        echo -e "\n❌ Error: $binary version $installed_version is below the minimum required version $MIN_KUBECTL_VERSION."
-                        prerequisites_met=false
-                    else
-                        echo "✔️ $binary version $installed_version meets or exceeds the requirement."
-                    fi
-                    ;;
-            esac
+            echo "✔️ yq version $installed_version meets or exceeds the requirement."
         fi
-    done
+    fi
+
+    # Check helm
+    if ! command -v helm &> /dev/null; then
+        echo -e "\n❌ Error: helm is not installed or not available in PATH."
+        prerequisites_met=false
+    else
+        echo "✔️ helm is installed."
+        installed_version=$(helm version --short | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | tr -d 'v')
+        if [[ $(echo -e "$MIN_HELM_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_HELM_VERSION" ]]; then
+            echo -e "\n❌ Error: helm version $installed_version is below the minimum required version $MIN_HELM_VERSION."
+            prerequisites_met=false
+        else
+            echo "✔️ helm version $installed_version meets or exceeds the requirement."
+        fi
+    fi
+
+    # Check jq
+    if ! command -v jq &> /dev/null; then
+        echo -e "\n❌ Error: jq is not installed or not available in PATH."
+        prerequisites_met=false
+    else
+        echo "✔️ jq is installed."
+        installed_version=$(jq --version | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?')
+        if [[ $(echo -e "$MIN_JQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_JQ_VERSION" ]]; then
+            echo -e "\n❌ Error: jq version $installed_version is below the minimum required version $MIN_JQ_VERSION."
+            prerequisites_met=false
+        else
+            echo "✔️ jq version $installed_version meets or exceeds the requirement."
+        fi
+    fi
+
+    # Check kubectl
+    if ! command -v kubectl &> /dev/null; then
+        echo -e "\n❌ Error: kubectl is not installed or not available in PATH."
+        prerequisites_met=false
+    else
+        echo "✔️ kubectl is installed."
+        installed_version=$(kubectl version --client --output=json | jq -r .clientVersion.gitVersion | tr -d 'v')
+        if [[ $(echo -e "$MIN_KUBECTL_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_KUBECTL_VERSION" ]]; then
+            echo -e "\n❌ Error: kubectl version $installed_version is below the minimum required version $MIN_KUBECTL_VERSION."
+            prerequisites_met=false
+        else
+            echo "✔️ kubectl version $installed_version meets or exceeds the requirement."
+        fi
+    fi
 
     if [ "$prerequisites_met" = false ]; then
         echo "❌ Please install the missing prerequisites or update to the required versions and try again."
@@ -102,6 +112,7 @@ prerequisite_check() {
     echo "✔️ Prerequisite check complete."
     echo ""
 }
+
 
 
 
@@ -2237,6 +2248,8 @@ fi
 
 # If an input YAML file is provided, parse it
 if [ -n "$EGS_INPUT_YAML" ]; then
+   # Run prerequisite checks if precheck is enabled
+     prerequisite_check
     if command -v yq &> /dev/null; then
         parse_yaml "$EGS_INPUT_YAML"
 	echo " calling validate_paths..."
@@ -2247,10 +2260,6 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     fi
 fi
 
-# Run prerequisite checks if precheck is enabled
-if [ "$PRECHECK" = "true" ]; then
-    prerequisite_check
-fi
 
 # Process kubeslice-controller installation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
