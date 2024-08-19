@@ -31,7 +31,7 @@ Before you begin, make sure you have completed the following steps:
      ```
 
 2. **Modify the Configuration File:**
-   - Navigate to the cloned repository and locate the input configuration YAML file.
+   - Navigate to the cloned repository and locate the input configuration YAML file. i.e `egs-installer-config.yaml`
    - Update the following mandatory parameters:
      a. **Image Pull Secrets:**
      - Insert the image pull secrets received via email as part of the registration process.
@@ -51,7 +51,7 @@ Before you begin, make sure you have completed the following steps:
 3. **Run the Installation Script:**
    - Execute the installation script using the following command:
      ```bash
-     ./egs-installer.sh --input-yaml <yaml_file>
+     ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
 
 ## 🛠️ Configuration details
