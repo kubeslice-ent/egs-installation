@@ -2048,7 +2048,6 @@ echo "✅ Image pull secrets configured successfully."
     echo "-----------------------------------------"
     echo "✔️ Helm chart installation or upgrade complete."
 }
-
 create_projects_in_controller() {
     echo "🚀 Starting project creation in controller cluster..."
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
@@ -2259,7 +2258,6 @@ if [ -n "$EGS_INPUT_YAML" ]; then
         exit 1
     fi
 fi
-
 
 # Process kubeslice-controller installation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
