@@ -95,9 +95,6 @@ Here's how the installation steps should be updated after the third point to inc
 
 ---
 
-This updated guide now includes the step for modifying the `kubeslice-worker-egs-values` to ensure the correct configuration of the worker cluster endpoint.
----
-
 ## 🛠️ Configuration details
 
 The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installer-config.yaml`) with descriptions for each section.
