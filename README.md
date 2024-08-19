@@ -25,9 +25,7 @@ Before you begin, ensure the following steps are completed:
 
 3. **Kubernetes Access:**
    - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
-
-Here's how the installation steps should be updated after the third point to include the modification of the `kubeslice-worker-egs-values` with the `kube cluster endpoint` or `apiserver endpoint` accessible from the `kubeslice-controller` cluster:
-
+   - 
 ---
 
 ### Installation Steps
