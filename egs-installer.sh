@@ -41,7 +41,7 @@ prerequisite_check() {
     local MIN_YQ_VERSION="4.44.2"
     local MIN_HELM_VERSION="3.15.0"
     local MIN_JQ_VERSION="1.6"
-    local MIN_KUBECTL_VERSION="1.20.0"
+    local MIN_KUBECTL_VERSION="1.23.6"
 
     # Check yq
     if ! command -v yq &> /dev/null; then
