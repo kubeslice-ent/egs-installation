@@ -55,9 +55,9 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: latest-feature-workloads
+    tag: 1.0.1
     # Image pull policy for the KubeSlice controller
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
     kubeTally:
       # Interval for cleaning up metrics when a worker cluster stops communicating
@@ -66,7 +66,7 @@ kubeslice:
     migration:
       minio:
         # Whether to install MinIO
-        install: "true"
+        install: "false"
         # Storage size for MinIO
         storage: 1Gi
         # Username for MinIO
@@ -107,8 +107,8 @@ egs:
     # Image name for the gateway certificates generator
     image: gpr-manager
     # Image tag for the gateway certificates generator
-    tag: latest-feature-master-egs
-    imagePullPolicy: Always
+    tag: 1.1.0
+    imagePullPolicy: IfNotPresent
 
 prometheus:
   # Secrets for image pulling

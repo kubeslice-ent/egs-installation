@@ -42,14 +42,14 @@ Before you begin, ensure the following steps are completed:
          ```yaml
          global_image_pull_secret:
            repository: "https://index.docker.io/v1/"
-           username: ""  # Global Docker registry username
-           password: ""  # Global Docker registry password
+           username: ""  # Global Docker registry username (MANDATORY)
+           password: ""  # Global Docker registry password (MANDATORY)
          ```
      - **Kubernetes Configuration:**
        - Set the global `kubeconfig` and `kubecontext` parameters:
          ```yaml
-         global_kubeconfig: ""  # Relative path to global kubeconfig file
-         global_kubecontext: ""  # Global kubecontext, if empty, the default context will be used
+         global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
+         global_kubecontext: ""  # Global kubecontext(MANDATORY)
          ```
 
 3. **Modify the kubeslice-controller-egs Values:**
@@ -62,7 +62,7 @@ Before you begin, ensure the following steps are completed:
    inline_values:  # Inline Helm values for the controller chart
      kubeslice:
        controller: 
-         endpoint: "<cluster_endpoint>"  # Endpoint of the controller API server
+         endpoint: "<cluster_endpoint>"  # Endpoint of the controller API server (MANDATORY)
    ```
 
 4. **Run the Installation Script:**
