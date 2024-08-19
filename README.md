@@ -54,7 +54,7 @@ Before you begin, ensure the following steps are completed:
          ```
 
 3. **Modify the kubeslice-controller-egs Values:**
-   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-controller-egs`.
+   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-controller-egs` in `egs-installer-config.yaml`.
    - Update the `endpoint` field under `kubeslice.controller` with the fetched `cluster_endpoint` value.
      ```yaml
      inline_values:  # Inline Helm values for the controller chart
@@ -66,7 +66,7 @@ Before you begin, ensure the following steps are completed:
 
 4. **Modify the `kubeslice-worker-egs` Values:**
    - Update the `kubeslice-worker-egs` configuration with the `kube cluster endpoint` or `apiserver endpoint` accessible from the `kubeslice-controller` cluster.
-   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-worker-egs`.
+   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-worker-egs` section in `egs-installer-config.yaml`.
      ```yaml
      inline_values:  # Inline Helm values for the worker chart
        cluster:
@@ -92,7 +92,7 @@ Before you begin, ensure the following steps are completed:
      ```bash
      kubectl get svc prometheus-grafana -n monitoring
      ```
-   - Update the `kubeslice-worker-egs` configuration with the Grafana LB external IP:
+   - Update the `kubeslice-worker-egs` configuration with the Grafana LB external IP in `egs-installer-config.yaml` :
      ```yaml
      inline_values:  # Inline Helm values for the worker chart
        cluster:
