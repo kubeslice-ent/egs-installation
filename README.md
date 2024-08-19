@@ -48,7 +48,7 @@ Before you begin, ensure the following steps are completed:
      - **Kubernetes Configuration:**
        - Set the global `kubeconfig` and `kubecontext` parameters:
          ```yaml
-         global_kubeconfig: ""  # Relative path to global kubeconfig file (MANDATORY)
+         global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
          global_kubecontext: ""  # Global kubecontext(MANDATORY)
          ```
 
