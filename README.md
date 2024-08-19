@@ -5,18 +5,56 @@
 
 The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
 
-## ✅ Prerequisites
+### Prerequisites
 
-Before using the EGS Installer Script, ensure that the following prerequisites are met:
+Before you begin, make sure you have completed the following steps:
 
-- **Binaries**: The following binaries must be installed and available in your system's `PATH`:
-  - `yq` 📄 (minimum version: 4.0.0)
-  - `helm` 🛠️ (minimum version: 3.15.0)
-  - `kubectl` ⚙️ (minimum version: 1.20.0)
-  - `jq` 📦 (minimum version: 1.6.0)
-- **Kubernetes Access**: Ensure you have administrative access to the necessary Kubernetes clusters with the appropriate kubeconfig files.
+1. **Registration:**
+   - Complete the registration process at [Avesha Registration](https://avesha.io/kubeslice-registration) to receive the image pull secrets required for running the script.
 
-## 🛠️ Configuration
+2. **Required Binaries:**
+   - Ensure the following binaries are installed and available in your system's `PATH`:
+     - **yq** 📄 (minimum version: 4.0.0)
+     - **helm** 🛠️ (minimum version: 3.15.0)
+     - **kubectl** ⚙️ (minimum version: 1.20.0)
+     - **jq** 📦 (minimum version: 1.6.0)
+
+3. **Kubernetes Access:**
+   - Ensure you have administrative access to the necessary Kubernetes clusters with the appropriate `kubeconfig` files.
+
+### Installation Steps
+
+1. **Clone the Repository:**
+   - Start by cloning the EGS installation Git repository:
+     ```bash
+     git clone https://github.com/kubeslice-ent/egs-installation
+     ```
+
+2. **Modify the Configuration File:**
+   - Navigate to the cloned repository and locate the input configuration YAML file.
+   - Update the following mandatory parameters:
+     a. **Image Pull Secrets:**
+     - Insert the image pull secrets received via email as part of the registration process.
+       ```yaml
+       global_image_pull_secret:
+         repository: "https://index.docker.io/v1/"
+         username: ""  # Global Docker registry username
+         password: ""  # Global Docker registry password
+       ```
+     b. **Kubernetes Configuration:**
+     - Set the global `kubeconfig` and `kubecontext` parameters:
+       ```yaml
+       global_kubeconfig: ""  # Relative path to global kubeconfig file
+       global_kubecontext: ""  # Global kubecontext, if empty, the default context will be used
+       ```
+
+3. **Run the Installation Script:**
+   - Execute the installation script using the following command:
+     ```bash
+     ./egs-installer.sh --input-yaml <yaml_file>
+     ```
+
+## 🛠️ Configuration details
 
 The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installer-config.yaml`) with descriptions for each section.
 
