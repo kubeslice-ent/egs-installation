@@ -2224,6 +2224,66 @@ EOF
     echo "✔️ Worker values file preparation complete."
 }
 
+
+
+# Function to create a values file from inline values, ensuring uniqueness
+create_values_file() {
+    local inline_values=$1
+    local base_name=$2
+    local values_file_path="$run_dir/${base_name}_values.yaml"
+    local counter=1
+
+    # Ensure the file name is unique by appending an incremental number if needed
+    while [ -f "$values_file_path" ]; do
+        values_file_path="$run_dir/${base_name}_$counter.yaml"
+        counter=$((counter + 1))
+    done
+
+    # Use yq to parse and create a valid YAML file
+    echo "$inline_values" | yq eval -P - > "$values_file_path"
+    
+    # Return the file path to be used in Helm command
+    echo "$values_file_path"
+}
+
+
+# Function to create a unique directory for each run
+create_unique_run_dir() {
+    local base_dir="$INSTALLATION_FILES_PATH/run"
+    local release_name=$1
+    local run_dir="$base_dir/helm_run_$(date +%Y%m%d_%H%M%S)_${release_name}"
+
+    mkdir -p "$run_dir"
+    echo "$run_dir"
+}
+
+# Function to merge prepared values and inline values into the final combined file
+
+
+# Function to merge inline values and handle any missing flags
+merge_inline_values() {
+    local prepared_values_file=$1
+    local inline_values=$2
+    local base_name=$3
+    local run_dir=$4
+    local combined_values_file="$run_dir/${base_name}_combined_values.yaml"
+
+    # Copy the prepared values file to the combined file
+    if [ -n "$prepared_values_file" ] && [ -f "$prepared_values_file" ]; then
+        cp "$prepared_values_file" "$combined_values_file"
+    else
+        touch "$combined_values_file"
+    fi
+
+    # Merge the inline values into the combined values file
+    if [ -n "$inline_values" ]; then
+        echo "$inline_values" | yq eval -P - >> "$combined_values_file"
+    fi
+
+    echo "$combined_values_file"
+}
+
+
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -2276,7 +2336,6 @@ else
 fi
 
 
-
 # Check if the enable_custom_apps flag is defined and set to true
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
 
@@ -2326,141 +2385,6 @@ else
     echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."
 fi
 
-# Process kubeslice-controller installation if enabled
-if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
-    install_or_upgrade_helm_chart "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_CHART_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_REPO_URL" "$KUBESLICE_CONTROLLER_USERNAME" "$KUBESLICE_CONTROLLER_PASSWORD" "$KUBESLICE_CONTROLLER_VALUES_FILE" "$KUBESLICE_CONTROLLER_INLINE_VALUES" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_CONTROLLER_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_CONTROLLER_VERSION" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
-fi
-
-
-# Process kubeslice-ui installation if enabled
-if [ "$ENABLE_INSTALL_UI" = "true" ]; then
-    install_or_upgrade_helm_chart "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_CHART_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_REPO_URL" "$KUBESLICE_UI_USERNAME" "$KUBESLICE_UI_PASSWORD" "$KUBESLICE_UI_VALUES_FILE" "$KUBESLICE_UI_INLINE_VALUES" "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_UI_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_UI_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_UI_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_UI_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_UI_VERSION" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
-fi
-
-
-
-# Create projects in the controller cluster before deploying workers
-if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
-    create_projects_in_controller
-fi
-
-# Register clusters in the controller cluster after projects have been created
-if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
-    register_clusters_in_controller
-fi
-
-# Fetch secrets from the controller cluster if enabled
-#if [ "$ENABLE_FETCH_CONTROLLER_SECRETS" = "true" ]; then
-#    fetch_controller_secrets
-#fi
-
-
-# Function to merge inline values and handle any missing flags
-
-# Function to create a unique directory for each run
-create_unique_run_dir() {
-    local base_dir="$INSTALLATION_FILES_PATH/run"
-    local release_name=$1
-    local run_dir="$base_dir/helm_run_$(date +%Y%m%d_%H%M%S)_${release_name}"
-
-    mkdir -p "$run_dir"
-    echo "$run_dir"
-}
-
-# Function to merge prepared values and inline values into the final combined file
-
-
-
-merge_inline_values() {
-    local prepared_values_file=$1
-    local inline_values=$2
-    local base_name=$3
-    local run_dir=$4
-    local combined_values_file="$run_dir/${base_name}_combined_values.yaml"
-
-    # Copy the prepared values file to the combined file
-    if [ -n "$prepared_values_file" ] && [ -f "$prepared_values_file" ]; then
-        cp "$prepared_values_file" "$combined_values_file"
-    else
-        touch "$combined_values_file"
-    fi
-
-    # Merge the inline values into the combined values file
-    if [ -n "$inline_values" ]; then
-        echo "$inline_values" | yq eval -P - >> "$combined_values_file"
-    fi
-
-    echo "$combined_values_file"
-}
-
-# Inside the loop where you process each worker
-if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
-    for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
-        IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<< "${KUBESLICE_WORKERS[$worker_index]}"
-
-        if [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "true" ]; then
-             prepare_worker_values_file
-         fi
-         
-        # Prepare the path to the prepared values file
-        prepared_values_file="$INSTALLATION_FILES_PATH/${worker_name}_final_values.yaml"
-
-        # Extract and output inline values
-        inline_values=$(yq e ".kubeslice_worker_egs[$worker_index].inline_values | select(. != null)" "$EGS_INPUT_YAML")
-        echo "Inline values extracted for worker $worker_name:"
-        echo "$inline_values"
-
-        # Extract worker-specific values for the new parameters
-        worker=$(yq e ".kubeslice_worker_egs[$worker_index]" "$EGS_INPUT_YAML")
-        worker_name=$(echo "$worker" | yq e '.name' -)
-        skip_installation=$(echo "$worker" | yq e '.skip_installation' -)
-        use_global_kubeconfig=$(echo "$worker" | yq e '.use_global_kubeconfig' -)
-        namespace=$(echo "$worker" | yq e '.namespace' -)
-        release_name=$(echo "$worker" | yq e '.release' -)
-        chart_name=$(echo "$worker" | yq e '.chart' -)
-        values_file=$(echo "$worker" | yq e '.values_file' -)
-        helm_flags=$(echo "$worker" | yq e '.helm_flags' -)
-        verify_install=$(echo "$worker" | yq e '.verify_install' -)
-        verify_install_timeout=$(echo "$worker" | yq e '.verify_install_timeout' -)
-        skip_on_verify_fail=$(echo "$worker" | yq e '.skip_on_verify_fail' -)
-        version=$(echo "$worker" | yq e '.version' -)
-        specific_use_local_charts=$(echo "$worker" | yq e '.specific_use_local_charts' -)
-
-        # Create a unique directory for this worker's run
-        run_dir=$(create_unique_run_dir "$release_name")
-
-        # Merge the prepared values and inline values
-        combined_values_file=$(merge_inline_values "$prepared_values_file" "$inline_values" "$worker_name" "$run_dir")
-
-        # Debugging: Output the combined values file to check the contents
-        echo "Generated combined values file for $worker_name:"
-        cat "$combined_values_file"
-
-        # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
-        install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$combined_values_file" "" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$LOCAL_CHARTS_PATH" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
-    done
-fi
-
-
-# Function to create a values file from inline values, ensuring uniqueness
-create_values_file() {
-    local inline_values=$1
-    local base_name=$2
-    local values_file_path="$run_dir/${base_name}_values.yaml"
-    local counter=1
-
-    # Ensure the file name is unique by appending an incremental number if needed
-    while [ -f "$values_file_path" ]; do
-        values_file_path="$run_dir/${base_name}_$counter.yaml"
-        counter=$((counter + 1))
-    done
-
-    # Use yq to parse and create a valid YAML file
-    echo "$inline_values" | yq eval -P - > "$values_file_path"
-    
-    # Return the file path to be used in Helm command
-    echo "$values_file_path"
-}
 
 
 # Process additional applications if any are defined and installation is enabled
@@ -2512,6 +2436,83 @@ else
     echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
 fi
 
+
+# Process kubeslice-controller installation if enabled
+if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
+    install_or_upgrade_helm_chart "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_CHART_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_REPO_URL" "$KUBESLICE_CONTROLLER_USERNAME" "$KUBESLICE_CONTROLLER_PASSWORD" "$KUBESLICE_CONTROLLER_VALUES_FILE" "$KUBESLICE_CONTROLLER_INLINE_VALUES" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_CONTROLLER_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_CONTROLLER_VERSION" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
+fi
+
+
+# Process kubeslice-ui installation if enabled
+if [ "$ENABLE_INSTALL_UI" = "true" ]; then
+    install_or_upgrade_helm_chart "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_CHART_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_REPO_URL" "$KUBESLICE_UI_USERNAME" "$KUBESLICE_UI_PASSWORD" "$KUBESLICE_UI_VALUES_FILE" "$KUBESLICE_UI_INLINE_VALUES" "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_UI_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_UI_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_UI_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_UI_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_UI_VERSION" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
+fi
+
+
+# Create projects in the controller cluster before deploying workers
+if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+    create_projects_in_controller
+fi
+
+# Register clusters in the controller cluster after projects have been created
+if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
+    register_clusters_in_controller
+fi
+
+# Fetch secrets from the controller cluster if enabled
+#if [ "$ENABLE_FETCH_CONTROLLER_SECRETS" = "true" ]; then
+#    fetch_controller_secrets
+#fi
+
+
+
+# Inside the loop where you process each worker
+if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
+    for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
+        IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<< "${KUBESLICE_WORKERS[$worker_index]}"
+
+        if [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "true" ]; then
+             prepare_worker_values_file
+         fi
+         
+        # Prepare the path to the prepared values file
+        prepared_values_file="$INSTALLATION_FILES_PATH/${worker_name}_final_values.yaml"
+
+        # Extract and output inline values
+        inline_values=$(yq e ".kubeslice_worker_egs[$worker_index].inline_values | select(. != null)" "$EGS_INPUT_YAML")
+        echo "Inline values extracted for worker $worker_name:"
+        echo "$inline_values"
+
+        # Extract worker-specific values for the new parameters
+        worker=$(yq e ".kubeslice_worker_egs[$worker_index]" "$EGS_INPUT_YAML")
+        worker_name=$(echo "$worker" | yq e '.name' -)
+        skip_installation=$(echo "$worker" | yq e '.skip_installation' -)
+        use_global_kubeconfig=$(echo "$worker" | yq e '.use_global_kubeconfig' -)
+        namespace=$(echo "$worker" | yq e '.namespace' -)
+        release_name=$(echo "$worker" | yq e '.release' -)
+        chart_name=$(echo "$worker" | yq e '.chart' -)
+        values_file=$(echo "$worker" | yq e '.values_file' -)
+        helm_flags=$(echo "$worker" | yq e '.helm_flags' -)
+        verify_install=$(echo "$worker" | yq e '.verify_install' -)
+        verify_install_timeout=$(echo "$worker" | yq e '.verify_install_timeout' -)
+        skip_on_verify_fail=$(echo "$worker" | yq e '.skip_on_verify_fail' -)
+        version=$(echo "$worker" | yq e '.version' -)
+        specific_use_local_charts=$(echo "$worker" | yq e '.specific_use_local_charts' -)
+
+        # Create a unique directory for this worker's run
+        run_dir=$(create_unique_run_dir "$release_name")
+
+        # Merge the prepared values and inline values
+        combined_values_file=$(merge_inline_values "$prepared_values_file" "$inline_values" "$worker_name" "$run_dir")
+
+        # Debugging: Output the combined values file to check the contents
+        echo "Generated combined values file for $worker_name:"
+        cat "$combined_values_file"
+
+        # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
+        install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$combined_values_file" "" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$LOCAL_CHARTS_PATH" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+    done
+fi
 
 
 # Identify the cloud provider and perform cloud-specific installations if cloud_install is defined
