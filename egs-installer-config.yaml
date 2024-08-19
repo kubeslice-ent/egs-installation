@@ -165,8 +165,7 @@ additional_apps:
     inline_values:  # Inline Helm values for Prometheus
       prometheus:
         service:
-          type: LoadBalancer
-          port: 32270
+          type: ClusterIP
         prometheusSpec:
           additionalScrapeConfigs:
           - job_name: tgi
