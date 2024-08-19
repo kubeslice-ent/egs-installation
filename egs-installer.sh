@@ -2464,8 +2464,6 @@ fi
 #    fetch_controller_secrets
 #fi
 
-
-
 # Inside the loop where you process each worker
 if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
