@@ -1,7 +1,10 @@
 apiVersion: v2
-appVersion: 0.1.2
 description: Kubernetes manager for kubeslice
-home: https://avesha.io/products/product-slice
+name: kubeslice-ui-egs
+type: application
+maintainers:
+  - name: Avesha
+    email: support@avesha.io
 keywords:
 - multicloud
 - multi cloud
@@ -24,9 +27,6 @@ keywords:
 - infrastructure
 - application
 kubeVersion: '>= 1.19.0-0'
-maintainers:
-- email: support@avesha.io
-  name: Avesha
-name: kubeslice-ui-egs
-type: application
-version: 0.1.2
+home: https://avesha.io/products/product-slice
+version: 1.0.0
+appVersion: 1.0.0

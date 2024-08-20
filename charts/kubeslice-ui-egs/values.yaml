@@ -11,20 +11,20 @@ kubeTally:
 kubeslice:
   ui:
     image: kubeslice-ui-ent-egs
-    tag: latest-feature-egs
-    pullPolicy: Always
+    tag: 1.1.1
+    pullPolicy: IfNotPresent
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: latest-feature-egs
-    pullPolicy: Always
+    tag: 1.1.1
+    pullPolicy: IfNotPresent
   dashboard:
     image: kubeslice-kubernetes-dashboard
     tag: v2.5.1
     pullPolicy: IfNotPresent
   uiproxy:
     image: kubeslice-ui-proxy-egs
-    tag: latest-feature-egs
-    pullPolicy: Always
+    tag: 1.1.0
+    pullPolicy: IfNotPresent
     service:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
       ## Ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
@@ -34,8 +34,8 @@ kubeslice:
       # nodePort:
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: latest-feature-master-egs
-    pullPolicy: Always
+    tag: 1.1.0
+    pullPolicy: IfNotPresent
 
   workerinstaller:
     image: worker-installer

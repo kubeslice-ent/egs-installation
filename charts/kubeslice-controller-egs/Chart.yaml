@@ -1,17 +1,11 @@
 apiVersion: v2
-appVersion: 0.1.2
-dependencies:
-- condition: global.kubeTally.enabled
-  name: kubetally
-  repository: file://./charts/kubetally
-  version: 1.*.*
-- condition: kubeslice.prometheus.enabled
-  name: prometheus
-  repository: file://./charts/prometheus
-  version: 25.*.*
+name: kubeslice-controller-egs
 description: Kubernetes multi-cluster/cloud fleet management controller using Kubeslice
-home: https://avesha.io/products/product-slice
 icon: https://avatars.githubusercontent.com/u/99859346?s=200&v=4
+type: application
+maintainers:
+  - name: Avesha
+    email: support@aveshasystems.com
 keywords:
 - multicloud
 - multi cloud
@@ -34,9 +28,15 @@ keywords:
 - infrastructure
 - application
 kubeVersion: '>= 1.19.0-0'
-maintainers:
-- email: support@aveshasystems.com
-  name: Avesha
-name: kubeslice-controller-egs
-type: application
-version: 0.1.2
+home: https://avesha.io/products/product-slice
+dependencies:
+  - name: kubetally
+    repository: file://./charts/kubetally
+    version: 1.*.*
+    condition: global.kubeTally.enabled
+  - name: prometheus
+    repository: file://./charts/prometheus
+    version: 25.*.*
+    condition: kubeslice.prometheus.enabled
+version: 1.0.0
+appVersion: 1.0.0

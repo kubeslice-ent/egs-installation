@@ -1,7 +1,7 @@
 operator:
   image: worker-operator-ent-egs
-  tag: latest-feature-workloads
-  pullPolicy: Always
+  tag: 1.1.0
+  pullPolicy: IfNotPresent
   logLevel: INFO
 
 ## Base64 encoded secret values from controller cluster
@@ -18,8 +18,8 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: latest-feature-egs-visualization
-  pullPolicy: Always
+  tag: 1.1.1
+  pullPolicy: IfNotPresent
   logLevel: INFO
 
 egs:
@@ -105,4 +105,4 @@ global:
 
 # enable/disable network component installation
 kubesliceNetworking:
-  enabled: true
+  enabled: false
