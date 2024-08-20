@@ -1,7 +1,7 @@
 operator:
   image: worker-operator-ent-egs
-  tag: latest-feature-workloads
-  pullPolicy: Always
+  tag: 1.1.0
+  pullPolicy: IfNotPresent
   logLevel: INFO
 
 ## Base64 encoded secret values from controller cluster
@@ -18,7 +18,7 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.1.0
+  tag: 1.1.1
   pullPolicy: IfNotPresent
   logLevel: INFO
 

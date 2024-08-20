@@ -1,17 +1,10 @@
 apiVersion: v2
-appVersion: 1.0.0
-dependencies:
-- condition: kubesliceNetworking.enabled
-  name: nsm
-  repository: file://./charts/nsm
-  version: 0.6.4
-- condition: kubesliceNetworking.enabled
-  name: netop
-  repository: file://./charts/netop
-  version: 0.2.0
-description: KubeSlice operator - A Helm chart for managing life-cycle management
-  of KubeSlice
-home: https://avesha.io/products/product-slice
+description:  KubeSlice operator - A Helm chart for managing life-cycle management of KubeSlice
+name: kubeslice-worker-egs
+type: application
+maintainers:
+  - name: Avesha
+    email: support@avesha.io
 keywords:
 - multicloud
 - multi cloud
@@ -34,9 +27,15 @@ keywords:
 - infrastructure
 - application
 kubeVersion: '>= 1.19.0-0'
-maintainers:
-- email: support@avesha.io
-  name: Avesha
-name: kubeslice-worker-egs
-type: application
+home: https://avesha.io/products/product-slice
+dependencies:
+  - name: nsm
+    repository: file://./charts/nsm
+    version: 0.6.4
+    condition: kubesliceNetworking.enabled
+  - name: netop
+    repository: file://./charts/netop
+    version: 0.2.0
+    condition: kubesliceNetworking.enabled
 version: 1.0.0
+appVersion: 1.0.0
