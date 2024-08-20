@@ -1128,17 +1128,26 @@ load_cloud_install_config() {
 
 apply_manifests_from_yaml() {
     local yaml_file=$1
-    local global_kubeconfig_path="${KUBECONFIG:-$GLOBAL_KUBECONFIG}"
-    local global_kubecontext="${KUBECONTEXT:-$GLOBAL_KUBECONTEXT}"
-    local base_path=$(yq e '.base_path' "$yaml_file")
+    local global_kubeconfig_path=""
+    if [ -z "$global_kubeconfig_path" ] || [ "$global_kubeconfig_path" = "null" ]; then
+        global_kubeconfig_path="$GLOBAL_KUBECONFIG"
+    fi
 
-    # Ensure base_path is absolute
-    base_path=$(realpath "${base_path:-.}")
+    local global_kubecontext=""
+    if [ -z "$global_kubecontext" ] || [ "$global_kubecontext" = "null" ]; then
+        global_kubecontext="$GLOBAL_KUBECONTEXT"
+    fi
+
+    local global_context_arg=""
+    if [ -n "$global_kubecontext" ] && [ "$global_kubecontext" != "null" ]; then
+        global_context_arg="--context $global_kubecontext"
+    fi
+    local base_path=$(yq e '.base_path' "$yaml_file")
 
     echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"
     echo "🔧 Global Variables:"
     echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
-    echo "  🌐 global_kubecontext=$global_kubecontext"
+    echo "  🌐  global_kubecontext=$global_kubecontext"
     echo "  🗂️  base_path=$base_path"
     echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
     echo "-----------------------------------------"
@@ -1175,19 +1184,17 @@ apply_manifests_from_yaml() {
         skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$yaml_file")
         namespace=$(yq e ".manifests[$index].namespace" "$yaml_file")
 
-        # Determine kubeconfig path and context
-        local kubeconfig_path=""
-        local context_arg=""
 
         if [ "$use_global_kubeconfig" = true ]; then
             kubeconfig_path="$global_kubeconfig_path"
+	    kubecontext=$global_kubecontext
             context_arg="--context $global_kubecontext"
         else
-            if [ -n "$kubeconfig" ] && [ "$kubeconfig" != "null" ]; then
-                kubeconfig_path="$base_path/$kubeconfig"
+            if [ -z "$kubeconfig" ] && [ "$kubeconfig" == "null" ]; then
+                kubeconfig_path="$global_kubeconfig_path"
             fi
-            if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
-                context_arg="--context $kubecontext"
+            if [ -z "$kubecontext" ] && [ "$kubecontext" == "null" ]; then
+                context_arg="--context $global_kubecontext"
             fi
         fi
 
@@ -1570,7 +1577,7 @@ display_summary() {
             ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
         fi
         if [ -n "$ui_proxy_url" ]; then
-            echo "🔗 **Kubeslice UI Proxy LoadBalancer URL**: $ui_proxy_url"
+            echo "🔗 **Kubeslice UI Proxy LoadBalancer URL**: https://$ui_proxy_url"
         else
             echo "⚠️ Warning: Kubeslice UI Proxy LoadBalancer URL not available."
         fi
