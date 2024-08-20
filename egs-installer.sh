@@ -24,7 +24,7 @@ wait_with_dots() {
     local message="$2"
     echo -n "$message"
     trap "exit" INT
-    for ((i=0; i<$duration; i++)); do
+    for ((i = 0; i < $duration; i++)); do
         echo -n "."
         sleep 1
     done
@@ -44,7 +44,7 @@ prerequisite_check() {
     local MIN_KUBECTL_VERSION="1.23.6"
 
     # Check yq
-    if ! command -v yq &> /dev/null; then
+    if ! command -v yq &>/dev/null; then
         echo -e "\n❌ Error: yq is not installed or not available in PATH."
         prerequisites_met=false
     else
@@ -59,7 +59,7 @@ prerequisite_check() {
     fi
 
     # Check helm
-    if ! command -v helm &> /dev/null; then
+    if ! command -v helm &>/dev/null; then
         echo -e "\n❌ Error: helm is not installed or not available in PATH."
         prerequisites_met=false
     else
@@ -74,7 +74,7 @@ prerequisite_check() {
     fi
 
     # Check jq
-    if ! command -v jq &> /dev/null; then
+    if ! command -v jq &>/dev/null; then
         echo -e "\n❌ Error: jq is not installed or not available in PATH."
         prerequisites_met=false
     else
@@ -89,7 +89,7 @@ prerequisite_check() {
     fi
 
     # Check kubectl
-    if ! command -v kubectl &> /dev/null; then
+    if ! command -v kubectl &>/dev/null; then
         echo -e "\n❌ Error: kubectl is not installed or not available in PATH."
         prerequisites_met=false
     else
@@ -112,9 +112,6 @@ prerequisite_check() {
     echo "✔️ Prerequisite check complete."
     echo ""
 }
-
-
-
 
 # Function to validate if a given kubecontext is valid
 validate_kubecontext() {
@@ -242,7 +239,7 @@ kubeslice_pre_check() {
 
     # Iterate through each worker configuration and validate access if installation is not skipped
     for worker in "${KUBESLICE_WORKERS[@]}"; do
-        IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<< "$worker"
+        IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"$worker"
 
         if [ "$skip_installation" = "false" ]; then
             local kubeconfig_path="$kubeconfig"
@@ -289,7 +286,7 @@ kubeslice_pre_check() {
 
             worker_cluster_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" $context_arg -o jsonpath='{.clusters[0].cluster.server}')
             echo "✔️  Successfully accessed worker cluster '$worker_name'. Kubernetes endpoint: $worker_cluster_endpoint"
-            
+
             # Check for nodes labeled with 'kubeslice.io/node-type=gateway'
             echo "🔍 Checking for nodes labeled 'kubeslice.io/node-type=gateway' in worker cluster '$worker_name'..."
             gateway_node_count=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg -l kubeslice.io/node-type=gateway --no-headers | wc -l)
@@ -297,10 +294,10 @@ kubeslice_pre_check() {
             if [ "$gateway_node_count" -lt 1 ]; then
                 if [ "$ADD_NODE_LABEL" = "true" ]; then
                     echo "⚠️  No nodes labeled with 'kubeslice.io/node-type=gateway' found. Attempting to label nodes..."
-                    
+
                     # Attempt to label nodes with external IPs first
                     nodes_with_external_ips=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg -o jsonpath='{range .items[*]}{@.metadata.name} {@.status.addresses[?(@.type=="ExternalIP")].address}{"\n"}{end}' | grep -v '^\s*$' | awk '{print $1}' | head -n 2)
-                    
+
                     if [ -n "$nodes_with_external_ips" ]; then
                         echo "✔️  Nodes with external IPs found: $nodes_with_external_ips"
                         nodes_to_label=$nodes_with_external_ips
@@ -308,12 +305,12 @@ kubeslice_pre_check() {
                         echo "⚠️  No nodes with external IPs found. Falling back to any available nodes."
                         nodes_to_label=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg --no-headers | awk '{print $1}' | head -n 2)
                     fi
-                    
+
                     if [ -z "$nodes_to_label" ]; then
                         echo "❌ Error: No nodes available to label."
                         exit 1
                     fi
-                    
+
                     for node in $nodes_to_label; do
                         echo "🔧 Labeling node '$node' with 'kubeslice.io/node-type=gateway'..."
                         kubectl label node "$node" kubeslice.io/node-type=gateway --kubeconfig $kubeconfig_path $context_arg --overwrite
@@ -371,7 +368,7 @@ validate_paths() {
     # Check each worker's kubeconfig if worker installation is enabled
     if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         for worker in "${KUBESLICE_WORKERS[@]}"; do
-            IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<< "$worker"
+            IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"$worker"
 
             if [ "$skip_installation" = "false" ] && [ "$use_global_kubeconfig" != "true" ]; then
                 if [ -z "$kubeconfig" ] || [ "$kubeconfig" = "null" ] || [ ! -f "$kubeconfig" ]; then
@@ -401,7 +398,6 @@ validate_paths() {
 
 # Function to parse YAML using yq
 
-
 parse_yaml() {
     local yaml_file=$1
 
@@ -412,7 +408,7 @@ parse_yaml() {
     BASE_PATH=$(yq e '.base_path' "$yaml_file")
     if [ -z "$BASE_PATH" ] || [ "$BASE_PATH" = "null" ]; then
         echo "⚠️  BASE_PATH not specified. Defaulting to script directory."
-        BASE_PATH=$(dirname "$(realpath "$0")")  # Default to the script's directory
+        BASE_PATH=$(dirname "$(realpath "$0")") # Default to the script's directory
     fi
 
     # Ensure BASE_PATH is absolute
@@ -425,26 +421,25 @@ parse_yaml() {
     # Extract precheck flag
     PRECHECK=$(yq e '.precheck' "$yaml_file")
     if [ -z "$PRECHECK" ] || [ "$PRECHECK" = "null" ]; then
-        PRECHECK="true"  # Default to true if not specified
+        PRECHECK="true" # Default to true if not specified
     fi
 
     # Extract Kubeslice pre-check flag
     KUBESLICE_PRECHECK=$(yq e '.kubeslice_precheck' "$yaml_file")
     if [ -z "$KUBESLICE_PRECHECK" ] || [ "$KUBESLICE_PRECHECK" = "null" ]; then
-        KUBESLICE_PRECHECK="false"  # Default to false if not specified
+        KUBESLICE_PRECHECK="false" # Default to false if not specified
     fi
 
+    # Extract the add_node_label setting
+    ADD_NODE_LABEL=$(yq e '.add_node_label' "$yaml_file")
+    if [ -z "$ADD_NODE_LABEL" ] || [ "$ADD_NODE_LABEL" = "null" ]; then
+        ADD_NODE_LABEL="false" # Default to false if not specified
+    fi
 
-	# Extract the add_node_label setting
-	ADD_NODE_LABEL=$(yq e '.add_node_label' "$yaml_file")
-	if [ -z "$ADD_NODE_LABEL" ] || [ "$ADD_NODE_LABEL" = "null" ]; then
-    	ADD_NODE_LABEL="false"  # Default to false if not specified
-	fi
-
- # Extract cloud_install configuration
+    # Extract cloud_install configuration
     CLOUD_INSTALL=$(yq e '.cloud_install' "$yaml_file")
     if [ -z "$CLOUD_INSTALL" ] || [ "$CLOUD_INSTALL" = "null" ]; then
-       # echo "⚠️  CLOUD_INSTALL not specified. Skipping cloud-specific installations."
+        # echo "⚠️  CLOUD_INSTALL not specified. Skipping cloud-specific installations."
         CLOUD_INSTALL=""
     fi
 
@@ -463,23 +458,23 @@ parse_yaml() {
     # Verify install settings
     GLOBAL_VERIFY_INSTALL=$(yq e '.verify_install' "$yaml_file")
     if [ -z "$GLOBAL_VERIFY_INSTALL" ] || [ "$GLOBAL_VERIFY_INSTALL" = "null" ]; then
-        GLOBAL_VERIFY_INSTALL="true"  # Default to true if not specified
+        GLOBAL_VERIFY_INSTALL="true" # Default to true if not specified
     fi
 
     GLOBAL_VERIFY_INSTALL_TIMEOUT=$(yq e '.verify_install_timeout' "$yaml_file")
     if [ -z "$GLOBAL_VERIFY_INSTALL_TIMEOUT" ] || [ "$GLOBAL_VERIFY_INSTALL_TIMEOUT" = "null" ]; then
-        GLOBAL_VERIFY_INSTALL_TIMEOUT="600"  # Default to 10 minutes if not specified
+        GLOBAL_VERIFY_INSTALL_TIMEOUT="600" # Default to 10 minutes if not specified
     fi
 
     GLOBAL_SKIP_ON_VERIFY_FAIL=$(yq e '.skip_on_verify_fail' "$yaml_file")
     if [ -z "$GLOBAL_SKIP_ON_VERIFY_FAIL" ] || [ "$GLOBAL_SKIP_ON_VERIFY_FAIL" = "null" ]; then
-        GLOBAL_SKIP_ON_VERIFY_FAIL="false"  # Default to error out if not specified
+        GLOBAL_SKIP_ON_VERIFY_FAIL="false" # Default to error out if not specified
     fi
 
     # Extract the list of required binaries
     REQUIRED_BINARIES=($(yq e '.required_binaries[]' "$yaml_file"))
     if [ ${#REQUIRED_BINARIES[@]} -eq 0 ]; then
-        REQUIRED_BINARIES=("yq" "helm" "kubectl" "kubectx")  # Default list if none specified
+        REQUIRED_BINARIES=("yq" "helm" "kubectl" "kubectx") # Default list if none specified
     fi
 
     # Extract global settings with defaults
@@ -510,7 +505,7 @@ parse_yaml() {
     # Extract global context usage flag
     USE_GLOBAL_CONTEXT=$(yq e '.use_global_context' "$yaml_file")
     if [ -z "$USE_GLOBAL_CONTEXT" ] || [ "$USE_GLOBAL_CONTEXT" = "null" ]; then
-        USE_GLOBAL_CONTEXT="true"  # Default to true if not specified
+        USE_GLOBAL_CONTEXT="true" # Default to true if not specified
     fi
 
     echo "DEBUG: BASE_PATH=$BASE_PATH"
@@ -728,7 +723,7 @@ parse_yaml() {
     WORKERS_COUNT=$(yq e '.kubeslice_worker_egs | length' "$yaml_file")
 
     KUBESLICE_WORKERS=()
-    for ((i=0; i<WORKERS_COUNT; i++)); do
+    for ((i = 0; i < WORKERS_COUNT; i++)); do
         WORKER_NAME=$(yq e ".kubeslice_worker_egs[$i].name" "$yaml_file")
         WORKER_SKIP_INSTALLATION=$(yq e ".kubeslice_worker_egs[$i].skip_installation" "$yaml_file")
         WORKER_USE_GLOBAL_KUBECONFIG=$(yq e ".kubeslice_worker_egs[$i].use_global_kubeconfig" "$yaml_file")
@@ -819,7 +814,7 @@ parse_yaml() {
     PROJECTS_COUNT=$(yq e '.projects | length' "$yaml_file")
 
     KUBESLICE_PROJECTS=()
-    for ((i=0; i<PROJECTS_COUNT; i++)); do
+    for ((i = 0; i < PROJECTS_COUNT; i++)); do
         PROJECT_NAME=$(yq e ".projects[$i].name" "$yaml_file")
         PROJECT_USERNAME=$(yq e ".projects[$i].username" "$yaml_file")
         KUBESLICE_PROJECTS+=("$PROJECT_NAME|$PROJECT_USERNAME")
@@ -834,7 +829,7 @@ parse_yaml() {
     CLUSTER_REGISTRATION_COUNT=$(yq e '.cluster_registration | length' "$yaml_file")
 
     KUBESLICE_CLUSTER_REGISTRATIONS=()
-    for ((i=0; i<CLUSTER_REGISTRATION_COUNT; i++)); do
+    for ((i = 0; i < CLUSTER_REGISTRATION_COUNT; i++)); do
         CLUSTER_NAME=$(yq e ".cluster_registration[$i].cluster_name" "$yaml_file")
         PROJECT_NAME=$(yq e ".cluster_registration[$i].project_name" "$yaml_file")
         TELEMETRY_ENABLED=$(yq e ".cluster_registration[$i].telemetry.enabled" "$yaml_file")
@@ -845,17 +840,17 @@ parse_yaml() {
         KUBESLICE_CLUSTER_REGISTRATIONS+=("$CLUSTER_NAME|$PROJECT_NAME|$TELEMETRY_ENABLED|$TELEMETRY_ENDPOINT|$TELEMETRY_PROVIDER|$GEO_LOCATION_PROVIDER|$GEO_LOCATION_REGION")
     done
 
-# Extract global enable/disable flag for additional apps installation
+    # Extract global enable/disable flag for additional apps installation
     ENABLE_INSTALL_ADDITIONAL_APPS=$(yq e '.enable_install_additional_apps' "$yaml_file")
     if [ -z "$ENABLE_INSTALL_ADDITIONAL_APPS" ] || [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "null" ]; then
-        ENABLE_INSTALL_ADDITIONAL_APPS="true"  # Default to true if not specified
+        ENABLE_INSTALL_ADDITIONAL_APPS="true" # Default to true if not specified
     fi
 
- # Extract values for additional applications
+    # Extract values for additional applications
     ADDITIONAL_APPS_COUNT=$(yq e '.additional_apps | length' "$yaml_file")
 
     ADDITIONAL_APPS=()
-    for ((i=0; i<ADDITIONAL_APPS_COUNT; i++)); do
+    for ((i = 0; i < ADDITIONAL_APPS_COUNT; i++)); do
         APP_NAME=$(yq e ".additional_apps[$i].name" "$yaml_file")
         APP_SKIP_INSTALLATION=$(yq e ".additional_apps[$i].skip_installation" "$yaml_file")
         APP_USE_GLOBAL_KUBECONFIG=$(yq e ".additional_apps[$i].use_global_kubeconfig" "$yaml_file")
@@ -956,7 +951,7 @@ verify_pods_running() {
     echo "  pod_check_timeout=$pod_check_timeout seconds"
     echo "  skip_on_fail=$skip_on_fail"
     echo "-----------------------------------------"
-    
+
     # Print all resources in the namespace
     echo "📋 Listing all resources in namespace '$namespace'..."
     kubectl get all -n $namespace --kubeconfig $kubeconfig_path --context $kubecontext
@@ -990,7 +985,7 @@ verify_pods_running() {
 wait_with_dots() {
     local seconds=$1
     local message=$2
-    for ((i=0; i<seconds; i++)); do
+    for ((i = 0; i < seconds; i++)); do
         echo -n "⏳"
         sleep 1
     done
@@ -1020,7 +1015,7 @@ manage_helm_repo() {
                 if [[ $n -lt $max ]]; then
                     ((n++))
                     echo "⚠️  Command failed. Attempt $n/$max:"
-                    sleep $delay;
+                    sleep $delay
                 else
                     echo "❌ Command failed after $n attempts."
                     return 1
@@ -1094,15 +1089,15 @@ handle_cloud_installation() {
         local name=$(echo "$item" | cut -d':' -f2)
 
         case "$type" in
-            "manifest")
-                install_manifest "$name"
-                ;;
-            "app")
-                install_additional_apps "$name"
-                ;;
-            *)
-                echo "⚠️  Unrecognized installation type: $type"
-                ;;
+        "manifest")
+            install_manifest "$name"
+            ;;
+        "app")
+            install_additional_apps "$name"
+            ;;
+        *)
+            echo "⚠️  Unrecognized installation type: $type"
+            ;;
         esac
     done
 }
@@ -1118,7 +1113,7 @@ load_cloud_install_config() {
 
     if [ "$cloud_install_exists" == "null" ]; then
         echo "⚠️  No 'cloud_install' section found in the YAML file. Skipping cloud-specific installations."
-        return  # Return empty array
+        return # Return empty array
     fi
 
     # Get installs array for the specific cloud provider
@@ -1183,7 +1178,7 @@ apply_manifests_from_yaml() {
         # Determine kubeconfig path and context
         local kubeconfig_path=""
         local context_arg=""
-        
+
         if [ "$use_global_kubeconfig" = true ]; then
             kubeconfig_path="$global_kubeconfig_path"
             context_arg="--context $global_kubecontext"
@@ -1230,7 +1225,7 @@ apply_manifests_from_yaml() {
             if [ -n "$inline_yaml" ] && [ "$inline_yaml" != "null" ]; then
                 echo "📄 Using inline YAML as the base manifest for $appname"
                 temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
-                echo "$inline_yaml" > "$temp_manifest"
+                echo "$inline_yaml" >"$temp_manifest"
             else
                 echo "❌ Error: Neither base manifest nor inline YAML provided for app: $appname"
                 exit 1
@@ -1245,14 +1240,14 @@ apply_manifests_from_yaml() {
         # Merge inline YAML with the base manifest if provided
         if [ -n "$inline_yaml" ] && [ "$inline_yaml" != "null" ] && [ -f "$temp_manifest" ]; then
             echo "🔄 Merging inline YAML for $appname into the base manifest"
-            echo "$inline_yaml" | yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "-")' - "$temp_manifest" > "${temp_manifest}_merged"
+            echo "$inline_yaml" | yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "-")' - "$temp_manifest" >"${temp_manifest}_merged"
             mv "${temp_manifest}_merged" "$temp_manifest"
         fi
 
         # Merge overrides if provided
         if [ -f "$overrides_yaml" ]; then
             echo "🔄 Merging overrides from $overrides_yaml into $temp_manifest"
-            yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "'"$overrides_yaml"'")' "$temp_manifest" "$overrides_yaml" > "${temp_manifest}_merged"
+            yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "'"$overrides_yaml"'")' "$temp_manifest" "$overrides_yaml" >"${temp_manifest}_merged"
             mv "${temp_manifest}_merged" "$temp_manifest"
         else
             echo "⚠️  No overrides YAML file found for app: $appname. Proceeding with base/inline manifest."
@@ -1297,7 +1292,6 @@ apply_manifests_from_yaml() {
     echo "✅ All applicable manifests applied successfully."
     echo "-----------------------------------------"
 }
-
 
 # Function to install manifest-based apps
 install_manifest() {
@@ -1367,7 +1361,7 @@ run_k8s_commands_from_yaml() {
 
         # Write the command stream to a temporary file in the installation files directory
         command_stream_file="$INSTALLATION_FILES_PATH/command_stream_$index.sh"
-        yq e ".commands[$index].command_stream" "$yaml_file" > "$command_stream_file"
+        yq e ".commands[$index].command_stream" "$yaml_file" >"$command_stream_file"
         command_stream=$(<"$command_stream_file")
         rm "$command_stream_file"
 
@@ -1381,7 +1375,7 @@ run_k8s_commands_from_yaml() {
         # Determine kubeconfig path and context
         local kubeconfig_path=""
         local context_arg=""
-        
+
         if [ "$use_global_kubeconfig" = true ]; then
             kubeconfig_path="$global_kubeconfig_path"
             context_arg="--context $global_kubecontext"
@@ -1483,7 +1477,7 @@ display_summary() {
 
         echo "-----------------------------------------"
         echo "🚀 **Helm Release: $release_name**"
-        if helm status "$release_name" --namespace "$namespace" --kubeconfig "$kubeconfig" --kube-context "$kubecontext" > /dev/null 2>&1; then
+        if helm status "$release_name" --namespace "$namespace" --kubeconfig "$kubeconfig" --kube-context "$kubecontext" >/dev/null 2>&1; then
             echo "✔️ Release '$release_name' in namespace '$namespace' is successfully installed."
             echo "🔍 **Helm List Output**:"
             helm list --namespace "$namespace" --kubeconfig "$kubeconfig" --kube-context "$kubecontext" || echo "⚠️ Warning: Failed to list Helm releases in namespace '$namespace'."
@@ -1502,7 +1496,7 @@ display_summary() {
 
     # Worker Cluster Installations
     if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
-        for ((i=0; i<${#KUBESLICE_WORKERS[@]}; i++)); do
+        for ((i = 0; i < ${#KUBESLICE_WORKERS[@]}; i++)); do
             # Extract variables for each worker cluster
             worker_name=$(yq e ".kubeslice_worker_egs[$i].name" "$EGS_INPUT_YAML")
             skip_installation=$(yq e ".kubeslice_worker_egs[$i].skip_installation" "$EGS_INPUT_YAML")
@@ -1533,7 +1527,7 @@ display_summary() {
 
     # Additional Application Installations
     if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ]; then
-        for ((i=0; i<${#ADDITIONAL_APPS[@]}; i++)); do
+        for ((i = 0; i < ${#ADDITIONAL_APPS[@]}; i++)); do
             # Extract variables for each additional application
             app_name=$(yq e ".additional_apps[$i].name" "$EGS_INPUT_YAML")
             skip_installation=$(yq e ".additional_apps[$i].skip_installation" "$EGS_INPUT_YAML")
@@ -1587,7 +1581,7 @@ display_summary() {
     # Fetch the token for each project provided in the input YAML
     if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
         for project in "${KUBESLICE_PROJECTS[@]}"; do
-            IFS="|" read -r project_name project_username <<< "$project"
+            IFS="|" read -r project_name project_username <<<"$project"
             token=$(kubectl get secret "kubeslice-rbac-rw-$project_username" -o jsonpath="{.data.token}" -n "kubeslice-$project_name" --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --context "$KUBESLICE_CONTROLLER_KUBECONTEXT" 2>/dev/null | base64 --decode || echo "")
             if [ -n "$token" ]; then
                 echo "🔑 **Token for project '$project_name' (username: $project_username)**: $token"
@@ -1604,7 +1598,7 @@ display_summary() {
     echo "========================================="
 
     # Run helm list -A to list all releases across all namespaces
-    if helm list -A --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --kube-context "$KUBESLICE_CONTROLLER_KUBECONTEXT" > /dev/null 2>&1; then
+    if helm list -A --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --kube-context "$KUBESLICE_CONTROLLER_KUBECONTEXT" >/dev/null 2>&1; then
         echo "🔍 **Helm List Output (All Namespaces)**:"
         helm list -A --kubeconfig "$KUBESLICE_CONTROLLER_KUBECONFIG" --kube-context "$KUBESLICE_CONTROLLER_KUBECONTEXT" || echo "⚠️ Warning: Failed to list Helm releases across all namespaces."
     else
@@ -1676,7 +1670,6 @@ fetch_k8s_cluster_endpoint() {
 
     echo "$endpoint"
 }
-
 
 install_or_upgrade_helm_chart() {
     local skip_installation=$1
@@ -1780,66 +1773,64 @@ install_or_upgrade_helm_chart() {
     kubectl get namespace $namespace --kubeconfig $kubeconfig_path --context $kubecontext || kubectl create namespace $namespace --kubeconfig $kubeconfig_path --context $kubecontext
     echo "✔️ Namespace '$namespace' is ready."
 
+    # Determine if the current release is the KubeSlice controller
+    if [[ "$release_name" == *"controller"* ]]; then
+        if [ -z "$inline_values" ] || [ "$inline_values" = "{}" ]; then
+            echo "⚠️ Warning: Inline values are empty or not provided."
+            echo "🔍 Attempting to fetch the cluster endpoint..."
 
-# Determine if the current release is the KubeSlice controller
-if [[ "$release_name" == *"controller"* ]]; then
-    if [ -z "$inline_values" ] || [ "$inline_values" = "{}" ]; then
-        echo "⚠️ Warning: Inline values are empty or not provided."
-        echo "🔍 Attempting to fetch the cluster endpoint..."
-        
-        local cluster_endpoint
-        cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
-        
-        if [ -z "$cluster_endpoint" ]; then
-            echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
-        else
-            # Clean and sanitize the endpoint
-            cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
-            # Initialize inline_values with the fetched endpoint
-            inline_values=$(echo "{}" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
-            echo "✔️ Inline values created with fetched cluster endpoint: $cluster_endpoint"
-        fi
-    elif [ -z "$(echo "$inline_values" | yq e '.kubeslice.controller.endpoint' -)" ]; then
-        echo "🔍 No endpoint found in inline values. Attempting to fetch the cluster endpoint..."
-        
-        local cluster_endpoint
-        cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
-        
-        if [ -z "$cluster_endpoint" ]; then
-            echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
-        else
-            # Clean and sanitize the endpoint
-            cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
-            # Merge the fetched endpoint into the existing inline_values
-            inline_values=$(echo "$inline_values" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
-            echo "✔️ Inline values updated with fetched cluster endpoint: $cluster_endpoint"
-        fi
-    else
-        # Double-check the endpoint actually exists
-        local existing_endpoint=$(echo "$inline_values" | yq e '.kubeslice.controller.endpoint' -)
-        if [ -z "$existing_endpoint" ]; then
-            echo "⚠️ Warning: Detected an empty endpoint in inline values, fetching again."
             local cluster_endpoint
             cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
-            
+
             if [ -z "$cluster_endpoint" ]; then
                 echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
             else
                 # Clean and sanitize the endpoint
                 cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
+                # Initialize inline_values with the fetched endpoint
+                inline_values=$(echo "{}" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
+                echo "✔️ Inline values created with fetched cluster endpoint: $cluster_endpoint"
+            fi
+        elif [ -z "$(echo "$inline_values" | yq e '.kubeslice.controller.endpoint' -)" ]; then
+            echo "🔍 No endpoint found in inline values. Attempting to fetch the cluster endpoint..."
+
+            local cluster_endpoint
+            cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
+
+            if [ -z "$cluster_endpoint" ]; then
+                echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
+            else
+                # Clean and sanitize the endpoint
+                cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
+                # Merge the fetched endpoint into the existing inline_values
                 inline_values=$(echo "$inline_values" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
                 echo "✔️ Inline values updated with fetched cluster endpoint: $cluster_endpoint"
             fi
         else
-            echo "✔️ Endpoint is already provided in inline values. No need to override."
+            # Double-check the endpoint actually exists
+            local existing_endpoint=$(echo "$inline_values" | yq e '.kubeslice.controller.endpoint' -)
+            if [ -z "$existing_endpoint" ]; then
+                echo "⚠️ Warning: Detected an empty endpoint in inline values, fetching again."
+                local cluster_endpoint
+                cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
+
+                if [ -z "$cluster_endpoint" ]; then
+                    echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
+                else
+                    # Clean and sanitize the endpoint
+                    cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
+                    inline_values=$(echo "$inline_values" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
+                    echo "✔️ Inline values updated with fetched cluster endpoint: $cluster_endpoint"
+                fi
+            else
+                echo "✔️ Endpoint is already provided in inline values. No need to override."
+            fi
         fi
+
+        # Final sanity check to ensure inline_values is correctly formed
+        echo "🛠 Final inline_values:"
+        echo "$inline_values" | yq e
     fi
-
-    # Final sanity check to ensure inline_values is correctly formed
-    echo "🛠 Final inline_values:"
-    echo "$inline_values" | yq e
-fi
-
 
     # Function to create a values file from inline values, ensuring uniqueness
     create_values_file() {
@@ -1855,111 +1846,108 @@ fi
         done
 
         # Use yq to parse and create a valid YAML file
-        echo "$inline_values" | yq eval -P - > "$values_file_path"
-        
+        echo "$inline_values" | yq eval -P - >"$values_file_path"
+
         # Return only the file path
         echo "$values_file_path"
     }
 
+    # Print the entire inline_values for debugging
+    echo "🔍 Debugging: Full inline_values content"
+    echo "$inline_values"
 
+    # Extract the values from inline_values using yq
+    image_pull_secret_repo=$(echo "$inline_values" | yq e '.imagePullSecrets.repository' -)
+    image_pull_secret_username=$(echo "$inline_values" | yq e '.imagePullSecrets.username' -)
+    image_pull_secret_password=$(echo "$inline_values" | yq e '.imagePullSecrets.password' -)
 
-# Print the entire inline_values for debugging
-echo "🔍 Debugging: Full inline_values content"
-echo "$inline_values"
-
-# Extract the values from inline_values using yq
-image_pull_secret_repo=$(echo "$inline_values" | yq e '.imagePullSecrets.repository' -)
-image_pull_secret_username=$(echo "$inline_values" | yq e '.imagePullSecrets.username' -)
-image_pull_secret_password=$(echo "$inline_values" | yq e '.imagePullSecrets.password' -)
-
-# Handle cases where yq might return 'null' or an empty value
-if [ "$image_pull_secret_repo" = "null" ] || [ -z "$image_pull_secret_repo" ]; then
-    image_pull_secret_repo=""
-fi
-
-if [ "$image_pull_secret_username" = "null" ] || [ -z "$image_pull_secret_username" ]; then
-    image_pull_secret_username=""
-fi
-
-if [ "$image_pull_secret_password" = "null" ] || [ -z "$image_pull_secret_password" ]; then
-    image_pull_secret_password=""
-fi
-
-# Debugging print to confirm parsed inline values
-echo "🔍 Debugging: Parsed inline chart values"
-echo "   Parsed Repository: $image_pull_secret_repo"
-echo "   Parsed Username: $image_pull_secret_username"
-echo "   Parsed Password: [Hidden for security]"
-
-# Determine which image pull secrets to use (global or chart-level)
-# If the inline values exist and are non-empty, use them; otherwise, fall back to global values
-
-# Check and assign the repository URL
-if [ -n "$image_pull_secret_repo" ]; then
-    image_pull_secret_repo_used=$image_pull_secret_repo
-    echo "✔️ Using inline repository URL: $image_pull_secret_repo_used"
-else
-    image_pull_secret_repo_used=$GLOBAL_IMAGE_PULL_SECRET_REPO
-    if [ -n "$image_pull_secret_repo_used" ]; then
-        echo "✔️ Using global repository URL: $image_pull_secret_repo_used"
-    else
-        echo "❌ Error: Repository URL is missing!"
-        echo "🔗 You can generate the required image pull secrets using the following URL:"
-        echo "   https://avesha.io/kubeslice-registration"
-        exit 1
+    # Handle cases where yq might return 'null' or an empty value
+    if [ "$image_pull_secret_repo" = "null" ] || [ -z "$image_pull_secret_repo" ]; then
+        image_pull_secret_repo=""
     fi
-fi
 
-# Check and assign the username
-if [ -n "$image_pull_secret_username" ]; then
-    image_pull_secret_username_used=$image_pull_secret_username
-    echo "✔️ Using inline username: $image_pull_secret_username_used"
-else
-    image_pull_secret_username_used=$GLOBAL_IMAGE_PULL_SECRET_USERNAME
-    if [ -n "$image_pull_secret_username_used" ]; then
-        echo "✔️ Using global username: $image_pull_secret_username_used"
-    else
-        echo "❌ Error: Username is missing!"
-        echo "🔗 You can generate the required image pull secrets using the following URL:"
-	echo "   https://avesha.io/kubeslice-registration"
-        exit 1
+    if [ "$image_pull_secret_username" = "null" ] || [ -z "$image_pull_secret_username" ]; then
+        image_pull_secret_username=""
     fi
-fi
 
-# Check and assign the password
-if [ -n "$image_pull_secret_password" ]; then
-    image_pull_secret_password_used=$image_pull_secret_password
-    echo "✔️ Using inline password: [Hidden for security]"
-else
-    image_pull_secret_password_used=$GLOBAL_IMAGE_PULL_SECRET_PASSWORD
-    if [ -n "$image_pull_secret_password_used" ]; then
-        echo "✔️ Using global password: [Hidden for security]"
-    else
-        echo "❌ Error: Password is missing!"
-        echo "🔗 You can generate the required image pull secrets using the following URL:"
-	echo "   https://avesha.io/kubeslice-registration"
-        exit 1
+    if [ "$image_pull_secret_password" = "null" ] || [ -z "$image_pull_secret_password" ]; then
+        image_pull_secret_password=""
     fi
-fi
 
-# Final debugging print to confirm values used
-echo "📋 Final values being used:"
-echo "   Repository: $image_pull_secret_repo_used"
-echo "   Username: $image_pull_secret_username_used"
-echo "   Password: [Hidden for security]"
+    # Debugging print to confirm parsed inline values
+    echo "🔍 Debugging: Parsed inline chart values"
+    echo "   Parsed Repository: $image_pull_secret_repo"
+    echo "   Parsed Username: $image_pull_secret_username"
+    echo "   Parsed Password: [Hidden for security]"
 
-# Create inline values for imagePullSecrets
-image_pull_secrets_inline=$(cat <<EOF
+    # Determine which image pull secrets to use (global or chart-level)
+    # If the inline values exist and are non-empty, use them; otherwise, fall back to global values
+
+    # Check and assign the repository URL
+    if [ -n "$image_pull_secret_repo" ]; then
+        image_pull_secret_repo_used=$image_pull_secret_repo
+        echo "✔️ Using inline repository URL: $image_pull_secret_repo_used"
+    else
+        image_pull_secret_repo_used=$GLOBAL_IMAGE_PULL_SECRET_REPO
+        if [ -n "$image_pull_secret_repo_used" ]; then
+            echo "✔️ Using global repository URL: $image_pull_secret_repo_used"
+        else
+            echo "❌ Error: Repository URL is missing!"
+            echo "🔗 You can generate the required image pull secrets using the following URL:"
+            echo "   https://avesha.io/kubeslice-registration"
+            exit 1
+        fi
+    fi
+
+    # Check and assign the username
+    if [ -n "$image_pull_secret_username" ]; then
+        image_pull_secret_username_used=$image_pull_secret_username
+        echo "✔️ Using inline username: $image_pull_secret_username_used"
+    else
+        image_pull_secret_username_used=$GLOBAL_IMAGE_PULL_SECRET_USERNAME
+        if [ -n "$image_pull_secret_username_used" ]; then
+            echo "✔️ Using global username: $image_pull_secret_username_used"
+        else
+            echo "❌ Error: Username is missing!"
+            echo "🔗 You can generate the required image pull secrets using the following URL:"
+            echo "   https://avesha.io/kubeslice-registration"
+            exit 1
+        fi
+    fi
+
+    # Check and assign the password
+    if [ -n "$image_pull_secret_password" ]; then
+        image_pull_secret_password_used=$image_pull_secret_password
+        echo "✔️ Using inline password: [Hidden for security]"
+    else
+        image_pull_secret_password_used=$GLOBAL_IMAGE_PULL_SECRET_PASSWORD
+        if [ -n "$image_pull_secret_password_used" ]; then
+            echo "✔️ Using global password: [Hidden for security]"
+        else
+            echo "❌ Error: Password is missing!"
+            echo "🔗 You can generate the required image pull secrets using the following URL:"
+            echo "   https://avesha.io/kubeslice-registration"
+            exit 1
+        fi
+    fi
+
+    # Final debugging print to confirm values used
+    echo "📋 Final values being used:"
+    echo "   Repository: $image_pull_secret_repo_used"
+    echo "   Username: $image_pull_secret_username_used"
+    echo "   Password: [Hidden for security]"
+
+    # Create inline values for imagePullSecrets
+    image_pull_secrets_inline=$(
+        cat <<EOF
 imagePullSecrets:
   repository: $image_pull_secret_repo_used
   username: $image_pull_secret_username_used
   password: $image_pull_secret_password_used
 EOF
-)
+    )
 
-echo "✅ Image pull secrets configured successfully."
-
-
+    echo "✅ Image pull secrets configured successfully."
 
     # Define the base Helm command
     helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path"
@@ -2003,7 +1991,6 @@ echo "✅ Image pull secrets configured successfully."
         helm_cmd="$helm_cmd -f $inline_values_file"
         echo "🗂  Using inline values file: $inline_values_file"
     fi
-
 
     # Use the merged values file
     if [ -n "$values_file" ] && [ "$values_file" != "null" ] && [ -f "$values_file" ]; then
@@ -2053,11 +2040,11 @@ create_projects_in_controller() {
     echo "🚀 Starting project creation in controller cluster..."
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
-    
+
     if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
         context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
     fi
-    
+
     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
 
     echo "🔧 Variables:"
@@ -2067,13 +2054,13 @@ create_projects_in_controller() {
     echo "-----------------------------------------"
 
     for project in "${KUBESLICE_PROJECTS[@]}"; do
-        IFS="|" read -r project_name project_username <<< "$project"
-        
+        IFS="|" read -r project_name project_username <<<"$project"
+
         echo "-----------------------------------------"
         echo "🚀 Creating project '$project_name' in namespace '$namespace'"
         echo "-----------------------------------------"
-        
-        cat <<EOF > "$INSTALLATION_FILES_PATH/${project_name}_project.yaml"
+
+        cat <<EOF >"$INSTALLATION_FILES_PATH/${project_name}_project.yaml"
 apiVersion: controller.kubeslice.io/v1alpha1
 kind: Project
 metadata:
@@ -2101,11 +2088,11 @@ register_clusters_in_controller() {
     echo "🚀 Starting cluster registration in controller cluster..."
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
-    
+
     if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
         context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
     fi
-    
+
     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
 
     echo "🔧 Variables:"
@@ -2115,13 +2102,13 @@ register_clusters_in_controller() {
     echo "-----------------------------------------"
 
     for registration in "${KUBESLICE_CLUSTER_REGISTRATIONS[@]}"; do
-        IFS="|" read -r cluster_name project_name telemetry_enabled telemetry_endpoint telemetry_provider geo_location_provider geo_location_region <<< "$registration"
-        
+        IFS="|" read -r cluster_name project_name telemetry_enabled telemetry_endpoint telemetry_provider geo_location_provider geo_location_region <<<"$registration"
+
         echo "-----------------------------------------"
         echo "🚀 Registering cluster '$cluster_name' in project '$project_name' within namespace '$namespace'"
         echo "-----------------------------------------"
-        
-        cat <<EOF > "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml"
+
+        cat <<EOF >"$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml"
 apiVersion: controller.kubeslice.io/v1alpha1
 kind: Cluster
 metadata:
@@ -2159,36 +2146,49 @@ prepare_worker_values_file() {
     if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
         controller_context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
     fi
-    
 
-    echo "🚀 Starting worker values file preparation..."
-    for worker in "${KUBESLICE_WORKERS[@]}"; do
-        IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<< "$worker"
+    for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
+        IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"${KUBESLICE_WORKERS[$worker_index]}"
 
-        echo "🔧 Variables:"
-        echo "  worker_name=$worker_name"
-        echo "  skip_installation=$skip_installation"
-        echo "  use_global_kubeconfig=$use_global_kubeconfig"
-        echo "  kubeconfig=$kubeconfig"
-        echo "  kubecontext=$kubecontext"
-        echo "  namespace=$namespace"
-        echo "  release_name=$release_name"
-        echo "  chart_name=$chart_name"
-	echo "  controller_kubeconfig_path=$controller_kubeconfig_path"
-	echo "  controller_context_arg=$controller_context_arg"
-	echo "  project_ns=kubeslice-$project_name"
-        echo "-----------------------------------------"
+        # Extract worker-specific values for the new parameters
+        worker=$(yq e ".kubeslice_worker_egs[$worker_index]" "$EGS_INPUT_YAML")
+        worker_name=$(echo "$worker" | yq e '.name' -)
+        skip_installation=$(echo "$worker" | yq e '.skip_installation' -)
+        use_global_kubeconfig=$(echo "$worker" | yq e '.use_global_kubeconfig' -)
+        namespace=$(echo "$worker" | yq e '.namespace' -)
+        release_name=$(echo "$worker" | yq e '.release' -)
+        chart_name=$(echo "$worker" | yq e '.chart' -)
+        values_file=$(echo "$worker" | yq e '.values_file' -)
+        helm_flags=$(echo "$worker" | yq e '.helm_flags' -)
+        verify_install=$(echo "$worker" | yq e '.verify_install' -)
+        verify_install_timeout=$(echo "$worker" | yq e '.verify_install_timeout' -)
+        skip_on_verify_fail=$(echo "$worker" | yq e '.skip_on_verify_fail' -)
+        version=$(echo "$worker" | yq e '.version' -)
+        specific_use_local_charts=$(echo "$worker" | yq e '.specific_use_local_charts' -)
 
-        echo "-----------------------------------------"
-        echo "🚀 Preparing values file for worker '$worker_name'"
-        echo "-----------------------------------------"
+        echo "  Extracted values for worker $worker_name:"
+        echo "  Worker Name: $worker_name"
+        echo "  Skip Installation: $skip_installation"
+        echo "  Use Global Kubeconfig: $use_global_kubeconfig"
+        echo "  Namespace: $namespace"
+        echo "  Release Name: $release_name"
+        echo "  Chart Name: $chart_name"
+        echo "  Values File: $values_file"
+        echo "  Helm Flags: $helm_flags"
+        echo "  Verify Install: $verify_install"
+        echo "  Verify Install Timeout: $verify_install_timeout"
+        echo "  Skip on Verify Fail: $skip_on_verify_fail"
+        echo "  Version: $version"
+        echo "  Specific Use Local Charts: $specific_use_local_charts"
 
-
-
-
+        # Extract and output inline values from the EGS input YAML
+        inline_values=$(yq e ".kubeslice_worker_egs[$worker_index].inline_values | select(. != null)" "$EGS_INPUT_YAML")
+        echo "Inline values extracted for worker $worker_name:"
+        echo "$inline_values"
 
         local secret_name="kubeslice-rbac-worker-$worker_name"
         local controller_secret_file="$INSTALLATION_FILES_PATH/${secret_name}.yaml"
+        local worker_endpoint
 
         # Fetch the secret from the worker cluster
         echo "🔍 Fetching secret '$project_name' from worker cluster..."
@@ -2197,44 +2197,175 @@ prepare_worker_values_file() {
         echo "kubectl get secret $secret_name -n "kubeslice-$project_name" --kubeconfig $controller_kubeconfig_path $controller_context_arg -o yaml"
 
         worker_secret=$(kubectl get secret $secret_name -n "kubeslice-$project_name" --kubeconfig $controller_kubeconfig_path $controller_context_arg -o yaml)
-        
+
         # Decode the relevant fields from the controller secret
         ca_crt=$(echo "$worker_secret" | yq e '.data["ca.crt"]')
         token=$(echo "$worker_secret" | yq e '.data.token')
         namespace=$(echo "$worker_secret" | yq e '.data.namespace')
-        endpoint=$(echo "$worker_secret" | yq e '.data.controllerEndpoint')
-	cluster_name=$(echo "$worker_secret" | yq e '.data.clusterName' - | base64 --decode)
+        controller_endpoint=$(echo "$worker_secret" | yq e '.data.controllerEndpoint')
+        cluster_name=$(echo "$worker_secret" | yq e '.data.clusterName' - | base64 --decode)
 
-        # Prepare the worker values file
-        cat <<EOF > "$INSTALLATION_FILES_PATH/${worker_name}_final_values.yaml"
+        # Determine the cluster endpoint and name
+        if [ -n "$inline_values" ] && [ "$inline_values" != "{}" ]; then
+            # Check if the cluster object is present and if it's empty
+            cluster_object_present=$(echo "$inline_values" | yq e '.cluster // null' -)
+            if [ "$cluster_object_present" != "null" ]; then
+                # Check if the cluster object is empty
+                is_cluster_empty=$(echo "$inline_values" | yq e '.cluster | length == 0' -)
+                if [ "$is_cluster_empty" = "true" ]; then
+                    echo "Error: The cluster object is present in inline values but is empty."
+                    exit 1
+                fi
+            fi
+
+            inline_clustername=$(echo "$inline_values" | yq e '.cluster.name // null' -)
+            inline_endpoint=$(echo "$inline_values" | yq e '.cluster.endpoint // null' -)
+
+            # Ensure the cluster name always matches the one from secrets
+            if [ "$inline_clustername" != "null" ] && [ "$inline_clustername" != "$cluster_name" ]; then
+                echo "Error: The inline cluster name ($inline_clustername) does not match the expected cluster name ($cluster_name)."
+                exit 1
+            fi
+
+            # Fetch the worker endpoint if not provided in inline values
+            if [ -z "$inline_endpoint" ] || [ "$inline_endpoint" == "null" ]; then
+                echo "🔍 No endpoint found in inline values. Attempting to fetch the worker endpoint..."
+                worker_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.clusters[0].cluster.server}')
+
+                if [ -z "$worker_endpoint" ]; then
+                    echo "⚠️ Warning: Failed to fetch worker endpoint. Setting a default value."
+                    worker_endpoint="https://default-endpoint" # Replace this with a suitable default if needed
+                else
+                    worker_endpoint=$(echo "$worker_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1)
+                    echo "✔️ Fetched worker endpoint: $worker_endpoint"
+                fi
+            else
+                worker_endpoint=$inline_endpoint
+                echo "✔️ Worker endpoint is provided in inline values: $worker_endpoint"
+            fi
+        else
+            echo "⚠️ Warning: Worker inline values are empty or not provided."
+
+            # Fetch the worker endpoint if inline values are empty or not provided
+            worker_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.clusters[0].cluster.server}')
+
+            if [ -z "$worker_endpoint" ]; then
+                echo "⚠️ Warning: Failed to fetch worker endpoint. Setting a default value."
+                worker_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.clusters[0].cluster.server}')
+            else
+                worker_endpoint=$(echo "$worker_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1)
+                echo "✔️ Fetched worker endpoint: $worker_endpoint"
+            fi
+        fi
+
+        # Ensure the cluster object is properly created in the final values file
+        if [ -z "$inline_clustername" ] || [ "$inline_clustername" == "null" ]; then
+            inline_clustername="$cluster_name"
+        fi
+
+        # Generate the final values file
+        echo "🔧 Generating final values file: $INSTALLATION_FILES_PATH/${worker_name}_final_values.yaml"
+        cat <<EOF >"$INSTALLATION_FILES_PATH/${worker_name}_final_values.yaml"
 controllerSecret:
   namespace: $namespace
-  endpoint: $endpoint
+  endpoint: $controller_endpoint
   ca.crt: $ca_crt
   token: $token
 
 cluster:
   name: $cluster_name
+  endpoint: $worker_endpoint
 
 EOF
 
-        echo "✔️  Worker values file prepared and saved as '${worker_name}_final_values.yaml'."
+        # Append the remaining inline values (excluding the cluster object)
+        echo "$inline_values" | yq e 'del(.cluster)' - >>"$INSTALLATION_FILES_PATH/${worker_name}_final_values.yaml"
+
+        echo "✔️ Worker values file prepared and saved as '${worker_name}_final_values.yaml'."
         echo "-----------------------------------------"
+
     done
     echo "✔️ Worker values file preparation complete."
+}
+
+# Function to create a values file from inline values, ensuring uniqueness
+create_values_file() {
+    local inline_values=$1
+    local base_name=$2
+    local values_file_path="$run_dir/${base_name}_values.yaml"
+    local counter=1
+
+    # Ensure the file name is unique by appending an incremental number if needed
+    while [ -f "$values_file_path" ]; do
+        values_file_path="$run_dir/${base_name}_$counter.yaml"
+        counter=$((counter + 1))
+    done
+
+    # Use yq to parse and create a valid YAML file
+    echo "$inline_values" | yq eval -P - >"$values_file_path"
+
+    # Return the file path to be used in Helm command
+    echo "$values_file_path"
+}
+
+# Function to create a unique directory for each run
+create_unique_run_dir() {
+    local base_dir="$INSTALLATION_FILES_PATH/run"
+    local release_name=$1
+    local run_dir="$base_dir/helm_run_$(date +%Y%m%d_%H%M%S)_${release_name}"
+
+    mkdir -p "$run_dir"
+    echo "$run_dir"
+}
+
+# Function to merge prepared values and inline values into the final combined file
+
+# Function to merge inline values and handle any missing flags, removing duplicate keys
+# Function to merge inline values and remove duplicates
+merge_inline_values() {
+    local prepared_values_file=$1
+    local inline_values=$2
+    local base_name=$3
+    local run_dir=$4
+    local combined_values_file="$run_dir/${base_name}_combined_values.yaml"
+
+    # Copy the prepared values file to the combined file
+    if [ -n "$prepared_values_file" ] && [ -f "$prepared_values_file" ]; then
+        cp "$prepared_values_file" "$combined_values_file"
+    else
+        touch "$combined_values_file"
+    fi
+
+    # Merge the inline values into the combined values file
+    if [ -n "$inline_values" ]; then
+        echo "$inline_values" | yq eval -P - >>"$combined_values_file"
+
+        # Remove duplicates, keeping the first occurrence
+        yq eval 'with(.[]; . as $item ireduce({}; . *+ $item))' "$combined_values_file" -o=yaml >"$run_dir/temp_combined_values.yaml"
+
+        # Replace the original combined file with the deduplicated version
+        mv "$run_dir/temp_combined_values.yaml" "$combined_values_file"
+    fi
+
+    echo "$combined_values_file"
 }
 
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --input-yaml) EGS_INPUT_YAML="$2"; shift ;;
-        --help) 
-            echo "Usage: $0 --input-yaml <yaml_file>"
-            exit 0 ;;
-        *) 
-            echo "Unknown parameter passed: $1"; 
-            echo "Use --help for usage information."
-            exit 1 ;;
+    --input-yaml)
+        EGS_INPUT_YAML="$2"
+        shift
+        ;;
+    --help)
+        echo "Usage: $0 --input-yaml <yaml_file>"
+        exit 0
+        ;;
+    *)
+        echo "Unknown parameter passed: $1"
+        echo "Use --help for usage information."
+        exit 1
+        ;;
     esac
     shift
 done
@@ -2248,12 +2379,12 @@ fi
 
 # If an input YAML file is provided, parse it
 if [ -n "$EGS_INPUT_YAML" ]; then
-   # Run prerequisite checks if precheck is enabled
-     prerequisite_check
-    if command -v yq &> /dev/null; then
+    # Run prerequisite checks if precheck is enabled
+    prerequisite_check
+    if command -v yq &>/dev/null; then
         parse_yaml "$EGS_INPUT_YAML"
-	echo " calling validate_paths..."
-    	validate_paths
+        echo " calling validate_paths..."
+        validate_paths
     else
         echo "❌ yq command not found. Please install yq to use the --input-yaml option."
         exit 1
@@ -2275,14 +2406,12 @@ else
     run_k8s_commands_from_yaml "$EGS_INPUT_YAML"
 fi
 
-
-
 # Check if the enable_custom_apps flag is defined and set to true
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
 
 if [ "$enable_custom_apps" = "true" ]; then
     echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."
-    
+
     # Check if the manifests section is defined
     manifests_exist=$(yq e '.manifests // "null"' "$EGS_INPUT_YAML")
 
@@ -2290,13 +2419,13 @@ if [ "$enable_custom_apps" = "true" ]; then
         echo "⚠️  No 'manifests' section found in the YAML file. Skipping manifest application."
     else
         manifests_length=$(yq e '.manifests | length' "$EGS_INPUT_YAML")
-        
+
         if [ "$manifests_length" -eq 0 ]; then
             echo "⚠️  'manifests' section is defined but contains no entries. Skipping manifest application."
         else
             for index in $(seq 0 $((manifests_length - 1))); do
                 echo "🔄 Applying manifest $((index + 1)) of $manifests_length..."
-                
+
                 appname=$(yq e ".manifests[$index].appname" "$EGS_INPUT_YAML")
                 manifest=$(yq e ".manifests[$index].manifest" "$EGS_INPUT_YAML")
                 overrides_yaml=$(yq e ".manifests[$index].overrides_yaml" "$EGS_INPUT_YAML")
@@ -2312,7 +2441,7 @@ if [ "$enable_custom_apps" = "true" ]; then
 
                 # Create a temporary YAML with only the current manifest entry
                 temp_yaml="$INSTALLATION_FILES_PATH/temp_manifest_$index.yaml"
-                yq e ".manifests = [ .manifests[$index] ]" "$EGS_INPUT_YAML" > "$temp_yaml"
+                yq e ".manifests = [ .manifests[$index] ]" "$EGS_INPUT_YAML" >"$temp_yaml"
 
                 # Call apply_manifests_from_yaml function for each manifest
                 apply_manifests_from_yaml "$temp_yaml"
@@ -2326,18 +2455,63 @@ else
     echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."
 fi
 
+# Process additional applications if any are defined and installation is enabled
+if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" -gt 0 ]; then
+    echo "🚀 Starting installation of additional applications..."
+    for app_index in $(seq 0 $((${#ADDITIONAL_APPS[@]} - 1))); do
+        # Extracting application configuration from YAML using yq
+        app=$(yq e ".additional_apps[$app_index]" "$EGS_INPUT_YAML")
+        app_name=$(echo "$app" | yq e '.name' -)
+        skip_installation=$(echo "$app" | yq e '.skip_installation' -)
+        use_global_kubeconfig=$(echo "$app" | yq e '.use_global_kubeconfig' -)
+        namespace=$(echo "$app" | yq e '.namespace' -)
+        release_name=$(echo "$app" | yq e '.release' -)
+        chart_name=$(echo "$app" | yq e '.chart' -)
+        values_file=$(echo "$app" | yq e '.values_file' -)
+        helm_flags=$(echo "$app" | yq e '.helm_flags' -)
+        verify_install=$(echo "$app" | yq e '.verify_install' -)
+        verify_install_timeout=$(echo "$app" | yq e '.verify_install_timeout' -)
+        skip_on_verify_fail=$(echo "$app" | yq e '.skip_on_verify_fail' -)
+        repo_url=$(echo "$app" | yq e '.repo_url' -)
+        username=$(echo "$app" | yq e '.username' -)
+        password=$(echo "$app" | yq e '.password' -)
+        inline_values=$(echo "$app" | yq e '.inline_values // {}' -)
+        version=$(echo "$app" | yq e '.version' -)
+        specific_use_local_charts=$(echo "$app" | yq e '.specific_use_local_charts' -)
+
+        # Create a unique directory for this app's run
+        run_dir=$(create_unique_run_dir "$release_name")
+
+        # Merge the inline values and the values file
+        if [ -n "$inline_values" ] && [ "$inline_values" != "null" ]; then
+            inline_values_file=$(create_values_file "$inline_values" "$app_name-inline")
+            merged_values_file="$inline_values_file"
+            echo "Using inline values file: $inline_values_file"
+        elif [ -n "$values_file" ] && [ "$values_file" != "null" ] && [ -f "$values_file" ]; then
+            merged_values_file="$values_file"
+            echo "Using values file: $values_file"
+        else
+            merged_values_file=""
+        fi
+
+        # Now call the install_or_upgrade_helm_chart function
+        install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$values_file" "$inline_values" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$LOCAL_CHARTS_PATH" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+
+    done
+    echo "✔️ Installation of additional applications complete."
+else
+    echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
+fi
+
 # Process kubeslice-controller installation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
     install_or_upgrade_helm_chart "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_CHART_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_REPO_URL" "$KUBESLICE_CONTROLLER_USERNAME" "$KUBESLICE_CONTROLLER_PASSWORD" "$KUBESLICE_CONTROLLER_VALUES_FILE" "$KUBESLICE_CONTROLLER_INLINE_VALUES" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_CONTROLLER_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_CONTROLLER_VERSION" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
 fi
 
-
-# Process kubeslice-ui installation if enabled
+# Process kubeslice-ui ins6fctallation if enabled
 if [ "$ENABLE_INSTALL_UI" = "true" ]; then
     install_or_upgrade_helm_chart "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_CHART_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_REPO_URL" "$KUBESLICE_UI_USERNAME" "$KUBESLICE_UI_PASSWORD" "$KUBESLICE_UI_VALUES_FILE" "$KUBESLICE_UI_INLINE_VALUES" "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_UI_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_UI_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_UI_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_UI_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_UI_VERSION" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
 fi
-
-
 
 # Create projects in the controller cluster before deploying workers
 if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
@@ -2354,54 +2528,15 @@ fi
 #    fetch_controller_secrets
 #fi
 
-
-# Function to merge inline values and handle any missing flags
-
-# Function to create a unique directory for each run
-create_unique_run_dir() {
-    local base_dir="$INSTALLATION_FILES_PATH/run"
-    local release_name=$1
-    local run_dir="$base_dir/helm_run_$(date +%Y%m%d_%H%M%S)_${release_name}"
-
-    mkdir -p "$run_dir"
-    echo "$run_dir"
-}
-
-# Function to merge prepared values and inline values into the final combined file
-
-
-
-merge_inline_values() {
-    local prepared_values_file=$1
-    local inline_values=$2
-    local base_name=$3
-    local run_dir=$4
-    local combined_values_file="$run_dir/${base_name}_combined_values.yaml"
-
-    # Copy the prepared values file to the combined file
-    if [ -n "$prepared_values_file" ] && [ -f "$prepared_values_file" ]; then
-        cp "$prepared_values_file" "$combined_values_file"
-    else
-        touch "$combined_values_file"
-    fi
-
-    # Merge the inline values into the combined values file
-    if [ -n "$inline_values" ]; then
-        echo "$inline_values" | yq eval -P - >> "$combined_values_file"
-    fi
-
-    echo "$combined_values_file"
-}
-
 # Inside the loop where you process each worker
 if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
-        IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<< "${KUBESLICE_WORKERS[$worker_index]}"
+        IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"${KUBESLICE_WORKERS[$worker_index]}"
 
         if [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "true" ]; then
-             prepare_worker_values_file
-         fi
-         
+            prepare_worker_values_file
+        fi
+
         # Prepare the path to the prepared values file
         prepared_values_file="$INSTALLATION_FILES_PATH/${worker_name}_final_values.yaml"
 
@@ -2441,79 +2576,6 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
     done
 fi
 
-
-# Function to create a values file from inline values, ensuring uniqueness
-create_values_file() {
-    local inline_values=$1
-    local base_name=$2
-    local values_file_path="$run_dir/${base_name}_values.yaml"
-    local counter=1
-
-    # Ensure the file name is unique by appending an incremental number if needed
-    while [ -f "$values_file_path" ]; do
-        values_file_path="$run_dir/${base_name}_$counter.yaml"
-        counter=$((counter + 1))
-    done
-
-    # Use yq to parse and create a valid YAML file
-    echo "$inline_values" | yq eval -P - > "$values_file_path"
-    
-    # Return the file path to be used in Helm command
-    echo "$values_file_path"
-}
-
-
-# Process additional applications if any are defined and installation is enabled
-if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" -gt 0 ]; then
-    echo "🚀 Starting installation of additional applications..."
-    for app_index in $(seq 0 $((${#ADDITIONAL_APPS[@]} - 1))); do
-        # Extracting application configuration from YAML using yq
-        app=$(yq e ".additional_apps[$app_index]" "$EGS_INPUT_YAML")
-        app_name=$(echo "$app" | yq e '.name' -)
-        skip_installation=$(echo "$app" | yq e '.skip_installation' -)
-        use_global_kubeconfig=$(echo "$app" | yq e '.use_global_kubeconfig' -)
-        namespace=$(echo "$app" | yq e '.namespace' -)
-        release_name=$(echo "$app" | yq e '.release' -)
-        chart_name=$(echo "$app" | yq e '.chart' -)
-        values_file=$(echo "$app" | yq e '.values_file' -)
-        helm_flags=$(echo "$app" | yq e '.helm_flags' -)
-        verify_install=$(echo "$app" | yq e '.verify_install' -)
-        verify_install_timeout=$(echo "$app" | yq e '.verify_install_timeout' -)
-        skip_on_verify_fail=$(echo "$app" | yq e '.skip_on_verify_fail' -)
-        repo_url=$(echo "$app" | yq e '.repo_url' -)
-        username=$(echo "$app" | yq e '.username' -)
-        password=$(echo "$app" | yq e '.password' -)
-        inline_values=$(echo "$app" | yq e '.inline_values // {}' -)
-        version=$(echo "$app" | yq e '.version' -)
-        specific_use_local_charts=$(echo "$app" | yq e '.specific_use_local_charts' -)
-
-
-        # Create a unique directory for this app's run
-        run_dir=$(create_unique_run_dir "$release_name")
-
-        # Merge the inline values and the values file
-        if [ -n "$inline_values" ] && [ "$inline_values" != "null" ]; then
-            inline_values_file=$(create_values_file "$inline_values" "$app_name-inline")
-            merged_values_file="$inline_values_file"
-            echo "Using inline values file: $inline_values_file"
-        elif [ -n "$values_file" ] && [ "$values_file" != "null" ] && [ -f "$values_file" ]; then
-            merged_values_file="$values_file"
-            echo "Using values file: $values_file"
-        else
-            merged_values_file=""
-        fi
-
-        # Now call the install_or_upgrade_helm_chart function
-	install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$values_file" "$inline_values" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$LOCAL_CHARTS_PATH" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
-
-    done
-    echo "✔️ Installation of additional applications complete."
-else
-    echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
-fi
-
-
-
 # Identify the cloud provider and perform cloud-specific installations if cloud_install is defined
 if [ -n "$CLOUD_INSTALL" ]; then
     cloud_provider=$(identify_cloud_provider)
@@ -2521,18 +2583,13 @@ if [ -n "$CLOUD_INSTALL" ]; then
     if [ ${#cloud_install_array[@]} -gt 0 ]; then
         handle_cloud_installation "$cloud_provider" "${cloud_install_array[@]}"
     else
-       echo "⚠️  No cloud-specific installations found for $cloud_provider. Skipping."
+        echo "⚠️  No cloud-specific installations found for $cloud_provider. Skipping."
     fi
 else
     echo "⏩ Cloud-specific installations are disabled or not defined."
 fi
 
-
-
-
 trap display_summary EXIT
-
-
 
 echo "========================================="
 echo "    EGS Installer Script Complete        "
