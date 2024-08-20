@@ -1128,8 +1128,19 @@ load_cloud_install_config() {
 
 apply_manifests_from_yaml() {
     local yaml_file=$1
-    local global_kubeconfig_path="${KUBECONFIG:-$GLOBAL_KUBECONFIG}"
-    local global_kubecontext="${KUBECONTEXT:-$GLOBAL_KUBECONTEXT}"
+    local kubeconfig_path=""
+    if [ -z "$kubeconfig_path" ] || [ "$kubeconfig_path" = "null" ]; then
+        kubeconfig_path="$GLOBAL_KUBECONFIG"
+    fi
+
+    local kubecontext=""
+    if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
+        kubecontext="$GLOBAL_KUBECONTEXT"
+    fi
+
+    local context_arg=""
+    if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+        context_arg="--kube-context $kubecontext"
     local base_path=$(yq e '.base_path' "$yaml_file")
 
     # Ensure base_path is absolute
@@ -1137,8 +1148,8 @@ apply_manifests_from_yaml() {
 
     echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"
     echo "🔧 Global Variables:"
-    echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
-    echo "  🌐 global_kubecontext=$global_kubecontext"
+    echo "  🗂️  global_kubeconfig_path=$kubeconfig_path"
+    echo "  🌐  global_kubecontext=$kubecontext"
     echo "  🗂️  base_path=$base_path"
     echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
     echo "-----------------------------------------"
