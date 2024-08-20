@@ -53,41 +53,13 @@ Before you begin, ensure the following steps are completed:
          global_kubecontext: ""  # Global kubecontext (MANDATORY)
          ```
 
-3. **Modify the kubeslice-controller-egs Values:**
-   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-controller-egs` in `egs-installer-config.yaml`.
-   - Update the `endpoint` field under `kubeslice.controller` with the fetched `cluster_endpoint` value.
-     ```yaml
-     inline_values:  # Inline Helm values for the controller chart
-       kubeslice:
-         controller: 
-           endpoint: "<controller_cluster_endpoint>"  # Endpoint of the controller API server (MANDATORY)
-     ```
-   - Replace `<controller_cluster_endpoint>` with the actual endpoint of your controller cluster.
-
-4. **Modify the `kubeslice-worker-egs` Values:**
-   - Update the `kubeslice-worker-egs` configuration with the `kube cluster endpoint` or `apiserver endpoint` accessible from the `kubeslice-controller` cluster.
-   - Navigate to the configuration file where the `inline_values` are defined for `kubeslice-worker-egs` section in `egs-installer-config.yaml`.
-     ```yaml
-     inline_values:  # Inline Helm values for the worker chart
-       cluster:
-         name: worker-1  # Name of the worker cluster (MANDATORY)
-         endpoint: "<worker_cluster_endpoint>"  # Kube cluster or API server endpoint accessible from the controller cluster (MANDATORY)
-       kubesliceNetworking:
-         enabled: false  # Disable Kubeslice networking for this worker
-       egs:
-         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
-       metrics:
-         insecure: true  # Allow insecure connections for metrics
-     ```
-
-5. **Run the Installation Script:**
+3. **Run the Installation Script:**
    - Execute the installation script using the following command:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
 
-6. **Update the inline-values of kubeslice-worker-egs in `egs-installer-config.yaml` with Grafana LB External IP:**
+4. **Update the inline-values of kubeslice-worker-egs in `egs-installer-config.yaml` with Grafana LB External IP:**
    - Fetch the external IP using the following command:
      ```bash
      kubectl get svc prometheus-grafana -n monitoring
@@ -95,9 +67,6 @@ Before you begin, ensure the following steps are completed:
    - Update the `kubeslice-worker-egs` configuration with the Grafana LB external IP in `egs-installer-config.yaml` :
      ```yaml
      inline_values:  # Inline Helm values for the worker chart
-       cluster:
-         name: worker-1  # Name of the worker cluster (MANDATORY)
-         endpoint: "<worker_cluster_endpoint>"  # Kube cluster or API server endpoint accessible from the controller cluster (MANDATORY)
        kubesliceNetworking:
          enabled: false  # Disable Kubeslice networking for this worker
        egs:
@@ -106,7 +75,7 @@ Before you begin, ensure the following steps are completed:
        metrics:
          insecure: true  # Allow insecure connections for metrics
      ```
-6. **Run the Installation Script Again with updated `egs-installer-config.yaml` to apply the patch:**
+5. **Run the Installation Script Again with updated `egs-installer-config.yaml` to apply the patch:**
    - Execute the installation script using the following command:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
