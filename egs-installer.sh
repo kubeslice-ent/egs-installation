@@ -1125,7 +1125,6 @@ load_cloud_install_config() {
 
     echo "${installs[@]}"
 }
-
 apply_manifests_from_yaml() {
     local yaml_file=$1
     local global_kubeconfig_path=""
@@ -1184,10 +1183,9 @@ apply_manifests_from_yaml() {
         skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$yaml_file")
         namespace=$(yq e ".manifests[$index].namespace" "$yaml_file")
 
-
         if [ "$use_global_kubeconfig" = true ]; then
             kubeconfig_path="$global_kubeconfig_path"
-	    kubecontext=$global_kubecontext
+            kubecontext=$global_kubecontext
             context_arg="--context $global_kubecontext"
         else
             if [ -z "$kubeconfig" ] && [ "$kubeconfig" == "null" ]; then
@@ -1211,6 +1209,24 @@ apply_manifests_from_yaml() {
         echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
         echo "  🏷️  namespace=$namespace"
         echo "-----------------------------------------"
+
+        # Check if namespace exists, if not create it
+        if [ -n "$namespace" ] && [ "$namespace" != "null" ]; then
+            echo "🔍 Checking if namespace $namespace exists..."
+            if ! kubectl get namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg &>/dev/null; then
+                echo "🚀 Namespace $namespace not found. Creating namespace $namespace..."
+                kubectl create namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
+                if [ $? -ne 0 ]; then
+                    echo "❌ Error: Failed to create namespace: $namespace"
+                    exit 1
+                fi
+                echo "✔️ Namespace $namespace created successfully."
+            else
+                echo "✔️ Namespace $namespace already exists."
+            fi
+        else
+            echo "⚠️  No namespace specified. Default namespace will be used."
+        fi
 
         # Handle HTTPS file URLs or local base manifest files
         if [ -n "$base_manifest" ] && [ "$base_manifest" != "null" ]; then
