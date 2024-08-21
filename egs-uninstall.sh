@@ -1714,8 +1714,14 @@ else
     echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
 fi
 
-
+#Delete Slice
 continue_on_error delete_slices_in_controller
+
+
+# Delete projects in the controller cluster before deploying workers
+if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+   continue_on_error delete_projects_in_controller
+fi
 
 # Inside the loop where you process each worker
 if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
@@ -1745,23 +1751,19 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
     done
 fi
 
-# Register clusters in the controller cluster after projects have been created
+# UnRegister clusters in the controller cluster after projects have been created
 if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
   continue_on_error  unregister_clusters_in_controller
 fi
 
-# Create projects in the controller cluster before deploying workers
-if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
-   continue_on_error delete_projects_in_controller
-fi
 
-# Process kubeslice-ui ins6fctallation if enabled
+# Process kubeslice-ui uninstallation if enabled
 if [ "$ENABLE_INSTALL_UI" = "true" ]; then
    continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
 fi
 
 
-# Process kubeslice-controller installation if enabled
+# Process kubeslice-controller uninstallation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
    continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
 fi
