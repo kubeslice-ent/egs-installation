@@ -55,7 +55,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.0.1
+    tag: 0.5.0
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -107,7 +107,7 @@ egs:
     # Image name for the gateway certificates generator
     image: gpr-manager
     # Image tag for the gateway certificates generator
-    tag: 1.1.0
+    tag: 0.5.0
     imagePullPolicy: IfNotPresent
 
 prometheus:
