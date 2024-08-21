@@ -179,7 +179,7 @@ if [[ "$ENABLE_INSTALL_CONTROLLER" == "true" && "$KUBESLICE_CONTROLLER_SKIP_INST
     # Using the kubeaccess_precheck function to determine kubeconfig and kubecontext
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "kubeslice-controller" \
-        "$USE_GLOBAL_CONTEXT" \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
         "$KUBESLICE_CONTROLLER_KUBECONFIG" \
@@ -201,9 +201,9 @@ if [[ "$ENABLE_INSTALL_CONTROLLER" == "true" && "$KUBESLICE_CONTROLLER_SKIP_INST
         echo "🔧 Variables:"
         echo "  ENABLE_INSTALL_CONTROLLER=$ENABLE_INSTALL_CONTROLLER"
         echo "  KUBESLICE_CONTROLLER_SKIP_INSTALLATION=$KUBESLICE_CONTROLLER_SKIP_INSTALLATION"
-        echo "  KUBESLICE_CONTROLLER_KUBECONFIG=$kubeconfig_path"
-        echo "  KUBESLICE_CONTROLLER_KUBECONTEXT=$kubecontext"
-        echo "  USE_GLOBAL_CONTEXT=$USE_GLOBAL_CONTEXT"
+        echo "  kubeconfig_path=$kubeconfig_path"
+        echo "  kubecontext=$kubecontext"
+        echo "  KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG=$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG"
         echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG"
         echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT"
         echo "-----------------------------------------"
@@ -227,7 +227,7 @@ if [[ "$ENABLE_INSTALL_UI" == "true" && "$KUBESLICE_UI_SKIP_INSTALLATION" == "fa
     # Using the kubeaccess_precheck function to determine kubeconfig and kubecontext
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "kubeslice-ui" \
-        "$USE_GLOBAL_CONTEXT" \
+        "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
         "$KUBESLICE_UI_KUBECONFIG" \
@@ -248,9 +248,9 @@ if [[ "$ENABLE_INSTALL_UI" == "true" && "$KUBESLICE_UI_SKIP_INSTALLATION" == "fa
         echo "🔧 Variables:"
         echo "  ENABLE_INSTALL_UI=$ENABLE_INSTALL_UI"
         echo "  KUBESLICE_UI_SKIP_INSTALLATION=$KUBESLICE_UI_SKIP_INSTALLATION"
-        echo "  KUBESLICE_UI_KUBECONFIG=$kubeconfig_path"
-        echo "  KUBESLICE_UI_KUBECONTEXT=$kubecontext"
-        echo "  USE_GLOBAL_CONTEXT=$USE_GLOBAL_CONTEXT"
+        echo "  kubeconfig_path=$kubeconfig_path"
+        echo "  kubecontext=$kubecontext"
+        echo "  KUBESLICE_UI_USE_GLOBAL_KUBECONFIG=$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG"
         echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG"
         echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT"
         echo "-----------------------------------------"
@@ -540,20 +540,11 @@ parse_yaml() {
     fi
     LOCAL_CHARTS_PATH="$BASE_PATH/$LOCAL_CHARTS_PATH"
 
-    # Extract global context usage flag
-    USE_GLOBAL_CONTEXT=$(yq e '.use_global_context' "$yaml_file")
-    if [ -z "$USE_GLOBAL_CONTEXT" ] || [ "$USE_GLOBAL_CONTEXT" = "null" ]; then
-        USE_GLOBAL_CONTEXT="true" # Default to true if not specified
-    fi
 
-    echo "DEBUG: BASE_PATH=$BASE_PATH"
-    echo "DEBUG: LOCAL_CHARTS_PATH=$LOCAL_CHARTS_PATH"
+    echo " BASE_PATH=$BASE_PATH"
+    echo " LOCAL_CHARTS_PATH=$LOCAL_CHARTS_PATH"
 
     # Global enable/disable flags for different stages
-    ENABLE_FETCH_CONTROLLER_SECRETS=$(yq e '.enable_fetch_controller_secrets' "$yaml_file")
-    if [ -z "$ENABLE_FETCH_CONTROLLER_SECRETS" ] || [ "$ENABLE_FETCH_CONTROLLER_SECRETS" = "null" ]; then
-        ENABLE_FETCH_CONTROLLER_SECRETS="true"
-    fi
 
     ENABLE_PREPARE_WORKER_VALUES_FILE=$(yq e '.enable_prepare_worker_values_file' "$yaml_file")
     if [ -z "$ENABLE_PREPARE_WORKER_VALUES_FILE" ] || [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "null" ]; then
@@ -2634,10 +2625,6 @@ if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
     register_clusters_in_controller
 fi
 
-# Fetch secrets from the controller cluster if enabled
-#if [ "$ENABLE_FETCH_CONTROLLER_SECRETS" = "true" ]; then
-#    fetch_controller_secrets
-#fi
 
 # Inside the loop where you process each worker
 if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
