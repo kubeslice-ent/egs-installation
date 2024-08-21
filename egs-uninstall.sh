@@ -1471,6 +1471,8 @@ delete_slices_in_controller() {
     echo "🚀 Starting project deletion in controller cluster..."
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
+    local retry_interval=60  # Default wait time of 1 minute between retries
+    local max_retries=5      # Maximum number of retries
 
     if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
         context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
@@ -1488,34 +1490,54 @@ delete_slices_in_controller() {
         IFS="|" read -r project_name project_username <<<"$project"
 
         echo "-----------------------------------------"
-        echo "🚀 Deleting all slice in '$project_name' in namespace '$project_name'"
+        echo "🚀 Deleting all slices in '$project_name' in namespace 'kubeslice-$project_name'"
         echo "-----------------------------------------"
 
-   kubectl get sliceconfig --kubeconfig $kubeconfig_path $context_arg -n "kubeslice-$project_name" -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name --no-headers | while read namespace name; do
-  # Patch the SliceConfig to remove the specific entry
-  kubectl patch sliceconfig --kubeconfig $kubeconfig_path $context_arg $name -n $namespace --type=json -p='[
-    {
-      "op": "remove",
-      "path": "/spec/namespaceIsolationProfile/applicationNamespaces/0"
-    }
-  ]'
-  
-  # Delete the SliceConfig after patching
-  kubectl delete sliceconfig $name -n $namespace --kubeconfig $kubeconfig_path $context_arg
-done
+        kubectl get sliceconfig --kubeconfig $kubeconfig_path $context_arg -n "kubeslice-$project_name" -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name --no-headers | while read namespace name; do
+            retry_count=0
+            success=false
+            until [ $retry_count -ge $max_retries ]; do
+                # Patch the SliceConfig to remove the specific entry
+                kubectl patch sliceconfig --kubeconfig $kubeconfig_path $context_arg $name -n $namespace --type=json -p='[
+                    {
+                        "op": "remove",
+                        "path": "/spec/namespaceIsolationProfile/applicationNamespaces/0"
+                    }
+                ]'
+                # Check if the patch was successful
+                if [ $? -eq 0 ]; then
+                    # Delete the SliceConfig after patching
+                    kubectl delete sliceconfig $name -n $namespace --kubeconfig $kubeconfig_path $context_arg
+                    if [ $? -eq 0 ]; then
+                        success=true
+                        break
+                    fi
+                fi
+
+                echo "⚠️  Retrying deletion of SliceConfig '$name' in namespace '$namespace' ($((retry_count + 1))/$max_retries)..."
+                retry_count=$((retry_count + 1))
+                sleep $retry_interval
+            done
+
+            if [ "$success" = false ]; then
+                echo "❌ Error: Failed to delete SliceConfig '$name' in namespace '$namespace' after $max_retries attempts."
+                return 1
+            fi
+        done
 
         echo "🔍 Verifying sliceconfig in 'kubeslice-$project_name' deletion..."
         if kubectl get sliceconfig --all -n "kubeslice-$project_name" --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
             echo "❌ Error: sliceconfig in '$project_name' still exists in namespace kubeslice-$project_name."
             return 1
         else
-            echo "✔️  sliceconfig in  '$project_name' deleted successfully in namespace kubeslice-$project_name."
+            echo "✔️  sliceconfig in '$project_name' deleted successfully in namespace kubeslice-$project_name."
         fi
 
         echo "-----------------------------------------"
     done
     echo "✔️ slice config in kubeslice-$project_name deletion in controller cluster complete."
 }
+
 
 unregister_clusters_in_controller() {
     echo "🚀 Starting cluster unregistration in controller cluster..."
