@@ -519,14 +519,14 @@ parse_yaml() {
     GLOBAL_KUBECONFIG=$(yq e '.global_kubeconfig' "$yaml_file")
     if [ -z "$GLOBAL_KUBECONFIG" ] || [ "$GLOBAL_KUBECONFIG" = "null" ]; then
         echo -e "\n❌ Error: global_kubeconfig is not specified in the YAML file."
-        return 1
+        exit 1
     fi
     GLOBAL_KUBECONFIG="$BASE_PATH/$GLOBAL_KUBECONFIG"
 
     GLOBAL_KUBECONTEXT=$(yq e '.global_kubecontext' "$yaml_file")
     if [ -z "$GLOBAL_KUBECONTEXT" ] || [ "$GLOBAL_KUBECONTEXT" = "null" ]; then
         echo -e "\n❌ Error: global_kubecontext is not specified in the YAML file."
-        return 1
+        exit 1
     fi
 
     USE_LOCAL_CHARTS=$(yq e '.use_local_charts' "$yaml_file")
