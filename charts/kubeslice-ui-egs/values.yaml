@@ -11,11 +11,11 @@ kubeTally:
 kubeslice:
   ui:
     image: kubeslice-ui-ent-egs
-    tag: 1.1.1
+    tag: 0.5.0
     pullPolicy: IfNotPresent
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.1.1
+    tag: 0.5.0
     pullPolicy: IfNotPresent
   dashboard:
     image: kubeslice-kubernetes-dashboard
@@ -23,7 +23,7 @@ kubeslice:
     pullPolicy: IfNotPresent
   uiproxy:
     image: kubeslice-ui-proxy-egs
-    tag: 1.1.0
+    tag: 0.5.0
     pullPolicy: IfNotPresent
     service:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
@@ -34,7 +34,7 @@ kubeslice:
       # nodePort:
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 1.1.0
+    tag: 0.5.0
     pullPolicy: IfNotPresent
 
   workerinstaller:

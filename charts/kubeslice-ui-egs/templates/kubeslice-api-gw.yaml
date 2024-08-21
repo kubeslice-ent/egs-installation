@@ -32,7 +32,7 @@ spec:
         app: kubeslice-api-gw
     spec:
       containers:
-        - image: 'aveshadev/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
+        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
           env:
             - name: KUBESLICE_CONTROLLER_PROMETHEUS

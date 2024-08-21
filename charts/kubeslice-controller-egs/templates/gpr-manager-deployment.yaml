@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: gpr-manager
-          image: 'aveshadev/{{ .Values.egs.gprManager.image}}:{{.Values.egs.gprManager.tag}}'
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.egs.gprManager.image}}:{{.Values.egs.gprManager.tag}}'
           ports:
             - containerPort: 8088
               protocol: TCP
