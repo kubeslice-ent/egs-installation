@@ -1367,7 +1367,6 @@ uninstall_helm_chart_and_cleanup() {
     delete_kubernetes_objects() {
         echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'"
         kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
-        kubectl delete pvc --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
         kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
         kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
         kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
@@ -1745,11 +1744,6 @@ fi
 continue_on_error delete_slices_in_controller
 
 
-# Delete projects in the controller cluster before deploying workers
-if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
-   continue_on_error delete_projects_in_controller
-fi
-
 # Inside the loop where you process each worker
 if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
@@ -1776,6 +1770,11 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
        continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
     done
+fi
+
+# Delete projects in the controller cluster before deploying workers
+if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+   continue_on_error delete_projects_in_controller
 fi
 
 # UnRegister clusters in the controller cluster after projects have been created
