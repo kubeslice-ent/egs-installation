@@ -193,6 +193,9 @@ kubeslice_worker_egs:
     release: "kubeslice-worker1-release"  # Helm release name for the worker
     chart: "kubeslice-worker-egs"  # Helm chart name for the worker
     inline_values:  # Inline Helm values for the worker chart
+      cluster:
+        name: worker-1
+        endpoint: <worker-cluster-endpoint> # Cluster Endpoint Accessible from Controller Cluster
       kubesliceNetworking:
         enabled: false  # Disable Kubeslice networking for this worker
       egs:
