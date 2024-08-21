@@ -920,53 +920,6 @@ parse_yaml() {
     echo "✔️ Parsing completed."
 }
 
-# Function to verify all pods in a namespace are not running
-verify_pods_not_running() {
-    local namespace=$1
-    local kubeconfig_path=$2
-    local kubecontext=$3
-    local pod_check_timeout=$4
-    local skip_on_fail=$5
-
-    echo "🚀 Starting verification that no pods are running in namespace '$namespace'..."
-    echo "🔧 Variables:"
-    echo "  namespace=$namespace"
-    echo "  kubeconfig_path=$kubeconfig_path"
-    echo "  kubecontext=$kubecontext"
-    echo "  pod_check_timeout=$pod_check_timeout seconds"
-    echo "  skip_on_fail=$skip_on_fail"
-    echo "-----------------------------------------"
-
-    # Print all resources in the namespace
-    echo "📋 Listing all resources in namespace '$namespace'..."
-    kubectl get all -n $namespace --kubeconfig $kubeconfig_path --context $kubecontext
-    echo "-----------------------------------------"
-
-    echo "Verifying no pods are running in namespace '$namespace' with a timeout of $((pod_check_timeout / 60)) minutes..."
-    local end_time=$((SECONDS + pod_check_timeout))
-
-    while [ $SECONDS -lt $end_time ]; do
-        running_pods=$(kubectl get pods -n $namespace --kubeconfig $kubeconfig_path --context $kubecontext --no-headers | awk '{print $3}' | grep -E 'Running|Pending' | wc -l)
-
-        if [ $running_pods -eq 0 ]; then
-            echo "✔️ No pods are running in namespace '$namespace'."
-            echo "✔️ Verification of no pods running in namespace '$namespace' complete."
-            return 0
-        else
-            echo -n "⏳ Waiting for all pods to terminate in namespace '$namespace'..."
-            wait_with_dots 5 " "
-        fi
-    done
-
-    if [ "$skip_on_fail" = "true" ]; then
-        echo "⚠️  Warning: Timed out waiting for all pods to terminate in namespace '$namespace'. Skipping to the next task."
-    else
-        echo "❌ Error: Timed out waiting for all pods to terminate in namespace '$namespace'."
-        exit 1
-    fi
-}
-
-
 # Simulated wait_with_dots function for demonstration purposes
 wait_with_dots() {
     local seconds=$1
@@ -1029,6 +982,9 @@ remove_helm_repo() {
 delete_manifests_from_yaml() {
     local yaml_file=$1
     local global_kubeconfig_path=""
+    local max_retries=3  # Number of retries
+    local retry_delay=5  # Delay between retries in seconds
+
     if [ -z "$global_kubeconfig_path" ] || [ "$global_kubeconfig_path" = "null" ]; then
         global_kubeconfig_path="$GLOBAL_KUBECONFIG"
     fi
@@ -1109,11 +1065,18 @@ delete_manifests_from_yaml() {
             if [[ "$base_manifest" =~ ^https:// ]]; then
                 echo "🌐 Downloading manifest from URL: $base_manifest"
                 temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
-                curl -sL "$base_manifest" -o "$temp_manifest"
-                if [ $? -ne 0 ]; then
-                    echo "❌ Error: Failed to download manifest from URL: $base_manifest"
-                    return 1
-                fi
+                for ((i=1; i<=$max_retries; i++)); do
+                    curl -sL "$base_manifest" -o "$temp_manifest"
+                    if [ $? -eq 0 ]; then
+                        break
+                    elif [ $i -lt $max_retries ]; then
+                        echo "⚠️  Warning: Failed to download manifest from URL: $base_manifest. Retrying in $retry_delay seconds... ($i/$max_retries)"
+                        sleep $retry_delay
+                    else
+                        echo "⚠️  Warning: Failed to download manifest after $max_retries attempts."
+                        return 1
+                    fi
+                done
             else
                 base_manifest="$base_path/$base_manifest"
                 temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
@@ -1126,7 +1089,7 @@ delete_manifests_from_yaml() {
                 temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
                 echo "$inline_yaml" >"$temp_manifest"
             else
-                echo "❌ Error: Neither base manifest nor inline YAML provided for app: $appname"
+                echo "⚠️  Warning: Neither base manifest nor inline YAML provided for app: $appname"
                 return 1
             fi
         fi
@@ -1153,12 +1116,19 @@ delete_manifests_from_yaml() {
         fi
 
         echo "📄 Deleting manifest for app: $appname in namespace: ${namespace:-default}"
-        kubectl delete -f "$temp_manifest" --namespace "${namespace:-default}" --kubeconfig "$kubeconfig_path" $context_arg
-        if [ $? -ne 0 ]; then
-            echo "❌ Error: Failed to delete manifest for app: $appname"
-            return 1
-        fi
-        echo "✔️ Successfully deleted manifest for app: $appname"
+        for ((i=1; i<=$max_retries; i++)); do
+            kubectl delete -f "$temp_manifest" --namespace "${namespace:-default}" --kubeconfig "$kubeconfig_path" $context_arg
+            if [ $? -eq 0 ]; then
+                echo "✔️ Successfully deleted manifest for app: $appname"
+                break
+            elif [ $i -lt $max_retries ]; then
+                echo "⚠️  Warning: Failed to delete manifest for app: $appname. Retrying in $retry_delay seconds... ($i/$max_retries)"
+                sleep $retry_delay
+            else
+                echo "⚠️  Warning: Failed to delete manifest for app: $appname after $max_retries attempts."
+                return 1
+            fi
+        done
 
         # Clean up the temporary manifest file
         rm -f "$temp_manifest"
@@ -1167,6 +1137,7 @@ delete_manifests_from_yaml() {
     echo "✅ All applicable manifests deleted successfully."
     echo "-----------------------------------------"
 }
+
 
 
 # Function to fetch and display summary information
@@ -1178,7 +1149,7 @@ display_summary() {
     # Summary of all Helm chart uninstallations (including controller, UI, workers, and additional apps)
     echo "🛠️ **Application Uninstallations Summary**:"
 
-    # Helper function to check Helm release status and ensure it is removed
+    # Helper function to check Helm release status, ensure it is removed, and show resources
     check_helm_release_uninstalled() {
         local release_name=$1
         local namespace=$2
@@ -1191,6 +1162,9 @@ display_summary() {
             echo "⚠️ Warning: Release '$release_name' in namespace '$namespace' still exists. It was not successfully uninstalled."
         else
             echo "✔️ Release '$release_name' in namespace '$namespace' has been successfully uninstalled."
+            # Display resources in the namespace after uninstallation
+            echo "📋 Resources in namespace '$namespace' after uninstallation:"
+            kubectl get all --namespace "$namespace" --kubeconfig "$kubeconfig" --context "$kubecontext"
         fi
         echo "-----------------------------------------"
     }
@@ -1268,6 +1242,7 @@ display_summary() {
     echo "          🏁 Summary Output Complete      "
     echo "========================================="
 }
+
 
 
 fetch_k8s_cluster_endpoint() {
@@ -1471,7 +1446,7 @@ delete_slices_in_controller() {
     echo "🚀 Starting project deletion in controller cluster..."
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
-    local retry_interval=60  # Default wait time of 1 minute between retries
+    local retry_interval=120  # Default wait time of 1 minute between retries
     local max_retries=5      # Maximum number of retries
 
     if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
