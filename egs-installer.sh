@@ -383,14 +383,23 @@ validate_paths() {
 
     # Check GLOBAL_KUBECONFIG
     if [ ! -f "$GLOBAL_KUBECONFIG" ]; then
-        echo "❌ Error: GLOBAL_KUBECONFIG '$GLOBAL_KUBECONFIG' does not exist or is not a file."
-        error_found=true
+        log_warning "GLOBAL_KUBECONFIG '$GLOBAL_KUBECONFIG' does not exist or is not a file."
     fi
 
-    # Check KUBESLICE_CONTROLLER_KUBECONFIG if controller installation is enabled
-    if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
-        if [ ! -f "$KUBESLICE_CONTROLLER_KUBECONFIG" ]; then
+    # Check GLOBAL_KUBECONTEXT
+    if [ ! -f "$GLOBAL_KUBECONTEXT" ]; then
+        log_warning "GLOBAL_KUBECONTEXT '$GLOBAL_KUBECONTEXT' does not exist or is not a file."
+    fi
+
+    # Check KUBESLICE_CONTROLLER_KUBECONFIG if controller installation is enabled and global config is not being used
+    if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ] && [ "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" != "true" ]; then
+        if [ -z "$KUBESLICE_CONTROLLER_KUBECONFIG" ] || [ "$KUBESLICE_CONTROLLER_KUBECONFIG" = "null" ] || [ ! -f "$KUBESLICE_CONTROLLER_KUBECONFIG" ]; then
             echo "❌ Error: KUBESLICE_CONTROLLER_KUBECONFIG '$KUBESLICE_CONTROLLER_KUBECONFIG' does not exist or is not a file."
+            error_found=true
+        fi
+
+        if [ -z "$KUBESLICE_CONTROLLER_KUBECONTEXT" ] || [ "$KUBESLICE_CONTROLLER_KUBECONTEXT" = "null" ]; then
+            echo "❌ Error: KUBESLICE_CONTROLLER_KUBECONTEXT is not defined."
             error_found=true
         fi
     fi
@@ -399,6 +408,11 @@ validate_paths() {
     if [ "$ENABLE_INSTALL_UI" = "true" ] && [ "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" != "true" ]; then
         if [ -z "$KUBESLICE_UI_KUBECONFIG" ] || [ "$KUBESLICE_UI_KUBECONFIG" = "null" ] || [ ! -f "$KUBESLICE_UI_KUBECONFIG" ]; then
             echo "❌ Error: KUBESLICE_UI_KUBECONFIG '$KUBESLICE_UI_KUBECONFIG' does not exist or is not a file."
+            error_found=true
+        fi
+
+        if [ -z "$KUBESLICE_UI_KUBECONTEXT" ] || [ "$KUBESLICE_UI_KUBECONTEXT" = "null" ]; then
+            echo "❌ Error: KUBESLICE_UI_KUBECONTEXT is not defined."
             error_found=true
         fi
     fi
@@ -413,6 +427,11 @@ validate_paths() {
                     echo "❌ Error: Worker '$worker_name' kubeconfig '$kubeconfig' does not exist or is not a file."
                     error_found=true
                 fi
+
+                if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
+                    echo "❌ Error: Worker '$worker_name' kubecontext is not defined."
+                    error_found=true
+                fi
             fi
         done
     fi
@@ -425,14 +444,77 @@ validate_paths() {
         fi
     fi
 
+    # Check each additional app's kubeconfig if additional apps installation is enabled
+    if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ]; then
+        for app in "${ADDITIONAL_APPS[@]}"; do
+            IFS="|" read -r app_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"$app"
+
+            if [ "$skip_installation" = "false" ] && [ "$use_global_kubeconfig" != "true" ]; then
+                if [ -z "$kubeconfig" ] || [ "$kubeconfig" = "null" ] || [ ! -f "$kubeconfig" ]; then
+                    echo "❌ Error: Additional app '$app_name' kubeconfig '$kubeconfig' does not exist or is not a file."
+                    error_found=true
+                fi
+
+                if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
+                    echo "❌ Error: Additional app '$app_name' kubecontext is not defined."
+                    error_found=true
+                fi
+            fi
+        done
+    fi
+
+    # Check if the manifests path exists and is valid if specified
+    if [ -n "$MANIFESTS_PATH" ]; then
+        if [ ! -d "$MANIFESTS_PATH" ]; then
+            echo "❌ Error: MANIFESTS_PATH '$MANIFESTS_PATH' does not exist or is not a directory."
+            error_found=true
+        fi
+    fi
+
+    # Check kubeconfigs for manifests if MANIFESTS_PATH is specified
+    if [ -n "$MANIFESTS_PATH" ]; then
+        for manifest in "$MANIFESTS_PATH"/*.yaml; do
+            if [ ! -f "$manifest" ]; then
+                echo "❌ Error: Manifest '$manifest' does not exist or is not a file."
+                error_found=true
+            fi
+
+            manifest_kubeconfig=$(yq e '.kubeconfig' "$manifest")
+            if [ -n "$manifest_kubeconfig" ] && [ ! -f "$manifest_kubeconfig" ]; then
+                echo "❌ Error: Manifest kubeconfig '$manifest_kubeconfig' specified in '$manifest' does not exist or is not a file."
+                error_found=true
+            fi
+        done
+    fi
+
+    # Check if the run command kubeconfigs exist and are valid if specified
+    if [ -n "$RUN_COMMAND_KUBECONFIGS" ]; then
+        IFS=',' read -r -a run_command_kubeconfigs <<< "$RUN_COMMAND_KUBECONFIGS"
+        for kubeconfig in "${run_command_kubeconfigs[@]}"; do
+            if [ ! -f "$kubeconfig" ]; then
+                echo "❌ Error: Run command kubeconfig '$kubeconfig' does not exist or is not a file."
+                error_found=true
+            fi
+        done
+    fi
+
+    # Check if any required commands are available
+    for cmd in "kubectl" "helm" "yq"; do
+        if ! command -v "$cmd" &> /dev/null; then
+            echo "❌ Error: Required command '$cmd' is not installed or not found in PATH."
+            error_found=true
+        fi
+    done
+
     # If any errors were found, exit the script
     if [ "$error_found" = "true" ]; then
-        echo "❌ One or more critical errors were found in the paths. Please correct them and try again."
+        echo "❌ One or more critical errors were found in the paths or required commands. Please correct them and try again."
         exit 1
     else
-        echo "✔️ All required paths are valid."
+        echo "✔️ All required paths and commands are valid."
     fi
 }
+
 
 # Function to parse YAML using yq
 
@@ -1329,27 +1411,7 @@ apply_manifests_from_yaml() {
     echo "-----------------------------------------"
 }
 
-# Function to install manifest-based apps
-install_manifest() {
-    local manifest_name="$1"
-    echo "🚀 Applying manifest: $manifest_name"
-    # Placeholder for applying the manifest
-    echo "⚠️  Placeholder: Add commands to apply manifest $manifest_name here."
-    # Example:
-    # kubectl apply -f path-to-$manifest_name.yaml
-    echo "✅ Manifest $manifest_name applied successfully."
-}
 
-# Function to install additional apps
-install_additional_apps() {
-    local app_name="$1"
-    echo "🚀 Deploying additional app: $app_name"
-    # Placeholder for deploying additional apps
-    echo "⚠️  Placeholder: Add commands to deploy additional app $app_name here."
-    # Example:
-    # kubectl apply -f path-to-$app_name.yaml
-    echo "✅ Additional app $app_name deployed successfully."
-}
 
 run_k8s_commands_from_yaml() {
     local yaml_file=$1
@@ -1529,7 +1591,7 @@ display_summary() {
     if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ] && [ "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" = "false" ]; then
         read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
             "Kubeslice Controller" \
-            true \
+            "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
             "$GLOBAL_KUBECONFIG" \
             "$GLOBAL_KUBECONTEXT" \
             "$KUBESLICE_CONTROLLER_KUBECONFIG" \
@@ -1546,14 +1608,14 @@ display_summary() {
             skip_installation=$(yq e ".kubeslice_worker_egs[$i].skip_installation" "$EGS_INPUT_YAML")
             kubeconfig=$(yq e ".kubeslice_worker_egs[$i].kubeconfig" "$EGS_INPUT_YAML")
             kubecontext=$(yq e ".kubeslice_worker_egs[$i].kubecontext" "$EGS_INPUT_YAML")
-
+            use_global_kubeconfig=$(yq e ".kubeslice_worker_egs[$i].use_global_kubeconfig" "$EGS_INPUT_YAML")
             namespace=$(yq e ".kubeslice_worker_egs[$i].namespace" "$EGS_INPUT_YAML")
             release_name=$(yq e ".kubeslice_worker_egs[$i].release" "$EGS_INPUT_YAML")
 
             if [ "$skip_installation" = "false" ]; then
                 read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
                     "$worker_name" \
-                    true \
+                    "$use_global_kubeconfig" \
                     "$GLOBAL_KUBECONFIG" \
                     "$GLOBAL_KUBECONTEXT" \
                     "$kubeconfig" \
