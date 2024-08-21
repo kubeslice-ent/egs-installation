@@ -1359,10 +1359,23 @@ uninstall_helm_chart_and_cleanup() {
     helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path"
     echo "Helm Command Base: $helm_cmd"
 
-    if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-        echo "🔄 Helm release '$release_name' found. Preparing to uninstall..."
+    uninstall_helm_chart() {
         echo "Executing: helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg"
         helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg
+    }
+
+    delete_kubernetes_objects() {
+        echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'"
+        kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
+        kubectl delete pvc --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
+        kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
+        kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
+        kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
+    }
+
+    if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+        echo "🔄 Helm release '$release_name' found. Preparing to uninstall..."
+        uninstall_helm_chart
 
         if [ "$verify_uninstall" = "true" ]; then
             echo "🔍 Verifying uninstallation of Helm release '$release_name'..."
@@ -1378,11 +1391,19 @@ uninstall_helm_chart_and_cleanup() {
             done
 
             if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-                if [ "$skip_on_verify_fail" = "true" ]; then
-                    echo "⚠️ Warning: Helm release '$release_name' was not fully uninstalled, but skipping as per configuration."
+                echo "❌ Error: Helm release '$release_name' was not fully uninstalled. Deleting all resources manually..."
+                delete_kubernetes_objects
+                echo "🔄 Retrying Helm uninstallation..."
+                uninstall_helm_chart
+                if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+                    if [ "$skip_on_verify_fail" = "true" ]; then
+                        echo "⚠️ Warning: Helm release '$release_name' was not fully uninstalled after retry, but skipping as per configuration."
+                    else
+                        echo "❌ Error: Helm release '$release_name' failed to uninstall even after retrying. Manual intervention may be required."
+                        return 1
+                    fi
                 else
-                    echo "❌ Error: Helm release '$release_name' was not fully uninstalled."
-                    return 1
+                    echo "✔️ Helm release '$release_name' has been successfully uninstalled after manual cleanup."
                 fi
             fi
         else
@@ -1393,15 +1414,21 @@ uninstall_helm_chart_and_cleanup() {
     fi
 
     echo "-----------------------------------------"
-    echo "✔️ Completed uninstallation for release: $release_name"
+    echo "🧹 Cleaning up any remaining Kubernetes objects..."
+    delete_kubernetes_objects
+
     echo "-----------------------------------------"
-    echo "✔️ Helm chart uninstallation and cleanup complete."
+    echo "✔️ Completed uninstallation and cleanup for release: $release_name"
+    echo "-----------------------------------------"
 }
+
 
 delete_projects_in_controller() {
     echo "🚀 Starting project deletion in controller cluster..."
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
+    local max_retries=3  # Number of retries
+    local retry_delay=5  # Delay between retries in seconds
 
     if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
         context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
@@ -1422,11 +1449,19 @@ delete_projects_in_controller() {
         echo "🚀 Deleting project '$project_name' in namespace '$namespace'"
         echo "-----------------------------------------"
 
-        kubectl delete project "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
-        if [ $? -ne 0 ]; then
-            echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace'."
-            return 1
-        fi
+        # Retry loop for deletion
+        for ((i=1; i<=max_retries; i++)); do
+            kubectl delete project "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            if [ $? -eq 0 ]; then
+                break
+            elif [ $i -lt $max_retries ]; then
+                echo "⚠️  Warning: Failed to delete project '$project_name' in namespace '$namespace'. Retrying in $retry_delay seconds... ($i/$max_retries)"
+                sleep $retry_delay
+            else
+                echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace' after $max_retries attempts."
+                return 1
+            fi
+        done
 
         echo "🔍 Verifying project '$project_name' deletion..."
         if kubectl get project "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
@@ -1440,6 +1475,7 @@ delete_projects_in_controller() {
     done
     echo "✔️ Project deletion in controller cluster complete."
 }
+
 
 
 delete_slices_in_controller() {
@@ -1514,10 +1550,12 @@ delete_slices_in_controller() {
 }
 
 
-unregister_clusters_in_controller() {
-    echo "🚀 Starting cluster unregistration in controller cluster..."
+delete_projects_in_controller() {
+    echo "🚀 Starting project deletion in controller cluster..."
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
+    local max_retries=3  # Number of retries
+    local retry_delay=5  # Delay between retries in seconds
 
     if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
         context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
@@ -1531,31 +1569,45 @@ unregister_clusters_in_controller() {
     echo "  namespace=$namespace"
     echo "-----------------------------------------"
 
-    for registration in "${KUBESLICE_CLUSTER_REGISTRATIONS[@]}"; do
-        IFS="|" read -r cluster_name project_name telemetry_enabled telemetry_endpoint telemetry_provider geo_location_provider geo_location_region <<<"$registration"
+    for project in "${KUBESLICE_PROJECTS[@]}"; do
+        IFS="|" read -r project_name project_username <<<"$project"
 
         echo "-----------------------------------------"
-        echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'"
+        echo "🚀 Deleting project '$project_name' in namespace '$namespace'"
         echo "-----------------------------------------"
 
-        kubectl delete cluster "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
-        if [ $? -ne 0 ]; then
-            echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'."
-            return 1
-        fi
+        # Retry loop for deletion
+        for ((i=1; i<=max_retries; i++)); do
+            kubectl delete project "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            if [ $? -eq 0 ]; then
+                break
+            elif kubectl get project "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+                if [ $i -lt $max_retries ]; then
+                    echo "⚠️  Warning: Failed to delete project '$project_name' in namespace '$namespace'. Retrying in $retry_delay seconds... ($i/$max_retries)"
+                    sleep $retry_delay
+                else
+                    echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace' after $max_retries attempts."
+                    return 1
+                fi
+            else
+                echo "⚠️  Warning: Project '$project_name' not found in namespace '$namespace'. Proceeding to the next project."
+                break
+            fi
+        done
 
-        echo "🔍 Verifying cluster unregistration for '$cluster_name'..."
-        if kubectl get cluster "$cluster_name" -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-            echo "❌ Error: Cluster '$cluster_name' still exists in project '$project_name'."
+        echo "🔍 Verifying project '$project_name' deletion..."
+        if kubectl get project "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+            echo "❌ Error: Project '$project_name' still exists in namespace '$namespace'."
             return 1
         else
-            echo "✔️  Cluster '$cluster_name' unregistered successfully from project '$project_name'."
+            echo "✔️  Project '$project_name' deleted successfully or was not found in namespace '$namespace'."
         fi
 
         echo "-----------------------------------------"
     done
-    echo "✔️ Cluster unregistration in controller cluster complete."
+    echo "✔️ Project deletion in controller cluster complete."
 }
+
 
 
 
