@@ -83,9 +83,9 @@ Before you begin, ensure the following steps are completed:
 ---
 
 ### UnInstallation Steps
-
+---
   **Run the Cleanup Script**
-   - Execute the installation script using the following command:
+   - Execute the UnInstallation script using the following command:
      ```bash
      ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
      ```
