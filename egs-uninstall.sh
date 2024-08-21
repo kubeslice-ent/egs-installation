@@ -19,7 +19,7 @@ continue_on_error() {
 
 # Print introductory statement
 echo "========================================="
-echo "           EGS Installer Script          "
+echo "           EGS UnInstaller Script          "
 echo "========================================="
 echo ""
 
@@ -1747,5 +1747,5 @@ fi
 trap display_summary EXIT
 
 echo "========================================="
-echo "    EGS Installer Script Complete        "
+echo "    EGS UnInstaller Script Complete        "
 echo "========================================="
