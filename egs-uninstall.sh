@@ -1347,7 +1347,7 @@ uninstall_helm_chart_and_cleanup() {
 
     local context_arg=""
     if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
-        context_arg="--kube-context $kubecontext"
+        context_arg="--context $kubecontext"
     fi
     echo "Context Argument: $context_arg"
 
