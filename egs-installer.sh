@@ -181,7 +181,8 @@ kubeslice_pre_check() {
             exit 1
         fi
 
-        controller_cluster_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" $context_arg -o jsonpath='{.clusters[0].cluster.server}')
+        controller_cluster_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.context.cluster}')'")].cluster.server}'
+)
         echo "✔️  Successfully accessed kubeslice-controller cluster. Kubernetes endpoint: $controller_cluster_endpoint"
         echo "-----------------------------------------"
     else
@@ -230,7 +231,8 @@ kubeslice_pre_check() {
             exit 1
         fi
 
-        ui_cluster_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" $context_arg -o jsonpath='{.clusters[0].cluster.server}')
+        ui_cluster_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.context.cluster}')'")].cluster.server}'
+)
         echo "✔️  Successfully accessed kubeslice-ui cluster. Kubernetes endpoint: $ui_cluster_endpoint"
         echo "-----------------------------------------"
     else
@@ -284,7 +286,8 @@ kubeslice_pre_check() {
                 exit 1
             fi
 
-            worker_cluster_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" $context_arg -o jsonpath='{.clusters[0].cluster.server}')
+            worker_cluster_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.context.cluster}')'")].cluster.server}'
+)
             echo "✔️  Successfully accessed worker cluster '$worker_name'. Kubernetes endpoint: $worker_cluster_endpoint"
 
             # Check for nodes labeled with 'kubeslice.io/node-type=gateway'
@@ -1799,7 +1802,8 @@ install_or_upgrade_helm_chart() {
             echo "🔍 Attempting to fetch the cluster endpoint..."
 
             local cluster_endpoint
-            cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
+            cluster_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.context.cluster}')'")].cluster.server}'
+)
 
             if [ -z "$cluster_endpoint" ]; then
                 echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
@@ -1814,7 +1818,8 @@ install_or_upgrade_helm_chart() {
             echo "🔍 No endpoint found in inline values. Attempting to fetch the cluster endpoint..."
 
             local cluster_endpoint
-            cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
+            cluster_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.context.cluster}')'")].cluster.server}'
+)
 
             if [ -z "$cluster_endpoint" ]; then
                 echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
@@ -1831,7 +1836,8 @@ install_or_upgrade_helm_chart() {
             if [ -z "$existing_endpoint" ]; then
                 echo "⚠️ Warning: Detected an empty endpoint in inline values, fetching again."
                 local cluster_endpoint
-                cluster_endpoint=$(fetch_k8s_cluster_endpoint "$kubeconfig_path" "$kubecontext")
+                cluster_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.context.cluster}')'")].cluster.server}'
+)
 
                 if [ -z "$cluster_endpoint" ]; then
                     echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
@@ -2166,6 +2172,7 @@ prepare_worker_values_file() {
         controller_context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
     fi
 
+
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
         IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"${KUBESLICE_WORKERS[$worker_index]}"
 
@@ -2184,6 +2191,9 @@ prepare_worker_values_file() {
         skip_on_verify_fail=$(echo "$worker" | yq e '.skip_on_verify_fail' -)
         version=$(echo "$worker" | yq e '.version' -)
         specific_use_local_charts=$(echo "$worker" | yq e '.specific_use_local_charts' -)
+
+
+ 
 
         echo "  Extracted values for worker $worker_name:"
         echo "  Worker Name: $worker_name"
@@ -2249,11 +2259,13 @@ prepare_worker_values_file() {
             # Fetch the worker endpoint if not provided in inline values
             if [ -z "$inline_endpoint" ] || [ "$inline_endpoint" == "null" ]; then
                 echo "🔍 No endpoint found in inline values. Attempting to fetch the worker endpoint..."
-                worker_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.clusters[0].cluster.server}')
+                worker_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.context.cluster}')'")].cluster.server}'
+)
 
                 if [ -z "$worker_endpoint" ]; then
                     echo "⚠️ Warning: Failed to fetch worker endpoint. Setting a default value."
-                    worker_endpoint="https://default-endpoint" # Replace this with a suitable default if needed
+                    worker_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.context.cluster}')'")].cluster.server}'
+) # Replace this with a suitable default if needed
                 else
                     worker_endpoint=$(echo "$worker_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1)
                     echo "✔️ Fetched worker endpoint: $worker_endpoint"
@@ -2266,11 +2278,13 @@ prepare_worker_values_file() {
             echo "⚠️ Warning: Worker inline values are empty or not provided."
 
             # Fetch the worker endpoint if inline values are empty or not provided
-            worker_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.clusters[0].cluster.server}')
+            worker_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.context.cluster}')'")].cluster.server}'
+)
 
             if [ -z "$worker_endpoint" ]; then
                 echo "⚠️ Warning: Failed to fetch worker endpoint. Setting a default value."
-                worker_endpoint=$(kubectl config view --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.clusters[0].cluster.server}')
+                worker_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.context.cluster}')'")].cluster.server}'
+)
             else
                 worker_endpoint=$(echo "$worker_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1)
                 echo "✔️ Fetched worker endpoint: $worker_endpoint"
