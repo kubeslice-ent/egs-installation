@@ -82,6 +82,15 @@ Before you begin, ensure the following steps are completed:
      ```
 ---
 
+### UnInstallation Steps
+
+5. **Run the Cleanup Script**
+   - Execute the installation script using the following command:
+     ```bash
+     ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
+     ```
+---
+
 ## 🛠️ Configuration details
 
 The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installer-config.yaml`) with descriptions for each section.
