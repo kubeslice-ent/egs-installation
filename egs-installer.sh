@@ -2323,47 +2323,7 @@ EOF
 register_clusters_in_controller() {
     echo "🚀 Starting cluster registration in controller cluster..."
 
-    # Use kubeaccess_precheck to determine kubeconfig path and context
-    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-        "Kubeslice Controller Cluster Registration" \
-        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
-        "$GLOBAL_KUBECONFIG" \
-        "$GLOBAL_KUBECONTEXT" \
-        "$KUBESLICE_CONTROLLER_KUBECONFIG" \
-        "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
-    # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Cluster Registration "
-    echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
-
-    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
-    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-
-        validate_kubecontext "$kubeconfig_path" "$kubecontext"
-    else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-        exit 1
-    fi
-
-    local context_arg=""
-    if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
-        context_arg="--context $kubecontext"
-    fi
-
-    local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
-
-    echo "🔧 Variables:"
-    echo "  kubeconfig_path=$kubeconfig_path"
-    echo "  context_arg=$context_arg"
-    echo "  namespace=$namespace"
-    echo "-----------------------------------------"
 
     for registration in "${KUBESLICE_CLUSTER_REGISTRATIONS[@]}"; do
         IFS="|" read -r cluster_name project_name telemetry_enabled telemetry_endpoint telemetry_provider geo_location_provider geo_location_region <<<"$registration"
