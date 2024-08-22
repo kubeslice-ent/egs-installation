@@ -1621,7 +1621,7 @@ run_k8s_commands_from_yaml() {
             "$kubeconfig" \
             "$kubecontext")
 
-        # Print output variables after calling kubeaccess_precheck
+        # Log debug info
         echo "🔧 kubeaccess_precheck - Output Variables: command_set_$index"
         echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
         echo "  🌐 Kubecontext: $kubecontext"
@@ -1647,10 +1647,10 @@ run_k8s_commands_from_yaml() {
             context_arg="--context $kubecontext"
         fi
 
-        # Execute the command stream with the appropriate context and kubeconfig
+        # Log command before execution
         echo "🔧 Executing command stream with kubeconfig: $kubeconfig_path and context: $context_arg"
 
-        # Print all variables
+        # Print all variables for debugging
         echo "🔧 Command Set Variables:"
         echo "  📜 command_stream=$command_stream"
         echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"
@@ -1675,20 +1675,24 @@ run_k8s_commands_from_yaml() {
             continue
         fi
 
-        # Handle the command as a whole without appending namespace or kubeconfig
-        local full_cmd="KUBECONFIG=\"$kubeconfig_path\" $command_stream $context_arg"
-        echo "🔄 Executing command: $full_cmd"
-        eval "$full_cmd"
-        if [ $? -ne 0 ]; then
-            echo "❌ Error: Command failed: $command_stream"
-            if [ "$skip_on_verify_fail" = true ]; then
-                echo "⚠️  Skipping further commands in this set due to failure."
-                break
-            else
-                echo "❌ Exiting due to command failure."
-                exit 1
+        # Execute each command in the stream with the appropriate kubeconfig and context
+        while IFS= read -r cmd; do
+            if [ -n "$cmd" ]; then
+                local full_cmd="KUBECONFIG=\"$kubeconfig_path\" $cmd $context_arg"
+                echo "🔄 Executing command: $full_cmd"
+                eval "$full_cmd"
+                if [ $? -ne 0 ]; then
+                    echo "❌ Error: Command failed: $cmd"
+                    if [ "$skip_on_verify_fail" = true ]; then
+                        echo "⚠️  Skipping further commands in this set due to failure."
+                        break
+                    else
+                        echo "❌ Exiting due to command failure."
+                        exit 1
+                    fi
+                fi
             fi
-        fi
+        done <<< "$command_stream"
 
         if [ "$verify_install" = true ]; then
             echo "🔍 Verifying installation in namespace: $namespace"
