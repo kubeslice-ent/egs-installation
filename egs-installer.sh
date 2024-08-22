@@ -171,8 +171,25 @@ kubeaccess_precheck() {
         echo "-----------------------------------------" >&2
     fi
 
+    # Condition to check if global config should be used when component config/context is empty
+    if [ "$use_global_config" = "true" ] && [ -z "$component_kubeconfig" ] && [ -z "$component_kubecontext" ]; then
+        if [ -n "$global_kubeconfig" ] && [ -n "$global_kubecontext" ]; then
+            if context_exists_in_kubeconfig "$global_kubeconfig" "$global_kubecontext"; then
+                kubeaccess_kubeconfig="$global_kubeconfig"
+                kubeaccess_context="$global_kubecontext"
+                echo "⚠️  Warning: Both component_kubeconfig and component_kubecontext are empty or null. Falling back to global kubeconfig and kubecontext for deployment of $component_name." >&2
+                api_server_url=$(get_api_server_url "$kubeaccess_kubeconfig" "$kubeaccess_context")
+                echo "🌐 API Server URL for context '$kubeaccess_context': $api_server_url" >&2
+            else
+                echo "❌ Error: Global kubecontext '$global_kubecontext' not found in the specified kubeconfig." >&2
+                exit 1
+            fi
+        else
+            echo "❌ Error: Global kubeconfig or kubecontext is not defined or is empty." >&2
+            exit 1
+        fi
     # Fall back to global config if component kubeconfig is not provided
-    if [ -z "$component_kubeconfig" ] && [ -n "$component_kubecontext" ]; then
+    elif [ -z "$component_kubeconfig" ] && [ -n "$component_kubecontext" ]; then
         if context_exists_in_kubeconfig "$global_kubeconfig" "$component_kubecontext"; then
             kubeaccess_kubeconfig="$global_kubeconfig"
             kubeaccess_context="$component_kubecontext"
@@ -181,9 +198,6 @@ kubeaccess_precheck() {
             echo "🌐 API Server URL for context '$kubeaccess_context': $api_server_url" >&2
         else
             echo "❌ Error: Component kubecontext '$component_kubecontext' not found in global kubeconfig." >&2
-            echo "🔍 Possible solutions:" >&2
-            echo "  - Verify that the component kubecontext exists in the global kubeconfig file." >&2
-            echo "  - Ensure the correct kubecontext name is used." >&2
             exit 1
         fi
     elif [ "$use_global_config" = "true" ]; then
@@ -196,20 +210,10 @@ kubeaccess_precheck() {
                 echo "🌐 API Server URL for context '$kubeaccess_context': $api_server_url" >&2
             else
                 echo "❌ Error: Global kubecontext '$global_kubecontext' not found in the specified kubeconfig." >&2
-                echo "🔍 Disabling use of global config." >&2
-                use_global_config="false"
-                echo "🔍 Possible solutions:" >&2
-                echo "  - Ensure the kubecontext '$global_kubecontext' exists in the kubeconfig '$global_kubeconfig'." >&2
-                echo "  - Double-check the spelling of the context name." >&2
-                echo "  - Verify that the kubeconfig file is correct and accessible." >&2
                 exit 1
             fi
         else
             echo "❌ Error: Global kubeconfig or kubecontext is not defined correctly." >&2
-            echo "🔍 Disabling use of global config." >&2
-            use_global_config="false"
-            echo "🔍 Possible solutions:" >&2
-            echo "  - Ensure both 'global_kubeconfig' and 'global_kubecontext' are provided when 'use_global_config' is true." >&2
             exit 1
         fi
     else
@@ -221,9 +225,6 @@ kubeaccess_precheck() {
             echo "🌐 API Server URL for context '$kubeaccess_context': $api_server_url" >&2
         else
             echo "❌ Error: Component level kubeconfig or kubecontext for $component_name is not defined or found correctly." >&2
-            echo "🔍 Possible solutions:" >&2
-            echo "  - Ensure both 'component_kubeconfig' and 'component_kubecontext' are provided and correct." >&2
-            echo "  - Verify that the kubecontext exists in the respective kubeconfig." >&2
             exit 1
         fi
     fi
@@ -232,6 +233,7 @@ kubeaccess_precheck() {
         echo "$kubeaccess_kubeconfig $kubeaccess_context"
     fi
 }
+
 
 
 
