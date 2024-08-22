@@ -327,6 +327,7 @@ kubeslice_pre_check() {
         echo "  KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG=$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG"
         echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG"
         echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT"
+        echo "  context_arg=$context_arg"
         echo "-----------------------------------------"
 
         cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" $context_arg 2>&1)
@@ -336,7 +337,7 @@ kubeslice_pre_check() {
             exit 1
         fi
 
-        controller_cluster_endpoint=$(kubectl config --kubeconfig="$kubeconfig_path" view -o jsonpath="{.clusters[?(@.name == \"$(kubectl config --kubeconfig="$kubeconfig_path" view -o jsonpath="{.contexts[?(@.name == \"$kubecontext\")].context.cluster}")\")].cluster.server}")
+        controller_cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
         echo "✔️  Successfully accessed kubeslice-controller cluster. Kubernetes endpoint: $controller_cluster_endpoint"
         echo "-----------------------------------------"
@@ -409,7 +410,7 @@ kubeslice_pre_check() {
             exit 1
         fi
 
-        ui_cluster_endpoint=$(kubectl config --kubeconfig="$kubeconfig" view -o jsonpath="{.clusters[?(@.name == \"$(kubectl config --kubeconfig="$kubeconfig_path" view -o jsonpath="{.contexts[?(@.name == \"$kubecontext\")].context.cluster}")\")].cluster.server}")
+        ui_cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
         echo "✔️  Successfully accessed kubeslice-ui cluster. Kubernetes endpoint: $ui_cluster_endpoint"
         echo "-----------------------------------------"
@@ -485,6 +486,7 @@ kubeslice_pre_check() {
             echo "  use_global_kubeconfig=$use_global_kubeconfig"
             echo "  kubeconfig=$kubeconfig_path"
             echo "  kubecontext=$kubecontext"
+            echo "  context_arg=$context_arg"
             echo "  namespace=$namespace"
             echo "  release_name=$release_name"
             echo "  chart_name=$chart_name"
@@ -500,9 +502,7 @@ kubeslice_pre_check() {
                 exit 1
             fi
 
-            worker_cluster_endpoint=$(
-                kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path $context_arg -o jsonpath='{.context.cluster}')'")].cluster.server}'
-            )
+            worker_cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
             echo "✔️  Successfully accessed worker cluster '$worker_name'. Kubernetes endpoint: $worker_cluster_endpoint"
 
             # Check for nodes labeled with 'kubeslice.io/node-type=gateway'
