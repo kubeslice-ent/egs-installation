@@ -180,11 +180,18 @@ kubeaccess_precheck() {
                 api_server_url=$(get_api_server_url "$kubeaccess_kubeconfig" "$kubeaccess_context")
                 echo "🌐 API Server URL for context '$kubeaccess_context': $api_server_url" >&2
             else
-                echo "Error: Global kubecontext '$global_kubecontext' not found in the specified kubeconfig." >&2
+                echo "❌ Error: Global kubecontext '$global_kubecontext' not found in the specified kubeconfig." >&2
+                echo "🔍 Possible solutions:" >&2
+                echo "  - Ensure the kubecontext '$global_kubecontext' exists in the kubeconfig '$global_kubeconfig'." >&2
+                echo "  - Double-check the spelling of the context name." >&2
+                echo "  - Verify that the kubeconfig file is correct and accessible." >&2
                 exit 1
             fi
         else
-            echo "Error: Global kubeconfig or kubecontext is not defined correctly." >&2
+            echo "❌ Error: Global kubeconfig or kubecontext is not defined correctly." >&2
+            echo "🔍 Possible solutions:" >&2
+            echo "  - Ensure both 'global_kubeconfig' and 'global_kubecontext' are provided when 'use_global_config' is true." >&2
+            echo "  - Check if these variables are set in the environment or passed correctly to the script." >&2
             exit 1
         fi
     elif [ -n "$component_kubecontext" ] && [ -z "$component_kubeconfig" ]; then
@@ -195,7 +202,10 @@ kubeaccess_precheck() {
             api_server_url=$(get_api_server_url "$kubeaccess_kubeconfig" "$kubeaccess_context")
             echo "🌐 API Server URL for context '$kubeaccess_context': $api_server_url" >&2
         else
-            echo "Error: Component kubecontext '$component_kubecontext' not found in global kubeconfig." >&2
+            echo "❌ Error: Component kubecontext '$component_kubecontext' not found in global kubeconfig." >&2
+            echo "🔍 Possible solutions:" >&2
+            echo "  - Verify that the component kubecontext exists in the global kubeconfig file." >&2
+            echo "  - Ensure the correct kubecontext name is used." >&2
             exit 1
         fi
     else
@@ -207,11 +217,17 @@ kubeaccess_precheck() {
                 api_server_url=$(get_api_server_url "$kubeaccess_kubeconfig" "$kubeaccess_context")
                 echo "🌐 API Server URL for context '$kubeaccess_context': $api_server_url" >&2
             else
-                echo "Error: Component level kubecontext '$component_kubecontext' not found in the specified kubeconfig." >&2
+                echo "❌ Error: Component level kubecontext '$component_kubecontext' not found in the specified kubeconfig." >&2
+                echo "🔍 Possible solutions:" >&2
+                echo "  - Check that the kubecontext '$component_kubecontext' exists in the component kubeconfig '$component_kubeconfig'." >&2
+                echo "  - Verify that the correct kubeconfig file and context are being used." >&2
                 exit 1
             fi
         else
-            echo "Error: Component level kubeconfig or kubecontext for $component_name is not defined correctly." >&2
+            echo "❌ Error: Component level kubeconfig or kubecontext for $component_name is not defined correctly." >&2
+            echo "🔍 Possible solutions:" >&2
+            echo "  - Ensure both 'component_kubeconfig' and 'component_kubecontext' are provided." >&2
+            echo "  - Double-check the variables passed to the script for correctness." >&2
             exit 1
         fi
     fi
@@ -220,6 +236,7 @@ kubeaccess_precheck() {
         echo "$kubeaccess_kubeconfig $kubeaccess_context"
     fi
 }
+
 
 
 # Function to validate if a given kubecontext is valid
