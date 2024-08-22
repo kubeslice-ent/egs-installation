@@ -2179,7 +2179,7 @@ EOF
     echo "✅ Image pull secrets configured successfully."
 
     # Define the base Helm command
-    helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path"
+    helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path $context_arg"
 
     # Determine whether to install or upgrade
     if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
