@@ -1341,7 +1341,6 @@ load_cloud_install_config() {
 
     echo "${installs[@]}"
 }
-
 apply_manifests_from_yaml() {
     local yaml_file=$1
     local base_path=$(yq e '.base_path' "$yaml_file")
@@ -1386,6 +1385,7 @@ apply_manifests_from_yaml() {
         skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$yaml_file")
         namespace=$(yq e ".manifests[$index].namespace" "$yaml_file")
 
+
         # Call the kubeaccess_precheck function and capture output
         read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
             "$appname" \
@@ -1408,6 +1408,7 @@ apply_manifests_from_yaml() {
             echo "  🌐 Kubecontext: $kubecontext"
 
             validate_kubecontext "$kubeconfig_path" "$kubecontext"
+
         else
             echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
             echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
@@ -1434,6 +1435,24 @@ apply_manifests_from_yaml() {
         echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
         echo "  🏷️ namespace=$namespace"
         echo "-----------------------------------------"
+
+        # Check if namespace exists, if not create it
+        if [ -n "$namespace" ] && [ "$namespace" != "null" ]; then
+            echo "🔍 Checking if namespace $namespace exists..."
+            if ! kubectl get namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg &>/dev/null; then
+                echo "🚀 Namespace $namespace not found. Creating namespace $namespace..."
+                kubectl create namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
+                if [ $? -ne 0 ]; then
+                    echo "❌ Error: Failed to create namespace: $namespace"
+                    exit 1
+                fi
+                echo "✔️ Namespace $namespace created successfully."
+            else
+                echo "✔️ Namespace $namespace already exists."
+            fi
+        else
+            echo "⚠️  No namespace specified. Default namespace will be used."
+        fi
 
         # Handle HTTPS file URLs or local base manifest files
         if [ -n "$base_manifest" ] && [ "$base_manifest" != "null" ]; then
