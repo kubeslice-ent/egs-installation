@@ -1560,87 +1560,86 @@ fi
 run_k8s_commands_from_yaml() {
     local yaml_file=$1
 
-# Extract and ensure the base_path is absolute
-local base_path=$(yq e '.base_path' "$yaml_file")
-base_path=$(realpath "${base_path:-.}")
+    # Extract and ensure the base_path is absolute
+    local base_path=$(yq e '.base_path' "$yaml_file")
+    base_path=$(realpath "${base_path:-.}")
 
-# Check if the run_commands flag is set to true
-local run_commands=$(yq e '.run_commands // "false"' "$yaml_file")
-if [[ "$run_commands" != "true" ]]; then
-    echo "⏩ Command execution is disabled (run_commands is not true). Skipping."
-    return
-fi
+    # Check if the run_commands flag is set to true
+    local run_commands=$(yq e '.run_commands // "false"' "$yaml_file")
+    if [[ "$run_commands" != "true" ]]; then
+        echo "⏩ Command execution is disabled (run_commands is not true). Skipping."
+        return
+    fi
 
-echo "🚀 Starting execution of Kubernetes commands from YAML file: $yaml_file"
-echo "🔧 Global Variables:"
-echo "  🗂️  global_kubeconfig_path= $GLOBAL_KUBECONFIG"
-echo "  🌐 global_kubecontext=$GLOBAL_KUBECONTEXT"
-echo "  🗂️  base_path=$base_path"
-echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
-echo "-----------------------------------------"
+    echo "🚀 Starting execution of Kubernetes commands from YAML file: $yaml_file"
+    echo "🔧 Global Variables:"
+    echo "  🗂️  global_kubeconfig_path= $GLOBAL_KUBECONFIG"
+    echo "  🌐 global_kubecontext=$GLOBAL_KUBECONTEXT"
+    echo "  🗂️  base_path=$base_path"
+    echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
+    echo "-----------------------------------------"
 
-# Check if the commands section exists in the YAML file
-commands_exist=$(yq e '.commands' "$yaml_file")
-if [[ "$commands_exist" == "null" ]]; then
-    echo "⚠️  Warning: No 'commands' section found in the YAML file. Skipping command execution."
-    return
-fi
+    # Check if the commands section exists in the YAML file
+    local commands_exist=$(yq e '.commands' "$yaml_file")
+    if [[ "$commands_exist" == "null" ]]; then
+        echo "⚠️  Warning: No 'commands' section found in the YAML file. Skipping command execution."
+        return
+    fi
 
-# Extract commands from the YAML file
-commands_length=$(yq e '.commands | length' "$yaml_file")
-if [[ "$commands_length" -eq 0 ]]; then
-    echo "⚠️  Warning: 'commands' section is defined, but no commands found. Skipping command execution."
-    return
-fi
+    # Extract commands from the YAML file
+    local commands_length=$(yq e '.commands | length' "$yaml_file")
+    if [[ "$commands_length" -eq 0 ]]; then
+        echo "⚠️  Warning: 'commands' section is defined, but no commands found. Skipping command execution."
+        return
+    fi
 
-# Iterate through each command set
-for index in $(seq 0 $((commands_length - 1))); do
-    echo "🔄 Executing command set $((index + 1)) of $commands_length"
+    # Iterate through each command set
+    for index in $(seq 0 $((commands_length - 1))); do
+        echo "🔄 Executing command set $((index + 1)) of $commands_length"
 
-    # Extract the command stream and other configurations
-    command_stream_file="$INSTALLATION_FILES_PATH/command_stream_$index.sh"
-    yq e ".commands[$index].command_stream" "$yaml_file" >"$command_stream_file"
-    command_stream=$(<"$command_stream_file")
-    rm "$command_stream_file"
+        # Extract the command stream and other configurations
+        local command_stream_file="$INSTALLATION_FILES_PATH/command_stream_$index.sh"
+        yq e ".commands[$index].command_stream" "$yaml_file" >"$command_stream_file"
+        local command_stream=$(<"$command_stream_file")
+        rm "$command_stream_file"
 
-    use_global_kubeconfig=$(yq e ".commands[$index].use_global_kubeconfig // false" "$yaml_file")
-    skip_installation=$(yq e ".commands[$index].skip_installation // false" "$yaml_file")
-    verify_install=$(yq e ".commands[$index].verify_install // false" "$yaml_file")
-    verify_install_timeout=$(yq e ".commands[$index].verify_install_timeout // 200" "$yaml_file")
-    skip_on_verify_fail=$(yq e ".commands[$index].skip_on_verify_fail // false" "$yaml_file")
-    namespace=$(yq e ".commands[$index].namespace // \"default\"" "$yaml_file")
-    kubeconfig=$(yq e ".commands[$index].kubeconfig" "$yaml_file")
-    kubecontext=$(yq e ".commands[$index].kubecontext" "$yaml_file")
+        local use_global_kubeconfig=$(yq e ".commands[$index].use_global_kubeconfig // false" "$yaml_file")
+        local skip_installation=$(yq e ".commands[$index].skip_installation // false" "$yaml_file")
+        local verify_install=$(yq e ".commands[$index].verify_install // false" "$yaml_file")
+        local verify_install_timeout=$(yq e ".commands[$index].verify_install_timeout // 200" "$yaml_file")
+        local skip_on_verify_fail=$(yq e ".commands[$index].skip_on_verify_fail // false" "$yaml_file")
+        local namespace=$(yq e ".commands[$index].namespace // \"default\"" "$yaml_file")
+        local kubeconfig=$(yq e ".commands[$index].kubeconfig" "$yaml_file")
+        local kubecontext=$(yq e ".commands[$index].kubecontext" "$yaml_file")
 
-# Call the kubeaccess_precheck function and capture output
-read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-    "command_set_$index" \
-    "$use_global_kubeconfig" \
-    "$GLOBAL_KUBECONFIG" \
-    "$GLOBAL_KUBECONTEXT" \
-    "$kubeconfig" \
-    "$kubecontext")
+        # Call the kubeaccess_precheck function and capture output
+        read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+            "command_set_$index" \
+            "$use_global_kubeconfig" \
+            "$GLOBAL_KUBECONFIG" \
+            "$GLOBAL_KUBECONTEXT" \
+            "$kubeconfig" \
+            "$kubecontext")
 
-# Print output variables after calling kubeaccess_precheck
-echo "🔧 kubeaccess_precheck - Output Variables: command_set_$index"
-echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-echo "  🌐 Kubecontext: $kubecontext"
-echo "-----------------------------------------"
+        # Print output variables after calling kubeaccess_precheck
+        echo "🔧 kubeaccess_precheck - Output Variables: command_set_$index"
+        echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        echo "-----------------------------------------"
 
+        # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+        if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+            echo "🔍 Validating Kubecontext:"
+            echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
+            echo "  🌐 Kubecontext: $kubecontext"
 
-# Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
-if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-    echo "🔍 Validating Kubecontext:"
-    echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-
-    validate_kubecontext "$kubeconfig_path" "$kubecontext"
-else
-    echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-    echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    exit 1
-fi
+            validate_kubecontext "$kubeconfig_path" "$kubecontext"
+        else
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+            echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
+            echo "  🌐 Kubecontext: $kubecontext"
+            exit 1
+        fi
 
         # Prepare the context argument if the context is available
         local context_arg=""
@@ -1648,8 +1647,8 @@ fi
             context_arg="--context $kubecontext"
         fi
 
-    # Execute the command stream with the appropriate context and kubeconfig
-    echo "🔧 Executing command stream with kubeconfig: $kubeconfig_path and context: $context_arg"
+        # Execute the command stream with the appropriate context and kubeconfig
+        echo "🔧 Executing command stream with kubeconfig: $kubeconfig_path and context: $context_arg"
 
         # Print all variables
         echo "🔧 Command Set Variables:"
@@ -1677,7 +1676,7 @@ fi
         fi
 
         # Handle the command as a whole without appending namespace or kubeconfig
-        full_cmd="KUBECONFIG=\"$kubeconfig_path\" $command_stream"
+        local full_cmd="KUBECONFIG=\"$kubeconfig_path\" $command_stream $context_arg"
         echo "🔄 Executing command: $full_cmd"
         eval "$full_cmd"
         if [ $? -ne 0 ]; then
@@ -1693,9 +1692,9 @@ fi
 
         if [ "$verify_install" = true ]; then
             echo "🔍 Verifying installation in namespace: $namespace"
-            end_time=$((SECONDS + verify_install_timeout))
+            local end_time=$((SECONDS + verify_install_timeout))
             while [ $SECONDS -lt $end_time ]; do
-                non_running_pods=$(kubectl get pods -n "$namespace" --kubeconfig "$kubeconfig_path" $context_arg --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
+                local non_running_pods=$(kubectl get pods -n "$namespace" --kubeconfig "$kubeconfig_path" $context_arg --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
                 if [ "$non_running_pods" -eq 0 ]; then
                     echo "✔️ All pods are running in namespace: $namespace."
                     break
@@ -1719,6 +1718,7 @@ fi
     echo "✅ All commands executed successfully."
     echo "-----------------------------------------"
 }
+
 
 # Function to fetch and display summary information
 display_summary() {
