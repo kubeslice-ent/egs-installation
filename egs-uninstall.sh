@@ -1550,7 +1550,7 @@ uninstall_helm_chart_and_cleanup() {
         return
     fi
 
-    helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path"
+    helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path" $context_arg
     echo "Helm Command Base: $helm_cmd"
 
     uninstall_helm_chart() {
@@ -1560,10 +1560,10 @@ uninstall_helm_chart_and_cleanup() {
 
     delete_kubernetes_objects() {
         echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'"
-        kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
-        kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
-        kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
-        kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" $context_arg
+        kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
+        kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
+        kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
+        kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
     }
 
     if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
