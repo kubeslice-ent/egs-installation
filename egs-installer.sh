@@ -156,6 +156,9 @@ kubeaccess_precheck() {
     local kubeaccess_context=""
 
     # Treat "null" as an empty value
+    if [ "$component_kubecontext" = "null" ]; then
+        component_kubecontext=""
+    fi
     if [ "$component_kubeconfig" = "null" ]; then
         component_kubeconfig=""
     fi
@@ -167,17 +170,17 @@ kubeaccess_precheck() {
         echo "  🗂️  global_kubeconfig=$global_kubeconfig" >&2
         echo "  🌐 global_kubecontext=$global_kubecontext" >&2
         echo "  🗂️  component_kubeconfig=${component_kubeconfig:-"(not provided)"}" >&2
-        echo "  🌐 component_kubecontext=$component_kubecontext" >&2
+        echo "  🌐 component_kubecontext=${component_kubecontext:-"(not provided)"}" >&2
         echo "-----------------------------------------" >&2
     fi
 
     # Condition to check if global config should be used when component config/context is empty
-    if [ "$use_global_config" = "true" ] && [ -z "$component_kubeconfig" ] && [ -z "$component_kubecontext" ]; then
+    if [ "$use_global_config" = "true" ] && [ -z "$component_kubecontext" ]; then
         if [ -n "$global_kubeconfig" ] && [ -n "$global_kubecontext" ]; then
             if context_exists_in_kubeconfig "$global_kubeconfig" "$global_kubecontext"; then
                 kubeaccess_kubeconfig="$global_kubeconfig"
                 kubeaccess_context="$global_kubecontext"
-                echo "⚠️  Warning: Both component_kubeconfig and component_kubecontext are empty or null. Falling back to global kubeconfig and kubecontext for deployment of $component_name." >&2
+                echo "⚠️  Warning: Component kubecontext is empty. Falling back to global kubeconfig and kubecontext for deployment of $component_name." >&2
                 api_server_url=$(get_api_server_url "$kubeaccess_kubeconfig" "$kubeaccess_context")
                 echo "🌐 API Server URL for context '$kubeaccess_context': $api_server_url" >&2
             else
