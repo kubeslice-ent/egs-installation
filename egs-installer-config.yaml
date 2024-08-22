@@ -268,5 +268,6 @@ commands:
     skip_on_verify_fail: true  # Skip if command verification fails
     namespace: kube-system  # Namespace context for these commands
     command_stream: |  # Commands to execute
-      kubectl get nodes
-      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
+       kubectl create namespace gpu-operator --dry-run=client -o yaml | kubectl apply -f -
+       get nodes
+       get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
