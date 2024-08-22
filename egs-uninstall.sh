@@ -1220,29 +1220,12 @@ remove_helm_repo() {
 
 delete_manifests_from_yaml() {
     local yaml_file=$1
-    local global_kubeconfig_path=""
-    local max_retries=3  # Number of retries
-    local retry_delay=5  # Delay between retries in seconds
-
-    if [ -z "$global_kubeconfig_path" ] || [ "$global_kubeconfig_path" = "null" ]; then
-        global_kubeconfig_path="$GLOBAL_KUBECONFIG"
-    fi
-
-    local global_kubecontext=""
-    if [ -z "$global_kubecontext" ] || [ "$global_kubecontext" = "null" ]; then
-        global_kubecontext="$GLOBAL_KUBECONTEXT"
-    fi
-
-    local global_context_arg=""
-    if [ -n "$global_kubecontext" ] && [ "$global_kubecontext" != "null" ]; then
-        global_context_arg="--context $global_kubecontext"
-    fi
     local base_path=$(yq e '.base_path' "$yaml_file")
 
-    echo "🚀 Starting the deletion of Kubernetes manifests from YAML file: $yaml_file"
+    echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"
     echo "🔧 Global Variables:"
-    echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
-    echo "  🌐  global_kubecontext=$global_kubecontext"
+    echo "  🗂️  global_kubeconfig_path=$GLOBAL_KUBECONFIG"
+    echo "  🌐  global_kubecontext= --context $GLOBAL_KUBECONTEXT"
     echo "  🗂️  base_path=$base_path"
     echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
     echo "-----------------------------------------"
@@ -1251,7 +1234,7 @@ delete_manifests_from_yaml() {
     manifests_exist=$(yq e '.manifests' "$yaml_file")
 
     if [ "$manifests_exist" == "null" ]; then
-        echo "⚠️  Warning: No 'manifests' section found in the YAML file. Skipping manifest deletion."
+        echo "⚠️  Warning: No 'manifests' section found in the YAML file. Skipping manifest application."
         return
     fi
 
@@ -1259,7 +1242,7 @@ delete_manifests_from_yaml() {
     manifests_length=$(yq e '.manifests | length' "$yaml_file")
 
     if [ "$manifests_length" -eq 0 ]; then
-        echo "⚠️  Warning: 'manifests' section is defined, but no manifests found. Skipping manifest deletion."
+        echo "⚠️  Warning: 'manifests' section is defined, but no manifests found. Skipping manifest application."
         return
     fi
 
@@ -1273,20 +1256,45 @@ delete_manifests_from_yaml() {
         use_global_kubeconfig=$(yq e ".manifests[$index].use_global_kubeconfig" "$yaml_file")
         kubeconfig=$(yq e ".manifests[$index].kubeconfig" "$yaml_file")
         kubecontext=$(yq e ".manifests[$index].kubecontext" "$yaml_file")
+        skip_installation=$(yq e ".manifests[$index].skip_installation" "$yaml_file")
+        verify_install=$(yq e ".manifests[$index].verify_install" "$yaml_file")
+        verify_install_timeout=$(yq e ".manifests[$index].verify_install_timeout" "$yaml_file")
+        skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$yaml_file")
         namespace=$(yq e ".manifests[$index].namespace" "$yaml_file")
 
+        # Call the kubeaccess_precheck function and capture output
+        read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+            "$appname" \
+            "$use_global_kubeconfig" \
+            "$GLOBAL_KUBECONFIG" \
+            "$GLOBAL_KUBECONTEXT" \
+            "$kubeconfig" \
+            "$kubecontext")
 
-        if [ "$use_global_kubeconfig" = true ]; then
-            kubeconfig_path="$global_kubeconfig_path"
-            kubecontext=$global_kubecontext
-            context_arg="--context $global_kubecontext"
+        # Print output variables after calling kubeaccess_precheck
+        echo "🔧 kubeaccess_precheck - Output Variables:"
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        echo "-----------------------------------------"
+
+        # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+        if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+            echo "🔍 Validating Kubecontext:"
+            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+            echo "  🌐 Kubecontext: $kubecontext"
+
+            validate_kubecontext "$kubeconfig_path" "$kubecontext"
         else
-            if [ -z "$kubeconfig" ] || [ "$kubeconfig" == "null" ]; then
-                kubeconfig_path="$global_kubeconfig_path"
-            fi
-            if [ -z "$kubecontext" ] || [ "$kubecontext" == "null" ]; then
-                context_arg="--context $global_kubecontext"
-            fi
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+            echo "  🌐 Kubecontext: $kubecontext"
+            exit 1
+        fi
+
+        # Prepare the context argument if the context is available
+        local context_arg=""
+        if [[ -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+            context_arg="--context $kubecontext"
         fi
 
         echo "🔧 App Variables for '$appname':"
@@ -1296,7 +1304,11 @@ delete_manifests_from_yaml() {
         echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"
         echo "  🗂️  kubeconfig_path=$kubeconfig_path"
         echo "  🌐 kubecontext=$kubecontext"
-        echo "  🏷️  namespace=$namespace"
+        echo "  🚫 skip_installation=$skip_installation"
+        echo "  🔍 verify_install=$verify_install"
+        echo "  ⏰ verify_install_timeout=$verify_install_timeout"
+        echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
+        echo "  🏷️ namespace=$namespace"
         echo "-----------------------------------------"
 
         # Handle HTTPS file URLs or local base manifest files
@@ -1304,18 +1316,11 @@ delete_manifests_from_yaml() {
             if [[ "$base_manifest" =~ ^https:// ]]; then
                 echo "🌐 Downloading manifest from URL: $base_manifest"
                 temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
-                for ((i=1; i<=$max_retries; i++)); do
-                    curl -sL "$base_manifest" -o "$temp_manifest"
-                    if [ $? -eq 0 ]; then
-                        break
-                    elif [ $i -lt $max_retries ]; then
-                        echo "⚠️  Warning: Failed to download manifest from URL: $base_manifest. Retrying in $retry_delay seconds... ($i/$max_retries)"
-                        sleep $retry_delay
-                    else
-                        echo "⚠️  Warning: Failed to download manifest after $max_retries attempts."
-                        return 1
-                    fi
-                done
+                curl -sL "$base_manifest" -o "$temp_manifest"
+                if [ $? -ne 0 ]; then
+                    echo "❌ Error: Failed to download manifest from URL: $base_manifest"
+                    exit 1
+                fi
             else
                 base_manifest="$base_path/$base_manifest"
                 temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
@@ -1328,8 +1333,8 @@ delete_manifests_from_yaml() {
                 temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
                 echo "$inline_yaml" >"$temp_manifest"
             else
-                echo "⚠️  Warning: Neither base manifest nor inline YAML provided for app: $appname"
-                return 1
+                echo "❌ Error: Neither base manifest nor inline YAML provided for app: $appname"
+                exit 1
             fi
         fi
 
@@ -1354,24 +1359,18 @@ delete_manifests_from_yaml() {
             echo "⚠️  No overrides YAML file found for app: $appname. Proceeding with base/inline manifest."
         fi
 
-        echo "📄 Deleting manifest for app: $appname in namespace: ${namespace:-default}"
-        for ((i=1; i<=$max_retries; i++)); do
-            kubectl delete -f "$temp_manifest" --namespace "${namespace:-default}" --kubeconfig "$kubeconfig_path" $context_arg
-            if [ $? -eq 0 ]; then
-                echo "✔️ Successfully deleted manifest for app: $appname"
-                break
-            elif [ $i -lt $max_retries ]; then
-                echo "⚠️  Warning: Failed to delete manifest for app: $appname. Retrying in $retry_delay seconds... ($i/$max_retries)"
-                sleep $retry_delay
-            else
-                echo "⚠️  Warning: Failed to delete manifest for app: $appname after $max_retries attempts."
-                return 1
-            fi
-        done
+        echo "📄 Deleting manifest for app: $appname in namespace: ${namespace}"
+        kubectl delete -f "$temp_manifest" --namespace "${namespace}" --kubeconfig "$kubeconfig_path" $context_arg
+        if [ $? -ne 0 ]; then
+            echo "❌ Error: Failed to delete manifest for app: $appname"
+            exit 1
+        fi
+        echo "✔️ Successfully deleted manifest for app: $appname"
 
         # Clean up the temporary manifest file
         rm -f "$temp_manifest"
     done
+
 
     echo "✅ All applicable manifests deleted successfully."
     echo "-----------------------------------------"
