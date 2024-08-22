@@ -1296,18 +1296,14 @@ apply_manifests_from_yaml() {
         namespace=$(yq e ".manifests[$index].namespace" "$yaml_file")
 
 
-        if [ "$use_global_kubeconfig" = true ]; then
-            kubeconfig_path="$global_kubeconfig_path"
-	    kubecontext=$global_kubecontext
-            context_arg="--context $global_kubecontext"
-        else
-            if [ -z "$kubeconfig" ] && [ "$kubeconfig" == "null" ]; then
-                kubeconfig_path="$global_kubeconfig_path"
-            fi
-            if [ -z "$kubecontext" ] && [ "$kubecontext" == "null" ]; then
-                context_arg="--context $global_kubecontext"
-            fi
-        fi
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "$appname" \
+        "$use_global_kubeconfig" \
+        "$global_kubeconfig_path" \
+        "$global_kubecontext" \
+        "$kubeconfig" \
+        "$kubecontext")
 
         echo "🔧 App Variables for '$appname':"
         echo "  🗂️  base_manifest=$base_manifest"
@@ -1633,17 +1629,17 @@ display_summary() {
     if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ]; then
         for ((i = 0; i < ${#ADDITIONAL_APPS[@]}; i++)); do
             app_name=$(yq e ".additional_apps[$i].name" "$EGS_INPUT_YAML")
+	    use_global_kubeconfig=$(yq e ".additional_apps[$i].use_global_kubeconfig" "$EGS_INPUT_YAML")
             skip_installation=$(yq e ".additional_apps[$i].skip_installation" "$EGS_INPUT_YAML")
             kubeconfig=$(yq e ".additional_apps[$i].kubeconfig" "$EGS_INPUT_YAML")
             kubecontext=$(yq e ".additional_apps[$i].kubecontext" "$EGS_INPUT_YAML")
-
             namespace=$(yq e ".additional_apps[$i].namespace" "$EGS_INPUT_YAML")
             release_name=$(yq e ".additional_apps[$i].release" "$EGS_INPUT_YAML")
 
             if [ "$skip_installation" = "false" ]; then
                 read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
                     "$app_name" \
-                    true \
+                    "$use_global_kubeconfig" \
                     "$GLOBAL_KUBECONFIG" \
                     "$GLOBAL_KUBECONTEXT" \
                     "$kubeconfig" \
@@ -1666,7 +1662,7 @@ display_summary() {
         echo "🔍 **Service Information for Kubeslice UI**:"
         read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
             "Kubeslice UI" \
-            true \
+            "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" \
             "$GLOBAL_KUBECONFIG" \
             "$GLOBAL_KUBECONTEXT" \
             "$KUBESLICE_CONTROLLER_KUBECONFIG" \
@@ -1702,17 +1698,17 @@ display_summary() {
         echo "⏩ **Project creation was skipped or disabled.**"
     fi
 
-    echo "========================================="
-    echo "           📋 Helm List - All Namespaces "
-    echo "========================================="
+    # echo "========================================="
+    # echo "           📋 Helm List - All Namespaces "
+    # echo "========================================="
 
-    # Run helm list -A to list all releases across all namespaces
-    if helm list -A --kubeconfig "$kubeconfig_path" --kube-context "$kubecontext" >/dev/null 2>&1; then
-        echo "🔍 **Helm List Output (All Namespaces)**:"
-        helm list -A --kubeconfig "$kubeconfig_path" --kube-context "$kubecontext" || echo "⚠️ Warning: Failed to list Helm releases across all namespaces."
-    else
-        echo "⚠️ Warning: Unable to run helm list -A."
-    fi
+    # # Run helm list -A to list all releases across all namespaces
+    # if helm list -A --kubeconfig "$kubeconfig_path" --kube-context "$kubecontext" >/dev/null 2>&1; then
+    #     echo "🔍 **Helm List Output (All Namespaces)**:"
+    #     helm list -A --kubeconfig "$kubeconfig_path" --kube-context "$kubecontext" || echo "⚠️ Warning: Failed to list Helm releases across all namespaces."
+    # else
+    #     echo "⚠️ Warning: Unable to run helm list -A."
+    # fi
 
     echo "========================================="
     echo "          🏁 Summary Output Complete      "
@@ -2154,7 +2150,7 @@ create_projects_in_controller() {
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "Kubeslice Controller Project Creation" \
-        true \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
         "$KUBESLICE_CONTROLLER_KUBECONFIG" \
@@ -2211,7 +2207,7 @@ register_clusters_in_controller() {
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "Kubeslice Controller Cluster Registration" \
-        true \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
         "$KUBESLICE_CONTROLLER_KUBECONFIG" \
@@ -2273,7 +2269,7 @@ prepare_worker_values_file() {
     # Use kubeaccess_precheck to determine the controller kubeconfig path and context
     read -r controller_kubeconfig_path controller_kubecontext < <(kubeaccess_precheck \
         "Kubeslice Controller" \
-        true \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
         "$KUBESLICE_CONTROLLER_KUBECONFIG" \
