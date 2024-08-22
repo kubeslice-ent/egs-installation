@@ -1483,66 +1483,7 @@ display_summary() {
 
 
 
-fetch_k8s_cluster_endpoint() {
-    local kubeconfig=$1
-    local kubecontext=$2
 
-    echo "🔍 Fetching Kubernetes cluster endpoint..."
-    echo "  kubeconfig: $kubeconfig"
-    echo "  kubecontext: $kubecontext"
-
-    if [ -z "$kubecontext" ]; then
-        echo "⚠️ Warning: kubecontext is empty. Using default context."
-        kubecontext=$(kubectl --kubeconfig="$kubeconfig" config current-context)
-    fi
-
-    echo "  Using kubecontext: $kubecontext"
-
-    # Extract the cluster name associated with the context
-    local cluster_name
-    cluster_name=$(kubectl --kubeconfig="$kubeconfig" --context="$kubecontext" config view -o jsonpath='{.contexts[?(@.name == "'$kubecontext'")].context.cluster}')
-
-    echo "  Extracted cluster name from context: $cluster_name"
-
-    # Now fetch the endpoint for that cluster
-    local endpoint
-    echo "🔍 Attempting to fetch endpoint from kubeconfig..."
-    endpoint=$(kubectl --kubeconfig="$kubeconfig" config view -o jsonpath='{.clusters[?(@.name == "'$cluster_name'")].cluster.server}')
-    echo "  Output from kubectl config view: '$endpoint'"
-
-    if [ -z "$endpoint" ]; then
-        echo "⚠️ Warning: Failed to fetch the Kubernetes cluster endpoint from kubeconfig for cluster '$cluster_name'."
-
-        echo "🔍 Attempting to fetch the endpoint using 'kubectl cluster-info'..."
-        local cluster_info_output
-        cluster_info_output=$(kubectl --kubeconfig="$kubeconfig" --context="$kubecontext" cluster-info)
-        echo "  Full output from kubectl cluster-info: '$cluster_info_output'"
-
-        # Extract the first occurrence of a URL in the cluster-info output
-        endpoint=$(echo "$cluster_info_output" | grep -oP '(?<=Kubernetes control plane is running at )https?://[^ ]+')
-
-        if [ -z "$endpoint" ]; then
-            echo "⚠️ Warning: Failed to fetch the Kubernetes cluster endpoint using 'kubectl cluster-info'."
-
-            # Fallback: Check the first cluster entry in kubeconfig as a last resort
-            echo "🔍 Attempting fallback to first cluster entry in kubeconfig..."
-            endpoint=$(kubectl --kubeconfig="$kubeconfig" config view -o jsonpath='{.clusters[0].cluster.server}')
-            echo "  Fallback kubeconfig view output: '$endpoint'"
-
-            if [ -z "$endpoint" ]; then
-                echo "❌ Critical: All methods to fetch the Kubernetes cluster endpoint have failed."
-            else
-                echo "✔️ Fallback successful: Fetched endpoint: $endpoint"
-            fi
-        else
-            echo "✔️ Successfully fetched endpoint using 'kubectl cluster-info': $endpoint"
-        fi
-    else
-        echo "✔️ Successfully fetched endpoint from kubeconfig: $endpoint"
-    fi
-
-    echo "$endpoint"
-}
 
 uninstall_helm_chart_and_cleanup() {
     local skip_uninstallation=$1
@@ -1569,23 +1510,38 @@ uninstall_helm_chart_and_cleanup() {
     echo "-----------------------------------------"
 
     local script_dir=$(dirname "$(realpath "$0")")
-    echo "Script Directory: $script_dir"
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "$release_name" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
 
-    local kubeconfig_path="$specific_kubeconfig_path"
-    if [ -z "$kubeconfig_path" ] || [ "$kubeconfig_path" = "null" ]; then
-        kubeconfig_path="$GLOBAL_KUBECONFIG"
-    fi
-    echo "Kubeconfig Path: $kubeconfig_path"
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
+    echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
 
-    local kubecontext="$specific_kubecontext"
-    if [ -z "$kubecontext" ] || [ "$kubecontext" = "null" ]; then
-        kubecontext="$GLOBAL_KUBECONTEXT"
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
     fi
-    echo "Kubecontext: $kubecontext"
 
     local context_arg=""
     if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
-        context_arg="--context $kubecontext"
+        context_arg="--kube-context $kubecontext"
     fi
     echo "Context Argument: $context_arg"
 
@@ -1661,15 +1617,44 @@ uninstall_helm_chart_and_cleanup() {
 
 
 delete_projects_in_controller() {
-    echo "🚀 Starting project deletion in controller cluster..."
-    local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
-    local context_arg=""
-    local max_retries=3  # Number of retries
-    local retry_delay=5  # Delay between retries in seconds
 
-    if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
-        context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
+    local retry_interval=120  # Default wait time of 1 minute between retries
+    local max_retries=5      # Maximum number of retries
+    echo "🚀 Starting project deletion in controller cluster..."
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "Kubeslice Controller Project Deletion" \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$KUBESLICE_CONTROLLER_KUBECONFIG" \
+        "$KUBESLICE_CONTROLLER_KUBECONTEXT")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "
+    echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
     fi
+
+    local context_arg=""
+    if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+        context_arg="--context $kubecontext"
+    fi
+
 
     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
 
@@ -1722,17 +1707,41 @@ delete_slices_in_controller() {
     local retry_interval=120  # Default wait time of 1 minute between retries
     local max_retries=5      # Maximum number of retries
 
-    if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
-        context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
-    fi
+    
+  read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "Kubeslice Controller Project Deletion" \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$KUBESLICE_CONTROLLER_KUBECONFIG" \
+        "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
-    local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
-
-    echo "🔧 Variables:"
-    echo "  kubeconfig_path=$kubeconfig_path"
-    echo "  context_arg=$context_arg"
-    echo "  namespace=$namespace"
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "
+    echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
     echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
+     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
+    
+
+    local context_arg=""
+    if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+        context_arg="--context $kubecontext"
+    fi
 
     for project in "${KUBESLICE_PROJECTS[@]}"; do
         IFS="|" read -r project_name project_username <<<"$project"
@@ -1794,8 +1803,38 @@ delete_projects_in_controller() {
     local max_retries=3  # Number of retries
     local retry_delay=5  # Delay between retries in seconds
 
-    if [ -n "$KUBESLICE_CONTROLLER_KUBECONTEXT" ]; then
-        context_arg="--context $KUBESLICE_CONTROLLER_KUBECONTEXT"
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "Kubeslice Controller Cluster Registration" \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$KUBESLICE_CONTROLLER_KUBECONFIG" \
+        "$KUBESLICE_CONTROLLER_KUBECONTEXT")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Cluster Registration "
+    echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
+
+    local context_arg=""
+    if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+        context_arg="--context $kubecontext"
     fi
 
     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
@@ -1844,9 +1883,6 @@ delete_projects_in_controller() {
     done
     echo "✔️ Project deletion in controller cluster complete."
 }
-
-
-
 
 
 
