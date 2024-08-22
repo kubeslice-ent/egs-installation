@@ -142,7 +142,6 @@ get_api_server_url() {
 
 
 
-# Function to check kubeconfig and kubecontext
 kubeaccess_precheck() {
     local component_name="$1"
     local use_global_config="$2"
@@ -150,20 +149,27 @@ kubeaccess_precheck() {
     local global_kubecontext="$4"
     local component_kubeconfig="$5"
     local component_kubecontext="$6"
+    local verbose="${7:-true}"
+    local dry_run="${8:-false}"
 
     local kubeaccess_kubeconfig=""
     local kubeaccess_context=""
 
-    # Print the initial variables with icons (redirect to stderr to avoid capturing in output)
-    echo "🚀 Starting precheck for deployment of component: $component_name" >&2
-    echo "🔧 Initial Variables:" >&2
-    echo "  🌐 use_global_config=$use_global_config" >&2
-    echo "  🗂️  global_kubeconfig=$global_kubeconfig" >&2
-    echo "  🌐 global_kubecontext=$global_kubecontext" >&2
-    echo "  🗂️  component_kubeconfig=$component_kubeconfig" >&2
-    echo "  🌐 component_kubecontext=$component_kubecontext" >&2
-    echo "-----------------------------------------" >&2
+    # Treat "null" as an empty value
+    if [ "$component_kubeconfig" = "null" ]; then
+        component_kubeconfig=""
+    fi
 
+    if [ "$verbose" = "true" ]; then
+        echo "🚀 Starting precheck for deployment of component: $component_name" >&2
+        echo "🔧 Initial Variables:" >&2
+        echo "  🌐 use_global_config=$use_global_config" >&2
+        echo "  🗂️  global_kubeconfig=$global_kubeconfig" >&2
+        echo "  🌐 global_kubecontext=$global_kubecontext" >&2
+        echo "  🗂️  component_kubeconfig=${component_kubeconfig:-"(not provided)"}" >&2
+        echo "  🌐 component_kubecontext=$component_kubecontext" >&2
+        echo "-----------------------------------------" >&2
+    fi
 
     if [ "$use_global_config" = "true" ]; then
         if [ -n "$global_kubeconfig" ] && [ -n "$global_kubecontext" ]; then
@@ -210,8 +216,9 @@ kubeaccess_precheck() {
         fi
     fi
 
-    # Only output the final kubeconfig and context, nothing else
-    echo "$kubeaccess_kubeconfig $kubeaccess_context"
+    if [ "$dry_run" = "false" ]; then
+        echo "$kubeaccess_kubeconfig $kubeaccess_context"
+    fi
 }
 
 
@@ -1349,30 +1356,17 @@ load_cloud_install_config() {
 }
 
 apply_manifests_from_yaml() {
-    local yaml_file=$1
-    local global_kubeconfig_path=""
-    if [ -z "$global_kubeconfig_path" ] || [ "$global_kubeconfig_path" = "null" ]; then
-        global_kubeconfig_path="$GLOBAL_KUBECONFIG"
-    fi
-
-    local global_kubecontext=""
-    if [ -z "$global_kubecontext" ] || [ "$global_kubecontext" = "null" ]; then
-        global_kubecontext="$GLOBAL_KUBECONTEXT"
-    fi
-
-    local global_context_arg=""
-    if [ -n "$global_kubecontext" ] && [ "$global_kubecontext" != "null" ]; then
-        global_context_arg="--context $global_kubecontext"
-    fi
+    local yaml_file=$1 
     local base_path=$(yq e '.base_path' "$yaml_file")
 
     echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"
     echo "🔧 Global Variables:"
-    echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
-    echo "  🌐  global_kubecontext=$global_kubecontext"
+    echo "  🗂️  global_kubeconfig_path=$GLOBAL_KUBECONFIG"
+    echo "  🌐  global_kubecontext= --context $GLOBAL_KUBECONTEXT"
     echo "  🗂️  base_path=$base_path"
     echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
     echo "-----------------------------------------"
+
 
     # Check if the manifests section exists
     manifests_exist=$(yq e '.manifests' "$yaml_file")
@@ -1407,14 +1401,41 @@ apply_manifests_from_yaml() {
         namespace=$(yq e ".manifests[$index].namespace" "$yaml_file")
 
 
-    # Use kubeaccess_precheck to determine kubeconfig path and context
-    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-        "$appname" \
-        "$use_global_kubeconfig" \
-        "$global_kubeconfig_path" \
-        "$global_kubecontext" \
-        "$kubeconfig" \
-        "$kubecontext")
+# Call the kubeaccess_precheck function and capture output
+read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+    "$appname" \
+    "$use_global_kubeconfig" \
+    "$GLOBAL_KUBECONFIG" \
+    "$GLOBAL_KUBECONTEXT" \
+    "$kubeconfig" \
+    "$kubecontext")
+
+# Print output variables after calling kubeaccess_precheck
+echo "🔧 kubeaccess_precheck - Output Variables:"
+echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+echo "  🌐 Kubecontext: $kubecontext"
+echo "-----------------------------------------"
+
+
+# Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+    echo "🔍 Validating Kubecontext:"
+    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+
+    validate_kubecontext "$kubeconfig_path" "$kubecontext"
+else
+    echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    exit 1
+fi
+
+        # Prepare the context argument if the context is available
+        local context_arg=""
+        if [[ -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+            context_arg="--context $kubecontext"
+        fi
 
         echo "🔧 App Variables for '$appname':"
         echo "  🗂️  base_manifest=$base_manifest"
@@ -1427,7 +1448,7 @@ apply_manifests_from_yaml() {
         echo "  🔍 verify_install=$verify_install"
         echo "  ⏰ verify_install_timeout=$verify_install_timeout"
         echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
-        echo "  🏷️  namespace=$namespace"
+        echo "  🏷️ namespace=$namespace"
         echo "-----------------------------------------"
 
         # Handle HTTPS file URLs or local base manifest files
@@ -1522,10 +1543,6 @@ apply_manifests_from_yaml() {
 
 run_k8s_commands_from_yaml() {
     local yaml_file=$1
-# Prepare global context argument if the global context is set
-if [[ -n "$global_kubecontext" && "$global_kubecontext" != "null" ]]; then
-    global_context_arg="--context $global_kubecontext"
-fi
 
 # Extract and ensure the base_path is absolute
 local base_path=$(yq e '.base_path' "$yaml_file")
@@ -1540,8 +1557,8 @@ fi
 
 echo "🚀 Starting execution of Kubernetes commands from YAML file: $yaml_file"
 echo "🔧 Global Variables:"
-echo "  🗂️  global_kubeconfig_path=$global_kubeconfig_path"
-echo "  🌐 global_kubecontext=$global_kubecontext"
+echo "  🗂️  global_kubeconfig_path= $GLOBAL_KUBECONFIG"
+echo "  🌐 global_kubecontext=$GLOBAL_KUBECONTEXT"
 echo "  🗂️  base_path=$base_path"
 echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
 echo "-----------------------------------------"
@@ -1579,20 +1596,41 @@ for index in $(seq 0 $((commands_length - 1))); do
     kubeconfig=$(yq e ".commands[$index].kubeconfig" "$yaml_file")
     kubecontext=$(yq e ".commands[$index].kubecontext" "$yaml_file")
 
-    # Use kubeaccess_precheck to determine kubeconfig path and context
-    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-        "command_set_$index" \
-        "$use_global_kubeconfig" \
-        "$global_kubeconfig_path" \
-        "$global_kubecontext" \
-        "$kubeconfig" \
-        "$kubecontext")
+# Call the kubeaccess_precheck function and capture output
+read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+    "command_set_$index" \
+    "$use_global_kubeconfig" \
+    "$GLOBAL_KUBECONFIG" \
+    "$GLOBAL_KUBECONTEXT" \
+    "$kubeconfig" \
+    "$kubecontext")
 
-    # Prepare the context argument if the context is available
-    local context_arg=""
-    if [[ -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        context_arg="--context $kubecontext"
-    fi
+# Print output variables after calling kubeaccess_precheck
+echo "🔧 kubeaccess_precheck - Output Variables: command_set_$index"
+echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
+echo "  🌐 Kubecontext: $kubecontext"
+echo "-----------------------------------------"
+
+
+# Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+    echo "🔍 Validating Kubecontext:"
+    echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+
+    validate_kubecontext "$kubeconfig_path" "$kubecontext"
+else
+    echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+    echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    exit 1
+fi
+
+        # Prepare the context argument if the context is available
+        local context_arg=""
+        if [[ -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+            context_arg="--context $kubecontext"
+        fi
 
     # Execute the command stream with the appropriate context and kubeconfig
     echo "🔧 Executing command stream with kubeconfig: $kubeconfig_path and context: $context_arg"
@@ -1809,17 +1847,6 @@ display_summary() {
         echo "⏩ **Project creation was skipped or disabled.**"
     fi
 
-    # echo "========================================="
-    # echo "           📋 Helm List - All Namespaces "
-    # echo "========================================="
-
-    # # Run helm list -A to list all releases across all namespaces
-    # if helm list -A --kubeconfig "$kubeconfig_path" --kube-context "$kubecontext" >/dev/null 2>&1; then
-    #     echo "🔍 **Helm List Output (All Namespaces)**:"
-    #     helm list -A --kubeconfig "$kubeconfig_path" --kube-context "$kubecontext" || echo "⚠️ Warning: Failed to list Helm releases across all namespaces."
-    # else
-    #     echo "⚠️ Warning: Unable to run helm list -A."
-    # fi
 
     echo "========================================="
     echo "          🏁 Summary Output Complete      "
@@ -1827,66 +1854,6 @@ display_summary() {
 }
 
 
-fetch_k8s_cluster_endpoint() {
-    local kubeconfig=$1
-    local kubecontext=$2
-
-    echo "🔍 Fetching Kubernetes cluster endpoint..."
-    echo "  kubeconfig: $kubeconfig"
-    echo "  kubecontext: $kubecontext"
-
-    if [ -z "$kubecontext" ]; then
-        echo "⚠️ Warning: kubecontext is empty. Using default context."
-        kubecontext=$(kubectl --kubeconfig="$kubeconfig" config current-context)
-    fi
-
-    echo "  Using kubecontext: $kubecontext"
-
-    # Extract the cluster name associated with the context
-    local cluster_name
-    cluster_name=$(kubectl --kubeconfig="$kubeconfig" --context="$kubecontext" config view -o jsonpath='{.contexts[?(@.name == "'$kubecontext'")].context.cluster}')
-
-    echo "  Extracted cluster name from context: $cluster_name"
-
-    # Now fetch the endpoint for that cluster
-    local endpoint
-    echo "🔍 Attempting to fetch endpoint from kubeconfig..."
-    endpoint=$(kubectl --kubeconfig="$kubeconfig" config view -o jsonpath='{.clusters[?(@.name == "'$cluster_name'")].cluster.server}')
-    echo "  Output from kubectl config view: '$endpoint'"
-
-    if [ -z "$endpoint" ]; then
-        echo "⚠️ Warning: Failed to fetch the Kubernetes cluster endpoint from kubeconfig for cluster '$cluster_name'."
-
-        echo "🔍 Attempting to fetch the endpoint using 'kubectl cluster-info'..."
-        local cluster_info_output
-        cluster_info_output=$(kubectl --kubeconfig="$kubeconfig" --context="$kubecontext" cluster-info)
-        echo "  Full output from kubectl cluster-info: '$cluster_info_output'"
-
-        # Extract the first occurrence of a URL in the cluster-info output
-        endpoint=$(echo "$cluster_info_output" | grep -oP '(?<=Kubernetes control plane is running at )https?://[^ ]+')
-
-        if [ -z "$endpoint" ]; then
-            echo "⚠️ Warning: Failed to fetch the Kubernetes cluster endpoint using 'kubectl cluster-info'."
-
-            # Fallback: Check the first cluster entry in kubeconfig as a last resort
-            echo "🔍 Attempting fallback to first cluster entry in kubeconfig..."
-            endpoint=$(kubectl --kubeconfig="$kubeconfig" --context="$kubecontext" config view -o jsonpath='{.contexts[?(@.name == "'$kubecontext'")].context.cluster}')
-            echo "  Fallback kubeconfig view output: '$endpoint'"
-
-            if [ -z "$endpoint" ]; then
-                echo "❌ Critical: All methods to fetch the Kubernetes cluster endpoint have failed."
-            else
-                echo "✔️ Fallback successful: Fetched endpoint: $endpoint"
-            fi
-        else
-            echo "✔️ Successfully fetched endpoint using 'kubectl cluster-info': $endpoint"
-        fi
-    else
-        echo "✔️ Successfully fetched endpoint from kubeconfig: $endpoint"
-    fi
-
-    echo "$endpoint"
-}
 
 install_or_upgrade_helm_chart() {
     local skip_installation=$1
@@ -1931,6 +1898,30 @@ install_or_upgrade_helm_chart() {
         "$GLOBAL_KUBECONTEXT" \
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
+
+
+
+# Print output variables after calling kubeaccess_precheck
+echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
+echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+echo "  🌐 Kubecontext: $kubecontext"
+echo "-----------------------------------------"
+
+
+# Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+    echo "🔍 Validating Kubecontext:"
+    echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+
+    validate_kubecontext "$kubeconfig_path" "$kubecontext"
+else
+    echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+    echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    exit 1
+fi
+
 
     local context_arg=""
     if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
@@ -2267,6 +2258,29 @@ create_projects_in_controller() {
         "$KUBESLICE_CONTROLLER_KUBECONFIG" \
         "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
+
+# Print output variables after calling kubeaccess_precheck
+echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "
+echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
+echo "  🌐 Kubecontext: $kubecontext"
+echo "-----------------------------------------"
+
+
+# Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+    echo "🔍 Validating Kubecontext:"
+    echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+
+    validate_kubecontext "$kubeconfig_path" "$kubecontext"
+else
+    echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+    echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    exit 1
+fi
+
+
     local context_arg=""
     if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
         context_arg="--context $kubecontext"
@@ -2324,6 +2338,29 @@ register_clusters_in_controller() {
         "$KUBESLICE_CONTROLLER_KUBECONFIG" \
         "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
+
+# Print output variables after calling kubeaccess_precheck
+echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Cluster Registration "
+echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+echo "  🌐 Kubecontext: $kubecontext"
+echo "-----------------------------------------"
+
+
+# Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+    echo "🔍 Validating Kubecontext:"
+    echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+
+    validate_kubecontext "$kubeconfig_path" "$kubecontext"
+else
+    echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+    echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    exit 1
+fi
+
+
     local context_arg=""
     if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
         context_arg="--context $kubecontext"
@@ -2375,22 +2412,6 @@ EOF
 # Function to fetch secrets from the worker clusters and create worker values file
 prepare_worker_values_file() {
 
-    echo "🚀 Fetching controller context"
-
-    # Use kubeaccess_precheck to determine the controller kubeconfig path and context
-    read -r controller_kubeconfig_path controller_kubecontext < <(kubeaccess_precheck \
-        "Kubeslice Controller" \
-        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
-        "$GLOBAL_KUBECONFIG" \
-        "$GLOBAL_KUBECONTEXT" \
-        "$KUBESLICE_CONTROLLER_KUBECONFIG" \
-        "$KUBESLICE_CONTROLLER_KUBECONTEXT")
-
-    local controller_context_arg=""
-    if [ -n "$controller_kubecontext" ] && [ "$controller_kubecontext" != "null" ]; then
-        controller_context_arg="--context $controller_kubecontext"
-    fi
-
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
         IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"${KUBESLICE_WORKERS[$worker_index]}"
 
@@ -2425,6 +2446,46 @@ prepare_worker_values_file() {
         echo "  Version: $version"
         echo "  Specific Use Local Charts: $specific_use_local_charts"
 
+
+
+   echo "🚀 Fetching controller context"
+    # Use kubeaccess_precheck to determine the controller kubeconfig path and context
+    read -r controller_kubeconfig_path controller_kubecontext < <(kubeaccess_precheck \
+        "Fetching secrets for $worker_name from Kubeslice Controller" \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$KUBESLICE_CONTROLLER_KUBECONFIG" \
+        "$KUBESLICE_CONTROLLER_KUBECONTEXT")
+
+
+# Print output variables after calling kubeaccess_precheck
+echo "🔧 kubeaccess_precheck - Output Variables: Controller: Fetching secrets for $worker_name from Kubeslice Controller"
+echo "  🗂️ Kubeconfig Path: $controller_kubeconfig_path"
+echo "  🌐 Kubecontext: $controller_kubecontext"
+echo "-----------------------------------------"
+
+
+# Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+if [[ -n "$controller_kubeconfig_path" && "$controller_kubeconfig_path" != "null" && -n "$controller_kubecontext" && "$controller_kubecontext" != "null" ]]; then
+    echo "🔍 Validating Kubecontext:"
+    echo "  🗂️ Kubeconfig Path: $controller_kubeconfig_path"
+    echo "  🌐 Kubecontext: $controller_kubecontext"
+
+    validate_kubecontext "$controller_kubeconfig_path" "$controller_kubecontext"
+else
+    echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+    echo "  🗂️ Kubeconfig Path: $controller_kubeconfig_path"
+    echo "  🌐 Kubecontext: $controller_kubecontext"
+    exit 1
+fi
+
+    local controller_context_arg=""
+    if [ -n "$controller_kubecontext" ] && [ "$controller_kubecontext" != "null" ]; then
+        controller_context_arg="--context $controller_kubecontext"
+    fi
+
+
         # Use kubeaccess_precheck to determine worker kubeconfig path and context
         read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
             "$worker_name" \
@@ -2433,6 +2494,27 @@ prepare_worker_values_file() {
             "$GLOBAL_KUBECONTEXT" \
             "$kubeconfig" \
             "$kubecontext")
+
+# Print output variables after calling kubeaccess_precheck
+echo "🔧 kubeaccess_precheck - Output Variables: Fetching secrets for $worker_name from Kubeslice Controller"
+echo "  🗂️      Kubeconfig Path: $kubeconfig_path"
+echo "  🌐 Kubecontext: $kubecontext"
+echo "-----------------------------------------"
+
+
+# Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+    echo "🔍 Validating Kubecontext:"
+    echo "  🗂️      Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+
+    validate_kubecontext "$kubeconfig_path" "$kubecontext"
+else
+    echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+    echo "  🗂️      Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    exit 1
+fi
 
         local context_arg=""
         if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
