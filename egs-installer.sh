@@ -1679,10 +1679,18 @@ run_k8s_commands_from_yaml() {
         # Execute each command in the stream with the appropriate kubeconfig and context
         while IFS= read -r cmd; do
             if [ -n "$cmd" ]; then
-                # Pass the kubeconfig and context directly to kubectl commands
-                local full_cmd="kubectl $cmd $kubeconfig_arg $context_arg"
-                echo "🔄 Executing command: $full_cmd"
-                eval "$full_cmd"
+                if echo "$cmd" | grep -q "|"; then
+                    # Complex command with pipes, handle each part correctly
+                    local full_cmd="${cmd//kubectl/kubectl $kubeconfig_arg $context_arg}"
+                    echo "🔄 Executing complex command: $full_cmd"
+                    eval "$full_cmd"
+                else
+                    # Simple command
+                    local full_cmd="kubectl $cmd $kubeconfig_arg $context_arg"
+                    echo "🔄 Executing command: $full_cmd"
+                    eval "$full_cmd"
+                fi
+                
                 if [ $? -ne 0 ]; then
                     echo "❌ Error: Command failed: $cmd"
                     if [ "$skip_on_verify_fail" = true ]; then
@@ -1711,7 +1719,7 @@ run_k8s_commands_from_yaml() {
             done
 
             if [ "$non_running_pods" -ne 0 ]; then
-                if [ "$skip_on_verify_fail" = true]; then
+                if [ "$skip_on_verify_fail" = true ]; then
                     echo "⚠️  Warning: Verification failed, but skipping as per configuration."
                 else
                     echo "❌ Error: Verification failed in namespace: $namespace. Exiting."
