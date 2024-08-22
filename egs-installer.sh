@@ -2022,13 +2022,13 @@ fi
             echo "🔍 Attempting to fetch the cluster endpoint..."
 
             local cluster_endpoint
-            cluster_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.context.cluster}')'")].cluster.server}')
-
+            cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
+	    
             if [ -z "$cluster_endpoint" ]; then
                 echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint."
             else
                 # Clean and sanitize the endpoint
-                cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
+                cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
                 # Initialize inline_values with the fetched endpoint
                 inline_values=$(echo "{}" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
                 echo "✔️ Inline values created with fetched cluster endpoint: $cluster_endpoint"
@@ -2037,14 +2037,14 @@ fi
             echo "🔍 No endpoint found in inline values. Attempting to fetch the cluster endpoint..."
 
             local cluster_endpoint
-            cluster_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.context.cluster}')'")].cluster.server}')
+            cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
             if [ -z "$cluster_endpoint" ]; then
                 echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint, Manually Pass the value"
 		exit 1
             else
                 # Clean and sanitize the endpoint
-                cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
+                cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
                 # Merge the fetched endpoint into the existing inline_values
                 inline_values=$(echo "$inline_values" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
                 echo "✔️ Inline values updated with fetched cluster endpoint: $cluster_endpoint"
@@ -2055,14 +2055,14 @@ fi
             if [ -z "$existing_endpoint" ]; then
                 echo "⚠️ Warning: Detected an empty endpoint in inline values, fetching again."
                 local cluster_endpoint
-                cluster_endpoint=$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.clusters[?(@.name == "'$(kubectl config view --kubeconfig=$kubeconfig_path --context $kubecontext -o jsonpath='{.context.cluster}')'")].cluster.server}')
+                cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
                 if [ -z "$cluster_endpoint" ]; then
                     echo "⚠️ Warning: Failed to fetch cluster endpoint. Proceeding without setting the controller endpoint. Manually pass the value in inline values file "
 		    exit 1
                 else
                     # Clean and sanitize the endpoint
-                    cluster_endpoint=$(echo "$cluster_endpoint" | grep -oP 'https?://[^ ]+' | head -n 1 | sed "s/[']$//")
+                    cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
                     inline_values=$(echo "$inline_values" | yq e ".kubeslice.controller.endpoint = \"$cluster_endpoint\"" -)
                     echo "✔️ Inline values updated with fetched cluster endpoint: $cluster_endpoint"
                 fi
