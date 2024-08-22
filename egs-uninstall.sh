@@ -1319,7 +1319,7 @@ delete_manifests_from_yaml() {
                 curl -sL "$base_manifest" -o "$temp_manifest"
                 if [ $? -ne 0 ]; then
                     echo "❌ Error: Failed to download manifest from URL: $base_manifest"
-                    exit 1
+                    return 1
                 fi
             else
                 base_manifest="$base_path/$base_manifest"
@@ -1334,7 +1334,7 @@ delete_manifests_from_yaml() {
                 echo "$inline_yaml" >"$temp_manifest"
             else
                 echo "❌ Error: Neither base manifest nor inline YAML provided for app: $appname"
-                exit 1
+                return 1
             fi
         fi
 
@@ -1363,7 +1363,7 @@ delete_manifests_from_yaml() {
         kubectl delete -f "$temp_manifest" --namespace "${namespace}" --kubeconfig "$kubeconfig_path" $context_arg
         if [ $? -ne 0 ]; then
             echo "❌ Error: Failed to delete manifest for app: $appname"
-            exit 1
+            return 1
         fi
         echo "✔️ Successfully deleted manifest for app: $appname"
 
