@@ -1579,6 +1579,9 @@ run_k8s_commands_from_yaml() {
     echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
     echo "-----------------------------------------"
 
+    # Unset the local KUBECONFIG environment variable to avoid interference
+    unset KUBECONFIG
+
     # Check if the commands section exists in the YAML file
     local commands_exist=$(yq e '.commands' "$yaml_file")
     if [[ "$commands_exist" == "null" ]]; then
@@ -1641,11 +1644,9 @@ run_k8s_commands_from_yaml() {
             exit 1
         fi
 
-        # Prepare the context argument if the context is available
-        local context_arg=""
-        if [[ -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-            context_arg="--context $kubecontext"
-        fi
+        # Prepare the kubeconfig and context arguments
+        local kubeconfig_arg="--kubeconfig $kubeconfig_path"
+        local context_arg="--context $kubecontext"
 
         # Log command before execution
         echo "🔧 Executing command stream with kubeconfig: $kubeconfig_path and context: $context_arg"
@@ -1678,7 +1679,8 @@ run_k8s_commands_from_yaml() {
         # Execute each command in the stream with the appropriate kubeconfig and context
         while IFS= read -r cmd; do
             if [ -n "$cmd" ]; then
-                local full_cmd="KUBECONFIG=\"$kubeconfig_path\" $cmd $context_arg"
+                # Pass the kubeconfig and context directly to kubectl commands
+                local full_cmd="kubectl $cmd $kubeconfig_arg $context_arg"
                 echo "🔄 Executing command: $full_cmd"
                 eval "$full_cmd"
                 if [ $? -ne 0 ]; then
@@ -1698,7 +1700,7 @@ run_k8s_commands_from_yaml() {
             echo "🔍 Verifying installation in namespace: $namespace"
             local end_time=$((SECONDS + verify_install_timeout))
             while [ $SECONDS -lt $end_time ]; do
-                local non_running_pods=$(kubectl get pods -n "$namespace" --kubeconfig "$kubeconfig_path" $context_arg --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
+                local non_running_pods=$(kubectl get pods -n "$namespace" $kubeconfig_arg $context_arg --no-headers | awk '{print $3}' | grep -vE 'Running|Completed' | wc -l)
                 if [ "$non_running_pods" -eq 0 ]; then
                     echo "✔️ All pods are running in namespace: $namespace."
                     break
@@ -1709,7 +1711,7 @@ run_k8s_commands_from_yaml() {
             done
 
             if [ "$non_running_pods" -ne 0 ]; then
-                if [ "$skip_on_verify_fail" = true ]; then
+                if [ "$skip_on_verify_fail" = true]; then
                     echo "⚠️  Warning: Verification failed, but skipping as per configuration."
                 else
                     echo "❌ Error: Verification failed in namespace: $namespace. Exiting."
