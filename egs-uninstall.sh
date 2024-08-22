@@ -1550,7 +1550,7 @@ uninstall_helm_chart_and_cleanup() {
         return
     fi
 
-    helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path" $context_arg
+    helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path"
     echo "Helm Command Base: $helm_cmd"
 
     uninstall_helm_chart() {
