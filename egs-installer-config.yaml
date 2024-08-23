@@ -257,12 +257,12 @@ manifests:
     namespace: kube-system  # Namespace for this application
     
 # Command execution settings
-run_commands: true  # Enable the execution of commands defined in the YAML
+run_commands: false  # Enable the execution of commands defined in the YAML
 
 # Define commands to execute
 commands:
   - use_global_kubeconfig: true  # Use global kubeconfig for these commands
-    skip_installation: false  # Do not skip the execution of these commands
+    skip_installation: true  # Do not skip the execution of these commands
     verify_install: true  # Verify the execution of these commands
     verify_install_timeout: 200  # Timeout for verification (in seconds)
     skip_on_verify_fail: true  # Skip if command verification fails
