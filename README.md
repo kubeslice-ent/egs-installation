@@ -12,10 +12,8 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 📖 For EGS platform overview, please see the [Platform Overview Documentation](https://docs.avesha.io/) 🌐
 - 🔧 For the Admin guide, please see the [Admin Guide Documentation](https://docs.avesha.io/) 🛠️
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/) 📚
+- 🛠️ For the Installation guide, please see the documentation on [GitHub Repo](https://github.com/kubeslice-ent/egs-installation) 💻
 
-
-
-For Installation guide please see the documentation on [github repo](https://github.com/kubeslice-ent/egs-installation)
 
 ## Getting Started
 
