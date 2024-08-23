@@ -257,7 +257,7 @@ manifests:
     namespace: kube-system  # Namespace for this application
     
 # Command execution settings
-run_commands: true  # Enable the execution of commands defined in the YAML
+run_commands: false  # Enable the execution of commands defined in the YAML
 
 # Define commands to execute
 commands:
