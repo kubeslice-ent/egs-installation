@@ -21,32 +21,33 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 Before you begin, ensure the following steps are completed:
 
-1. **Registration:**
+1. **📝 Registration:**
    - Complete the registration process at [Avesha Registration](https://avesha.io/kubeslice-registration) to receive the image pull secrets required for running the script.
 
-2. **Required Binaries:**
+2. **🔧 Required Binaries:**
    - Verify that the following binaries are installed and available in your system's `PATH`:
      - **yq** 📄 (minimum version: 4.44.2)
      - **helm** 🛠️ (minimum version: 3.15.0)
      - **kubectl** ⚙️ (minimum version: 1.23.6)
      - **jq** 📦 (minimum version: 1.6.0)
 
-3. **Kubernetes Access:**
+3. **🌐 Kubernetes Access:**
    - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
+
 ---
 
-### Installation Steps
+### 🛠️ Installation Steps
 
-1. **Clone the Repository:**
+1. **📂 Clone the Repository:**
    - Start by cloning the EGS installation Git repository:
      ```bash
      git clone https://github.com/kubeslice-ent/egs-installation
      ```
 
-2. **Modify the Configuration File:**
+2. **📝 Modify the Configuration File:**
    - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`.
    - Update the following mandatory parameters:
-     - **Image Pull Secrets:**
+     - **🔑 Image Pull Secrets:**
        - Insert the image pull secrets received via email as part of the registration process:
          ```yaml
          global_image_pull_secret:
@@ -54,40 +55,43 @@ Before you begin, ensure the following steps are completed:
            username: ""  # Global Docker registry username (MANDATORY)
            password: ""  # Global Docker registry password (MANDATORY)
          ```
-     - **Kubernetes Configuration:**
+     - **⚙️ Kubernetes Configuration:**
        - Set the global `kubeconfig` and `kubecontext` parameters:
          ```yaml
          global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
          global_kubecontext: ""  # Global kubecontext (MANDATORY)
          ```
 
-3. **Run the Installation Script:**
+3. **🚀 Run the Installation Script:**
    - Execute the installation script using the following command:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
 
-4. **Update the inline-values of kubeslice-worker-egs in `egs-installer-config.yaml` with Grafana LB External IP:**
-   - Fetch the external IP using the following command:
-     ```bash
-     kubectl get svc prometheus-grafana -n monitoring
-     ```
-   - Update the `kubeslice-worker-egs` configuration with the Grafana LB external IP in `egs-installer-config.yaml` :
-     ```yaml
-     inline_values:  # Inline Helm values for the worker chart
-       kubesliceNetworking:
-         enabled: false  # Disable Kubeslice networking for this worker
-       egs:
-         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
-       metrics:
-         insecure: true  # Allow insecure connections for metrics
-     ```
-5. **Run the Installation Script Again with updated `egs-installer-config.yaml` to apply the patch:**
-   - Execute the installation script using the following command:
+4. **🔄 Update the Inline Values:**
+   - Update the inline-values of `kubeslice-worker-egs` in `egs-installer-config.yaml` with the Grafana LB External IP:
+     - Fetch the external IP using the following command:
+       ```bash
+       kubectl get svc prometheus-grafana -n monitoring
+       ```
+     - Update the `kubeslice-worker-egs` configuration with the Grafana LB external IP in `egs-installer-config.yaml`:
+       ```yaml
+       inline_values:  # Inline Helm values for the worker chart
+         kubesliceNetworking:
+           enabled: false  # Disable Kubeslice networking for this worker
+         egs:
+           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
+         metrics:
+           insecure: true  # Allow insecure connections for metrics
+       ```
+
+5. **🔄 Run the Installation Script Again:**
+   - Apply the updated configuration by running the installation script again:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
+
 ---
 
 ### Uninstallation Steps
