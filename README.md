@@ -9,9 +9,9 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 ## 📄 EGS Documents
 
-- 📖 For EGS platform overview, please see the [documentation on the website](https://docs.avesha.io/)
-- 🔧 For the Admin guide, please see the [documentation on the website](https://docs.avesha.io/)
-- 👤 For the User guide, please see the [documentation on the website](https://docs.avesha.io/)
+- 📖 For EGS platform overview, please see the [Platform Overview Documentation](https://docs.avesha.io/) 🌐
+- 🔧 For the Admin guide, please see the [Admin Guide Documentation](https://docs.avesha.io/) 🛠️
+- 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/) 📚
 
 
 
