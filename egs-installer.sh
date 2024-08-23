@@ -222,7 +222,6 @@ kubeaccess_precheck() {
     fi
 }
 
-
 # Function to validate if a given kubecontext is valid
 validate_kubecontext() {
     local kubeconfig_path=$1
@@ -1384,7 +1383,6 @@ apply_manifests_from_yaml() {
         verify_install_timeout=$(yq e ".manifests[$index].verify_install_timeout" "$yaml_file")
         skip_on_verify_fail=$(yq e ".manifests[$index].skip_on_verify_fail" "$yaml_file")
         namespace=$(yq e ".manifests[$index].namespace" "$yaml_file")
-
 
         # Call the kubeaccess_precheck function and capture output
         read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
