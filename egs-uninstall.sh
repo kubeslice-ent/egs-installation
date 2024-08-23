@@ -144,8 +144,6 @@ get_api_server_url() {
     kubectl config --kubeconfig="$kubeconfig" view -o jsonpath="{.clusters[?(@.name == \"$(kubectl config --kubeconfig="$kubeconfig" view -o jsonpath="{.contexts[?(@.name == \"$kubecontext\")].context.cluster}")\")].cluster.server}"
 }
 
-
-
 kubeaccess_precheck() {
     local component_name="$1"
     local use_global_config="$2"
@@ -229,7 +227,6 @@ kubeaccess_precheck() {
     fi
 }
 
-
 # Function to validate if a given kubecontext is valid
 validate_kubecontext() {
     local kubeconfig_path=$1
@@ -261,7 +258,6 @@ validate_kubecontext() {
     # Return success without using echo in stdout
     return 0
 }
-
 
 # Kubeslice pre-checks function with context validation
 kubeslice_pre_check() {
@@ -525,7 +521,6 @@ kubeslice_pre_check() {
     echo "✔️ Kubeslice pre-checks completed successfully."
     echo ""
 }
-
 
 validate_paths() {
     echo "🚀 Validating paths..."
@@ -1206,7 +1201,6 @@ remove_helm_repo() {
     echo "✔️ Helm repository removal complete."
 }
 
-
 delete_manifests_from_yaml() {
     local yaml_file=$1
     local base_path=$(yq e '.base_path' "$yaml_file")
@@ -1360,12 +1354,9 @@ delete_manifests_from_yaml() {
         rm -f "$temp_manifest"
     done
 
-
     echo "✅ All applicable manifests deleted successfully."
     echo "-----------------------------------------"
 }
-
-
 
 # Function to fetch and display summary information
 display_summary() {
@@ -1469,10 +1460,6 @@ display_summary() {
     echo "          🏁 Summary Output Complete      "
     echo "========================================="
 }
-
-
-
-
 
 uninstall_helm_chart_and_cleanup() {
     local skip_uninstallation=$1
@@ -1604,10 +1591,9 @@ uninstall_helm_chart_and_cleanup() {
     echo "-----------------------------------------"
 }
 
-
 delete_projects_in_controller() {
 
-    local retry_interval=120  # Default wait time of 1 minute between retries
+    local retry_interval=120 # Default wait time of 1 minute between retries
     local max_retries=5      # Maximum number of retries
     echo "🚀 Starting project deletion in controller cluster..."
     # Use kubeaccess_precheck to determine kubeconfig path and context
@@ -1644,7 +1630,6 @@ delete_projects_in_controller() {
         context_arg="--context $kubecontext"
     fi
 
-
     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
 
     echo "🔧 Variables:"
@@ -1661,7 +1646,7 @@ delete_projects_in_controller() {
         echo "-----------------------------------------"
 
         # Retry loop for deletion
-        for ((i=1; i<=max_retries; i++)); do
+        for ((i = 1; i <= max_retries; i++)); do
             kubectl delete project "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
             if [ $? -eq 0 ]; then
                 break
@@ -1687,17 +1672,14 @@ delete_projects_in_controller() {
     echo "✔️ Project deletion in controller cluster complete."
 }
 
-
-
 delete_slices_in_controller() {
     echo "🚀 Starting project deletion in controller cluster..."
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
-    local retry_interval=120  # Default wait time of 1 minute between retries
+    local retry_interval=120 # Default wait time of 1 minute between retries
     local max_retries=5      # Maximum number of retries
 
-    
-  read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "Kubeslice Controller Project Deletion" \
         "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONFIG" \
@@ -1724,8 +1706,7 @@ delete_slices_in_controller() {
         echo "  🌐 Kubecontext: $kubecontext"
         exit 1
     fi
-     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
-    
+    local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
 
     local context_arg=""
     if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
@@ -1784,13 +1765,12 @@ delete_slices_in_controller() {
     echo "✔️ slice config in kubeslice-$project_name deletion in controller cluster complete."
 }
 
-
 delete_projects_in_controller() {
     echo "🚀 Starting project deletion in controller cluster..."
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
-    local max_retries=3  # Number of retries
-    local retry_delay=5  # Delay between retries in seconds
+    local max_retries=3 # Number of retries
+    local retry_delay=5 # Delay between retries in seconds
 
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
@@ -1842,7 +1822,7 @@ delete_projects_in_controller() {
         echo "-----------------------------------------"
 
         # Retry loop for deletion
-        for ((i=1; i<=max_retries; i++)); do
+        for ((i = 1; i <= max_retries; i++)); do
             kubectl delete project "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
             if [ $? -eq 0 ]; then
                 break
@@ -1872,8 +1852,6 @@ delete_projects_in_controller() {
     done
     echo "✔️ Project deletion in controller cluster complete."
 }
-
-
 
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
@@ -1918,9 +1896,8 @@ fi
 
 # Run Kubeslice pre-checks if enabled
 if [ "$KUBESLICE_PRECHECK" = "true" ]; then
-   continue_on_error kubeslice_uninstall_pre_check
+    continue_on_error kubeslice_uninstall_pre_check
 fi
-
 
 # Check if the enable_custom_apps flag is defined and set to true
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
@@ -1960,7 +1937,7 @@ if [ "$enable_custom_apps" = "true" ]; then
                 yq e ".manifests = [ .manifests[$index] ]" "$EGS_INPUT_YAML" >"$temp_yaml"
 
                 # Call apply_manifests_from_yaml function for each manifest
-               continue_on_error delete_manifests_from_yaml "$temp_yaml"
+                continue_on_error delete_manifests_from_yaml "$temp_yaml"
 
                 # Clean up temporary YAML file
                 rm -f "$temp_yaml"
@@ -1996,8 +1973,8 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         specific_use_local_charts=$(echo "$app" | yq e '.specific_use_local_charts' -)
         kubeconfig=$(echo "$app" | yq e '.kubeconfig' -)
         kubecontext=$(echo "$app" | yq e '.kubecontext' -)
-        
-       continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"  "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+
+        continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
 
     done
     echo "✔️ Installation of additional applications complete."
@@ -2008,12 +1985,10 @@ fi
 #Delete Slice
 continue_on_error delete_slices_in_controller
 
-
 # Inside the loop where you process each worker
 if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
         IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"${KUBESLICE_WORKERS[$worker_index]}"
-
 
         # Extract worker-specific values for the new parameters
         worker=$(yq e ".kubeslice_worker_egs[$worker_index]" "$EGS_INPUT_YAML")
@@ -2033,32 +2008,29 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         kubeconfig=$(echo "$worker" | yq e '.kubeconfig' -)
         kubecontext=$(echo "$worker" | yq e '.kubecontext' -)
 
-
         # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
-       continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+        continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
     done
 fi
 
 # Delete projects in the controller cluster before deploying workers
 if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
-   continue_on_error delete_projects_in_controller
+    continue_on_error delete_projects_in_controller
 fi
 
 # UnRegister clusters in the controller cluster after projects have been created
 if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
-  continue_on_error  unregister_clusters_in_controller
+    continue_on_error unregister_clusters_in_controller
 fi
-
 
 # Process kubeslice-ui uninstallation if enabled
 if [ "$ENABLE_INSTALL_UI" = "true" ]; then
-   continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
+    continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
 fi
-
 
 # Process kubeslice-controller uninstallation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
-   continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
+    continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
 fi
 
 trap display_summary EXIT
