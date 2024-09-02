@@ -12,7 +12,7 @@ skip_on_verify_fail: false  # If set to true, skip steps where verification fail
 
 # Helm repository settings
 use_local_charts: true  # Use local Helm charts instead of fetching them from a repository
-local_charts_path: "charts"  # Path to the directory containing local Helm charts
+local_charts_path: "${CHARTS_PATH}"  # Path to the directory containing local Helm charts
 global_helm_repo_url: ""  # URL for the global Helm repository (if not using local charts)
 global_helm_username: ""  # Username for accessing the global Helm repository
 global_helm_password: ""  # Password for accessing the global Helm repository
@@ -28,8 +28,8 @@ required_binaries:
 # Global image pull secret settings
 global_image_pull_secret:
   repository: "https://index.docker.io/v1/"  # Docker registry URL
-  username: ""  # Global Docker registry username
-  password: ""  # Global Docker registry password
+  username: "${IMAGEPULL_USERNAME}"  # Global Docker registry username
+  password: "${IMAGEPULL_PASSWORD}"  # Global Docker registry password
 
 # Node labeling settings
 add_node_label: true  # Enable node labeling during installation
