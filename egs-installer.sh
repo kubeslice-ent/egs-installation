@@ -123,7 +123,7 @@ context_exists_in_kubeconfig() {
     echo "  🗂️  Kubeconfig: $kubeconfig" >&2
     echo "  🌐 Kubecontext: $kubecontext" >&2
 
-    kubectl config --kubeconfig="$kubeconfig" get-contexts -o name | grep -qw "$kubecontext"
+    kubectl config --kubeconfig="$kubeconfig" current-context -o name | grep -qw "$kubecontext"
 }
 
 # Function to retrieve the API server URL for the provided kubeconfig and context
