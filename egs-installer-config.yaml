@@ -108,7 +108,7 @@ enable_cluster_registration: true  # Enable cluster registration in Kubeslice
 
 # Define projects
 projects:
-  - name: "avesha"
+  - name: "${PROJECT_NAME}"
     username: "admin"  # Username for accessing the Kubeslice project
 
 # Define cluster registration
