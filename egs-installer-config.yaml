@@ -120,8 +120,8 @@ cluster_registration:
       endpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Telemetry endpoint
       telemetryProvider: "prometheus"  # Telemetry provider (Prometheus in this case)
     geoLocation:
-      cloudProvider: "AKAMAI"  # Cloud provider for this cluster (e.g., GCP)
-      cloudRegion: "us-west"  # Cloud region for this cluster (e.g., us-central1)
+      cloudProvider: "${CLOUD_PROVIDER}"  # Cloud provider for this cluster (e.g., GCP)
+      cloudRegion: "${CLOUD_REGION}"   # Cloud region for this cluster (e.g., us-central1)
 
 # Enable or disable the installation of additional applications
 enable_install_additional_apps: true  # Set to true to enable additional apps installation
