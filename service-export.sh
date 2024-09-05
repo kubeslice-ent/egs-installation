@@ -2,7 +2,7 @@
 
 # Check if the processed-config.yaml file exists
 if [ ! -f "./egs-installation/egs-installer-config.yaml" ]; then
-    echo "Error: processed-config.yaml not found."
+    echo "Error: egs-installer-config.yaml not found."
     exit 1
 fi
 
