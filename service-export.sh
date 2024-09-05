@@ -7,4 +7,4 @@ if [ ! -f "./egs-installation/egs-installer-config.yaml" ]; then
 fi
 
 # Use \${EXTERNAL_IP} as a literal string
-sed -i 's|grafanaDashboardBaseUrl: "http:///d/Oxed_c6Wz"|grafanaDashboardBaseUrl: "http://${EXTERNAL_IP}/d/Oxed_c6Wz"|' ./egs-installation/egs-installer-config.yaml
+sed -i 's|grafanaDashboardBaseUrl: "http:///d/Oxed_c6Wz"|grafanaDashboardBaseUrl: "http://\\${EXTERNAL_IP}/d/Oxed_c6Wz"|' ./egs-installation/egs-installer-config.yaml
