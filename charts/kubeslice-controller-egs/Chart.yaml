@@ -38,5 +38,5 @@ dependencies:
     repository: file://./charts/prometheus
     version: 25.*.*
     condition: kubeslice.prometheus.enabled
-version: 0.5.0
-appVersion: 0.5.0
+version: 0.6.0
+appVersion: 0.6.0
