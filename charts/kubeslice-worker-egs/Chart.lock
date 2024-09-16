@@ -1,9 +1,0 @@
-dependencies:
-- name: nsm
-  repository: file://./charts/nsm
-  version: 0.6.4
-- name: netop
-  repository: file://./charts/netop
-  version: 0.2.0
-digest: sha256:9944b6eaac87f368a92e57dc3ec594de3618ff545c5f1ddf0fc7751e5191d0ad
-generated: "2024-08-18T11:08:37.831009971Z"
