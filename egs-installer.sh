@@ -139,6 +139,19 @@ get_api_server_url() {
     kubectl config --kubeconfig="$kubeconfig" view -o jsonpath="{.clusters[?(@.name == \"$(kubectl config --kubeconfig="$kubeconfig" view -o jsonpath="{.contexts[?(@.name == \"$kubecontext\")].context.cluster}")\")].cluster.server}"
 }
 
+get_lb_external_ip() {
+    local kubeconfig="$1"
+    local kubecontext="$2"
+
+    # Print the input values (redirected to stderr)
+    echo "🔧 get_lb_external_ip:" >&2
+    echo "  🗂️  Kubeconfig: $kubeconfig" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+
+    # kubectl config --kubeconfig="$kubeconfig" view -o jsonpath="{.clusters[?(@.name == \"$(kubectl config --kubeconfig="$kubeconfig" view -o jsonpath="{.contexts[?(@.name == \"$kubecontext\")].context.cluster}")\")].cluster.server}"
+    kubectl --kubeconfig "$kubeconfig" get svc -n "$namespace"  prometheus-grafana -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+}
+
 kubeaccess_precheck() {
     local component_name="$1"
     local use_global_config="$2"
@@ -2809,6 +2822,8 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         values_file=$(echo "$app" | yq e '.values_file' -)
         helm_flags=$(echo "$app" | yq e '.helm_flags' -)
         verify_install=$(echo "$app" | yq e '.verify_install' -)
+        # kubeconfigname=$(yq e '.global_kubeconfig' "$EGS_INPUT_YAML")
+        
         verify_install_timeout=$(echo "$app" | yq e '.verify_install_timeout' -)
         skip_on_verify_fail=$(echo "$app" | yq e '.skip_on_verify_fail' -)
         repo_url=$(echo "$app" | yq e '.repo_url' -)
@@ -2835,10 +2850,46 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
             merged_values_file=""
         fi
 
+
         echo "🔍 Installing or upgrading Helm chart for application: $app_name"
         # Now call the install_or_upgrade_helm_chart function
         install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$values_file" "$inline_values" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$LOCAL_CHARTS_PATH" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+        
+        # Check if the app is Prometheus and update Grafana IP if needed
+        if [ "$app_name" = "prometheus" ]; then
+            echo "🔄 Updating Grafana LoadBalancer IP..."
+            if [ "$use_global_kubeconfig" = "true" ]; then
+                    kubeconfigname=$(yq e '.global_kubeconfig' "$EGS_INPUT_YAML")
+                    kubecontextname=$(yq e '.global_kubecontext' "$EGS_INPUT_YAML")
+            else
+                kubeconfigname=$(echo "$app" | yq e '.kubeconfig' -)
+                kubecontextname=$(echo "$app" | yq e '.kubecontext' -)
+            fi
+            
+            # Wait for the LoadBalancer to get an external IP
+            echo "Waiting for Grafana LoadBalancer to get an external IP..."
+            external_ip=""
+            while [ -z $external_ip ]; do
+                echo "Current directory is"
+                dire=$(pwd)
+                echo $dire
+                echo "Waiting for external IP..."
+                echo "kubeconfig name is..."
+                echo $kubeconfigname
+                external_ip=$(get_lb_external_ip "$kubeconfigname" "$kubecontextname")
+                [ -z "$external_ip" ] && sleep 10
+            done
+            echo "Grafana LoadBalancer IP: $external_ip"
 
+            # Update the kubeslice-worker-egs configuration in egs-installer-config.yaml
+            yq e -i ".kubeslice-worker-egs.inline_values.egs.grafanaDashboardBaseUrl = \"http://$external_ip/d/Oxed_c6Wz\"" "$EGS_INPUT_YAML"
+            echo "Updated Grafana Dashboard Base URL in egs-installer-config.yaml"
+
+
+            # Upgrade the Prometheus chart with the updated values
+            echo "Upgrading Prometheus chart with updated Grafana IP..."
+            install_or_upgrade_helm_chart "$skip_installation" "$release_name" "$chart_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$repo_url" "$username" "$password" "$values_file" "$inline_values" "$image_pull_secret_repo" "$image_pull_secret_username" "$image_pull_secret_password" "$image_pull_secret_email" "$helm_flags" "$specific_use_local_charts" "$LOCAL_CHARTS_PATH" "$version" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+        fi
     done
     echo "✔️ Installation of additional applications complete."
 else
