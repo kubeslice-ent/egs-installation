@@ -274,247 +274,6 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
-  name: gpuprovisioningrequests.controller.kubeslice.io
-spec:
-  group: controller.kubeslice.io
-  names:
-    kind: GPUProvisioningRequest
-    listKind: GPUProvisioningRequestList
-    plural: gpuprovisioningrequests
-    singular: gpuprovisioningrequest
-  scope: Namespaced
-  versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: GPUProvisioningRequest is the Schema for the gpuprovisioningrequests
-          API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: GPUProvisioningRequestSpec defines the desired state of GPUProvisioningRequest
-            properties:
-              clusterName:
-                type: string
-              dedicatedNodes:
-                type: boolean
-              enableRDMA:
-                type: boolean
-              enableSecondaryNetwork:
-                type: boolean
-              exitDuration:
-                type: string
-              gpuShape:
-                type: string
-              gpuSharingMode:
-                type: string
-              multiNode:
-                type: boolean
-              numberOfGPUNodes:
-                type: integer
-              numberOfGPUs:
-                type: integer
-              sliceName:
-                type: string
-            required:
-            - gpuShape
-            - numberOfGPUNodes
-            - sliceName
-            type: object
-          status:
-            description: GPUProvisioningRequestStatus defines the observed state of
-              GPUProvisioningRequest
-            properties:
-              cost:
-                type: string
-              estimatedTimestamp:
-                format: date-time
-                type: string
-              estimatedWaitTime:
-                type: string
-              failureReason:
-                type: string
-              nodeList:
-                items:
-                  properties:
-                    clusterName:
-                      type: string
-                    gpuSharingMode:
-                      type: string
-                    nodeName:
-                      type: string
-                    numGPUsAllocated:
-                      type: integer
-                    workloads:
-                      items:
-                        type: string
-                      type: array
-                  type: object
-                type: array
-              numGPUsAllocated:
-                type: integer
-              provisioningStatus:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
-                enum:
-                - Pending
-                - Failed
-                - Successful
-                - Running
-                - Complete
-                type: string
-              requestName:
-                type: string
-              startTimestamp:
-                format: date-time
-                type: string
-            required:
-            - provisioningStatus
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
-  name: workerslicegpuprovisioningrequests.worker.kubeslice.io
-spec:
-  group: worker.kubeslice.io
-  names:
-    kind: WorkerSliceGPUProvisioningRequest
-    listKind: WorkerSliceGPUProvisioningRequestList
-    plural: workerslicegpuprovisioningrequests
-    singular: workerslicegpuprovisioningrequest
-  scope: Namespaced
-  versions:
-  - name: v1alpha1
-    schema:
-      openAPIV3Schema:
-        description: WorkerSliceGPUProvisioningRequest is the Schema for the workerslicegpuprovisioningrequests
-          API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: WorkerSliceGPUProvisioningRequestSpec defines the desired
-              state of WorkerSliceGPUProvisioningRequest
-            properties:
-              clusterName:
-                type: string
-              dedicatedNodes:
-                type: boolean
-              enableRDMA:
-                type: boolean
-              enableSecondaryNetwork:
-                type: boolean
-              exitDuration:
-                type: string
-              gpuShape:
-                type: string
-              gpuSharingMode:
-                type: string
-              multiNode:
-                type: boolean
-              numberOfGPUNodes:
-                type: integer
-              numberOfGPUs:
-                type: integer
-              sliceName:
-                type: string
-            required:
-            - gpuShape
-            - numberOfGPUNodes
-            - sliceName
-            type: object
-          status:
-            description: WorkerSliceGPUProvisioningRequestStatus defines the observed
-              state of WorkerSliceGPUProvisioningRequest
-            properties:
-              cost:
-                type: string
-              estimatedTimestamp:
-                format: date-time
-                type: string
-              estimatedWaitTime:
-                type: string
-              failureReason:
-                type: string
-              nodeList:
-                items:
-                  properties:
-                    clusterName:
-                      type: string
-                    gpuSharingMode:
-                      type: string
-                    nodeName:
-                      type: string
-                    numGPUsAllocated:
-                      type: integer
-                    workloads:
-                      items:
-                        type: string
-                      type: array
-                  type: object
-                type: array
-              numGPUsAllocated:
-                type: integer
-              provisioningStatus:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
-                enum:
-                - Pending
-                - Failed
-                - Successful
-                - Running
-                - Complete
-                type: string
-              startTimestamp:
-                format: date-time
-                type: string
-            required:
-            - provisioningStatus
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
   name: gpuworkloads.worker.kubeslice.io
 spec:
   group: worker.kubeslice.io
@@ -548,6 +307,8 @@ spec:
             description: WorkloadStatus defines the observed state of Workload
             properties:
               dashboardBaseUrl:
+                type: string
+              gprName:
                 type: string
               workloadDetails:
                 items:
@@ -6281,7 +6042,6 @@ rules:
       - slicerolebindings
       - sliceroletemplates
       - vpnkeyrotations
-      - gpuprovisioningrequests
     verbs:
       - create
       - delete
@@ -6305,7 +6065,6 @@ rules:
       - slicerolebindings/finalizers
       - sliceroletemplates/finalizers
       - vpnkeyrotations/finalizers
-      - gpuprovisioningrequests/finalizers
     verbs:
       - update
   - apiGroups:
@@ -6323,7 +6082,6 @@ rules:
       - slicerolebindings/status
       - sliceroletemplates/status
       - vpnkeyrotations/status
-      - gpuprovisioningrequests/status
     verbs:
       - get
       - list
@@ -6359,6 +6117,7 @@ rules:
       - workersliceappserviceresourceusages
       - workerslicegpuprovisioningrequests  
       - gpuworkloads
+      - workerclustergpuallocations
     verbs:
       - create
       - delete
@@ -6406,6 +6165,57 @@ rules:
       - update
       - watch
       - create
+  - apiGroups:
+      - inventory.kubeslice.io
+    resources:
+      - workerclustergpuallocations
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - inventory.kubeslice.io
+    resources:
+      - workerclustergpuallocations/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - inventory.kubeslice.io
+    resources:
+      - workerclustergpuallocations/status
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - create
+  - apiGroups:
+      - gpr.kubeslice.io
+    resources:
+      - gpuprovisioningrequests
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - gpr.kubeslice.io
+    resources:
+      - gpuprovisioningrequests/status
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

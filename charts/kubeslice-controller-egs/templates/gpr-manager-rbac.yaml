@@ -1,15 +1,14 @@
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: aiops-operator-access
+  name: gpr-manager-access
   namespace: {{ .Release.Namespace }}
 ---
-# permissions to do leader election.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: aiops-leader-election-role
+  name: gpr-manager-leader-election-role
+  namespace: {{ .Release.Namespace }}
 rules:
 - apiGroups:
   - ""
@@ -41,18 +40,16 @@ rules:
   - events
   verbs:
   - create
-  - list
   - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: aiops-manager-role
+  name: gpr-manager-manager-role
 rules:
 - apiGroups:
-  - aiops.kubeslice.io
+  - gpr.kubeslice.io
   resources:
-  - clustergpuallocations
   - gpuprovisioningrequests
   verbs:
   - create
@@ -63,90 +60,60 @@ rules:
   - update
   - watch
 - apiGroups:
-  - aiops.kubeslice.io
+  - gpr.kubeslice.io
   resources:
-  - clustergpuallocations/finalizers
   - gpuprovisioningrequests/finalizers
   verbs:
   - update
 - apiGroups:
-  - aiops.kubeslice.io
+  - gpr.kubeslice.io
   resources:
-  - clustergpuallocations/status
   - gpuprovisioningrequests/status
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - events.k8s.io
+  - worker.kubeslice.io
   resources:
-  - events
+  - workerslicegpuprovisioningrequests
   verbs:
-  - get
-  - list
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  - namespaces
-  verbs:
-  - get
-  - list
-  - watch
-  - update
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-  - watch
-  - update
+  - create
   - delete
-- apiGroups:
-  - networking.kubeslice.io
-  resources:
-  - slices
-  verbs:
   - get
   - list
   - patch
   - update
   - watch
 - apiGroups:
-  - networking.kubeslice.io
+  - worker.kubeslice.io
   resources:
-  - slices/status
+  - workerslicegpuprovisioningrequests/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - worker.kubeslice.io
+  resources:
+  - workerslicegpuprovisioningrequests/status
   verbs:
   - get
   - patch
   - update
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: aiops-metrics-reader
-rules:
-- nonResourceURLs:
-  - /metrics
+- apiGroups:
+  - controller.kubeslice.io
+  resources:
+  - projects
+  - sliceconfigs
+  - clusters
   verbs:
   - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: aiops-proxy-role
+  name: gpr-manager-metrics-auth-role
 rules:
 - apiGroups:
   - authentication.k8s.io
@@ -162,41 +129,52 @@ rules:
   - create
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gpr-manager-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: aiops-leader-election-rolebinding
+  name: gpr-manager-leader-election-rolebinding
   namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: aiops-leader-election-role
+  name: gpr-manager-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: aiops-operator-access
+  name: gpr-manager-access
   namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: aiops-manager-rolebinding
+  name: gpr-manager-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: aiops-manager-role
+  name: gpr-manager-manager-role
 subjects:
 - kind: ServiceAccount
-  name: aiops-operator-access
+  name: gpr-manager-access
   namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: aiops-proxy-rolebinding
+  name: gpr-manager-metrics-auth-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: aiops-proxy-role
+  name: gpr-manager-metrics-auth-role
 subjects:
 - kind: ServiceAccount
-  name: aiops-operator-access
+  name: gpr-manager-access
   namespace: {{ .Release.Namespace }}
+---

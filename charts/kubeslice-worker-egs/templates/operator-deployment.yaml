@@ -114,7 +114,7 @@ spec:
             value: kubeslice-image-pull-secret
               {{- end }}
           - name: ENABLE_SLICE_CHARGEBACK
-            value: "true"
+            value: "false"
 
         livenessProbe:
           httpGet:
