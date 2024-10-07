@@ -14,7 +14,11 @@ spec:
     singular: gpuprovisioningrequest
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.provisioningStatus
+      name: ProvisioningStatus
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: GPUProvisioningRequest is the Schema for the gpuprovisioningrequests
@@ -61,6 +65,10 @@ spec:
                   Specify if an entire GPU node should be assigned
                   even if the requested number of GPUs is less than the allocatable GPUs on a node
                 type: boolean
+              earlyRelease:
+                description: EarlyRelease flag indicates weather GPR needs to be early
+                  released
+                type: boolean
               enableRDMA:
                 description: RDMA capable GPU nodes applicable only if multiNode is
                   true
@@ -71,11 +79,11 @@ spec:
               exitDuration:
                 description: estimated usage duration of the GPUs; optional
                 type: string
-              gpuNodeShape:
-                description: Shape of the GPU Node
-                type: string
               gpuSharingMode:
                 description: desired type of GPU sharing mechanism
+                type: string
+              instanceType:
+                description: Instance Type of the GPU Node
                 type: string
               labeled:
                 description: Labeled indicates whether the nodes have been labeled
@@ -93,19 +101,7 @@ spec:
                 description: GPU nodes list - contains list of gpu nodes which got
                   reconciled by operator
                 items:
-                  description: Node defines the GPU nodes reserved for slice
-                  properties:
-                    nodeName:
-                      description: NodeName is the name of the GPU node
-                      type: string
-                    numGPUsAllocated:
-                      description: NumGPUsAllocated is the number of GPUs allocated
-                        from the node
-                      type: integer
-                  required:
-                  - nodeName
-                  - numGPUsAllocated
-                  type: object
+                  type: string
                 type: array
               numberOfGPUNodes:
                 description: Number of GPU nodes needed
@@ -122,7 +118,7 @@ spec:
             required:
             - clusterName
             - exitDuration
-            - gpuNodeShape
+            - instanceType
             - numberOfGPUNodes
             - sliceName
             type: object

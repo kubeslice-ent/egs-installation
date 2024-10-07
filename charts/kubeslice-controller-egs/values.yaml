@@ -55,7 +55,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 0.5.0
+    tag: 0.7.0
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -104,11 +104,38 @@ kubeslice:
 
 egs:
   gprManager:
-    # Image name for the gateway certificates generator
+    # Image name for the gpr-manager
     image: gpr-manager
-    # Image tag for the gateway certificates generator
-    tag: 0.5.0
+    # Image tag for the gpr-manager
+    tag: 0.7.0
     imagePullPolicy: IfNotPresent
+    # Period for checking if there is queue processing needed (in seconds)
+    qmgrCheckPeriod: 60
+    # Number of times a GPR can be delayed if there is not enough inventory
+    maxDelayedCount: 10
+  
+  queueManager:
+    # Image name for the gpr-manager
+    image: queue-manager
+    # Image tag for the gpr-manager
+    tag: 0.7.0
+    imagePullPolicy: IfNotPresent
+    service:
+      name: queue-manager
+      port: 80
+    # turn off reflection
+    appEnv: "production"
+      
+  inventory:
+    # Image name for inventory-manager
+    image: inventory-manager
+    # Image tag for inventory-manager
+    tag: 0.7.0
+    imagePullPolicy: IfNotPresent
+    logLevel: INFO
+    service:
+      name: inventory-manager
+      port: 80
 
 prometheus:
   # Secrets for image pulling

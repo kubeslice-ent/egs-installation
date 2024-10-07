@@ -45,8 +45,10 @@ spec:
               value: {{ .Values.kubeTally.costApiUrl }}
             - name: SLICE_USER_CONFIG_MAP_NAME
               value: slice-user-config
-            - name: GPR_MANAGER_ENDPOINT
-              value: {{ .Values.egs.GprManagerEndpoint }}
+            - name: INVENTORY_MANAGER_ADDRESS
+              value: {{ .Values.egs.InventoryManagerAddress }}
+            - name: QUEUE_MANAGER_ADDRESS
+              value: {{ .Values.egs.QueueManagerAddress }}  
           name: kubeslice-api-gw
           ports:
             - containerPort: 3000

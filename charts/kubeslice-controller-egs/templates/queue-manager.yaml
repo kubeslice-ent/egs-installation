@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: queue-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: "queue-manager"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "queue-manager"
+  template:
+    metadata:
+      labels:
+        app: "queue-manager"
+    spec:
+      containers:
+        - name: "queue-manager"
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.egs.queueManager.image }}:{{ .Values.egs.queueManager.tag }}'
+          ports:
+            - containerPort: 50051
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: {{ .Values.egs.queueManager.imagePullPolicy }}
+          env:
+          - name: QMGR_CHECK_PERIOD
+            value: "{{ .Values.egs.gprManager.qmgrCheckPeriod }}"
+          - name: MAX_DELAYED_COUNT
+            value: "{{ .Values.egs.gprManager.maxDelayedCount }}"
+          - name: APP_ENV
+            value: "{{ .Values.egs.queueManager.appEnv }}"
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: gpr-manager-access
+      serviceAccount: gpr-manager-access
+      securityContext: {}
+      {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+      imagePullSecrets:
+        - name: kubeslice-image-pull-secret
+      {{- end }}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.egs.queueManager.service.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.egs.queueManager.service.port }}
+      targetPort: 50051
+  selector:
+    app: "queue-manager"
