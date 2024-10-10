@@ -2462,6 +2462,28 @@ prepare_worker_values_file() {
         kubecontext=$(echo "$worker" | yq e '.kubecontext' -)
         specific_use_local_charts=$(echo "$worker" | yq e '.specific_use_local_charts' -)
 
+        if [ "$use_global_kubeconfig" = "true" ]; then
+                    kubeconfigname=$(yq e '.global_kubeconfig' "$EGS_INPUT_YAML")
+                    kubecontextname=$(yq e '.global_kubecontext' "$EGS_INPUT_YAML")
+        else
+                kubeconfigname=$(echo "$worker" | yq e '.kubeconfig' -)
+                kubecontextname=$(echo "$worker" | yq e '.kubecontext' -)
+        fi
+
+        echo "Waiting for Grafana service to get an IP or port for worker..."
+        external_ip=""
+        while [ -z "${external_ip}" ] ; do 
+            external_ip="$(get_lb_external_ip "${kubeconfigname}" "${kubecontextname}" "monitoring" prometheus-grafana)"
+            sleep 10 
+        done
+
+        grafana_url="http://${external_ip}/d/Oxed_c6Wz"
+        echo "Grafana URL: ${grafana_url}"
+
+        # Update YAML configuration with new Grafana URL
+        #yq eval ".kubeslice_worker_egs.inline_values.egs.grafanaDashboardBaseUrl = \"${grafana_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
+        yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egs.grafanaDashboardBaseUrl = \"${grafana_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
+        
         echo "  Extracted values for worker $worker_name:"
         echo "  Worker Name: $worker_name"
         echo "  Skip Installation: $skip_installation"
