@@ -15,7 +15,7 @@ kubeslice:
     pullPolicy: IfNotPresent
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 0.7.0
+    tag: 0.7.1
     pullPolicy: IfNotPresent
   dashboard:
     image: kubeslice-kubernetes-dashboard
@@ -34,7 +34,7 @@ kubeslice:
       # nodePort:
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 0.7.0
+    tag: 0.7.1
     pullPolicy: IfNotPresent
 
   workerinstaller:
