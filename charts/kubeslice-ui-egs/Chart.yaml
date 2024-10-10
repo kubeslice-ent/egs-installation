@@ -28,5 +28,5 @@ keywords:
 - application
 kubeVersion: '>= 1.19.0-0'
 home: https://avesha.io/products/product-slice
-version: 0.7.0
-appVersion: 0.7.0
+version: 0.7.1
+appVersion: 0.7.1
