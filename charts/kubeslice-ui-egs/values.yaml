@@ -23,7 +23,7 @@ kubeslice:
     pullPolicy: IfNotPresent
   uiproxy:
     image: kubeslice-ui-proxy-egs
-    tag: 0.7.0
+    tag: 0.7.2
     pullPolicy: IfNotPresent
     service:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
