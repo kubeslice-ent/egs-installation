@@ -8,7 +8,7 @@ metadata:
 spec:
   ports:
     - port: 443
-      targetPort: 443
+      targetPort: 8443
       protocol: TCP
       name: http
       {{- if eq .Values.kubeslice.uiproxy.service.type "NodePort" }}
@@ -42,7 +42,7 @@ spec:
           - name: REACT_APP_SOCKET_URL
             value: 'ws://kubeslice-api-gw.kubeslice-controller.svc.cluster.local:3000'
           ports:
-            - containerPort: 443
+            - containerPort: 8443
         {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
       imagePullSecrets:
       - name: kubeslice-ui-image-pull-secret
