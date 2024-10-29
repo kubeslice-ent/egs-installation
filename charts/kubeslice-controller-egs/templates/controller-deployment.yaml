@@ -45,7 +45,7 @@ spec:
             - --license-mode={{ .Values.kubeslice.license.mode }}
             - --license-customer-name={{ .Values.kubeslice.license.customerName }}
             - --license-type={{.Values.kubeslice.license.type }}
-            - --license-image=aveshadev/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}
+            - --license-image={{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}
             - --metrics-cleanup-interval={{ .Values.kubeslice.controller.kubeTally.metricsCleanupInterval }}
           command:
             - /manager
