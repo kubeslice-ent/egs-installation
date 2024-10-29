@@ -69,6 +69,31 @@ spec:
                       type: integer
                   type: object
                 type: array
+              unmanagedNodeInventory:
+                items:
+                  properties:
+                    free:
+                      type: integer
+                    gpuModelName:
+                      type: string
+                    gpuNodeShape:
+                      type: string
+                    gpuPowerThresold:
+                      type: string
+                    gpuTempThresold:
+                      type: string
+                    instanceType:
+                      type: string
+                    memory:
+                      type: integer
+                    nodeHealth:
+                      type: string
+                    nodeName:
+                      type: string
+                    totalGPUs:
+                      type: integer
+                  type: object
+                type: array
             type: object
         type: object
     served: true

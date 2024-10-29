@@ -3,7 +3,7 @@ kind: Service
 metadata:
   labels:
     app: gpr-manager
-  name: gpr-manager
+  name: egs-gpr-manager
   namespace: {{ .Release.Namespace }}
 spec:
   ports:

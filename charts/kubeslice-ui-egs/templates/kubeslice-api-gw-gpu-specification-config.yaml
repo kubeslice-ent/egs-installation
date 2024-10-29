@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-specification-config
+  namespace: kubeslice-controller
+data:
+  gpuDetails: |
+    [
+      { "gpuShape": "a100", "maxPower": 400 },
+      { "gpuShape": "a10", "maxPower": 150 },
+      { "gpuShape": "h100", "maxPower": 700 },
+      { "gpuShape": "p100", "maxPower": 250 },
+      { "gpuShape": "v100", "maxPower": 300 },
+      { "gpuShape": "tesla t4", "maxPower": 70 },
+      { "gpuShape": "p4", "maxPower": 75 },
+      { "gpuShape": "k80", "maxPower": 300 },
+      { "gpuShape": "l40", "maxPower": 300 }
+    ]
+
+---
+

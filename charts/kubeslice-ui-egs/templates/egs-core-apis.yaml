@@ -1,0 +1,115 @@
+{{- if $.Values.kubeslice.egsCoreApis.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: egs-core-apis
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: egs-core-apis
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "serviceaccounts/token" ]
+    verbs: [ "create" ]
+  - apiGroups: [ "" ]
+    resources: [ "serviceaccounts" ]
+    verbs: [ "get", "list" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: egs-core-apis
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: egs-core-apis
+subjects:
+  - kind: ServiceAccount
+    name: egs-core-apis
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: egs-core-apis
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: egs-core-apis
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: egs-core-apis
+subjects:
+  - kind: ServiceAccount
+    name: egs-core-apis
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: egs-core-apis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: egs-core-apis
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      app: egs-core-apis
+      version: v1
+  template:
+    metadata:
+      labels:
+        version: v1
+        app: egs-core-apis
+    spec:
+      containers:
+        - name: egs-core-apis
+          env:
+            - name: EGS_CORE_APIS_API_KEY_SECRET_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: EGS_CORE_APIS_PORT
+              value: "8080"
+            - name: EGS_CORE_APIS_EGS_API_GATEWAY_ENDPOINT
+              value: "http://kubeslice-api-gw:8080/"
+          ports:
+            - containerPort: 8080
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.egsCoreApis.image }}:{{ .Values.kubeslice.egsCoreApis.tag }}'
+          imagePullPolicy: '{{ .Values.kubeslice.egsCoreApis.pullPolicy }}'
+      restartPolicy: Always
+      {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+      imagePullSecrets:
+        - name: kubeslice-ui-image-pull-secret
+      {{- end }}
+      serviceAccountName: egs-core-apis
+  replicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: egs-core-apis
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 8080
+      name: http
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    version: v1
+    app: egs-core-apis
+  type: {{ $.Values.kubeslice.egsCoreApis.service.type }}
+{{- end }}
