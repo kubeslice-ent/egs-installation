@@ -117,7 +117,7 @@ egs:
     refreshWaitTimeInterval: 300
   
   queueManager:
-    imageRegistry: aveshadev # global registry will be choosen if removed 
+    imageRegistry: aveshasystems # global registry will be choosen if removed 
     # Image name for the gpr-manager
     image: queue-manager
     # Image tag for the gpr-manager
