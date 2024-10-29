@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   labels:
     control-plane: gpr-controller-manager
-  name: gpr-manager
+  name: egs-gpr-manager
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
@@ -35,6 +35,8 @@ spec:
           value: "{{ .Values.egs.gprManager.qmgrCheckPeriod }}"
         - name: MAX_DELAYED_COUNT
           value: "{{ .Values.egs.gprManager.maxDelayedCount }}"
+        - name: WAIT_TIME_REFRESH_PERIOD
+          value: "{{ .Values.egs.gprManager.refreshWaitTimeInterval }}"
         image: "{{ .Values.global.imageRegistry }}/{{ .Values.egs.gprManager.image }}:{{ .Values.egs.gprManager.tag }}"
         imagePullPolicy: "{{ .Values.egs.gprManager.pullPolicy }}"
         livenessProbe:
@@ -75,3 +77,9 @@ spec:
           secret:
             defaultMode: 420
             secretName: gpr-admission-webhook-certs
+      {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+      imagePullSecrets:
+        - name: kubeslice-image-pull-secret
+      {{- end }}
+      tolerations:
+        - operator: "Exists"

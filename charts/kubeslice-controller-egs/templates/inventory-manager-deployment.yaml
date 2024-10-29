@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   labels:
     control-plane: inventory-controller-manager
-  name: inventory-controller-manager
+  name: egs-inventory-controller-manager
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
@@ -60,3 +60,9 @@ spec:
         runAsNonRoot: true
       serviceAccountName: inventory-manager-access
       terminationGracePeriodSeconds: 10
+      {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+      imagePullSecrets:
+        - name: kubeslice-image-pull-secret
+      {{- end }}
+      tolerations:
+        - operator: "Exists"

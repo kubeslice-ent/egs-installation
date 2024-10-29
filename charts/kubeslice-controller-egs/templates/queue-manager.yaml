@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: queue-manager
+  name: egs-queue-manager
   namespace: {{ .Release.Namespace }}
   labels:
     app: "queue-manager"
@@ -43,6 +43,8 @@ spec:
         - name: kubeslice-image-pull-secret
       {{- end }}
       schedulerName: default-scheduler
+      tolerations:
+        - operator: "Exists"
   strategy:
     type: RollingUpdate
     rollingUpdate:

@@ -11,11 +11,11 @@ kubeTally:
 kubeslice:
   ui:
     image: kubeslice-ui-ent-egs
-    tag: 0.7.0
+    tag: 0.8.0
     pullPolicy: IfNotPresent
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 0.7.1
+    tag: 0.8.0
     pullPolicy: IfNotPresent
   dashboard:
     image: kubeslice-kubernetes-dashboard
@@ -23,7 +23,7 @@ kubeslice:
     pullPolicy: IfNotPresent
   uiproxy:
     image: kubeslice-ui-proxy-egs
-    tag: 0.7.2
+    tag: 0.8.0
     pullPolicy: IfNotPresent
     service:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
@@ -34,8 +34,16 @@ kubeslice:
       # nodePort:
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 0.7.1
+    tag: 0.8.0
     pullPolicy: IfNotPresent
+
+  egsCoreApis:
+    enabled: false
+    image: egs-core-apis
+    tag: 0.8.0
+    pullPolicy: Always
+    service:
+      type: LoadBalancer
 
   workerinstaller:
     image: worker-installer
@@ -46,8 +54,8 @@ kubeslice:
     url: http://kubeslice-controller-prometheus-service:9090
 
 egs:
-  InventoryManagerAddress: inventory-manager:80
-  QueueManagerAddress: queue-manager:80
+  InventoryManagerAddress: egs-inventory-manager:80
+  QueueManagerAddress: egs-queue-manager:80
 
 # username & password & email values for imagePullSecrets has to provided to create a secret
 imagePullSecrets:

@@ -3,7 +3,7 @@ kind: Service
 metadata:
   labels:
     app: inventory-manager
-  name: inventory-manager
+  name: egs-inventory-manager
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
