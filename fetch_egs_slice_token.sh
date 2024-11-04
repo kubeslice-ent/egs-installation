@@ -59,7 +59,7 @@ fi
 # Define the namespace
 NAMESPACE="kubeslice-${PROJECT_NAME}"
 
-# Define secret names for read-only and read-write tokens
+# Define secret names for read-only, read-write, and the old convention tokens
 SECRET_NAME_RO="kubeslice-rbac-ro-slice-${SLICE_NAME}"
 SECRET_NAME_RW="kubeslice-rbac-rw-slice-${SLICE_NAME}"
 
@@ -78,6 +78,6 @@ fetch_token() {
     fi
 }
 
-# Fetch and display tokens for both read-only and read-write secrets
+# Fetch and display tokens for read-only, read-write, and old convention secrets
 fetch_token "$SECRET_NAME_RO"
 fetch_token "$SECRET_NAME_RW"
