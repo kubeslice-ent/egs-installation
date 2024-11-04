@@ -7,7 +7,7 @@ usage() {
     echo ""
     echo -e "\033[1;34mParameters:\033[0m"
     echo -e "  \033[1;36m-k, --kubeconfig\033[0m  \U1F4C1  Absolute path to the kubeconfig file used for connecting to the Kubernetes cluster."
-    echo -e "  \033[1;36m-s, --slice\033[0m       \U1F4A5  Name of the slice for which the token is to be retrieved."
+    echo -e "  \033[1;36m-s, --slice\033[0m       \U1F4A5  Name of the slice for which the tokens are to be retrieved."
     echo -e "  \033[1;36m-p, --project\033[0m     \U1F4DA  Name of the project (namespace) where the slice is located."
     echo -e "  \033[1;36m-h, --help\033[0m        \U1F6C8  Display this help message."
     echo ""
@@ -56,18 +56,28 @@ if [ -z "$PROJECT_NAME" ]; then
     error_exit "The --project (-p) parameter is required."
 fi
 
-# Define the secret name and namespace
-SECRET_NAME="kubeslice-rbac-slice-${SLICE_NAME}"
+# Define the namespace
 NAMESPACE="kubeslice-${PROJECT_NAME}"
 
-# Fetch the token from the secret and decode it
-TOKEN=$(kubectl --kubeconfig="$KUBECONFIG_PATH" -n "$NAMESPACE" get secret "$SECRET_NAME" -o jsonpath="{.data.token}" 2>/dev/null | base64 --decode)
+# Define secret names for read-only, read-write, and the old convention tokens
+SECRET_NAME_RO="kubeslice-rbac-ro-slice-${SLICE_NAME}"
+SECRET_NAME_RW="kubeslice-rbac-rw-slice-${SLICE_NAME}"
 
-# Check if the token was successfully retrieved
-if [ -z "$TOKEN" ]; then
-    error_exit "Failed to retrieve token from secret '$SECRET_NAME' in namespace '$NAMESPACE'. Ensure the secret exists and you have the correct permissions."
-fi
+# Function to retrieve and decode token from a secret
+fetch_token() {
+    local secret_name="$1"
+    local token
 
-# Output the decoded token
-echo -e "\033[1;32mDecoded token for slice '\033[1;33m$SLICE_NAME\033[1;32m' in project '\033[1;33m$PROJECT_NAME\033[1;32m':\033[0m"
-echo "$TOKEN"
+    token=$(kubectl --kubeconfig="$KUBECONFIG_PATH" -n "$NAMESPACE" get secret "$secret_name" -o jsonpath="{.data.token}" 2>/dev/null | base64 --decode)
+
+    if [ -z "$token" ]; then
+        echo -e "\033[1;31mError:\033[0m Failed to retrieve token from secret '$secret_name' in namespace '$NAMESPACE'. Ensure the secret exists and you have the correct permissions."
+    else
+        echo -e "\033[1;32mDecoded token for secret '\033[1;33m$secret_name\033[1;32m':\033[0m"
+        echo "$token"
+    fi
+}
+
+# Fetch and display tokens for read-only, read-write, and old convention secrets
+fetch_token "$SECRET_NAME_RO"
+fetch_token "$SECRET_NAME_RW"
