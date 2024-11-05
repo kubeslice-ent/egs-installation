@@ -534,7 +534,7 @@ Replace `<yaml_file>` with the path to your YAML configuration file. For example
 
 ## 🚀 Examples
 
-### 1️⃣ Fetching Slice Tokens Only (Without `-a`)
+### 1️⃣ Fetching Slice Tokens Only
 
 Retrieve read-only and read-write tokens for a specified slice:
 
@@ -550,7 +550,7 @@ Retrieve read-only and read-write tokens for a specified slice:
 
 ---
 
-### 2️⃣ Fetching Admin Tokens Only (With `-a`)
+### 2️⃣ Fetching Admin Tokens Only 
 
 Fetch admin tokens for specific users. When the `-a` flag is used, `--slice` becomes optional.
 
