@@ -1,3 +1,5 @@
+{{- if .Values.kubeslice.dashboard.enabled }}
+---
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -317,3 +319,4 @@ spec:
       volumes:
         - name: tmp-volume
           emptyDir: {}
+{{- end }}
