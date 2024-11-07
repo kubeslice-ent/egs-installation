@@ -17,6 +17,7 @@ spec:
         kubectl.kubernetes.io/default-container: manager
         prometheus.io/port: "18080"
         prometheus.io/scrape: "true"
+        checksum/secret: {{ now | quote | sha256sum }}
       labels:
         control-plane: controller-manager
     spec:
