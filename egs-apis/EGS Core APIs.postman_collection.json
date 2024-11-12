@@ -1,0 +1,1509 @@
+{
+	"info": {
+		"_postman_id": "3cf54b25-259b-4fc5-ba35-2a3b359027b0",
+		"name": "EGS Core APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25042100"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Authentication",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"apiKey\": \"{{apiKey}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/auth",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"apiKey\": \"{{apiKey}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/auth",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"auth"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 20 Oct 2024 19:53:11 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "998"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IlNTYWZkejFDOE12VnZmZi1TeU9iUkZBVUtQcjhLcjdZaVFkSlRUd1BZM0UifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwiXSwiZXhwIjoxNzI5NDU0ODg5LCJpYXQiOjE3Mjk0NTM5ODksImlzcyI6Imh0dHBzOi8va3ViZXJuZXRlcy5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsIiwia3ViZXJuZXRlcy5pbyI6eyJuYW1lc3BhY2UiOiJkZWZhdWx0Iiwic2VydmljZWFjY291bnQiOnsibmFtZSI6Imt1YmVzbGljZS1yYmFjLXJvLXNsaWNlLWJsdWUiLCJ1aWQiOiIyMDdmMzllOC0yMjUwLTQ3NTUtOGY2MC01ZWM1YzZjNzM3YjIifX0sIm5iZiI6MTcyOTQ1Mzk4OSwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6a3ViZXNsaWNlLXJiYWMtcm8tc2xpY2UtYmx1ZSJ9.p_hZ3PSbXufy7d8wAdyLGn_hMjahRP0SVw6qDlCeP_FcPrIHHH1hdWWiNXfSY-RggrdYATGj4iTrDcFgp52pY1pW4yywdGc9zWd19fyreT5UkoM8HvEkV5zbyNuf2tQZRK6zbMjVS-HzwutSdE_M0tpx8zqO2uosLr29kkxG-3qe7DhoOsg04x0NjN9jNw3PQ9l6u48nSg0aUwW2CJAK-7SAp4tUjMnXyh4wxop7mZwimls6VLUoCCqtyACpc9WZNxqO82nCKmnUf6sMTens37PSMz_elM0kMMMUmZhlAcbxy3-fGbHDfjOv1_iaF5K3mbqw5Id0k2-xXcTM7TkUBw\"\n    }\n}"
+						},
+						{
+							"name": "ApiKey Secret Malformed",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"apiKey\": \"{{apiKey}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/auth",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"auth"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 20 Oct 2024 19:54:02 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "298"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 400,\n    \"status\": \"UNHANDLED_REQUEST_ERROR\",\n    \"message\": \"Api Key Configuration is invalid. Request a new API-key or contact administrator\",\n    \"error\": {\n        \"errorKey\": \"UNHANDLED_REQUEST_ERROR\",\n        \"message\": \"Api Key Configuration is invalid. Request a new API-key or contact administrator\",\n        \"data\": null\n    }\n}"
+						},
+						{
+							"name": "ApiKey Expired",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"apiKey\": \"{{apiKey}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/auth",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"auth"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 20 Oct 2024 19:55:44 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "160"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 401,\n    \"status\": \"UNAUTHENTICATED\",\n    \"message\": \"Api Key has expired\",\n    \"error\": {\n        \"errorKey\": \"UNAUTHENTICATED\",\n        \"message\": \"Api Key has expired\",\n        \"data\": null\n    }\n}"
+						},
+						{
+							"name": "Incorrect Key",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"apiKey\": \"{{apiKey}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/auth",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"auth"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 20 Oct 2024 19:56:24 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "152"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 401,\n    \"status\": \"UNAUTHENTICATED\",\n    \"message\": \"Unauthenticated\",\n    \"error\": {\n        \"errorKey\": \"UNAUTHENTICATED\",\n        \"message\": \"Unauthenticated\",\n        \"data\": null\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Workspace",
+			"item": [
+				{
+					"name": "Create Workspace",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"workspaceName\": \"{{workspaceName}}\",\r\n    \"clusters\": [\r\n        \"worker-1\"\r\n    ],\r\n    \"namespaces\" : [\r\n        \"namespace-3\"\r\n    ],\r\n    \"username\": \"John Doe\",\r\n    \"email\": \"john.doe@avesha.io\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/slice-workspace",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"slice-workspace"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Already Exists",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"workspaceName\": \"{{workspaceName}}\",\r\n    \"clusters\": [\r\n        \"worker-1\"\r\n    ],\r\n    \"namespaces\" : [\r\n        \"namespace-1\",\r\n        \"namespace-2\"\r\n    ],\r\n    \"username\": \"John Doe\",\r\n    \"email\": \"john.doe@avesha.io\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/slice-workspace",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"slice-workspace"
+									]
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:08:48 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "530"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 409,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error registering Slice\\\",\\\"Status\\\":409,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"sliceconfigs.controller.kubeslice.io \\\\\\\"evening\\\\\\\" already exists\\\",\\\"Reason\\\":\\\"AlreadyExists\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":409,\\\"ReferenceDocumentation\\\":\\\"https://kubeslice.io/documentation/open-source/0.2.0/getting-started-with-cloud-clusters/installing-kubeslice/creating-a-slice\\\"}}\"\n    }\n}"
+						},
+						{
+							"name": "Bad Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"workspaceName\": \"{{workspaceName}}\",\r\n    \"clusters\": [\r\n        \r\n    ],\r\n    \"namespaces\" : [\r\n        \"namespace-1\",\r\n        \"namespace-2\"\r\n    ],\r\n    \"username\": \"John Doe\",\r\n    \"email\": \"john.doe@avesha.io\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/slice-workspace",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"slice-workspace"
+									]
+								}
+							},
+							"status": "Unprocessable Entity",
+							"code": 422,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:09:10 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "823"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 422,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error registering Slice\\\",\\\"Status\\\":422,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"admission webhook \\\\\\\"vsliceconfig.kb.io\\\\\\\" denied the request: SliceConfig.controller.kubeslice.io \\\\\\\"evening\\\\\\\" is invalid: Spec.NamespaceIsolationProfile.ApplicationNamespaces.Clusters: Required value: clusters\\\",\\\"Reason\\\":\\\"Invalid\\\",\\\"Details\\\":[{\\\"reason\\\":\\\"FieldValueRequired\\\",\\\"message\\\":\\\"Required value: clusters\\\",\\\"field\\\":\\\"Spec.NamespaceIsolationProfile.ApplicationNamespaces.Clusters\\\"}]},\\\"StatusCode\\\":422,\\\"ReferenceDocumentation\\\":\\\"https://kubeslice.io/documentation/open-source/0.2.0/getting-started-with-cloud-clusters/installing-kubeslice/creating-a-slice\\\"}}\"\n    }\n}"
+						},
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"workspaceName\": \"{{workspaceName}}\",\r\n    \"clusters\": [\r\n        \"worker-1\"\r\n    ],\r\n    \"namespaces\" : [\r\n        \"namespace-3\"\r\n    ],\r\n    \"username\": \"John Doe\",\r\n    \"email\": \"john.doe@avesha.io\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/slice-workspace",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"slice-workspace"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:10:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "89"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"workspaceName\": \"afternoon\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Workspace",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"workspaceName\": \"{{workspaceName}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/slice-workspace",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"slice-workspace"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"workspaceName\": \"{{workspaceName}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/slice-workspace",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"slice-workspace"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:11:21 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "62"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {}\n}"
+						}
+					]
+				},
+				{
+					"name": "List Workspaces",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/slice-workspace/list",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"slice-workspace",
+								"list"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/slice-workspace/list",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"slice-workspace",
+										"list"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:10:54 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1145"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"workspaces\": [\n            {\n                \"name\": \"afternoon\",\n                \"overlayNetworkDeploymentMode\": \"no-network\",\n                \"maxClusters\": 16,\n                \"sliceDescription\": \"Created via slice workspace API\",\n                \"clusters\": [\n                    \"worker-1\"\n                ],\n                \"namespaces\": [\n                    {\n                        \"namespace\": \"namespace-3\",\n                        \"clusters\": [\n                            \"worker-1\"\n                        ]\n                    }\n                ]\n            },\n            {\n                \"name\": \"evening\",\n                \"overlayNetworkDeploymentMode\": \"no-network\",\n                \"maxClusters\": 16,\n                \"sliceDescription\": \"Created via slice workspace API\",\n                \"clusters\": [\n                    \"worker-1\"\n                ],\n                \"namespaces\": [\n                    {\n                        \"namespace\": \"namespace-1\",\n                        \"clusters\": [\n                            \"worker-1\"\n                        ]\n                    },\n                    {\n                        \"namespace\": \"namespace-2\",\n                        \"clusters\": [\n                            \"worker-1\"\n                        ]\n                    }\n                ]\n            },\n            {\n                \"name\": \"morning\",\n                \"overlayNetworkDeploymentMode\": \"no-network\",\n                \"maxClusters\": 16,\n                \"sliceDescription\": \"\",\n                \"clusters\": [\n                    \"worker-1\"\n                ],\n                \"namespaces\": [\n                    {\n                        \"namespace\": \"gpu-operator\",\n                        \"clusters\": [\n                            \"worker-1\"\n                        ]\n                    },\n                    {\n                        \"namespace\": \"gmp-public\",\n                        \"clusters\": [\n                            \"worker-1\"\n                        ]\n                    }\n                ]\n            },\n            {\n                \"name\": \"pink\",\n                \"overlayNetworkDeploymentMode\": \"no-network\",\n                \"maxClusters\": 16,\n                \"sliceDescription\": \"\",\n                \"clusters\": [\n                    \"worker-1\"\n                ],\n                \"namespaces\": null\n            },\n            {\n                \"name\": \"red\",\n                \"overlayNetworkDeploymentMode\": \"no-network\",\n                \"maxClusters\": 16,\n                \"sliceDescription\": \"\",\n                \"clusters\": [\n                    \"worker-1\"\n                ],\n                \"namespaces\": [\n                    {\n                        \"namespace\": \"red\",\n                        \"clusters\": [\n                            \"worker-1\"\n                        ]\n                    }\n                ]\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Generate KubeConfig for Workspace",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"workspaceName\": \"{{workspaceName}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/slice-workspace/kube-config",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"slice-workspace",
+								"kube-config"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"workspaceName\": \"{{workspaceName}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/slice-workspace/kube-config",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"slice-workspace",
+										"kube-config"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:11:06 GMT"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"kubeConfig\": \"apiVersion: v1\\nkind: Config\\nclusters:\\n    - name: worker-1\\n      cluster:\\n        server: https://35.185.192.225\\n        certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVMVENDQXBXZ0F3SUJBZ0lSQUptUWNiTjdRUXZzYnExR3I0MFdFb2t3RFFZSktvWklodmNOQVFFTEJRQXcKTHpFdE1Dc0dBMVVFQXhNa1pqUTRPVGMzTVRBdE5tUmlaUzAwWldNMkxXRmlNRFV0T1RabU1HUTNaVFJpTkdSbApNQ0FYRFRJME1UQXlNVEE1TVRReU4xb1lEekl3TlRReE1ERTBNVEF4TkRJM1dqQXZNUzB3S3dZRFZRUURFeVJtCk5EZzVOemN4TUMwMlpHSmxMVFJsWXpZdFlXSXdOUzA1Tm1Zd1pEZGxOR0kwWkdVd2dnR2lNQTBHQ1NxR1NJYjMKRFFFQkFRVUFBNElCandBd2dnR0tBb0lCZ1FDOStJcGY5VDYwWnNqVm9tbW4wSHJ3NUxmQnY0MzJBSnQ1aEJybwpHY2lsOWN1OFUzNlNBYzVETThSN3c3djRDcjhkVnZaazJHbHhQcUw4SkhFSGNRSW9ObHRoQ2ZKNG1rWEtpbGxzCmtoM05oUXN0WXlranBrb3JuN0hLeW5sZWVINHEwS1BGVWcrTEQyYTdXYmYzWFgrOTAwZElRNlk0QmZxaHhqYlAKMEZNWmFRSEErQTQ4NmJienM1VmFVYU43TmdiWTRUS1JLM2R2cFdueFRzUEtpbm1tT0RkQk04ZjhxcitaSjgzNgprL001Y0hndWcvVWoxRy9IeEJRUHVjWnRGeW5GdGRWY0Zxay9UWFErQStkNWRDUm9xdWZOZFNKR3lZRVdrNlM3CmtLQS9PTnNMNzBTdTJPQ3JEN2p4UGlxQ3RXcGhnMlB4L2h3MVlhd1ErWm9Wa0JKRXFlY1dmbkRWZGNuNHdNbEEKLzlEOWhic1BMclY1K0IvZGxrOXgrbE5BcjhTbjF0VG94S1Z5eDhjZnJHc3J0WVltdFNTMk82YVVlWktxWk9lMApMSzk5MnhmSnQwZ1VZbW9aQ3BPd0lHYWVmeVZmVVZDQ0g0d1hmT2lxdkxPVGFKMlF6LzNaMm5tdjlpSE1rQlhUCnNVd2ZnZ2d5YXRjNHZJdjVUR25aUE9VbklQMENBd0VBQWFOQ01FQXdEZ1lEVlIwUEFRSC9CQVFEQWdJRU1BOEcKQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwT0JCWUVGR3JwMHhFTEphY0tZTTZEcGF2UGJJbHhOT3Z2TUEwRwpDU3FHU0liM0RRRUJDd1VBQTRJQmdRQ0U4L1YzdVZUeGtySW4yaElKNHh3SmhjVDZTYTNNd3dDMThJTTRld1FhCkV0U0IrbG9rYllLL1grN2hzaUs1a1JXLzZIQ0k4ZzZNL0dYNkpIcWVWc096WjVmd3RqWUVrbkZtQktuaTliWE4KeGY3OTBhMFVmWFAwZHhPb3U0SXJNK0xDMmxHVU5rYXhxT0c1dVZhQUJwUTdNQ2xvcm8zN1N2dnRRTHZZdGtpdwp3dEI1T0JrdGFQaXJIV1Z0bHYxMnI3enlMZWp6cWRnbTY5Y0FPVUZkVER5SzlYMmxucnRMaTh1a2h1TXlIV1JmClZuVTZ6RHpGTDR2RkJGYlUzNmNxZVZ4ZURpbG1XRE5BRmx4NlFBVndiS3FIWDc0TVlzRUR2YlJTTVZXSWFyQzcKcW1NMEZTYVp1NXN5YlBrTnJ4cGJJNHNTYzhIejBWSFhCWURFQkIyMG40c01md1BFM2dLZWNsdUFKSDF2UE40agpic3VES3BKSThqNnUyWjFBS28yemRIdTBVTjRjclFhNWs0UmxaYm15djM3Vm83RytEdGZxUEpwVGNjQVFTYkFBCm4xTExwODNYUU5jUmFPem1RSlRCWHdwbWQyUXZ2ODVWb2dvWFNGNGhCQXZCVXB4T2NVTkRycnlyUlk1VU9NUTEKb1p5RGMrRnNVaTNsak4rV2M5NmNWM2s9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K\\nusers:\\n    - name: afternoon-workspace\\n      user:\\n        token: eyJhbGciOiJSUzI1NiIsImtpZCI6ImtsMUNpZDR5ZmlKb2dsVzVOTjFmdGN0emhKbjR2dEh5RWN2RmYtaTRNS28ifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJuYW1lc3BhY2UtMyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZnRlcm5vb24td29ya3NwYWNlLXNhIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFmdGVybm9vbi13b3Jrc3BhY2UiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIzMGIxNWU1NS02ZjNhLTQ3YjItYjg0NC03OTFjZmE1Mzk4ZWYiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6bmFtZXNwYWNlLTM6YWZ0ZXJub29uLXdvcmtzcGFjZSJ9.JlJsoOBALHiElBi13xFDLv1aljZT959ROi-nXsA-PRqFYhnGrV_yI6qvdkapR8_YTlugVdhdxIhrCppWhKsCeX0g3wT2tmjV90rcJXia1jejUmhfIwkxOj2R2-N57UfSB5dIb1DPZ_XX21yxJhcBua3GAe0v908wiMRTj_BlLVZyOj31d2d_0M4aQl2JCe0tUg4pL0BBEavk-cUXLHC8wOlT2BlmMqq6G1m3ZZPcrW4Eljt17OZVpGlMIjR4ZN1ag78fSFhr2trPkQNEYygIGJBI5oLDYH04SHURvJMA-LIqWodoLJq-s7uhgZFi4UfIp5m6bw2UATWt8AyffDnLww\\ncontexts:\\n    - name: afternoon-workspace@worker-1\\n      context:\\n        cluster: worker-1\\n        user: afternoon-workspace\\n        namespace: namespace-3\\ncurrent-context: afternoon-workspace@worker-1\\n\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "GPR",
+			"item": [
+				{
+					"name": "Create GPR",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"gprName\":\"created-by-apigw\",\r\n    \"sliceName\":\"{{workspaceName}}\",\r\n    \"clusterName\":\"worker-1\",\r\n    \"numberOfGPUs\":1,\r\n    \"instanceType\":\"n1-standard-8\",\r\n    \"exitDuration\":\"0d0h5m\",\r\n    \"numberOfGPUNodes\": 1,\r\n    \"priority\":201,\r\n    \"memoryPerGPU\":15,\r\n    \"gpuShape\":\"Tesla-T4\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/gpr",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"gpr"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"gprName\":\"created-by-apigw\",\r\n    \"sliceName\":\"{{workspaceName}}\",\r\n    \"clusterName\":\"worker-1\",\r\n    \"numberOfGPUs\":1,\r\n    \"instanceType\":\"n1-standard-8\",\r\n    \"exitDuration\":\"0d0h5m\",\r\n    \"numberOfGPUNodes\": 1,\r\n    \"priority\":201,\r\n    \"memoryPerGPU\":15,\r\n    \"gpuShape\":\"Tesla-T4\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/gpr",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:12:39 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "89"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"gprId\": \"gpr-1bb22a0b-9388\"\n    }\n}"
+						},
+						{
+							"name": "Bad Request",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"gprName\":\"created-by-apigw\",\r\n    \"sliceName\":\"{{workspaceName}}\",\r\n    \"clusterName\":\"worker-1\",\r\n    \"numberOfGPUs\":1,\r\n    \"instanceType\":\"n1-standard-8\",\r\n    \"numberOfGPUNodes\": 1,\r\n    \"priority\":201,\r\n    \"memoryPerGPU\":15,\r\n    \"gpuShape\":\"Tesla-T4\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/gpr",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									]
+								}
+							},
+							"status": "Unprocessable Entity",
+							"code": 422,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:13:12 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "384"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 422,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error while fetching GPR wait time\\\",\\\"Status\\\":422,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"\\\\\\\"exitDuration\\\\\\\" is not allowed to be empty\\\",\\\"Reason\\\":\\\"\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":422,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete GPR",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"gprId\": \"{{gprId}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/gpr",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"gpr"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"gprId\": \"{{gprId}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/gpr",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:16:07 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "62"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {}\n}"
+						},
+						{
+							"name": "Cannot Delete",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"gprId\": \"{{gprId}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/gpr",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:16:44 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "364"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 500,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error while deleting GPR\\\",\\\"Status\\\":500,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"Cannot delete GPR in Successful state\\\",\\\"Reason\\\":\\\"\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":500,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update GPR",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"gprId\":\"{{gprId}}\",\r\n    \"priority\": 101,\r\n    \"earlyRelease\": true,\r\n    \"gprName\": \"created-by-core-apis\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/gpr",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"gpr"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Update Priority",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"gprId\":\"{{gprId}}\",\r\n    \"priority\": 101\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/gpr",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:14:44 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "62"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {}\n}"
+						},
+						{
+							"name": "Update GPR Name",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"gprId\":\"{{gprId}}\",\r\n    \"gprName\": \"created-by-core-apis\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/gpr",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:15:15 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "62"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {}\n}"
+						},
+						{
+							"name": "Unable to Early Release",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"gprId\":\"{{gprId}}\",\r\n    \"earlyRelease\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/gpr",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:15:41 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "379"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 500,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error while updating a GPR\\\",\\\"Status\\\":500,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"Cannot update early release of GPR in Queued state\\\",\\\"Reason\\\":\\\"\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":500,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						},
+						{
+							"name": "Successful Early Release",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"gprId\":\"{{gprId}}\",\r\n    \"earlyRelease\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/gpr",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:17:12 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "62"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {}\n}"
+						}
+					]
+				},
+				{
+					"name": "List GPRs by Slice",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/gpr/list?sliceName={{workspaceName}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"gpr",
+								"list"
+							],
+							"query": [
+								{
+									"key": "sliceName",
+									"value": "{{workspaceName}}"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/gpr/list?sliceName={{workspaceName}}",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr",
+										"list"
+									],
+									"query": [
+										{
+											"key": "sliceName",
+											"value": "{{workspaceName}}"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:18:08 GMT"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"items\": [\n            {\n                \"gprId\": \"gpr-1bb22a0b-9388\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T09:12:38Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h5m0s\",\n                \"earlyRelease\": true,\n                \"gprName\": \"created-by-apigw\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"EarlyReleased\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T09:17:12Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-5d278fd3-e868\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 101,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T06:30:39Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h10m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"for-testing\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T06:41:17Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-784039ab-0cda\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 101,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T06:41:17Z\",\n                \"estimatedWaitTime\": \"0h2m40s\",\n                \"exitDuration\": \"0h10m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"for-testing3\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T06:52:17Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-85e2e884-f09a\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T07:30:28Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h2m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-apigw\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T07:32:44Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-c9ddbf88-b68b\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T08:18:38Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h2m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-apigw\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T08:21:34Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-e4e38fc5-4742\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T07:20:34Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-apigw\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T07:21:44Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            }\n        ]\n    }\n}"
+						},
+						{
+							"name": "Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/gpr/list?sliceName={{workspaceName}}",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr",
+										"list"
+									],
+									"query": [
+										{
+											"key": "sliceName",
+											"value": "{{workspaceName}}"
+										}
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:18:43 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "417"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 404,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error in listing GPR's for slice evening-x\\\",\\\"Status\\\":404,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"sliceconfigs.controller.kubeslice.io \\\\\\\"evening-x\\\\\\\" not found\\\",\\\"Reason\\\":\\\"NotFound\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":404,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get GPR",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/gpr?gprId={{gprId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"gpr"
+							],
+							"query": [
+								{
+									"key": "gprId",
+									"value": "{{gprId}}"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/gpr?gprId={{gprId}}",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									],
+									"query": [
+										{
+											"key": "gprId",
+											"value": "{{gprId}}"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:17:33 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "818"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"gprId\": \"gpr-1bb22a0b-9388\",\n        \"sliceName\": \"evening\",\n        \"clusterName\": \"worker-1\",\n        \"numberOfGPUs\": 1,\n        \"numberOfGPUNodes\": 1,\n        \"instanceType\": \"n1-standard-8\",\n        \"memoryPerGPU\": 15,\n        \"priority\": 201,\n        \"gpuSharingMode\": \"Virtual Machine\",\n        \"estimatedStartTime\": \"2024-10-22T09:12:38Z\",\n        \"estimatedWaitTime\": \"0h0m0s\",\n        \"exitDuration\": \"0h5m0s\",\n        \"earlyRelease\": true,\n        \"gprName\": \"created-by-apigw\",\n        \"gpuShape\": \"Tesla-T4\",\n        \"multiNode\": false,\n        \"dedicatedNodes\": false,\n        \"enableRDMA\": false,\n        \"enableSecondaryNetwork\": false,\n        \"status\": {\n            \"provisioningStatus\": \"EarlyReleased\",\n            \"failureReason\": \"\",\n            \"numGpusAllocated\": 0,\n            \"startTimestamp\": \"\",\n            \"completionTimestamp\": \"2024-10-22T09:17:12Z\",\n            \"cost\": \"\",\n            \"nodes\": [\n                \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n            ],\n            \"internalState\": \"Released\",\n            \"retryCount\": 0,\n            \"delayedCount\": 0\n        }\n    }\n}"
+						},
+						{
+							"name": "Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/gpr?gprId={{gprId}}-x",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									],
+									"query": [
+										{
+											"key": "gprId",
+											"value": "{{gprId}}-x"
+										}
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:17:50 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "414"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 404,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error while fetching GPRs\\\",\\\"Status\\\":404,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"gpuprovisioningrequests.gpr.kubeslice.io \\\\\\\"gpr-1bb22a0b-9388-x\\\\\\\" not found\\\",\\\"Reason\\\":\\\"NotFound\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":404,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Inventory",
+			"item": [
+				{
+					"name": "List Inventory",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/inventory/list",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"inventory",
+								"list"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/inventory/list",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"inventory",
+										"list"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:19:28 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "413"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"items\": [\n            {\n                \"gpuNodeName\": \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\",\n                \"gpuShape\": \"n1-standard-8\",\n                \"gpuModelName\": \"Tesla-T4\",\n                \"instanceType\": \"n1-standard-8\",\n                \"clusterName\": \"worker-1\",\n                \"memory\": 15360,\n                \"gpuCount\": 1,\n                \"gpuTempThreshold\": \"\",\n                \"gpuPowerThreshold\": \"\",\n                \"cloudProvider\": \"gcp\",\n                \"region\": \"\",\n                \"nodeHealth\": \"Healthy\",\n                \"gpuNodeStatus\": \"NODE_AVAILABLE\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "List Inventory by Slice Name",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/inventory?sliceName={{workspaceName}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"inventory"
+							],
+							"query": [
+								{
+									"key": "sliceName",
+									"value": "{{workspaceName}}"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/inventory?sliceName=evening",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"inventory"
+									],
+									"query": [
+										{
+											"key": "sliceName",
+											"value": "evening"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:19:39 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "222"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"items\": [\n            {\n                \"nodeName\": [\n                    \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                ],\n                \"instanceType\": \"n1-standard-8\",\n                \"memory\": 15360,\n                \"totalGpus\": 1,\n                \"gpuShape\": \"Tesla-T4\"\n            }\n        ]\n    }\n}"
+						},
+						{
+							"name": "Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/inventory?sliceName={{workspaceName}}-x",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"inventory"
+									],
+									"query": [
+										{
+											"key": "sliceName",
+											"value": "{{workspaceName}}-x"
+										}
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 22 Oct 2024 09:20:06 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "426"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 404,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error occurred while fetching the inventory details\\\",\\\"Status\\\":404,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"sliceconfigs.controller.kubeslice.io \\\\\\\"evening-x\\\\\\\" not found\\\",\\\"Reason\\\":\\\"NotFound\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":404,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
