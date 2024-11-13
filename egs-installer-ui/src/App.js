@@ -347,6 +347,7 @@ function WizardApp() {
                             <Button variant="contained" color="primary" onClick={handleNext}>Next</Button>
                         )}
                     </Box>
+                    {activeStep === steps.length - 1 && (
                     <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
                         <Button variant="contained" color="primary" onClick={() => streamToTerminal('install')}>
                             Run Install
@@ -355,6 +356,7 @@ function WizardApp() {
                             Run Uninstall
                         </Button>
                     </Box>
+                    )}
                 </Paper>
 
                 <Box mt={3}>
