@@ -1,9 +1,9 @@
 from flask import Flask, request, Response
 from flask_cors import CORS
-from ruamel.yaml import YAML
-from collections import OrderedDict
 import subprocess
 import json
+import os
+
 
 app = Flask(__name__)
 
@@ -11,9 +11,30 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 CONFIG_PATH = 'egs-installer-config.yaml'
-yaml = YAML()
-yaml.default_flow_style = False  # Ensures block-style formatting
-yaml.indent(mapping=2, sequence=4, offset=2)  # Sets indentation style for YAML
+
+def get_config():
+    # Use yq to convert YAML to JSON for the response
+    result = subprocess.run(['yq', '-o=json', CONFIG_PATH], capture_output=True, text=True)
+    if result.returncode == 0:
+        return json.loads(result.stdout)
+    else:
+        raise RuntimeError("Failed to read YAML config with yq")
+
+def update_config(new_config):
+    # Use yq for each field to update the YAML file in place
+    for key, value in new_config.items():
+        # Check if the value is boolean and convert to lowercase string explicitly
+        if isinstance(value, bool):
+            value_str = 'true' if value else 'false'
+            subprocess.run(['yq', f'.{key} = {value_str}', '-i', CONFIG_PATH])
+        elif isinstance(value, dict) or isinstance(value, list):
+            value_json = json.dumps(value)
+            subprocess.run(['yq', f'.{key} = {value_json}', '-i', CONFIG_PATH])
+        else:
+            subprocess.run(['yq', f'.{key} = "{value}"', '-i', CONFIG_PATH])
+    
+    # Post-process the file to ensure booleans are lowercase
+    os.system(f"sed -i 's/\\bTrue\\b/true/g; s/\\bFalse\\b/false/g' {CONFIG_PATH}")
 
 @app.route('/config', methods=['GET', 'POST'])
 def config():
@@ -21,20 +42,19 @@ def config():
     print("Request headers:", request.headers)
 
     if request.method == 'GET':
-        # Load and return YAML configuration in JSON format, maintaining order
-        with open(CONFIG_PATH, 'r') as file:
-            config = yaml.load(file)  # YAML loader preserves order
-        ordered_config = OrderedDict(config)  # Convert to OrderedDict for JSON serialization
-        response_json = json.dumps(ordered_config)  # Serialize to JSON with order intact
-        return Response(response_json, mimetype='application/json')
+        try:
+            config_data = get_config()
+            return Response(json.dumps(config_data), mimetype='application/json')
+        except RuntimeError as e:
+            return Response(json.dumps({"error": str(e)}), status=500, mimetype='application/json')
 
     elif request.method == 'POST':
-        # Update YAML configuration with the incoming JSON data, preserving order
         new_config = request.json
-        ordered_config = OrderedDict(new_config)  # Convert JSON to OrderedDict to preserve order
-        with open(CONFIG_PATH, 'w') as file:
-            yaml.dump(ordered_config, file)  # Save YAML with preserved order
-        return Response(json.dumps({"message": "Config updated successfully"}), mimetype='application/json')
+        try:
+            update_config(new_config)
+            return Response(json.dumps({"message": "Config updated successfully"}), mimetype='application/json')
+        except RuntimeError as e:
+            return Response(json.dumps({"error": str(e)}), status=500, mimetype='application/json')
 
 def stream_process(command):
     # Generator to yield output from a shell command in real-time
