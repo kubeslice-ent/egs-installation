@@ -1322,6 +1322,130 @@ identify_cloud_provider() {
     echo "$cloud_provider"
 }
 
+# Function to fetch details of a resource and save them in a directory
+fetch_resource_details() {
+    local namespace=$1
+    local kubeconfig_path=$2
+    local api_group=$3
+
+    echo "🚀 Starting resource details fetch for namespace '$namespace'..."
+    echo "🔧 Variables:"
+    echo "  namespace=$namespace"
+    echo "  kubeconfig_path=$kubeconfig_path"
+    echo "  api_group=$api_group"
+    echo "-----------------------------------------"
+
+    # Determine the current cluster name
+    cluster_name=$(kubectl --kubeconfig="$kubeconfig_path" config current-context | cut -d'_' -f4 | cut -d'/' -f2)
+    echo "📛 Detected cluster name: $cluster_name"
+
+    # Validate the namespace exists
+    if ! kubectl --kubeconfig="$kubeconfig_path" get namespace "$namespace" &>/dev/null; then
+        echo "❌ Error: Namespace '$namespace' does not exist. Exiting function."
+        return 1
+    fi
+
+    # Define the list of resource types to fetch
+    local resource_types=("pods" "deployments" "daemonsets" "statefulsets" "replicasets" "jobs" "configmaps" "secrets" "services" "serviceaccounts" "roles" "rolebindings" "crds")
+
+    # Loop through resource types and fetch their details
+    for resource_type in "${resource_types[@]}"; do
+        echo "📋 Fetching resources of type '$resource_type' in namespace '$namespace'..."
+        resources=$(kubectl --kubeconfig="$kubeconfig_path" get "$resource_type" -n "$namespace" -o jsonpath='{range .items[*]}{@.metadata.name}{"\n"}{end}')
+
+        if [ -z "$resources" ]; then
+            echo "ℹ️ No resources of type '$resource_type' found in namespace '$namespace'."
+            continue
+        fi
+
+        # Process each resource
+        while read -r resource; do
+            echo "🔍 Processing resource '$resource'..."
+            # Create directory for storing resource details
+            mkdir -p "$cluster_name/$namespace/$resource_type"
+
+            # Fetch details of "kubectl get <resources> -o wide -n <namespace>"
+            if [ ! -e "$cluster_name/$namespace/$resource_type/kubectl_get_$resource_type-output.txt" ] && [ "$resource_type" != "crds" ]; then
+                echo "📝 Fetching wide details of the resource type and saving output to a file"
+                echo "⚙️ kubectl --kubeconfig=$kubeconfig_path get $resource_type -o wide -n $namespace >$cluster_name/$namespace/$resource_type/kubectl_get_$resource_type-output.txt"
+                kubectl --kubeconfig="$kubeconfig_path" get $resource_type -o wide -n $namespace >"$cluster_name/$namespace/$resource_type/kubectl_get_$resource_type-output.txt"
+                cat "$cluster_name/$namespace/$resource_type/kubectl_get_$resource_type-output.txt"
+                echo -e "\xF0\x9F\x95\x9B"
+            fi
+
+            # Get details of the resource and save them in the directory
+            if [ "$resource_type" != "pods" ] && [ "$resource_type" != "crds" ]; then
+                echo "📝 Fetching detailed YAML configuration of the resource and saving it in the respective directory"
+                echo "⚙️ kubectl --kubeconfig=$kubeconfig_path get $resource_type $resource -n $namespace -o yaml >$cluster_name/$namespace/$resource_type/$resource.yaml"
+                kubectl --kubeconfig="$kubeconfig_path" get $resource_type $resource -n $namespace -o yaml >"$cluster_name/$namespace/$resource_type/$resource.yaml"
+            fi
+
+            # Get logs for containers in the resource (if applicable)
+            if [ "$resource_type" == "pods" ]; then
+                # Create a directory for the resource inside the namespace
+                mkdir -p "$cluster_name/$namespace/$resource_type/logs/$resource"
+                # Loop over each container in the pod
+                containers=$(kubectl --kubeconfig="$kubeconfig_path" get $resource_type $resource -n $namespace -o jsonpath='{.spec.containers[*].name}')
+                for container in $containers; do
+                    # Fetch logs for each container and save them in the directory
+                    echo "📝 Fetching logs for container '$container' in pod '$resource'..."
+                    echo "⚙️ kubectl --kubeconfig=$kubeconfig_path logs $resource -c $container -n $namespace >$cluster_name/$namespace/$resource_type/logs/$resource/$container.log"
+                    kubectl --kubeconfig="$kubeconfig_path" logs $resource -c $container -n $namespace >"$cluster_name/$namespace/$resource_type/logs/$resource/$container.log"
+                done
+            fi
+
+            # Get crds instance for api groups in the resource (if applicable)
+            if [ "$resource_type" == "crds" ]; then
+                # Get all crds of the current API group in the namespace
+                crds=$(echo $resource | tr ' ' '\n' | grep $api_group | cut -d ' ' -f1 | cut -d '.' -f1)
+                # Loop over each crds in the api group
+                for crd in $crds; do
+                    # Fetch crds for each container and save them in the directory
+                    if [ -n "$(kubectl --kubeconfig="$kubeconfig_path" get $crd -n $namespace 2>/dev/null)" ]; then
+                        # Create a directory for the resource inside the namespace
+                        mkdir -p "$cluster_name/$namespace/$resource_type/$api_group/$crd"
+                        if [ ! -e "$cluster_name/$namespace/$resource_type/$api_group/$crd/kubectl_get_$crd.txt" ]; then
+                            echo "📝 Fetching details for CRD '$crd' in namespace '$namespace'"
+                            echo "⚙️ kubectl --kubeconfig=$kubeconfig_path get $crd -n $namespace >$cluster_name/$namespace/$resource_type/$api_group/$crd/kubectl_get_$crd.txt"
+                            kubectl --kubeconfig="$kubeconfig_path" get $crd -n $namespace >"$cluster_name/$namespace/$resource_type/$api_group/$crd/kubectl_get_$crd.txt" 2>&1
+                            cat "$cluster_name/$namespace/$resource_type/$api_group/$crd/kubectl_get_$crd.txt"
+                            echo -e "\xF0\x9F\x95\x9B"
+                        fi
+                        # Loop over each crds instance in the crds
+                        crd_instances=$(kubectl --kubeconfig="$kubeconfig_path" get $CRD -n $namespace -o jsonpath='{range .items[*]}{@.metadata.name}{"\n"}{end}')
+                        if [ -n "$crd_instances" ]; then
+                            # Create a directory for the crds instance inside the crds
+                            while read -r crd_instance; do
+                                # Describe the crds instances and append the description to the existing file
+                                echo "📝 Fetching details for crd instance '$crd_instance' in '$crd'"
+                                echo "⚙️ kubectl --kubeconfig=$kubeconfig_path describe $crd $crd_instances -n $namespace >$cluster_name/$namespace/$resource_type/$api_group/$crd/$crd_instance.txt"
+                                kubectl --kubeconfig="$kubeconfig_path" describe $crd $crd_instances -n $namespace >"$cluster_name/$namespace/$resource_type/$api_group/$crd/$crd_instance.txt"
+                            done <<<"$crd_instances"
+                        fi
+                    fi
+                done
+            fi
+        done <<<"$resources"
+
+        # Fetch events for the namespace
+        echo "📝 Fetching events for namespace '$namespace'..."
+        echo "⚙️ kubectl --kubeconfig=$kubeconfig_path get events -n $namespace >$cluster_name/$namespace/events.txt"
+        kubectl --kubeconfig="$kubeconfig_path" get events -n "$namespace" >"$cluster_name/$namespace/events.txt" 2>&1
+    done
+
+    # Fetch events for all namespaces
+    echo "📝 Fetching events for all namespaces"
+    echo "⚙️ kubectl --kubeconfig=$kubeconfig_path get events --all-namespaces >$cluster_name/all_namespaces_events.txt"
+    kubectl --kubeconfig="$kubeconfig_path" get events --all-namespaces >"$cluster_name/all_namespaces_events.txt" 2>&1
+
+    # Fetch node details
+    echo "📝 Fetching cluster node details..."
+    echo "⚙️ kubectl --kubeconfig=$kubeconfig_path get nodes -o wide --show-labels >$cluster_name/nodes_output.txt"
+    kubectl --kubeconfig="$kubeconfig_path" get nodes -o wide --show-labels >"$cluster_name/nodes_output.txt"
+
+    echo "✅ Done. Resource details are fetched and saved in ./$cluster_name Folders"
+}
+
 # Function to handle the cloud-specific installation process
 handle_cloud_installation() {
     local cloud_provider="$1"
@@ -2747,8 +2871,14 @@ while [[ "$#" -gt 0 ]]; do
         shift
         ;;
     --help)
-        echo "Usage: $0 --input-yaml <yaml_file>"
+        echo "Usage: $0 --input-yaml <yaml_file> [--troubleshoot]"
+        echo "Options:"
+        echo "  --input-yaml <yaml_file>  Specify the input YAML file."
+        echo "  --troubleshoot            Enable troubleshooting mode for additional logs and checks."
         exit 0
+        ;;
+    --troubleshoot)
+        ENABLE_TROUBLESHOOT="true"
         ;;
     *)
         echo "Unknown parameter passed: $1"
@@ -2991,6 +3121,35 @@ if [ -n "$CLOUD_INSTALL" ]; then
     fi
 else
     echo "⏩ Cloud-specific installations are disabled or not defined."
+fi
+
+# Loop over each namespace for controller cluster to fetch details of a resource
+if [ "$ENABLE_TROUBLESHOOT" = "true" ]; then
+    for ((i = 0; i < CLUSTER_REGISTRATION_COUNT; i++)); do
+        PROJECT_NAME=$(yq e ".cluster_registration[$i].project_name" "$EGS_INPUT_YAML")
+    done
+    KUBESLICE_CONTROLLER_API_GROUPS=("controller.kubeslice.io" "worker.kubeslice.io" "networking.kubeslice.io")
+    echo "🔍 Fetching Resource details of controller cluster and save it in a directory"
+    for NAMESPACE in "$KUBESLICE_CONTROLLER_NAMESPACE" "kubeslice-${PROJECT_NAME[@]}"; do
+        for API_GROUP in "${KUBESLICE_CONTROLLER_API_GROUPS[@]}"; do
+            if [ -n "$API_GROUP" ]; then
+            # Fetch details of a resource and save it in a directory
+            fetch_resource_details "$NAMESPACE" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$API_GROUP"
+            fi
+        done
+    done
+
+    KUBESLICE_WORKER_KUBECONFIG=$(echo "$worker" | yq e '.kubeconfig' -)
+    KUBESLICE_WORKER_API_GROUPS=("spire.spiffe.io" "networking.kubeslice.io")
+    echo "🔍 Fetching Resource details of controller cluster and save it in a directory"
+    for NAMESPACE in "${KUBESLICE_WORKER_NAMESPACE[@]}"; do
+        for API_GROUP in "${KUBESLICE_WORKER_API_GROUPS[@]}"; do
+            if [ -n "$API_GROUP" ]; then
+                # Fetch details of a resource and save it in a directory
+                fetch_resource_details "$NAMESPACE" "$KUBESLICE_WORKER_KUBECONFIG" "$API_GROUP"
+            fi
+        done
+    done
 fi
 
 trap display_summary EXIT
