@@ -2473,7 +2473,7 @@ prepare_worker_values_file() {
         echo "Waiting for Grafana service to get an IP or port for worker..."
         external_ip=""
         while [ -z "${external_ip}" ] ; do 
-            external_ip="$(get_lb_external_ip "${kubeconfigname}" "${kubecontextname}" "monitoring" prometheus-grafana)"
+            external_ip="$(get_lb_external_ip "${kubeconfigname}" "${kubecontextname}" "egs-monitoring" prometheus-grafana)"
             sleep 10 
         done
 
