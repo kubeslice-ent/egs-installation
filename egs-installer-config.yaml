@@ -53,7 +53,7 @@ kubeslice_controller_egs:
   kubeconfig: ""  # Path to the kubeconfig file specific to the controller
   kubecontext: ""  # Kubecontext specific to the controller; if empty, uses the global context
   namespace: "kubeslice-controller"  # Kubernetes namespace where the controller will be installed
-  release: "kubeslice-controller-release"  # Helm release name for the controller
+  release: "egs-controller"  # Helm release name for the controller
   chart: "kubeslice-controller-egs"  # Helm chart name for the controller
   inline_values:  # Inline Helm values for the controller chart
     global:
@@ -80,7 +80,7 @@ kubeslice_ui_egs:
   skip_installation: false  # Do not skip the installation of the UI
   use_global_kubeconfig: true  # Use global kubeconfig for the UI installation
   namespace: "kubeslice-controller"  # Kubernetes namespace where the UI will be installed
-  release: "kubeslice-ui"  # Helm release name for the UI
+  release: "egs-ui"  # Helm release name for the UI
   chart: "kubeslice-ui-egs"  # Helm chart name for the UI
   inline_values:  # Inline Helm values for the UI chart
     global:
@@ -104,7 +104,7 @@ kubeslice_worker_egs:
     skip_installation: false  # Do not skip the installation of the worker
     specific_use_local_charts: true  # Override to use local charts for this worker
     namespace: "kubeslice-system"  # Kubernetes namespace for this worker
-    release: "kubeslice-worker1-release"  # Helm release name for the worker
+    release: "egs-worker"  # Helm release name for the worker
     chart: "kubeslice-worker-egs"  # Helm chart name for the worker
     inline_values:  # Inline Helm values for the worker chart
       global:
@@ -150,8 +150,8 @@ additional_apps:
   - name: "gpu-operator"
     skip_installation: false  # Do not skip the installation of the GPU operator
     use_global_kubeconfig: true  # Use global kubeconfig for this application
-    namespace: "gpu-operator"  # Namespace where the GPU operator will be installed
-    release: "gpu-operator-release"  # Helm release name for the GPU operator
+    namespace: "egs-gpu-operator"  # Namespace where the GPU operator will be installed
+    release: "gpu-operator"  # Helm release name for the GPU operator
     chart: "gpu-operator"  # Helm chart name for the GPU operator
     repo_url: "https://helm.ngc.nvidia.com/nvidia"  # Helm repository URL for the GPU operator
     version: "v24.6.0"  # Version of the GPU operator to install
@@ -174,7 +174,7 @@ additional_apps:
   - name: "prometheus"
     skip_installation: false  # Do not skip the installation of Prometheus
     use_global_kubeconfig: true  # Use global kubeconfig for Prometheus
-    namespace: "monitoring"  # Namespace where Prometheus will be installed
+    namespace: "egs-monitoring"  # Namespace where Prometheus will be installed
     release: "prometheus"  # Helm release name for Prometheus
     chart: "kube-prometheus-stack"  # Helm chart name for Prometheus
     repo_url: "https://prometheus-community.github.io/helm-charts"  # Helm repository URL for Prometheus
@@ -205,7 +205,7 @@ additional_apps:
             - role: endpoints
               namespaces:
                 names:
-                - gpu-operator
+                - egs-gpu-operator
             relabel_configs:
             - source_labels: [__meta_kubernetes_endpoints_name]
               action: drop
@@ -260,7 +260,7 @@ manifests:
     verify_install: true  # Verify the installation of this application
     verify_install_timeout: 30  # Timeout for verification (in seconds)
     skip_on_verify_fail: false  # Do not skip if verification fails
-    namespace: gpu-operator  # Namespace for this application
+    namespace: egs-gpu-operator  # Namespace for this application
     kubeconfig: ""  # Path to the kubeconfig file specific to this application
     kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
 
@@ -287,6 +287,6 @@ commands:
     skip_on_verify_fail: true  # Skip if command verification fails
     namespace: kube-system  # Namespace context for these commands
     command_stream: |  # Commands to execute
-       kubectl create namespace gpu-operator --dry-run=client -o yaml | kubectl apply -f -
+       kubectl create namespace egs-gpu-operator --dry-run=client -o yaml | kubectl apply -f -
        get nodes
        get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
