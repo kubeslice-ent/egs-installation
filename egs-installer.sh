@@ -728,6 +728,11 @@ parse_yaml() {
         GLOBAL_SKIP_ON_VERIFY_FAIL="false" # Default to error out if not specified
     fi
 
+    GLOBAL_ENABLE_TROUBLESHOOT=$(yq e '.enable_troubleshoot' "$yaml_file")
+    if [ -z "$GLOBAL_ENABLE_TROUBLESHOOT" ] || [ "$GLOBAL_ENABLE_TROUBLESHOOT" = "null" ]; then
+        GLOBAL_ENABLE_TROUBLESHOOT="false" # Default to error out if not specified
+    fi
+
     # Extract the list of required binaries
     REQUIRED_BINARIES=($(yq e '.required_binaries[]' "$yaml_file"))
     if [ ${#REQUIRED_BINARIES[@]} -eq 0 ]; then
@@ -774,6 +779,11 @@ parse_yaml() {
         ENABLE_INSTALL_CONTROLLER="true"
     fi
 
+    ENABLE_TROUBLESHOOT_CONTROLLER=$(yq e '.enable_troubleshoot_controller' "$yaml_file")
+    if [ -z "$ENABLE_TROUBLESHOOT_CONTROLLER" ] || [ "$ENABLE_TROUBLESHOOT_CONTROLLER" = "null" ]; then
+        ENABLE_TROUBLESHOOT_CONTROLLER="false"
+    fi
+
     ENABLE_INSTALL_UI=$(yq e '.enable_install_ui' "$yaml_file")
     if [ -z "$ENABLE_INSTALL_UI" ] || [ "$ENABLE_INSTALL_UI" = "null" ]; then
         ENABLE_INSTALL_UI="true"
@@ -782,6 +792,11 @@ parse_yaml() {
     ENABLE_INSTALL_WORKER=$(yq e '.enable_install_worker' "$yaml_file")
     if [ -z "$ENABLE_INSTALL_WORKER" ] || [ "$ENABLE_INSTALL_WORKER" = "null" ]; then
         ENABLE_INSTALL_WORKER="true"
+    fi
+
+    ENABLE_TROUBLESHOOT_WORKER=$(yq e '.enable_troubleshoot_worker' "$yaml_file")
+    if [ -z "$ENABLE_TROUBLESHOOT_WORKER" ] || [ "$ENABLE_TROUBLESHOOT_WORKER" = "null" ]; then
+        ENABLE_TROUBLESHOOT_WORKER="false"
     fi
 
     # Extract values for kubeslice-controller-egs
@@ -874,6 +889,13 @@ parse_yaml() {
     if [ -z "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL" ] || [ "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL" = "null" ]; then
         KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL="$GLOBAL_SKIP_ON_VERIFY_FAIL"
     fi
+
+    KUBESLICE_CONTROLLER_SKIP_TROUBLESHOOT=$(yq e '.kubeslice_controller_egs.skip_troubleshoot' "$yaml_file")
+    if [ -z "$KUBESLICE_CONTROLLER_SKIP_TROUBLESHOOT" ] || [ "$KUBESLICE_CONTROLLER_SKIP_TROUBLESHOOT" = "null" ]; then
+        KUBESLICE_CONTROLLER_SKIP_INSTALLATION="true"
+    fi
+
+    KUBESLICE_CONTROLLER_API_GROUPS=$(yq e '.kubeslice_controller_egs.api_groups' "$yaml_file")
 
     # Extract values for kubeslice-ui-egs
     KUBESLICE_UI_SKIP_INSTALLATION=$(yq e '.kubeslice_ui_egs.skip_installation' "$yaml_file")
@@ -974,6 +996,7 @@ parse_yaml() {
         WORKER_NAME=$(yq e ".kubeslice_worker_egs[$i].name" "$yaml_file")
         WORKER_SKIP_INSTALLATION=$(yq e ".kubeslice_worker_egs[$i].skip_installation" "$yaml_file")
         WORKER_USE_GLOBAL_KUBECONFIG=$(yq e ".kubeslice_worker_egs[$i].use_global_kubeconfig" "$yaml_file")
+        WORKER_SKIP_TROUBLESHOOT=$(yq e ".kubeslice_worker_egs[$i].skip_troubleshoot" "$yaml_file")
         if [ -z "$WORKER_USE_GLOBAL_KUBECONFIG" ] || [ "$WORKER_USE_GLOBAL_KUBECONFIG" = "null" ]; then
             WORKER_USE_GLOBAL_KUBECONFIG="true"
         fi
@@ -1049,6 +1072,15 @@ parse_yaml() {
             WORKER_SKIP_ON_VERIFY_FAIL="$GLOBAL_SKIP_ON_VERIFY_FAIL"
         fi
 
+        if [ -z "$WORKER_SKIP_TROUBLESHOOT" ] || [ "$WORKER_SKIP_TROUBLESHOOT" = "null" ]; then
+            WORKER_SKIP_TROUBLESHOOT="true"
+        fi
+
+        WORKER_API_GROUPS=$(yq e ".kubeslice_worker_egs[$i].api_groups" "$yaml_file")
+
+        KUBESLICE_WORKERS+=("$WORKER_NAME|$WORKER_SKIP_INSTALLATION|$WORKER_USE_GLOBAL_KUBECONFIG|$WORKER_KUBECONFIG|$WORKER_KUBECONTEXT|$WORKER_NAMESPACE|$WORKER_RELEASE_NAME|$WORKER_CHART_NAME|$WORKER_REPO_URL|$WORKER_USERNAME|$WORKER_PASSWORD|$WORKER_VALUES_FILE|$WORKER_INLINE_VALUES|$WORKER_IMAGE_PULL_SECRET_REPO|$WORKER_IMAGE_PULL_SECRET_USERNAME|$WORKER_IMAGE_PULL_SECRET_PASSWORD|$WORKER_IMAGE_PULL_SECRET_EMAIL|$WORKER_HELM_FLAGS|$WORKER_VERIFY_INSTALL|$WORKER_VERIFY_INSTALL_TIMEOUT|$WORKER_SKIP_ON_VERIFY_FAIL|$WORKER_SKIP_TROUBLESHOOT|$WORKER_API_GROUPS")
+    done
+
         KUBESLICE_WORKERS+=("$WORKER_NAME|$WORKER_SKIP_INSTALLATION|$WORKER_USE_GLOBAL_KUBECONFIG|$WORKER_KUBECONFIG|$WORKER_KUBECONTEXT|$WORKER_NAMESPACE|$WORKER_RELEASE_NAME|$WORKER_CHART_NAME|$WORKER_REPO_URL|$WORKER_USERNAME|$WORKER_PASSWORD|$WORKER_VALUES_FILE|$WORKER_INLINE_VALUES|$WORKER_IMAGE_PULL_SECRET_REPO|$WORKER_IMAGE_PULL_SECRET_USERNAME|$WORKER_IMAGE_PULL_SECRET_PASSWORD|$WORKER_IMAGE_PULL_SECRET_EMAIL|$WORKER_HELM_FLAGS|$WORKER_VERIFY_INSTALL|$WORKER_VERIFY_INSTALL_TIMEOUT|$WORKER_SKIP_ON_VERIFY_FAIL")
     done
 
@@ -1093,6 +1125,11 @@ parse_yaml() {
         ENABLE_INSTALL_ADDITIONAL_APPS="true" # Default to true if not specified
     fi
 
+    ENABLE_TROUBLESHOOT_ADDITIONAL_APPS=$(yq e '.enable_troubleshoot_additional_apps' "$yaml_file")
+    if [ -z "$ENABLE_TROUBLESHOOT_ADDITIONAL_APPS" ] || [ "$ENABLE_TROUBLESHOOT_ADDITIONAL_APPS" = "null" ]; then
+        ENABLE_TROUBLESHOOT_ADDITIONAL_APPS="false" # Default to false if not specified
+    fi
+
     # Extract values for additional applications
     ADDITIONAL_APPS_COUNT=$(yq e '.additional_apps | length' "$yaml_file")
 
@@ -1101,6 +1138,7 @@ parse_yaml() {
         APP_NAME=$(yq e ".additional_apps[$i].name" "$yaml_file")
         APP_SKIP_INSTALLATION=$(yq e ".additional_apps[$i].skip_installation" "$yaml_file")
         APP_USE_GLOBAL_KUBECONFIG=$(yq e ".additional_apps[$i].use_global_kubeconfig" "$yaml_file")
+        APP_SKIP_TROUBLESHOOT=$(yq e ".additional_apps[$i].skip_troubleshoot" "$yaml_file")
         if [ -z "$APP_USE_GLOBAL_KUBECONFIG" ] || [ "$APP_USE_GLOBAL_KUBECONFIG" = "null" ]; then
             APP_USE_GLOBAL_KUBECONFIG="true"
         fi
@@ -1176,7 +1214,13 @@ parse_yaml() {
             APP_SKIP_ON_VERIFY_FAIL="$GLOBAL_SKIP_ON_VERIFY_FAIL"
         fi
 
-        ADDITIONAL_APPS+=("$APP_NAME|$APP_SKIP_INSTALLATION|$APP_USE_GLOBAL_KUBECONFIG|$APP_KUBECONFIG|$APP_KUBECONTEXT|$APP_NAMESPACE|$APP_RELEASE_NAME|$APP_CHART_NAME|$APP_REPO_URL|$APP_USERNAME|$APP_PASSWORD|$APP_VALUES_FILE|$APP_INLINE_VALUES|$APP_IMAGE_PULL_SECRET_REPO|$APP_IMAGE_PULL_SECRET_USERNAME|$APP_IMAGE_PULL_SECRET_PASSWORD|$APP_IMAGE_PULL_SECRET_EMAIL|$APP_HELM_FLAGS|$APP_VERIFY_INSTALL|$APP_VERIFY_INSTALL_TIMEOUT|$APP_SKIP_ON_VERIFY_FAIL")
+        if [ -z "$APP_SKIP_TROUBLESHOOT" ] || [ "$APP_SKIP_TROUBLESHOOT" = "null" ]; then
+            APP_SKIP_TROUBLESHOOT="true"
+        fi
+
+        APP_API_GROUPS=$(yq e ".additional_apps[$i].api_groups" "$yaml_file")
+
+        ADDITIONAL_APPS+=("$APP_NAME|$APP_SKIP_INSTALLATION|$APP_USE_GLOBAL_KUBECONFIG|$APP_KUBECONFIG|$APP_KUBECONTEXT|$APP_NAMESPACE|$APP_RELEASE_NAME|$APP_CHART_NAME|$APP_REPO_URL|$APP_USERNAME|$APP_PASSWORD|$APP_VALUES_FILE|$APP_INLINE_VALUES|$APP_IMAGE_PULL_SECRET_REPO|$APP_IMAGE_PULL_SECRET_USERNAME|$APP_IMAGE_PULL_SECRET_PASSWORD|$APP_IMAGE_PULL_SECRET_EMAIL|$APP_HELM_FLAGS|$APP_VERIFY_INSTALL|$APP_VERIFY_INSTALL_TIMEOUT|$APP_SKIP_ON_VERIFY_FAIL|$APP_SKIP_TROUBLESHOOT|$APP_API_GROUPS")
     done
 
     echo "✔️ Parsing completed."
@@ -2739,6 +2783,350 @@ merge_inline_values() {
     echo "$combined_values_file"
 }
 
+# Function to fetch resource details in a given namespace for a cluster
+fetch_resource_details() {
+    local kubeconfig_path=$1
+    local kubecontext=$2
+    local namespace=$3
+    local cluster_name=$4
+    local api_groups=$5
+
+    # Define the list of resource types to fetch
+    local resource_types=("pods" "deployments" "daemonsets" "statefulsets" "replicasets" "jobs" "configmaps" "secrets" "services" "serviceaccounts" "roles" "rolebindings" "crds")
+
+    # Loop through resource types and fetch their details
+    for resource_type in "${resource_types[@]}"; do
+        resources=$(kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $resource_type  -n $namespace -o jsonpath='{range .items[*]}{@.metadata.name}{"\n"}{end}')
+
+        if [ -n "$resources" ]; then
+            # Process each resource
+            while read -r resource; do
+                # Create directory for storing resource details
+                mkdir -p "$cluster_name/$namespace/$resource_type"
+
+                # Fetch details of "kubectl get <resources> -o wide -n <namespace>"
+                if [ ! -e "$cluster_name/$namespace/$resource_type/kubectl_get_$resource_type-output.txt" ] && [ "$resource_type" != "crds" ]; then
+                    echo "📝 Fetching wide details of the resource type and saving output to a file"
+                    echo "⚙️ kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $resource_type --context $kubecontext -o wide -n $namespace >$cluster_name/$namespace/$resource_type/kubectl_get_$resource_type-output.txt"
+                    kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $resource_type -o wide -n $namespace >"$cluster_name/$namespace/$resource_type/kubectl_get_$resource_type-output.txt"
+                    cat "$cluster_name/$namespace/$resource_type/kubectl_get_$resource_type-output.txt"
+                    echo -e "\xF0\x9F\x95\x9B"
+                fi
+
+                # Get details of the resource and save them in the directory
+                if [ "$resource_type" != "pods" ] && [ "$resource_type" != "crds" ]; then
+                    echo "📝 Fetching detailed YAML configuration of the resource and saving it in the respective directory"
+                    echo "⚙️ kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $resource_type $resource -n $namespace -o yaml >$cluster_name/$namespace/$resource_type/$resource.yaml"
+                    kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $resource_type $resource -n $namespace -o yaml >"$cluster_name/$namespace/$resource_type/$resource.yaml"
+                fi
+
+                # Get logs for containers in the resource (if applicable)
+                if [ "$resource_type" == "pods" ]; then
+                    # Create a directory for the resource inside the namespace
+                    mkdir -p "$cluster_name/$namespace/$resource_type/logs/$resource"
+                    # Loop over each container in the pod
+                    containers=$(kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $resource_type $resource -n $namespace -o jsonpath='{.spec.containers[*].name}')
+                    for container in $containers; do
+                        # Fetch logs for each container and save them in the directory
+                        echo "📝 Fetching logs for container '$container' in pod '$resource'..."
+                        echo "⚙️ kubectl --kubeconfig $kubeconfig_path --context $kubecontext logs $resource -c $container -n $namespace >$cluster_name/$namespace/$resource_type/logs/$resource/$container.log"
+                        kubectl --kubeconfig $kubeconfig_path --context $kubecontext logs $resource -c $container -n $namespace >"$cluster_name/$namespace/$resource_type/logs/$resource/$container.log"
+                    done
+                fi
+
+                for api_group in "${api_groups[@]}"; do
+                    if [ -n "$api_group" ]; then
+                        # Get crds instance for api groups in the resource (if applicable)
+                        if [ "$resource_type" == "crds" ]; then
+                            # Get all crds of the current API group in the namespace
+                            crds=$(echo $resource | tr ' ' '\n' | grep $api_group | cut -d ' ' -f1 | cut -d '.' -f1)
+                            # Loop over each crds in the api group
+                            for crd in $crds; do
+                                # Fetch crds for each container and save them in the directory
+                                if [ -n "$(kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $crd -n $namespace 2>/dev/null)" ]; then
+                                    # Create a directory for the resource inside the namespace
+                                    mkdir -p "$cluster_name/$namespace/$resource_type/$api_group/$crd"
+                                    if [ ! -e "$cluster_name/$namespace/$resource_type/$api_group/$crd/kubectl_get_$crd.txt" ]; then
+                                        echo "📝 Fetching details for CRD '$crd' in namespace '$namespace'"
+                                        echo "⚙️ kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $crd -n $namespace >$cluster_name/$namespace/$resource_type/$api_group/$crd/kubectl_get_$crd.txt"
+                                        kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $crd -n $namespace >"$cluster_name/$namespace/$resource_type/$api_group/$crd/kubectl_get_$crd.txt" 2>&1
+                                        cat "$cluster_name/$namespace/$resource_type/$api_group/$crd/kubectl_get_$crd.txt"
+                                        echo -e "\xF0\x9F\x95\x9B"
+                                    fi
+                                    # Loop over each crds instance in the crds
+                                    crd_instances=$(kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $CRD -n $namespace -o jsonpath='{range .items[*]}{@.metadata.name}{"\n"}{end}')
+                                    if [ -n "$crd_instances" ]; then
+                                        # Create a directory for the crds instance inside the crds
+                                        while read -r crd_instance; do
+                                            # Describe the crds instances and append the description to the existing file
+                                            echo "📝 Fetching details for crd instance '$crd_instance' in '$crd'"
+                                            echo "⚙️ kubectl --kubeconfig $kubeconfig_path --context $kubecontext describe $crd $crd_instances -n $namespace >$cluster_name/$namespace/$resource_type/$api_group/$crd/$crd_instance.txt"
+                                            kubectl --kubeconfig $kubeconfig_path --context $kubecontext describe $crd $crd_instances -n $namespace >"$cluster_name/$namespace/$resource_type/$api_group/$crd/$crd_instance.txt"
+                                        done <<<"$crd_instances"
+                                    fi
+                                fi
+                            done
+                        fi
+                    else
+                        echo "⚠️ API_GROUP is empty. Skipping fetch for namespace: $NAMESPACE"
+                    fi
+                done
+
+            done <<<"$resources"
+
+            # Fetch events for the namespace
+            echo "📝 Fetching events for namespace '$namespace'..."
+            echo "⚙️ kubectl --kubeconfig $kubeconfig_path --context $kubecontext get events -n $namespace >$cluster_name/$namespace/events.txt"
+            kubectl --kubeconfig $kubeconfig_path --context $kubecontext get events -n "$namespace" >"$cluster_name/$namespace/events.txt" 2>&1
+        else
+            echo "ℹ️ No resources of type '$resource_type' found in namespace '$namespace'."
+        fi
+    done
+
+    # Fetch events for all namespaces
+    echo "📝 Fetching events for all namespaces"
+    echo "⚙️ kubectl --kubeconfig $kubeconfig_path --context $kubecontext get events --all-namespaces >$cluster_name/all_namespaces_events.txt"
+    kubectl --kubeconfig $kubeconfig_path --context $kubecontext get events --all-namespaces >"$cluster_name/all_namespaces_events.txt" 2>&1
+
+    # Fetch node details
+    echo "📝 Fetching cluster node details..."
+    echo "⚙️ kubectl --kubeconfig $kubeconfig_path --context $kubecontext get nodes -o wide --show-labels >$cluster_name/nodes_output.txt"
+    kubectl --kubeconfig $kubeconfig_path --context $kubecontext get nodes -o wide --show-labels >"$cluster_name/nodes_output.txt"
+}
+
+# Function to fetch the details of resources in the controller
+fetch_controller_resources() {
+    echo "🔍 Starting to fetch the details of resources in the controller..."
+
+    local namespace=$(IFS=,; echo "$KUBESLICE_CONTROLLER_NAMESPACE,${project_namespace[*]}")
+    local api_groups="$KUBESLICE_CONTROLLER_API_GROUPS"
+    local cluster_name=$(kubectl --kubeconfig $kubeconfig_path config current-context | cut -d'_' -f4 | cut -d'/' -f2)
+
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "Fetch Controller Resources" \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$KUBESLICE_CONTROLLER_KUBECONFIG" \
+        "$KUBESLICE_CONTROLLER_KUBECONTEXT")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: Fetch Controller Resources "
+    echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
+
+    local context_arg=""
+    if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+        context_arg="--context $kubecontext"
+    fi
+
+    for project in "${KUBESLICE_PROJECTS[@]}"; do
+        IFS="|" read -r project_name project_username <<<"$project"
+        project_namespace+=("kubeslice-$project_name")
+    done
+
+    echo "🔧 Variables:"
+    echo "  skip_troubleshoot=$KUBESLICE_CONTROLLER_SKIP_TROUBLESHOOT"
+    echo "  kubeconfig_path=$kubeconfig_path"
+    echo "  context_arg=$context_arg"
+    echo "  namespace=$namespace"
+    echo "  namespace=$namespace"
+    echo "  cluster_name=$cluster_name"
+    echo "  api_groups=$api_groups"
+    echo "-----------------------------------------"
+
+    # Check if troubleshooting should be skipped
+    if [ "$KUBESLICE_CONTROLLER_SKIP_TROUBLESHOOT" = "true" ]; then
+        echo "⏩ Skipping troubleshooting of cluster '$cluster_name' in namespace '$namespace' as per configuration."
+        return
+    fi
+
+    echo "-----------------------------------------"
+    echo "🔍 Fetching resources in namespaces '$namespace' for cluster '$cluster_name'"
+    echo "-----------------------------------------"
+
+    # Fetch details of a resource and save it in a directory
+    fetch_resource_details "$kubeconfig_path" "$kubecontext" "$namespace" "$cluster_name" "$api_groups"
+
+    echo "-----------------------------------------"
+    echo "✅ Resource details fetched successfully for namespace '$namespace' in cluster '$cluster_name' and saved in ./$cluster_name Folders.."
+    echo "-----------------------------------------"
+
+    echo "✅ Resource fetching in controller cluster $cluster_name complete."
+
+}
+
+# Function to fetch the details of resources in the worker
+fetch_worker_resources() {
+    echo "🔍 Starting to fetch the details of resources in the worker..."
+
+    for ((i = 0; i < ${#KUBESLICE_WORKERS[@]}; i++)); do
+        local worker_name=$(yq e ".kubeslice_worker_egs[$i].name" "$EGS_INPUT_YAML")
+        local use_global_kubeconfig=$(yq e ".kubeslice_worker_egs[$i].use_global_kubeconfig" "$EGS_INPUT_YAML")
+        local skip_troubleshoot=$(yq e ".kubeslice_worker_egs[$i].skip_troubleshoot" "$EGS_INPUT_YAML")
+        local kubeconfig=$(yq e ".kubeslice_worker_egs[$i].kubeconfig" "$EGS_INPUT_YAML")
+        local kubecontext=$(yq e ".kubeslice_worker_egs[$i].kubecontext" "$EGS_INPUT_YAML")
+        local namespace=$(yq e ".kubeslice_worker_egs[$i].namespace" "$EGS_INPUT_YAML")
+        local cluster_name=$(kubectl --kubeconfig $kubeconfig_path config current-context | cut -d'_' -f4 | cut -d'/' -f2)
+        local api_groups=$(yq e ".kubeslice_worker_egs[$i].api_groups" "$EGS_INPUT_YAML")
+
+        read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+            "Fetch Worker $worker_name Resources" \
+            "$use_global_kubeconfig" \
+            "$GLOBAL_KUBECONFIG" \
+            "$GLOBAL_KUBECONTEXT" \
+            "$kubeconfig" \
+            "$kubecontext")
+
+        # Print output variables after calling kubeaccess_precheck
+        echo "🔧 kubeaccess_precheck - Output Variables: Fetch Worker Resources "
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        echo "-----------------------------------------"
+
+        # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+        if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+            echo "🔍 Validating Kubecontext:"
+            echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+            echo "  🌐 Kubecontext: $kubecontext"
+
+            validate_kubecontext "$kubeconfig_path" "$kubecontext"
+        else
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+            echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+            echo "  🌐 Kubecontext: $kubecontext"
+            exit 1
+        fi
+
+        local context_arg=""
+        if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+            context_arg="--context $kubecontext"
+        fi
+
+        echo "🔧 Variables:"
+        echo "  skip_troubleshoot=$skip_troubleshoot"
+        echo "  kubeconfig_path=$kubeconfig_path"
+        echo "  context_arg=$context_arg"
+        echo "  namespace=$namespace"
+        echo "  cluster_name=$cluster_name"
+        echo "  api_groups=$api_groups"
+        echo "-----------------------------------------"
+
+        # Check if troubleshooting should be skipped
+        if [ "$skip_troubleshoot" = "true" ]; then
+            echo "⏩ Skipping troubleshooting of cluster '$cluster_name' in namespace '$namespace' as per configuration."
+            return
+        fi
+
+        echo "-----------------------------------------"
+        echo "🔍 Fetching resources in namespace '$namespace' for cluster '$cluster_name'"
+        echo "-----------------------------------------"
+
+        # Fetch details of a resource and save it in a directory
+        fetch_resource_details "$kubeconfig_path" "$kubecontext" "$namespace" "$cluster_name" "$api_groups"
+
+        echo "-----------------------------------------"
+        echo "✅ Resource details fetched successfully for namespace '$namespace' in cluster '$cluster_name' and saved in ./$cluster_name Folders.."
+        echo "-----------------------------------------"
+
+        echo "✅ Resource fetching in worker cluster $cluster_name complete."
+    done
+}
+
+# Function to fetch the details of resources in the additional applications
+fetch_additional_app_resources() {
+    echo "🔍 Starting to fetch the details of resources in the additional applications..."
+
+    for app_index in $(seq 0 $((${#ADDITIONAL_APPS[@]} - 1))); do
+        # Extracting application configuration from YAML using yq
+        local app=$(yq e ".additional_apps[$app_index]" "$EGS_INPUT_YAML")
+        local app_name=$(echo "$app" | yq e '.name' -)
+        local use_global_kubeconfig=$(echo "$app" | yq e '.use_global_kubeconfig' -)
+        local skip_troubleshoot=$(echo "$app" | yq e '.skip_troubleshoot' -)
+        local kubeconfig=$(echo "$app" | yq e '.kubeconfig' -)
+        local kubecontext=$(echo "$app" | yq e '.kubecontext' -)
+        local namespace=$(echo "$app" | yq e '.namespace' -)
+        local cluster_name=$(kubectl --kubeconfig $kubeconfig_path config current-context | cut -d'_' -f4 | cut -d'/' -f2)
+        local api_groups=$(echo "$app" | yq e '.api_groups' -)
+
+        read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+            "Fetch application $app_name Resources" \
+            "$use_global_kubeconfig" \
+            "$GLOBAL_KUBECONFIG" \
+            "$GLOBAL_KUBECONTEXT" \
+            "$kubeconfig" \
+            "$kubecontext")
+
+        # Print output variables after calling kubeaccess_precheck
+        echo "🔧 kubeaccess_precheck - Output Variables: Fetch Worker Resources "
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        echo "-----------------------------------------"
+
+        # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+        if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+            echo "🔍 Validating Kubecontext:"
+            echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+            echo "  🌐 Kubecontext: $kubecontext"
+
+            validate_kubecontext "$kubeconfig_path" "$kubecontext"
+        else
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+            echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+            echo "  🌐 Kubecontext: $kubecontext"
+            exit 1
+        fi
+
+        local context_arg=""
+        if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+            context_arg="--context $kubecontext"
+        fi
+
+        echo "🔧 Variables:"
+        echo "  skip_troubleshoot=$skip_troubleshoot"
+        echo "  kubeconfig_path=$kubeconfig_path"
+        echo "  context_arg=$context_arg"
+        echo "  namespace=$namespace"
+        echo "  cluster_name=$cluster_name"
+        echo "  api_groups=$api_groups"
+        echo "-----------------------------------------"
+
+        # Check if troubleshooting should be skipped
+        if [ "$skip_troubleshoot" = "true" ]; then
+            echo "⏩ Skipping troubleshooting of cluster '$cluster_name' in namespace '$namespace' as per configuration."
+            return
+        fi
+
+        echo "-----------------------------------------"
+        echo "🔍 Fetching resources in namespace '$namespace' for cluster '$cluster_name'"
+        echo "-----------------------------------------"
+
+        # Fetch details of a resource and save it in a directory
+        fetch_resource_details "$kubeconfig_path" "$kubecontext" "$namespace" "$cluster_name" "$api_groups"
+
+        echo "-----------------------------------------"
+        echo "✅ Resource details fetched successfully for namespace '$namespace' in cluster '$cluster_name' and saved in ./$cluster_name Folders.."
+        echo "-----------------------------------------"
+
+        echo "✅ Resource fetching in additional application $app_name complete."
+    done
+
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -2779,6 +3167,28 @@ if [ -n "$EGS_INPUT_YAML" ]; then
         echo "❌ yq command not found. Please install yq to use the --input-yaml option."
         exit 1
     fi
+fi
+
+# Fetch Resource details of controller
+if [ "$ENABLE_TROUBLESHOOT_CONTROLLER" = "true" ]; then
+    echo "🔍 Fectching the resource details resources of controller..."
+    fetch_controller_resources
+fi
+
+# Fetch Resource details of worker
+if [ "$ENABLE_TROUBLESHOOT_WORKER" = "true" ]; then
+    echo "🔍 Fectching the resource details resources of worker..."
+    fetch_worker_resources
+fi
+
+# Fetch Resource details of additional applications
+if [ "$ENABLE_TROUBLESHOOT_ADDITIONAL_APPS" = "true" ]; then
+    echo "🔍 Fectching the resource details of additional applications..."
+    fetch_additional_app_resources
+fi
+
+if [ "$ENABLE_TROUBLESHOOT_CONTROLLER" = "true" ] || [ "$ENABLE_TROUBLESHOOT_WORKER" = "true" ] || [ "$ENABLE_TROUBLESHOOT_ADDITIONAL_APPS" = "true" ]; then
+    exit 0
 fi
 
 # Run Kubeslice pre-checks if enabled
