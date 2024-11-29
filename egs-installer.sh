@@ -2348,7 +2348,7 @@ EOF
 
         kubectl apply -f "$INSTALLATION_FILES_PATH/${project_name}_project.yaml" --kubeconfig $kubeconfig_path $context_arg -n $namespace
         echo "🔍 Verifying project '$project_name' creation..."
-        kubectl get project -n $namespace --kubeconfig $kubeconfig_path $context_arg | grep $project_name
+        kubectl get project.controller.kubeslice.io -n $namespace --kubeconfig $kubeconfig_path $context_arg | grep $project_name
 
         echo "-----------------------------------------"
         echo "✔️  Project '$project_name' created successfully in namespace '$namespace'."
@@ -2429,7 +2429,7 @@ EOF
 
         kubectl apply -f "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
         echo "🔍 Verifying cluster registration for '$cluster_name'..."
-        kubectl get clusters -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg | grep $cluster_name
+        kubectl get cluster.controller.kubeslice.io -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg | grep $cluster_name
 
         echo "-----------------------------------------"
         echo "✔️  Cluster '$cluster_name' registered successfully in project '$project_name'."
