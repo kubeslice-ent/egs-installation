@@ -2541,25 +2541,25 @@ prepare_worker_values_file() {
         global_grafana_service_name=$(yq e '.global_grafana_service_name' "$EGS_INPUT_YAML")
         global_grafana_service_type=$(yq e '.global_grafana_service_type' "$EGS_INPUT_YAML")
 
-        local_auto_fetch_endpoint=$(echo "$worker" | yq e '.auto_fetch_endpoint // ""' -)
+        local_auto_fetch_endpoint=$(echo "$worker" | yq e '.local_auto_fetch_endpoint // ""' -)
         auto_fetch_endpoint=${local_auto_fetch_endpoint:-$global_auto_fetch_endpoint}
 
-        local_prometheus_namespace=$(echo "$worker" | yq e '.prometheus_namespace // ""' -)
+        local_prometheus_namespace=$(echo "$worker" | yq e '.local_prometheus_namespace // ""' -)
         prometheus_namespace=${local_prometheus_namespace:-$global_prometheus_namespace}
 
-        local_prometheus_service_name=$(echo "$worker" | yq e '.prometheus_service_name // ""' -)
+        local_prometheus_service_name=$(echo "$worker" | yq e '.local_prometheus_service_name // ""' -)
         prometheus_service_name=${local_prometheus_service_name:-$global_prometheus_service_name}
 
-        local_prometheus_service_type=$(echo "$worker" | yq e '.prometheus_service_type // ""' -)
+        local_prometheus_service_type=$(echo "$worker" | yq e '.local_prometheus_service_type // ""' -)
         prometheus_service_type=${local_prometheus_service_type:-$global_prometheus_service_type}
 
-        local_grafana_namespace=$(echo "$worker" | yq e '.grafana_namespace // ""' -)
+        local_grafana_namespace=$(echo "$worker" | yq e '.local_grafana_namespace // ""' -)
         grafana_namespace=${local_grafana_namespace:-$global_grafana_namespace}
 
-        local_grafana_service_name=$(echo "$worker" | yq e '.grafana_service_name // ""' -)
+        local_grafana_service_name=$(echo "$worker" | yq e '.local_grafana_service_name // ""' -)
         grafana_service_name=${local_grafana_service_name:-$global_grafana_service_name}
 
-        local_grafana_service_type=$(echo "$worker" | yq e '.grafana_service_type // ""' -)
+        local_grafana_service_type=$(echo "$worker" | yq e '.local_grafana_service_type // ""' -)
         grafana_service_type=${local_grafana_service_type:-$global_grafana_service_type}
 
 
