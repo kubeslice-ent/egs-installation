@@ -2438,6 +2438,69 @@ EOF
     echo "✔️ Cluster registration in controller cluster complete."
 }
 
+get_prometheus_external_ip() {
+    local kubeconfig="$1"
+    local kubecontext="$2"
+    local namespace="$3"
+    local service_name="$4"
+    local service_type="$5"
+
+    # Print the input values (redirected to stderr)
+    echo "🔧 get_lb_external_ip:" >&2
+    echo "  🗂️  Kubeconfig: $kubeconfig" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+    echo "  📦 Namespace: $namespace" >&2
+    echo "  🛠️  Service: $service_name" >&2
+    echo "  🔧 Service Type: $service_type" >&2
+
+    if [ "$service_type" = "LoadBalancer" ]; then
+        ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        echo "$ip"
+    elif [ "$service_type" = "NodePort" ]; then
+        node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        echo "$node_ip:$node_port"
+    elif [ "$service_type" = "ClusterIP" ]; then
+        cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
+        service_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].port}')
+        echo "$cluster_ip:$service_port"
+    else
+        echo "${service_name}.${namespace}.svc.cluster.local:9090"
+    fi
+}
+
+get_grafana_external_ip() {
+    local kubeconfig="$1"
+    local kubecontext="$2"
+    local namespace="$3"
+    local service_name="$4"
+    local service_type="$5"
+
+    # Print the input values (redirected to stderr)
+    echo "🔧 get_lb_external_ip:" >&2
+    echo "  🗂️  Kubeconfig: $kubeconfig" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+    echo "  📦 Namespace: $namespace" >&2
+    echo "  🛠️  Service: $service_name" >&2
+    echo "  🔧 Service Type: $service_type" >&2
+
+    if [ "$service_type" = "LoadBalancer" ]; then
+        ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        echo "$ip"
+    elif [ "$service_type" = "NodePort" ]; then
+        node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        echo "$node_ip:$node_port"
+    elif [ "$service_type" = "ClusterIP" ]; then
+        cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
+        service_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].port}')
+        echo "$cluster_ip:$service_port"
+    else
+        echo "Unknown service type: $service_type"
+        return 1
+    fi
+}
+
 # Function to fetch secrets from the worker clusters and create worker values file
 prepare_worker_values_file() {
 
