@@ -45,6 +45,15 @@ enable_install_controller: true  # Enable the installation of the Kubeslice cont
 enable_install_ui: true  # Enable the installation of the Kubeslice UI
 enable_install_worker: true  # Enable the installation of Kubeslice workers
 
+auto_fetch_endpoint: true
+global_grafana_namespace: egs-monitoring
+global_grafana_service_type: ClusterIP
+global_grafana_service_name: prometheus-grafana
+global_prometheus_namespace: egs-monitoring
+global_prometheus_service_name: prometheus-kube-prometheus-prometheus
+global_prometheus_service_type: ClusterIP
+  
+
 # Kubeslice controller installation settings
 kubeslice_controller_egs:
   skip_installation: false  # Do not skip the installation of the controller
@@ -112,7 +121,7 @@ kubeslice_worker_egs:
       kubesliceNetworking:
         enabled: false  # Disable Kubeslice networking for this worker
       egs:
-        prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+        prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
       metrics:
         insecure: true  # Allow insecure connections for metrics
@@ -120,6 +129,13 @@ kubeslice_worker_egs:
     verify_install: true  # Verify the installation of the worker
     verify_install_timeout: 60  # Timeout for the worker installation verification (in seconds)
     skip_on_verify_fail: false  # Do not skip if worker verification fails
+    auto_fetch_endpoint: true
+    grafana_namespace: egs-monitoring
+    grafana_service_name: prometheus-grafana
+    grafana_service_type: ClusterIP
+    prometheus_namespace: egs-monitoring
+    prometheus_service_name: prometheus-kube-prometheus-prometheus
+    prometheus_service_type: ClusterIP
 
 # Project and cluster registration settings
 enable_project_creation: true  # Enable project creation in Kubeslice
@@ -136,7 +152,7 @@ cluster_registration:
     project_name: "avesha"
     telemetry:
       enabled: true  # Enable telemetry for this cluster
-      endpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Telemetry endpoint
+      endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Telemetry endpoint
       telemetryProvider: "prometheus"  # Telemetry provider (Prometheus in this case)
     geoLocation:
       cloudProvider: "GCP"  # Cloud provider for this cluster (e.g., GCP)
