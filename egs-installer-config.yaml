@@ -45,7 +45,7 @@ enable_install_controller: true  # Enable the installation of the Kubeslice cont
 enable_install_ui: true  # Enable the installation of the Kubeslice UI
 enable_install_worker: true  # Enable the installation of Kubeslice workers
 
-auto_fetch_endpoint: true
+global_auto_fetch_endpoint: true
 global_grafana_namespace: egs-monitoring
 global_grafana_service_type: ClusterIP
 global_grafana_service_name: prometheus-grafana
