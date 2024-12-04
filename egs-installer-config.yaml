@@ -129,13 +129,16 @@ kubeslice_worker_egs:
     verify_install: true  # Verify the installation of the worker
     verify_install_timeout: 60  # Timeout for the worker installation verification (in seconds)
     skip_on_verify_fail: false  # Do not skip if worker verification fails
-    auto_fetch_endpoint: true
-    grafana_namespace: egs-monitoring
-    grafana_service_name: prometheus-grafana
-    grafana_service_type: ClusterIP
-    prometheus_namespace: egs-monitoring
-    prometheus_service_name: prometheus-kube-prometheus-prometheus
-    prometheus_service_type: ClusterIP
+    local_auto_fetch_endpoint: true
+    local_grafana_namespace: egs-monitoring
+    local_grafana_service_name: prometheus-grafana
+    local_grafana_service_type: ClusterIP
+    local_prometheus_namespace: egs-monitoring
+    local_prometheus_service_name: prometheus-kube-prometheus-prometheus
+    local_prometheus_service_type: ClusterIP
+    
+
+
 
 # Project and cluster registration settings
 enable_project_creation: true  # Enable project creation in Kubeslice
