@@ -121,7 +121,7 @@ kubeslice_worker_egs:
       kubesliceNetworking:
         enabled: false  # Disable Kubeslice networking for this worker
       egs:
-        prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+        prometheusEndpoint: "http://<prometheus_service_name>.<prometheus_namespace>.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
       metrics:
         insecure: true  # Allow insecure connections for metrics

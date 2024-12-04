@@ -2438,6 +2438,69 @@ EOF
     echo "✔️ Cluster registration in controller cluster complete."
 }
 
+get_prometheus_external_ip() {
+    local kubeconfig="$1"
+    local kubecontext="$2"
+    local namespace="$3"
+    local service_name="$4"
+    local service_type="$5"
+
+    # Print the input values (redirected to stderr)
+    echo "🔧 get_lb_external_ip:" >&2
+    echo "  🗂️  Kubeconfig: $kubeconfig" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+    echo "  📦 Namespace: $namespace" >&2
+    echo "  🛠️  Service: $service_name" >&2
+    echo "  🔧 Service Type: $service_type" >&2
+
+    if [ "$service_type" = "LoadBalancer" ]; then
+        ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        echo "$ip"
+    elif [ "$service_type" = "NodePort" ]; then
+        node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        echo "$node_ip:$node_port"
+    elif [ "$service_type" = "ClusterIP" ]; then
+        cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
+        service_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].port}')
+        echo "$cluster_ip:$service_port"
+    else
+        echo "${service_name}.${namespace}.svc.cluster.local:9090"
+    fi
+}
+
+get_grafana_external_ip() {
+    local kubeconfig="$1"
+    local kubecontext="$2"
+    local namespace="$3"
+    local service_name="$4"
+    local service_type="$5"
+
+    # Print the input values (redirected to stderr)
+    echo "🔧 get_lb_external_ip:" >&2
+    echo "  🗂️  Kubeconfig: $kubeconfig" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+    echo "  📦 Namespace: $namespace" >&2
+    echo "  🛠️  Service: $service_name" >&2
+    echo "  🔧 Service Type: $service_type" >&2
+
+    if [ "$service_type" = "LoadBalancer" ]; then
+        ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        echo "$ip"
+    elif [ "$service_type" = "NodePort" ]; then
+        node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        echo "$node_ip:$node_port"
+    elif [ "$service_type" = "ClusterIP" ]; then
+        cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
+        service_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].port}')
+        echo "$cluster_ip:$service_port"
+    else
+        echo "Unknown service type: $service_type"
+        return 1
+    fi
+}
+
 # Function to fetch secrets from the worker clusters and create worker values file
 prepare_worker_values_file() {
 
@@ -2470,19 +2533,68 @@ prepare_worker_values_file() {
                 kubecontextname=$(echo "$worker" | yq e '.kubecontext' -)
         fi
 
-        echo "Waiting for Grafana service to get an IP or port for worker..."
-        external_ip=""
-        while [ -z "${external_ip}" ] ; do 
-            external_ip="$(get_lb_external_ip "${kubeconfigname}" "${kubecontextname}" "egs-monitoring" prometheus-grafana)"
-            sleep 10 
-        done
+        global_auto_fetch_endpoint=$(yq e '.global_auto_fetch_endpoint' "$EGS_INPUT_YAML")
+        global_prometheus_namespace=$(yq e '.global_prometheus_namespace' "$EGS_INPUT_YAML")
+        global_prometheus_service_name=$(yq e '.global_prometheus_service_name' "$EGS_INPUT_YAML")
+        global_prometheus_service_type=$(yq e '.global_prometheus_service_type' "$EGS_INPUT_YAML")
+        global_grafana_namespace=$(yq e '.global_grafana_namespace' "$EGS_INPUT_YAML")
+        global_grafana_service_name=$(yq e '.global_grafana_service_name' "$EGS_INPUT_YAML")
+        global_grafana_service_type=$(yq e '.global_grafana_service_type' "$EGS_INPUT_YAML")
 
-        grafana_url="http://${external_ip}/d/Oxed_c6Wz"
-        echo "Grafana URL: ${grafana_url}"
+        local_auto_fetch_endpoint=$(echo "$worker" | yq e '.auto_fetch_endpoint // ""' -)
+        auto_fetch_endpoint=${local_auto_fetch_endpoint:-$global_auto_fetch_endpoint}
 
-        # Update YAML configuration with new Grafana URL
-        #yq eval ".kubeslice_worker_egs.inline_values.egs.grafanaDashboardBaseUrl = \"${grafana_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
-        yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egs.grafanaDashboardBaseUrl = \"${grafana_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
+        local_prometheus_namespace=$(echo "$worker" | yq e '.prometheus_namespace // ""' -)
+        prometheus_namespace=${local_prometheus_namespace:-$global_prometheus_namespace}
+
+        local_prometheus_service_name=$(echo "$worker" | yq e '.prometheus_service_name // ""' -)
+        prometheus_service_name=${local_prometheus_service_name:-$global_prometheus_service_name}
+
+        local_prometheus_service_type=$(echo "$worker" | yq e '.prometheus_service_type // ""' -)
+        prometheus_service_type=${local_prometheus_service_type:-$global_prometheus_service_type}
+
+        local_grafana_namespace=$(echo "$worker" | yq e '.grafana_namespace // ""' -)
+        grafana_namespace=${local_grafana_namespace:-$global_grafana_namespace}
+
+        local_grafana_service_name=$(echo "$worker" | yq e '.grafana_service_name // ""' -)
+        grafana_service_name=${local_grafana_service_name:-$global_grafana_service_name}
+
+        local_grafana_service_type=$(echo "$worker" | yq e '.grafana_service_type // ""' -)
+        grafana_service_type=${local_grafana_service_type:-$global_grafana_service_type}
+
+
+        if [[ -z "$auto_fetch_endpoint" || -z "$prometheus_namespace" || -z "$prometheus_service_name" || -z "$prometheus_service_type" || -z "$grafana_namespace" || -z "$grafana_service_name" || -z "$grafana_service_type" ]]; then
+                echo "Error: One or more required values are missing. Skipping Prometheus and Grafana endpoint updates."
+        else
+            prometheus_endpoint=""
+            while [ -z "${prometheus_endpoint}" ]; do 
+                prometheus_endpoint="$(get_prometheus_external_ip "${kubeconfigname}" "${kubecontextname}" "${prometheus_namespace}" "${prometheus_service_name}" "${prometheus_service_type}")"
+                sleep 10 
+            done
+
+            prometheus_url="http://${prometheus_endpoint}"
+            
+            
+            yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egs.prometheusEndpoint = \"${prometheus_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
+            echo "Updated Prometheus endpoint for worker ${worker_name}: ${prometheus_url}"
+
+
+            echo "Waiting for Grafana service to get an IP or port for worker..."
+            external_ip=""
+
+            while [ -z "${external_ip}" ] ; do 
+                external_ip="$(get_grafana_external_ip "${kubeconfigname}" "${kubecontextname}" "${grafana_namespace}" "${grafana_service_name}" "${grafana_service_type}")"
+                sleep 10 
+            done
+
+            grafana_url="http://${external_ip}/d/Oxed_c6Wz"
+            echo "Grafana URL: ${grafana_url}"
+
+            yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egs.grafanaDashboardBaseUrl = \"${grafana_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
+
+        fi
+
+        
         
         echo "  Extracted values for worker $worker_name:"
         echo "  Worker Name: $worker_name"
