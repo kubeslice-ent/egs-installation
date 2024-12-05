@@ -2541,37 +2541,94 @@ prepare_worker_values_file() {
         global_grafana_service_name=$(yq e '.global_grafana_service_name' "$EGS_INPUT_YAML")
         global_grafana_service_type=$(yq e '.global_grafana_service_type' "$EGS_INPUT_YAML")
 
+
+
+        echo "Worker data testing:"
+        echo "$worker" | yq e '.' -
+
         local_auto_fetch_endpoint=$(echo "$worker" | yq e '.local_auto_fetch_endpoint' -)
-        auto_fetch_endpoint=${local_auto_fetch_endpoint:-$global_auto_fetch_endpoint}
+
+        if [ -z "$local_auto_fetch_endpoint" ] || [ "$local_auto_fetch_endpoint" = "null" ]; then
+            auto_fetch_endpoint=$global_auto_fetch_endpoint
+        elif [ -z "$global_auto_fetch_endpoint" ] || [ "$global_auto_fetch_endpoint" = "null" ]; then
+            auto_fetch_endpoint=$local_auto_fetch_endpoint
+        else
+            auto_fetch_endpoint=$local_auto_fetch_endpoint
+        fi
 
         echo "local_auto_fetch_endpoint: $local_auto_fetch_endpoint"
         echo "global_auto_fetch_endpoint: $global_auto_fetch_endpoint"
         echo "auto_fetch_endpoint: $auto_fetch_endpoint"
 
-        local_prometheus_namespace=$(echo "$worker" | yq e '.local_prometheus_namespace' -)
-        prometheus_namespace=${local_prometheus_namespace:-$global_prometheus_namespace}
+        
+
+        local_prometheus_namespace=$(echo "$worker" | yq e '.prometheus_namespace' -)
+        if [ -z "$local_prometheus_namespace" ] || [ "$local_prometheus_namespace" = "null" ]; then
+            prometheus_namespace=$global_prometheus_namespace
+        elif [ -z "$global_prometheus_namespace" ] || [ "$global_prometheus_namespace" = "null" ]; then
+            prometheus_namespace=$local_prometheus_namespace
+        else
+            prometheus_namespace=$local_prometheus_namespace
+        fi
         echo "prometheus_namespace: $prometheus_namespace"
 
-        local_prometheus_service_name=$(echo "$worker" | yq e '.local_prometheus_service_name' -)
-        prometheus_service_name=${local_prometheus_service_name:-$global_prometheus_service_name}
+        
+        local_prometheus_service_name=$(echo "$worker" | yq e '.prometheus_service_name' -)
+        if [ -z "$local_prometheus_service_name" ] || [ "$local_prometheus_service_name" = "null" ]; then
+            prometheus_service_name=$global_prometheus_service_name
+        elif [ -z "$global_prometheus_service_name" ] || [ "$global_prometheus_service_name" = "null" ]; then
+            prometheus_service_name=$local_prometheus_service_name
+        else
+            prometheus_service_name=$local_prometheus_service_name
+        fi
         echo "prometheus_service_name: $prometheus_service_name"
 
-        local_prometheus_service_type=$(echo "$worker" | yq e '.local_prometheus_service_type' -)
-        prometheus_service_type=${local_prometheus_service_type:-$global_prometheus_service_type}
+        
+
+        local_prometheus_service_type=$(echo "$worker" | yq e '.prometheus_service_type' -)
+        if [ -z "$local_prometheus_service_type" ] || [ "$local_prometheus_service_type" = "null" ]; then
+            prometheus_service_type=$global_prometheus_service_type
+        elif [ -z "$global_prometheus_service_type" ] || [ "$global_prometheus_service_type" = "null" ]; then
+            prometheus_service_type=$local_prometheus_service_type
+        else
+            prometheus_service_type=$local_prometheus_service_type
+        fi
         echo "prometheus_service_type: $prometheus_service_type"
 
-        local_grafana_namespace=$(echo "$worker" | yq e '.local_grafana_namespace' -)
-        grafana_namespace=${local_grafana_namespace:-$global_grafana_namespace}
+
+        
+        local_grafana_namespace=$(echo "$worker" | yq e '.grafana_namespace' -)
+        if [ -z "$local_grafana_namespace" ] || [ "$local_grafana_namespace" = "null" ]; then
+            grafana_namespace=$global_grafana_namespace
+        elif [ -z "$global_grafana_namespace" ] || [ "$global_grafana_namespace" = "null" ]; then
+            grafana_namespace=$local_grafana_namespace
+        else
+            grafana_namespace=$local_grafana_namespace
+        fi
         echo "grafana_namespace: $grafana_namespace"
 
-        local_grafana_service_name=$(echo "$worker" | yq e '.local_grafana_service_name' -)
-        grafana_service_name=${local_grafana_service_name:-$global_grafana_service_name}
+
+        
+        local_grafana_service_name=$(echo "$worker" | yq e '.grafana_service_name' -)
+        if [ -z "$local_grafana_service_name" ] || [ "$local_grafana_service_name" = "null" ]; then
+            grafana_service_name=$global_grafana_service_name
+        elif [ -z "$global_grafana_service_name" ] || [ "$global_grafana_service_name" = "null" ]; then
+            grafana_service_name=$local_grafana_service_name
+        else
+            grafana_service_name=$local_grafana_service_name
+        fi
         echo "grafana_service_name: $grafana_service_name"
 
-        local_grafana_service_type=$(echo "$worker" | yq e '.local_grafana_service_type' -)
-        grafana_service_type=${local_grafana_service_type:-$global_grafana_service_type}
+        
+        local_grafana_service_type=$(echo "$worker" | yq e '.grafana_service_type' -)
+        if [ -z "$local_grafana_service_type" ] || [ "$local_grafana_service_type" = "null" ]; then
+            grafana_service_type=$global_grafana_service_type
+        elif [ -z "$global_grafana_service_type" ] || [ "$global_grafana_service_type" = "null" ]; then
+            grafana_service_type=$local_grafana_service_type
+        else
+            grafana_service_type=$local_grafana_service_type
+        fi
         echo "grafana_service_type: $grafana_service_type"
-
 
         if [[ "$auto_fetch_endpoint" == "true" && -n "$auto_fetch_endpoint" ]]; then
 
@@ -2606,7 +2663,7 @@ prepare_worker_values_file() {
 
             fi
         else
-            echo "Auto fetch endpoint is not enabled or empty. Skipping Prometheus and Grafana endpoint updates."
+            echo "Auto fetch endpoint is not enabled or empty. Skipping Prometheus and Grafana endpoint updates if it is false or please provide proper input if you haven't give any."
         fi
         
         echo "  Extracted values for worker $worker_name:"
