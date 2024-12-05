@@ -45,13 +45,14 @@ enable_install_controller: true  # Enable the installation of the Kubeslice cont
 enable_install_ui: true  # Enable the installation of the Kubeslice UI
 enable_install_worker: true  # Enable the installation of Kubeslice workers
 
-global_auto_fetch_endpoint: true
-global_grafana_namespace: egs-monitoring
-global_grafana_service_type: ClusterIP
-global_grafana_service_name: prometheus-grafana
-global_prometheus_namespace: egs-monitoring
-global_prometheus_service_name: prometheus-kube-prometheus-prometheus
-global_prometheus_service_type: ClusterIP
+global_auto_fetch_endpoint: true  # Enable automatic fetching of monitoring endpoints globally
+global_grafana_namespace: egs-monitoring  # Namespace where Grafana is globally deployed
+global_grafana_service_type: ClusterIP  # Service type for Grafana (accessible only within the cluster)
+global_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana globally
+global_prometheus_namespace: egs-monitoring  # Namespace where Prometheus is globally deployed
+global_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus globally
+global_prometheus_service_type: ClusterIP  # Service type for Prometheus (accessible only within the cluster)
+
   
 
 # Kubeslice controller installation settings
@@ -76,7 +77,7 @@ kubeslice_controller_egs:
     prometheus:
       server:
         persistentVolume:       # Enable/disable Persistent Volume Claim for Prometheus data
-          enabled: true         # Enable/disable Persistent Volume Claim for Prometheus data
+          enabled: false         # Enable/disable Persistent Volume Claim for Prometheus data
           size: 5Gi             # Size of the PVC
       retention: "30d"          # Retention period for Prometheus data
   helm_flags: "--timeout 10m --atomic"  # Additional Helm flags for the installation
@@ -129,16 +130,13 @@ kubeslice_worker_egs:
     verify_install: true  # Verify the installation of the worker
     verify_install_timeout: 60  # Timeout for the worker installation verification (in seconds)
     skip_on_verify_fail: false  # Do not skip if worker verification fails
-    local_auto_fetch_endpoint: true
-    local_grafana_namespace: egs-monitoring
-    local_grafana_service_name: prometheus-grafana
-    local_grafana_service_type: ClusterIP
-    local_prometheus_namespace: egs-monitoring
-    local_prometheus_service_name: prometheus-kube-prometheus-prometheus
-    local_prometheus_service_type: ClusterIP
-    
-
-
+    # local_auto_fetch_endpoint: true  # Enable automatic fetching of monitoring endpoints
+    # local_grafana_namespace: egs-monitoring  # Namespace where Grafana is deployed
+    # local_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana
+    # local_grafana_service_type: ClusterIP  # Service type for Grafana (accessible only within the cluster)
+    # local_prometheus_namespace: egs-monitoring  # Namespace where Prometheus is deployed
+    # local_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus
+    # local_prometheus_service_type: ClusterIP  # Service type for Prometheus (accessible only within the cluster)
 
 # Project and cluster registration settings
 enable_project_creation: true  # Enable project creation in Kubeslice
@@ -244,7 +242,7 @@ additional_apps:
         service:
           type: LoadBalancer
         persistence:
-          enabled: true
+          enabled: false
           size: 1Gi
     helm_flags: "--wait"  # Additional Helm flags for this application's installation
     verify_install: true  # Verify the installation of Prometheus
