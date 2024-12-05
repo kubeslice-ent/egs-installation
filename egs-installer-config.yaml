@@ -45,7 +45,7 @@ enable_install_controller: true  # Enable the installation of the Kubeslice cont
 enable_install_ui: true  # Enable the installation of the Kubeslice UI
 enable_install_worker: true  # Enable the installation of Kubeslice workers
 
-global_auto_fetch_endpoint: true  # Enable automatic fetching of monitoring endpoints globally
+global_auto_fetch_endpoint: false  # Enable automatic fetching of monitoring endpoints globally
 global_grafana_namespace: egs-monitoring  # Namespace where Grafana is globally deployed
 global_grafana_service_type: ClusterIP  # Service type for Grafana (accessible only within the cluster)
 global_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana globally
@@ -80,7 +80,7 @@ kubeslice_controller_egs:
           enabled: false         # Enable/disable Persistent Volume Claim for Prometheus data
           size: 5Gi             # Size of the PVC
       retention: "30d"          # Retention period for Prometheus data
-  helm_flags: ""  # Additional Helm flags for the installation
+  helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the installation
   verify_install: false  # Verify the installation of the controller
   verify_install_timeout: 30  # Timeout for the controller installation verification (in seconds)
   skip_on_verify_fail: true  # If verification fails, do not skip the step
@@ -101,7 +101,7 @@ kubeslice_ui_egs:
       uiproxy:
         service:
           type: LoadBalancer
-  helm_flags: ""  # Additional Helm flags for the UI installation
+  helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the UI installation
   verify_install: false  # Verify the installation of the UI
   verify_install_timeout: 50  # Timeout for the UI installation verification (in seconds)
   skip_on_verify_fail: true  # If UI verification fails, do not skip the step
@@ -126,7 +126,7 @@ kubeslice_worker_egs:
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
       metrics:
         insecure: true  # Allow insecure connections for metrics
-    helm_flags: ""  # Additional Helm flags for the worker installation
+    helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the worker installation
     verify_install: true  # Verify the installation of the worker
     verify_install_timeout: 60  # Timeout for the worker installation verification (in seconds)
     skip_on_verify_fail: false  # Do not skip if worker verification fails
