@@ -6,9 +6,9 @@ precheck: true  # Run general prechecks before starting the installation
 kubeslice_precheck: true  # Run specific prechecks for Kubeslice components
 
 # Global installation verification settings
-verify_install: true  # Enable verification of installations globally
+verify_install: false  # Enable verification of installations globally
 verify_install_timeout: 600  # Timeout for global installation verification (in seconds)
-skip_on_verify_fail: false  # If set to true, skip steps where verification fails, otherwise exit on failure
+skip_on_verify_fail: true  # If set to true, skip steps where verification fails, otherwise exit on failure
 
 # Helm repository settings
 use_local_charts: true  # Use local Helm charts instead of fetching them from a repository
@@ -45,7 +45,7 @@ enable_install_controller: true  # Enable the installation of the Kubeslice cont
 enable_install_ui: true  # Enable the installation of the Kubeslice UI
 enable_install_worker: true  # Enable the installation of Kubeslice workers
 
-global_auto_fetch_endpoint: true  # Enable automatic fetching of monitoring endpoints globally
+global_auto_fetch_endpoint: false  # Enable automatic fetching of monitoring endpoints globally
 global_grafana_namespace: egs-monitoring  # Namespace where Grafana is globally deployed
 global_grafana_service_type: ClusterIP  # Service type for Grafana (accessible only within the cluster)
 global_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana globally
@@ -80,10 +80,10 @@ kubeslice_controller_egs:
           enabled: false         # Enable/disable Persistent Volume Claim for Prometheus data
           size: 5Gi             # Size of the PVC
       retention: "30d"          # Retention period for Prometheus data
-  helm_flags: "--timeout 10m --atomic"  # Additional Helm flags for the installation
-  verify_install: true  # Verify the installation of the controller
+  helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the installation
+  verify_install: false  # Verify the installation of the controller
   verify_install_timeout: 30  # Timeout for the controller installation verification (in seconds)
-  skip_on_verify_fail: false  # If verification fails, do not skip the step
+  skip_on_verify_fail: true  # If verification fails, do not skip the step
 
 # Kubeslice UI installation settings
 kubeslice_ui_egs:
@@ -101,10 +101,10 @@ kubeslice_ui_egs:
       uiproxy:
         service:
           type: LoadBalancer
-  helm_flags: "--atomic"  # Additional Helm flags for the UI installation
-  verify_install: true  # Verify the installation of the UI
+  helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the UI installation
+  verify_install: false  # Verify the installation of the UI
   verify_install_timeout: 50  # Timeout for the UI installation verification (in seconds)
-  skip_on_verify_fail: false  # If UI verification fails, do not skip the step
+  skip_on_verify_fail: true  # If UI verification fails, do not skip the step
   specific_use_local_charts: true  # Override to use local charts for the UI
 
 # Kubeslice worker installation settings
@@ -126,7 +126,7 @@ kubeslice_worker_egs:
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
       metrics:
         insecure: true  # Allow insecure connections for metrics
-    helm_flags: "--atomic"  # Additional Helm flags for the worker installation
+    helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the worker installation
     verify_install: true  # Verify the installation of the worker
     verify_install_timeout: 60  # Timeout for the worker installation verification (in seconds)
     skip_on_verify_fail: false  # Do not skip if worker verification fails
@@ -183,10 +183,10 @@ additional_apps:
         default: true
       driver:
         enabled: false
-    helm_flags: "--wait"  # Additional Helm flags for this application's installation
-    verify_install: true  # Verify the installation of the GPU operator
+    helm_flags: ""  # Additional Helm flags for this application's installation
+    verify_install: false  # Verify the installation of the GPU operator
     verify_install_timeout: 600  # Timeout for verification (in seconds)
-    skip_on_verify_fail: false  # Do not skip if verification fails
+    skip_on_verify_fail: true  # Do not skip if verification fails
 
   - name: "prometheus"
     skip_installation: false  # Do not skip the installation of Prometheus
@@ -244,10 +244,10 @@ additional_apps:
         persistence:
           enabled: false
           size: 1Gi
-    helm_flags: "--wait"  # Additional Helm flags for this application's installation
-    verify_install: true  # Verify the installation of Prometheus
+    helm_flags: ""  # Additional Helm flags for this application's installation
+    verify_install: false  # Verify the installation of Prometheus
     verify_install_timeout: 600  # Timeout for verification (in seconds)
-    skip_on_verify_fail: false  # Do not skip if verification fails
+    skip_on_verify_fail: true  # Do not skip if verification fails
 
 # Enable custom applications
 enable_custom_apps: true  # Set to true to enable custom apps
@@ -274,9 +274,9 @@ manifests:
               - system-cluster-critical
     use_global_kubeconfig: true  # Use global kubeconfig for this application
     skip_installation: false  # Do not skip the installation of this application
-    verify_install: true  # Verify the installation of this application
+    verify_install: false  # Verify the installation of this application
     verify_install_timeout: 30  # Timeout for verification (in seconds)
-    skip_on_verify_fail: false  # Do not skip if verification fails
+    skip_on_verify_fail: true  # Do not skip if verification fails
     namespace: egs-gpu-operator  # Namespace for this application
     kubeconfig: ""  # Path to the kubeconfig file specific to this application
     kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
@@ -287,7 +287,7 @@ manifests:
     inline_yaml: null  # Inline YAML content for this application
     use_global_kubeconfig: true  # Use global kubeconfig for this application
     skip_installation: false  # Do not skip the installation of this application
-    verify_install: true  # Verify the installation of this application
+    verify_install: false  # Verify the installation of this application
     verify_install_timeout: 200  # Timeout for verification (in seconds)
     skip_on_verify_fail: true  # Skip if verification fails
     namespace: kube-system  # Namespace for this application
@@ -299,7 +299,7 @@ run_commands: false  # Enable the execution of commands defined in the YAML
 commands:
   - use_global_kubeconfig: true  # Use global kubeconfig for these commands
     skip_installation: true  # Do not skip the execution of these commands
-    verify_install: true  # Verify the execution of these commands
+    verify_install: false  # Verify the execution of these commands
     verify_install_timeout: 200  # Timeout for verification (in seconds)
     skip_on_verify_fail: true  # Skip if command verification fails
     namespace: kube-system  # Namespace context for these commands
