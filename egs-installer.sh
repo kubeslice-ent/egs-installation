@@ -2562,7 +2562,7 @@ prepare_worker_values_file() {
 
         
 
-        local_prometheus_namespace=$(echo "$worker" | yq e '.prometheus_namespace' -)
+        local_prometheus_namespace=$(echo "$worker" | yq e '.local_prometheus_namespace' -)
         if [ -z "$local_prometheus_namespace" ] || [ "$local_prometheus_namespace" = "null" ]; then
             prometheus_namespace=$global_prometheus_namespace
         elif [ -z "$global_prometheus_namespace" ] || [ "$global_prometheus_namespace" = "null" ]; then
@@ -2573,7 +2573,7 @@ prepare_worker_values_file() {
         echo "prometheus_namespace: $prometheus_namespace"
 
         
-        local_prometheus_service_name=$(echo "$worker" | yq e '.prometheus_service_name' -)
+        local_prometheus_service_name=$(echo "$worker" | yq e '.local_prometheus_service_name' -)
         if [ -z "$local_prometheus_service_name" ] || [ "$local_prometheus_service_name" = "null" ]; then
             prometheus_service_name=$global_prometheus_service_name
         elif [ -z "$global_prometheus_service_name" ] || [ "$global_prometheus_service_name" = "null" ]; then
@@ -2585,7 +2585,7 @@ prepare_worker_values_file() {
 
         
 
-        local_prometheus_service_type=$(echo "$worker" | yq e '.prometheus_service_type' -)
+        local_prometheus_service_type=$(echo "$worker" | yq e '.local_prometheus_service_type' -)
         if [ -z "$local_prometheus_service_type" ] || [ "$local_prometheus_service_type" = "null" ]; then
             prometheus_service_type=$global_prometheus_service_type
         elif [ -z "$global_prometheus_service_type" ] || [ "$global_prometheus_service_type" = "null" ]; then
@@ -2597,7 +2597,7 @@ prepare_worker_values_file() {
 
 
         
-        local_grafana_namespace=$(echo "$worker" | yq e '.grafana_namespace' -)
+        local_grafana_namespace=$(echo "$worker" | yq e '.local_grafana_namespace' -)
         if [ -z "$local_grafana_namespace" ] || [ "$local_grafana_namespace" = "null" ]; then
             grafana_namespace=$global_grafana_namespace
         elif [ -z "$global_grafana_namespace" ] || [ "$global_grafana_namespace" = "null" ]; then
@@ -2609,7 +2609,7 @@ prepare_worker_values_file() {
 
 
         
-        local_grafana_service_name=$(echo "$worker" | yq e '.grafana_service_name' -)
+        local_grafana_service_name=$(echo "$worker" | yq e '.local_grafana_service_name' -)
         if [ -z "$local_grafana_service_name" ] || [ "$local_grafana_service_name" = "null" ]; then
             grafana_service_name=$global_grafana_service_name
         elif [ -z "$global_grafana_service_name" ] || [ "$global_grafana_service_name" = "null" ]; then
@@ -2620,7 +2620,7 @@ prepare_worker_values_file() {
         echo "grafana_service_name: $grafana_service_name"
 
         
-        local_grafana_service_type=$(echo "$worker" | yq e '.grafana_service_type' -)
+        local_grafana_service_type=$(echo "$worker" | yq e '.local_grafana_service_type' -)
         if [ -z "$local_grafana_service_type" ] || [ "$local_grafana_service_type" = "null" ]; then
             grafana_service_type=$global_grafana_service_type
         elif [ -z "$global_grafana_service_type" ] || [ "$global_grafana_service_type" = "null" ]; then
