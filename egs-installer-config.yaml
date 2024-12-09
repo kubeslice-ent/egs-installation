@@ -10,6 +10,30 @@ verify_install: false  # Enable verification of installations globally
 verify_install_timeout: 600  # Timeout for global installation verification (in seconds)
 skip_on_verify_fail: true  # If set to true, skip steps where verification fails, otherwise exit on failure
 
+# Troubleshooting mode settings
+enable_troubleshoot:
+  enabled: true # Global Enable Troubleshooting mode for additional logs and checks
+  resource_types:
+    - pods
+    - deployments
+    - daemonsets
+    - statefulsets
+    - replicasets
+    - jobs
+    - configmaps
+    - secrets
+    - services
+    - serviceaccounts
+    - roles
+    - rolebindings
+    - crds
+  api_groups:
+    - controller.kubeslice.io
+    - inventory.kubeslice.io
+    - aiops.kubeslice.io
+    - networking.kubeslice.io
+    - monitoring.coreos.com
+
 # Helm repository settings
 use_local_charts: true  # Use local Helm charts instead of fetching them from a repository
 local_charts_path: "charts"  # Path to the directory containing local Helm charts
