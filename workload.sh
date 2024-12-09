@@ -16,6 +16,7 @@ metadata:
     app: llm-inference-10
     purpose: llm-demo-10
   name: llm-demo-10
+  namespace: "$NAMESPACE"
 spec:
   replicas: 1
   selector:
@@ -59,10 +60,6 @@ spec:
           volumeMounts:
             - mountPath: /data
               name: llm
-      tolerations:
-        - key: "nvidia.com/gpu"
-          effect: "NoSchedule"
-          value: "present"
       volumes:
         - name: llm
 ---
@@ -74,6 +71,7 @@ metadata:
   labels:
     purpose: llm-demo-10
   name: llm-inference-10
+  namespace: "$NAMESPACE"
 spec:
   ports:
     - port: 80
