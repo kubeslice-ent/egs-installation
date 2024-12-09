@@ -35,6 +35,8 @@ spec:
           resources:
             limits:
               nvidia.com/gpu: "1"
+            requests:
+              nvidia.com/gpu: "1"
           env:
             - name: MODEL_ID
               value: openai-community/gpt2
