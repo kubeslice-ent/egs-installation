@@ -1591,6 +1591,80 @@ uninstall_helm_chart_and_cleanup() {
     echo "-----------------------------------------"
 }
 
+unregister_clusters_in_controller() {
+    echo "🚀 Starting cluster unregistration in controller cluster..."
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "Kubeslice Controller Project Deletion" \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$KUBESLICE_CONTROLLER_KUBECONFIG" \
+        "$KUBESLICE_CONTROLLER_KUBECONTEXT")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "
+    echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
+
+    local context_arg=""
+    if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+        context_arg="--context $kubecontext"
+    fi
+
+    local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
+
+    echo "🔧 Variables:"
+    echo "  kubeconfig_path=$kubeconfig_path"
+    echo "  context_arg=$context_arg"
+    echo "  namespace=$namespace"
+    echo "-----------------------------------------"
+
+
+    for registration in "${KUBESLICE_CLUSTER_REGISTRATIONS[@]}"; do
+        IFS="|" read -r cluster_name project_name telemetry_enabled telemetry_endpoint telemetry_provider geo_location_provider geo_location_region <<<"$registration"
+
+        echo "-----------------------------------------"
+        echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'"
+        echo "-----------------------------------------"
+
+        kubectl delete cluster "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
+        if [ $? -ne 0 ]; then
+            echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'."
+            return 1
+        fi
+
+        echo "🔍 Verifying cluster unregistration for '$cluster_name'..."
+        if kubectl get cluster "$cluster_name" -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+            echo "❌ Error: Cluster '$cluster_name' still exists in project '$project_name'."
+            return 1
+        else
+            echo "✔️  Cluster '$cluster_name' unregistered successfully from project '$project_name'."
+        fi
+
+        echo "-----------------------------------------"
+    done
+    echo "✔️ Cluster unregistration in controller cluster complete."
+}
+
+
+
+
 delete_projects_in_controller() {
 
     local retry_interval=120 # Default wait time of 1 minute between retries
