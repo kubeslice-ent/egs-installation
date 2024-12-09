@@ -16,7 +16,6 @@ metadata:
     app: llm-inference-10
     purpose: llm-demo-10
   name: llm-demo-10
-  namespace: green
 spec:
   replicas: 1
   selector:
@@ -34,12 +33,6 @@ spec:
             - text-generation-launcher
           resources:
             limits:
-              cpu: 1
-              memory: 2Gi
-              nvidia.com/gpu: "1"
-            requests:
-              cpu: 1
-              memory: 2Gi
               nvidia.com/gpu: "1"
           env:
             - name: MODEL_ID
@@ -49,7 +42,7 @@ spec:
             - name: shm-size
               value: "2g"
             - name: HUGGING_FACE_HUB_TOKEN
-              value: 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1lmnnkjuy
+              value: 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
             - name: MAX_CONCURRENT_REQUESTS
               value: "128"
             - name: MAX_BATCH_TOTAL_TOKENS
@@ -66,16 +59,21 @@ spec:
           volumeMounts:
             - mountPath: /data
               name: llm
+      tolerations:
+        - key: "nvidia.com/gpu"
+          effect: "NoSchedule"
+          value: "present"
       volumes:
         - name: llm
 ---
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
   labels:
     purpose: llm-demo-10
   name: llm-inference-10
-  namespace: green
 spec:
   ports:
     - port: 80
