@@ -88,7 +88,7 @@ EOF
 
 # Step 1: Apply the manifests
 echo "Applying Kubernetes manifests..."
-# echo "$MANIFEST" | kubectl apply -f -
+echo "$MANIFEST" | kubectl apply -f -
 
 # Step 2: Wait for the deployment to become ready
 echo "Waiting for deployment to become ready..."
