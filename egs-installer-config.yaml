@@ -12,7 +12,7 @@ skip_on_verify_fail: true  # If set to true, skip steps where verification fails
 
 # Troubleshooting mode settings
 enable_troubleshoot:
-  enabled: true # Global Enable Troubleshooting mode for additional logs and checks
+  enabled: false # Global Enable Troubleshooting mode for additional logs and checks
   resource_types:
     - pods
     - deployments
@@ -109,6 +109,8 @@ kubeslice_controller_egs:
   verify_install_timeout: 30  # Timeout for the controller installation verification (in seconds)
   skip_on_verify_fail: true  # If verification fails, do not skip the step
 
+controller_enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
+
 # Kubeslice UI installation settings
 kubeslice_ui_egs:
   skip_installation: false  # Do not skip the installation of the UI
@@ -161,6 +163,8 @@ kubeslice_worker_egs:
     # local_prometheus_namespace: egs-monitoring  # Namespace where Prometheus is deployed
     # local_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus
     # local_prometheus_service_type: ClusterIP  # Service type for Prometheus (accessible only within the cluster)
+
+worker_enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
 
 # Project and cluster registration settings
 enable_project_creation: true  # Enable project creation in Kubeslice
@@ -272,6 +276,8 @@ additional_apps:
     verify_install: false  # Verify the installation of Prometheus
     verify_install_timeout: 600  # Timeout for verification (in seconds)
     skip_on_verify_fail: true  # Do not skip if verification fails
+
+apps_enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
 
 # Enable custom applications
 enable_custom_apps: true  # Set to true to enable custom apps

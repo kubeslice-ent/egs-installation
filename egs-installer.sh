@@ -728,6 +728,11 @@ parse_yaml() {
         GLOBAL_SKIP_ON_VERIFY_FAIL="false" # Default to error out if not specified
     fi
 
+    GLOBAL_ENABLE_TROUBLESHOOT=$(yq e '.enable_troubleshoot.enabled' "$yaml_file")
+    if [ -z "$GLOBAL_ENABLE_TROUBLESHOOT" ] || [ "$GLOBAL_ENABLE_TROUBLESHOOT" = "null" ]; then
+        GLOBAL_ENABLE_TROUBLESHOOT="false" # Default to false if not specified
+    fi
+
     # Extract the list of required binaries
     REQUIRED_BINARIES=($(yq e '.required_binaries[]' "$yaml_file"))
     if [ ${#REQUIRED_BINARIES[@]} -eq 0 ]; then
@@ -782,11 +787,6 @@ parse_yaml() {
     ENABLE_INSTALL_WORKER=$(yq e '.enable_install_worker' "$yaml_file")
     if [ -z "$ENABLE_INSTALL_WORKER" ] || [ "$ENABLE_INSTALL_WORKER" = "null" ]; then
         ENABLE_INSTALL_WORKER="true"
-    fi
-
-    ENABLE_TROUBLESHOOT=$(yq e '.enable_troubleshoot.enabled' "$yaml_file")
-    if [ -z "$ENABLE_TROUBLESHOOT" ] || [ "$ENABLE_TROUBLESHOOT" = "null" ]; then
-        ENABLE_TROUBLESHOOT="false"
     fi
 
     # Extract values for kubeslice-controller-egs
@@ -878,6 +878,11 @@ parse_yaml() {
     KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL=$(yq e '.kubeslice_controller_egs.skip_on_verify_fail' "$yaml_file")
     if [ -z "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL" ] || [ "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL" = "null" ]; then
         KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL="$GLOBAL_SKIP_ON_VERIFY_FAIL"
+    fi
+
+    KUBESLICE_CONTROLLER_ENABLE_TROUBLESHOOT=$(yq e '.kubeslice_controller_egs.enable_troubleshoot' "$yaml_file")
+    if [ -z "$KUBESLICE_CONTROLLER_ENABLE_TROUBLESHOOT" ] || [ "$KUBESLICE_CONTROLLER_ENABLE_TROUBLESHOOT" = "null" ]; then
+        KUBESLICE_CONTROLLER_ENABLE_TROUBLESHOOT="$GLOBAL_ENABLE_TROUBLESHOOT"
     fi
 
     # Extract values for kubeslice-ui-egs
@@ -1057,6 +1062,11 @@ parse_yaml() {
         KUBESLICE_WORKERS+=("$WORKER_NAME|$WORKER_SKIP_INSTALLATION|$WORKER_USE_GLOBAL_KUBECONFIG|$WORKER_KUBECONFIG|$WORKER_KUBECONTEXT|$WORKER_NAMESPACE|$WORKER_RELEASE_NAME|$WORKER_CHART_NAME|$WORKER_REPO_URL|$WORKER_USERNAME|$WORKER_PASSWORD|$WORKER_VALUES_FILE|$WORKER_INLINE_VALUES|$WORKER_IMAGE_PULL_SECRET_REPO|$WORKER_IMAGE_PULL_SECRET_USERNAME|$WORKER_IMAGE_PULL_SECRET_PASSWORD|$WORKER_IMAGE_PULL_SECRET_EMAIL|$WORKER_HELM_FLAGS|$WORKER_VERIFY_INSTALL|$WORKER_VERIFY_INSTALL_TIMEOUT|$WORKER_SKIP_ON_VERIFY_FAIL")
     done
 
+    KUBESLICE_WORKER_ENABLE_TROUBLESHOOT=$(yq e '.worker_enable_troubleshoot' "$yaml_file")
+    if [ -z "$KUBESLICE_WORKER_ENABLE_TROUBLESHOOT" ] || [ "$KUBESLICE_WORKER_ENABLE_TROUBLESHOOT" = "null" ]; then
+        KUBESLICE_WORKER_ENABLE_TROUBLESHOOT="$GLOBAL_ENABLE_TROUBLESHOOT"
+    fi
+
     # Extract values for projects
     ENABLE_PROJECT_CREATION=$(yq e '.enable_project_creation' "$yaml_file")
     if [ -z "$ENABLE_PROJECT_CREATION" ] || [ "$ENABLE_PROJECT_CREATION" = "null" ]; then
@@ -1183,6 +1193,11 @@ parse_yaml() {
 
         ADDITIONAL_APPS+=("$APP_NAME|$APP_SKIP_INSTALLATION|$APP_USE_GLOBAL_KUBECONFIG|$APP_KUBECONFIG|$APP_KUBECONTEXT|$APP_NAMESPACE|$APP_RELEASE_NAME|$APP_CHART_NAME|$APP_REPO_URL|$APP_USERNAME|$APP_PASSWORD|$APP_VALUES_FILE|$APP_INLINE_VALUES|$APP_IMAGE_PULL_SECRET_REPO|$APP_IMAGE_PULL_SECRET_USERNAME|$APP_IMAGE_PULL_SECRET_PASSWORD|$APP_IMAGE_PULL_SECRET_EMAIL|$APP_HELM_FLAGS|$APP_VERIFY_INSTALL|$APP_VERIFY_INSTALL_TIMEOUT|$APP_SKIP_ON_VERIFY_FAIL")
     done
+
+    APPS_ENABLE_TROUBLESHOOT=$(yq e '.apps_enable_troubleshoot' "$yaml_file")
+    if [ -z "$APPS_ENABLE_TROUBLESHOOT" ] || [ "$APPS_ENABLE_TROUBLESHOOT" = "null" ]; then
+        APPS_ENABLE_TROUBLESHOOT="$GLOBAL_ENABLE_TROUBLESHOOT"
+    fi
 
     echo "✔️ Parsing completed."
 }
@@ -3304,22 +3319,28 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     fi
 fi
 
-if [ "$ENABLE_TROUBLESHOOT" = "true" ]; then
-    # Create a unique directory for the resources
-    date=$(date +%Y%m%d_%H%M%S)
+# Create a unique directory for the resources
+date=$(date +%Y%m%d_%H%M%S)
 
-    # Fetch Resource details of controller
+# Fetch Resource details of controller
+if [ "$KUBESLICE_CONTROLLER_ENABLE_TROUBLESHOOT" = "true" ]; then
     echo "🔍 Fectching the resource details resources of controller..."
     fetch_controller_resources "$date"
+fi
 
-    # Fetch Resource details of worker
+# Fetch Resource details of worker
+if [ "$KUBESLICE_WORKER_ENABLE_TROUBLESHOOT" = "true" ]; then
     echo "🔍 Fectching the resource details resources of worker..."
     fetch_worker_resources "$date"
+fi
 
-    # Fetch Resource details of additional applications
+# Fetch Resource details of additional applications
+if [ "$APPS_ENABLE_TROUBLESHOOT" = "true" ]; then
     echo "🔍 Fectching the resource details of additional applications..."
     fetch_additional_app_resources "$date"
+done
 
+if [ "$KUBESLICE_CONTROLLER_ENABLE_TROUBLESHOOT" = "true" ] || [ "$KUBESLICE_WORKER_ENABLE_TROUBLESHOOT" = "true" ] || [ "$APPS_ENABLE_TROUBLESHOOT" = "true" ]; then
     exit 0
 fi
 
