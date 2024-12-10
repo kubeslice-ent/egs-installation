@@ -3338,7 +3338,7 @@ fi
 if [ "$APPS_ENABLE_TROUBLESHOOT" = "true" ]; then
     echo "🔍 Fectching the resource details of additional applications..."
     fetch_additional_app_resources "$date"
-done
+fi
 
 if [ "$KUBESLICE_CONTROLLER_ENABLE_TROUBLESHOOT" = "true" ] || [ "$KUBESLICE_WORKER_ENABLE_TROUBLESHOOT" = "true" ] || [ "$APPS_ENABLE_TROUBLESHOOT" = "true" ]; then
     exit 0
