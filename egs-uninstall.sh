@@ -1583,10 +1583,6 @@ uninstall_helm_chart_and_cleanup() {
     fi
 
     echo "-----------------------------------------"
-    echo "🧹 Cleaning up any remaining Kubernetes objects..."
-    delete_kubernetes_objects
-
-    echo "-----------------------------------------"
     echo "✔️ Completed uninstallation and cleanup for release: $release_name"
     echo "-----------------------------------------"
 }
@@ -1926,11 +1922,112 @@ delete_projects_in_controller() {
         else
             echo "✔️  Project '$project_name' deleted successfully or was not found in namespace '$namespace'."
         fi
-
+        echo "✔️ deletion of all objects Project '$project_name' starting."
+        api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
+        continue_on_error cleanup_resources_and_webhooks "kubeslice-$project_name" "${api_groups[@]}"
+        echo "✔️ deletion of all objects Project '$project_name' completed."
         echo "-----------------------------------------"
     done
     echo "✔️ Project deletion in controller cluster complete."
 }
+
+########################## EGS ALL Clear ##################################################
+
+# Function to list all resources for a specific API group in the namespace
+list_resources_in_group() {
+    local namespace=$1
+    local api_group=$2
+
+    # Get all resource kinds in the API group
+    kubectl api-resources --verbs=list --namespaced -o name | grep "$api_group" | while read -r resource; do
+        # List all resources of this kind in the namespace
+        kubectl -n "$namespace" get "$resource" -o name
+    done
+}
+
+# Function to remove finalizers from a resource
+remove_finalizers() {
+    local namespace=$1
+    local resource=$2
+
+    echo "🗑 Processing resource: $resource in namespace: $namespace"
+
+    # Fetch the resource YAML and remove unwanted fields
+    kubectl -n "$namespace" get "$resource" -o json > ./resource.json
+    if [[ $? -ne 0 ]]; then
+        echo "❌ Failed to fetch resource: $resource"
+        return
+    fi
+
+    # Remove the finalizers and clean up unnecessary metadata
+    jq 'del(.metadata.finalizers[]? | select(. == "inventory.kubeslice.io/hubspoke-gpunodeinventory-finalizer")) |
+        del(.metadata.ownerReferences) |
+        del(.metadata.managedFields)' ./resource.json > ./patched-resource.json
+
+    # Apply the patched resource
+    kubectl -n "$namespace" replace -f ./patched-resource.json
+    if [[ $? -eq 0 ]]; then
+        echo "✅ Finalizers removed from $resource"
+    else
+        echo "❌ Failed to remove finalizers from $resource"
+    fi
+
+    # Clean up temporary files
+    rm -f ./resource.json ./patched-resource.json
+}
+
+# Function to delete validating webhook configurations
+delete_validating_webhooks() {
+    local webhooks=("$@")
+
+    for webhook in "${webhooks[@]}"; do
+        echo "🗑 Removing validating webhook configuration: $webhook"
+        kubectl delete validatingwebhookconfigurations "$webhook" --ignore-not-found
+        if [[ $? -eq 0 ]]; then
+            echo "✅ Validating webhook configuration '$webhook' removed"
+        else
+            echo "❌ Failed to remove validating webhook configuration '$webhook'"
+        fi
+    done
+}
+
+# Main function to process all API groups and validating webhooks
+cleanup_resources_and_webhooks() {
+    local namespace=$1
+    shift
+    local api_groups=("$@")
+    local webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
+
+    echo "🛠 Cleaning up namespace: $namespace"
+    for api_group in "${api_groups[@]}"; do
+        echo "🔍 Processing API group: $api_group"
+        resources=$(list_resources_in_group "$namespace" "$api_group")
+
+        if [[ -z "$resources" ]]; then
+            echo "⚠️  No resources found in API group: $api_group"
+            continue
+        fi
+
+        echo "The following resources will be cleaned up:"
+        echo "$resources"
+
+
+        # Process each resource
+        echo "$resources" | while read -r resource; do
+            remove_finalizers "$namespace" "$resource"
+        done
+    done
+
+    echo "🛠 Cleaning up validating webhook configurations"
+    delete_validating_webhooks "${webhooks[@]}"
+
+    echo "🎉 Cleanup completed for namespace: $namespace"
+}
+
+
+############################### EGS ALL Clear ########################################################################
+
+
 
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
@@ -2094,6 +2191,9 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
 
         # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+        api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
+        continue_on_error cleanup_resources_and_webhooks "$namespace" "${api_groups[@]}"
+        continue_on_error delete_kubernetes_objects
     done
 fi
 
@@ -2106,12 +2206,18 @@ fi
 # Process kubeslice-controller uninstallation if enabled
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
+    api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
+    continue_on_error cleanup_resources_and_webhooks "$KUBESLICE_CONTROLLER_NAMESPACE" "${api_groups[@]}"
 fi
 
 # Process kubeslice-ui uninstallation if enabled
 if [ "$ENABLE_INSTALL_UI" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
+    namespace="$KUBESLICE_UI_NAMESPACE"
+    continue_on_error delete_kubernetes_objects
 fi
+
+
 
 trap display_summary EXIT
 
