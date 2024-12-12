@@ -1829,6 +1829,7 @@ delete_slices_in_controller() {
                 echo "❌ Error: Failed to delete SliceConfig '$name' in namespace '$namespace' after $max_retries attempts."
                 exit 1
             fi
+        done
 
         echo "🔍 Verifying sliceconfig in 'kubeslice-$project_name' deletion..."
         if kubectl get sliceconfig.controller.kubeslice.io --all -n "kubeslice-$project_name" --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
