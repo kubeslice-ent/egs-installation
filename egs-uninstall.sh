@@ -1561,7 +1561,7 @@ uninstall_helm_chart_and_cleanup() {
 
             if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
                 echo "❌ Error: Helm release '$release_name' was not fully uninstalled. Deleting all resources manually..."
-                delete_kubernetes_objects
+                #delete_kubernetes_objects
                 echo "🔄 Retrying Helm uninstallation..."
                 uninstall_helm_chart
                 if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
@@ -1643,14 +1643,14 @@ unregister_clusters_in_controller() {
         echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'"
         echo "-----------------------------------------"
 
-        kubectl delete cluster "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
+        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
         if [ $? -ne 0 ]; then
             echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'."
             return 1
         fi
 
         echo "🔍 Verifying cluster unregistration for '$cluster_name'..."
-        if kubectl get cluster "$cluster_name" -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+        if kubectl get cluster.controller.kubeslice.io "$cluster_name" -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
             echo "❌ Error: Cluster '$cluster_name' still exists in project '$project_name'."
             return 1
         else
@@ -1721,7 +1721,7 @@ delete_projects_in_controller() {
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
             if [ $? -eq 0 ]; then
                 break
             elif [ $i -lt $max_retries ]; then
@@ -1734,7 +1734,7 @@ delete_projects_in_controller() {
         done
 
         echo "🔍 Verifying project '$project_name' deletion..."
-        if kubectl get project "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+        if kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
             echo "❌ Error: Project '$project_name' still exists in namespace '$namespace'."
             return 1
         else
@@ -1794,25 +1794,30 @@ delete_slices_in_controller() {
         echo "🚀 Deleting all slices in '$project_name' in namespace 'kubeslice-$project_name'"
         echo "-----------------------------------------"
 
-        kubectl get sliceconfig --kubeconfig $kubeconfig_path $context_arg -n "kubeslice-$project_name" -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name --no-headers | while read namespace name; do
+        kubectl get sliceconfig.controller.kubeslice.io --kubeconfig $kubeconfig_path $context_arg -n "kubeslice-$project_name" -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name --no-headers | while read namespace name; do
             retry_count=0
             success=false
             until [ $retry_count -ge $max_retries ]; do
                 # Patch the SliceConfig to remove the specific entry
-                kubectl patch sliceconfig --kubeconfig $kubeconfig_path $context_arg $name -n $namespace --type=json -p='[
+                kubectl patch sliceconfig.controller.kubeslice.io --kubeconfig $kubeconfig_path $context_arg $name -n $namespace --type=json -p='[
                     {
                         "op": "remove",
                         "path": "/spec/namespaceIsolationProfile/applicationNamespaces/0"
                     }
                 ]'
-                # Check if the patch was successful
+                patch_status=$?
+
+                if [ $patch_status -eq 0 ]; then
+                    echo "✅ Successfully patched SliceConfig '$name'. Proceeding with deletion."
+                elif [ $patch_status -ne 0 ]; then
+                    echo "⚠️  Nothing to patch or patch failed. Proceeding with deletion."   
+                fi
+
+                # Attempt to delete the SliceConfig after patching
+                kubectl delete sliceconfig.controller.kubeslice.io $name -n $namespace --kubeconfig $kubeconfig_path $context_arg
                 if [ $? -eq 0 ]; then
-                    # Delete the SliceConfig after patching
-                    kubectl delete sliceconfig $name -n $namespace --kubeconfig $kubeconfig_path $context_arg
-                    if [ $? -eq 0 ]; then
-                        success=true
-                        break
-                    fi
+                    success=true
+                    break
                 fi
 
                 echo "⚠️  Retrying deletion of SliceConfig '$name' in namespace '$namespace' ($((retry_count + 1))/$max_retries)..."
@@ -1824,10 +1829,9 @@ delete_slices_in_controller() {
                 echo "❌ Error: Failed to delete SliceConfig '$name' in namespace '$namespace' after $max_retries attempts."
                 exit 1
             fi
-        done
 
         echo "🔍 Verifying sliceconfig in 'kubeslice-$project_name' deletion..."
-        if kubectl get sliceconfig --all -n "kubeslice-$project_name" --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+        if kubectl get sliceconfig.controller.kubeslice.io --all -n "kubeslice-$project_name" --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
             echo "❌ Error: sliceconfig in '$project_name' still exists in namespace kubeslice-$project_name."
             exit 1
         else
@@ -1897,10 +1901,10 @@ delete_projects_in_controller() {
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
             if [ $? -eq 0 ]; then
                 break
-            elif kubectl get project "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+            elif kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
                 if [ $i -lt $max_retries ]; then
                     echo "⚠️  Warning: Failed to delete project '$project_name' in namespace '$namespace'. Retrying in $retry_delay seconds... ($i/$max_retries)"
                     sleep $retry_delay
@@ -1915,7 +1919,7 @@ delete_projects_in_controller() {
         done
 
         echo "🔍 Verifying project '$project_name' deletion..."
-        if kubectl get project "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+        if kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
             echo "❌ Error: Project '$project_name' still exists in namespace '$namespace'."
             return 1
         else
@@ -2059,6 +2063,11 @@ fi
 #Delete Slice
 continue_on_error delete_slices_in_controller
 
+# UnRegister clusters in the controller cluster after projects have been created
+if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
+    continue_on_error unregister_clusters_in_controller
+fi
+
 # Inside the loop where you process each worker
 if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
@@ -2092,19 +2101,15 @@ if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
     continue_on_error delete_projects_in_controller
 fi
 
-# UnRegister clusters in the controller cluster after projects have been created
-if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
-    continue_on_error unregister_clusters_in_controller
+
+# Process kubeslice-controller uninstallation if enabled
+if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
+    continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
 fi
 
 # Process kubeslice-ui uninstallation if enabled
 if [ "$ENABLE_INSTALL_UI" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
-fi
-
-# Process kubeslice-controller uninstallation if enabled
-if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
-    continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
 fi
 
 trap display_summary EXIT
