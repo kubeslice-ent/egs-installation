@@ -1062,10 +1062,33 @@ parse_yaml() {
         KUBESLICE_WORKERS+=("$WORKER_NAME|$WORKER_SKIP_INSTALLATION|$WORKER_USE_GLOBAL_KUBECONFIG|$WORKER_KUBECONFIG|$WORKER_KUBECONTEXT|$WORKER_NAMESPACE|$WORKER_RELEASE_NAME|$WORKER_CHART_NAME|$WORKER_REPO_URL|$WORKER_USERNAME|$WORKER_PASSWORD|$WORKER_VALUES_FILE|$WORKER_INLINE_VALUES|$WORKER_IMAGE_PULL_SECRET_REPO|$WORKER_IMAGE_PULL_SECRET_USERNAME|$WORKER_IMAGE_PULL_SECRET_PASSWORD|$WORKER_IMAGE_PULL_SECRET_EMAIL|$WORKER_HELM_FLAGS|$WORKER_VERIFY_INSTALL|$WORKER_VERIFY_INSTALL_TIMEOUT|$WORKER_SKIP_ON_VERIFY_FAIL")
     done
 
-    KUBESLICE_WORKER_ENABLE_TROUBLESHOOT=$(yq e '.worker_enable_troubleshoot' "$yaml_file")
-    if [ -z "$KUBESLICE_WORKER_ENABLE_TROUBLESHOOT" ] || [ "$KUBESLICE_WORKER_ENABLE_TROUBLESHOOT" = "null" ]; then
-        KUBESLICE_WORKER_ENABLE_TROUBLESHOOT="$GLOBAL_ENABLE_TROUBLESHOOT"
-    fi
+    # Extract values for kubeslice-worker-egs troubleshooting
+    WORKERS_COUNT_TROUBLESHOOT=$(yq e '.kubeslice_worker_egs | length' "$yaml_file")
+
+    KUBESLICE_WORKERS_TROUBLESHOOT=()
+    for ((i = 0; i < WORKERS_COUNT_TROUBLESHOOT; i++)); do
+        WORKER_NAME_TROUBLESHOOT=$(yq e ".kubeslice_worker_egs[$i].name" "$yaml_file")
+        WORKER_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT=$(yq e ".kubeslice_worker_egs[$i].use_global_kubeconfig" "$yaml_file")
+        if [ -z "$WORKER_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT" ] || [ "$WORKER_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT" = "null" ]; then
+            WORKER_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT="true"
+        fi
+        WORKER_KUBECONFIG_TROUBLESHOOT=$(yq e ".kubeslice_worker_egs[$i].kubeconfig" "$yaml_file")
+        WORKER_KUBECONFIG_TROUBLESHOOT="${WORKER_KUBECONFIG_TROUBLESHOOT:-$GLOBAL_KUBECONFIG}"
+
+        WORKER_KUBECONTEXT_TROUBLESHOOT=$(yq e ".kubeslice_worker_egs[$i].kubecontext" "$yaml_file")
+        if [ -z "$WORKER_KUBECONTEXT_TROUBLESHOOT" ] || [ "$WORKER_KUBECONTEXT_TROUBLESHOOT" = "null" ]; then
+            WORKER_KUBECONTEXT_TROUBLESHOOT="$GLOBAL_KUBECONTEXT"
+        fi
+
+        WORKER_NAMESPACE_TROUBLESHOOT=$(yq e ".kubeslice_worker_egs[$i].namespace" "$yaml_file")
+
+        WORKER_ENABLE_TROUBLESHOOT=$(yq e ".kubeslice_worker_egs[$i].enable_troubleshoot" "$yaml_file")
+        if [ -z "$WORKER_ENABLE_TROUBLESHOOT" ] || [ "$WORKER_ENABLE_TROUBLESHOOT" = "null" ]; then
+            WORKER_ENABLE_TROUBLESHOOT="$GLOBAL_ENABLE_TROUBLESHOOT"
+        fi
+
+        KUBESLICE_WORKERS_TROUBLESHOOT+=("$WORKER_NAME_TROUBLESHOOT|$WORKER_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT|$WORKER_KUBECONFIG_TROUBLESHOOT|$WORKER_KUBECONTEXT_TROUBLESHOOT|$WORKER_NAMESPACE_TROUBLESHOOT|$WORKER_ENABLE_TROUBLESHOOT")
+    done
 
     # Extract values for projects
     ENABLE_PROJECT_CREATION=$(yq e '.enable_project_creation' "$yaml_file")
@@ -1194,10 +1217,33 @@ parse_yaml() {
         ADDITIONAL_APPS+=("$APP_NAME|$APP_SKIP_INSTALLATION|$APP_USE_GLOBAL_KUBECONFIG|$APP_KUBECONFIG|$APP_KUBECONTEXT|$APP_NAMESPACE|$APP_RELEASE_NAME|$APP_CHART_NAME|$APP_REPO_URL|$APP_USERNAME|$APP_PASSWORD|$APP_VALUES_FILE|$APP_INLINE_VALUES|$APP_IMAGE_PULL_SECRET_REPO|$APP_IMAGE_PULL_SECRET_USERNAME|$APP_IMAGE_PULL_SECRET_PASSWORD|$APP_IMAGE_PULL_SECRET_EMAIL|$APP_HELM_FLAGS|$APP_VERIFY_INSTALL|$APP_VERIFY_INSTALL_TIMEOUT|$APP_SKIP_ON_VERIFY_FAIL")
     done
 
-    APPS_ENABLE_TROUBLESHOOT=$(yq e '.apps_enable_troubleshoot' "$yaml_file")
-    if [ -z "$APPS_ENABLE_TROUBLESHOOT" ] || [ "$APPS_ENABLE_TROUBLESHOOT" = "null" ]; then
-        APPS_ENABLE_TROUBLESHOOT="$GLOBAL_ENABLE_TROUBLESHOOT"
-    fi
+    # Extract values for additional applications troubleshooting
+    ADDITIONAL_APPS_COUNT_TROUBLESHOOT=$(yq e '.additional_apps | length' "$yaml_file")
+
+    ADDITIONAL_APPS_TROUBLESHOOT=()
+    for ((i = 0; i < ADDITIONAL_APPS_COUNT_TROUBLESHOOT; i++)); do
+        APP_NAME_TROUBLESHOOT=$(yq e ".additional_apps[$i].name" "$yaml_file")
+        APP_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT=$(yq e ".additional_apps[$i].use_global_kubeconfig" "$yaml_file")
+        if [ -z "$APP_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT" ] || [ "$APP_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT" = "null" ]; then
+            APP_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT="true"
+        fi
+        APP_KUBECONFIG_TROUBLESHOOT=$(yq e ".additional_apps[$i].kubeconfig" "$yaml_file")
+        APP_KUBECONFIG_TROUBLESHOOT="${APP_KUBECONFIG_TROUBLESHOOT:-$GLOBAL_KUBECONFIG}"
+
+        APP_KUBECONTEXT_TROUBLESHOOT=$(yq e ".additional_apps[$i].kubecontext" "$yaml_file")
+        if [ -z "$APP_KUBECONTEXT_TROUBLESHOOT" ] || [ "$APP_KUBECONTEXT_TROUBLESHOOT" = "null" ]; then
+            APP_KUBECONTEXT_TROUBLESHOOT="$GLOBAL_KUBECONTEXT"
+        fi
+
+        APP_NAMESPACE_TROUBLESHOOT=$(yq e ".additional_apps[$i].namespace" "$yaml_file")
+
+        APP_ENABLE_TROUBLESHOOT=$(yq e ".additional_apps[$i].enable_troubleshoot" "$yaml_file")
+        if [ -z "$APP_ENABLE_TROUBLESHOOT" ] || [ "$APP_ENABLE_TROUBLESHOOT" = "null" ]; then
+            APP_ENABLE_TROUBLESHOOT="$GLOBAL_ENABLE_TROUBLESHOOT"
+        fi
+
+        ADDITIONAL_APPS_TROUBLESHOOT+=("$APP_NAME_TROUBLESHOOT|$APP_USE_GLOBAL_KUBECONFIG_TROUBLESHOOT|$APP_KUBECONFIG_TROUBLESHOOT|$APP_KUBECONTEXT_TROUBLESHOOT|$APP_NAMESPACE_TROUBLESHOOT|$APP_ENABLE_TROUBLESHOOT")
+    done
 
     echo "✔️ Parsing completed."
 }
@@ -2967,11 +3013,12 @@ fetch_resource_details() {
         if [ -n "$resources" ]; then
             # Process each resource
             while read -r resource; do
-                # Create directory for storing resource details
-                mkdir -p "$date/$kubecontext/$namespace/$resource_type"
 
                 # Fetch details of "kubectl get <resources> -o wide -n <namespace>"
                 if [ ! -e "$date/$kubecontext/$namespace/$resource_type/kubectl_get_$resource_type-output.txt" ] && [ "$resource_type" != "crds" ]; then
+                    # Create directory for storing resource details
+                    mkdir -p "$date/$kubecontext/$namespace/$resource_type"
+
                     echo "   📄 Fetching details for $resource_type: $resource..."
                     kubectl --kubeconfig $kubeconfig_path --context $kubecontext \
                         get $resource_type -o wide -n $namespace >"$date/$kubecontext/$namespace/$resource_type/kubectl_get_$resource_type-output.txt"
@@ -2980,6 +3027,9 @@ fetch_resource_details() {
 
                 # Get details of the resource and save them in the directory
                 if [ "$resource_type" != "pods" ] && [ "$resource_type" != "crds" ]; then
+                    # Create directory for storing resource details
+                    mkdir -p "$date/$kubecontext/$namespace/$resource_type"
+
                     echo "   📄 Fetching details for $resource_type: $resource..."
                     kubectl --kubeconfig $kubeconfig_path --context $kubecontext \
                         get $resource_type $resource -n $namespace -o yaml >"$date/$kubecontext/$namespace/$resource_type/$resource.yaml"
@@ -2987,6 +3037,9 @@ fetch_resource_details() {
 
                 # Get logs for containers in the resource (if applicable)
                 if [ "$resource_type" == "pods" ]; then
+                    # Create directory for storing resource details
+                    mkdir -p "$date/$kubecontext/$namespace/$resource_type"
+
                     # Create a directory for the resource inside the namespace
                     mkdir -p "$date/$kubecontext/$namespace/$resource_type/logs/$resource"
                     # Loop over each container in the pod
@@ -3011,6 +3064,9 @@ fetch_resource_details() {
                             for crd in $crds; do
                                 # Fetch crds for each container and save them in the directory
                                 if [ -n "$(kubectl --kubeconfig $kubeconfig_path --context $kubecontext get $crd -n $namespace 2>/dev/null)" ]; then
+                                    # Create directory for storing resource details
+                                    mkdir -p "$date/$kubecontext/$namespace/$resource_type"
+
                                     # Create a directory for the resource inside the namespace
                                     mkdir -p "$date/$kubecontext/$namespace/$resource_type/$api_group/$crd"
                                     if [ ! -e "$date/$kubecontext/$namespace/$resource_type/$api_group/$crd/kubectl_get_$crd.txt" ]; then
@@ -3031,6 +3087,8 @@ fetch_resource_details() {
                                                 describe $crd $crd_instances -n $namespace >"$date/$kubecontext/$namespace/$resource_type/$api_group/$crd/$crd_instance.txt"
                                         done <<<"$crd_instances"
                                     fi
+                                else
+                                    echo "ℹ️ No resources of type '$crd' found in namespace '$namespace'."
                                 fi
                             done
                         fi
@@ -3051,26 +3109,33 @@ fetch_resource_details() {
     # Fetch events for all namespaces
     echo "   📄 Fetching events for all namespaces..."
     kubectl --kubeconfig $kubeconfig_path --context $kubecontext \
-        get events --all-namespaces >>"$date/$kubecontext/all_namespaces_events.txt" 2>&1
+        get events --all-namespaces >"$date/$kubecontext/all_namespaces_events.txt" 2>&1
 
     # Fetch node details
     echo "   📄 Fetching node details..."
     kubectl --kubeconfig $kubeconfig_path --context $kubecontext \
-        get nodes -o wide --show-labels >>"$date/$kubecontext/nodes_output.txt"
+        get nodes -o wide --show-labels >"$date/$kubecontext/nodes_output.txt"
 }
 
 # Function to fetch the details of resources in the controller
 fetch_controller_resources() {
-    echo "🔍 Starting to fetch the details of resources in the controller..."
+    local controller_use_global_kubeconfig=$1
+    local controller_kubeconfig_path=$2
+    local controller_kubecontext=$3
+    local controller_namespace=$4
+    local date=$5
+
+    local resource_types=($(get_json_array_as_string '.enable_troubleshoot.resource_types'))
+    local api_groups=($(get_json_array_as_string '.enable_troubleshoot.api_groups'))
 
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "Fetch Controller Resources" \
-        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
+        "$controller_use_global_kubeconfig" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
-        "$CONTROLLER_KUBECONFIG" \
-        "$CONTROLLER_KUBECONTEXT")
+        "$controller_kubeconfig_path" \
+        "$controller_kubecontext")
 
     # Print output variables after calling kubeaccess_precheck
     echo "🔧 kubeaccess_precheck - Output Variables: Fetch Controller Resources "
@@ -3097,184 +3162,103 @@ fetch_controller_resources() {
         context_arg="--context $kubecontext"
     fi
 
-    controller_namespace=$KUBESLICE_CONTROLLER_NAMESPACE
+    local project_namespace=()
     for project in "${KUBESLICE_PROJECTS[@]}"; do
         IFS="|" read -r project_name project_username <<<"$project"
         project_namespace+=("kubeslice-$project_name")
     done
 
-    local resource_types=($(get_json_array_as_string '.enable_troubleshoot.resource_types'))
-    local api_groups=($(get_json_array_as_string '.enable_troubleshoot.api_groups'))
-    local date=$1
-
     echo "🔧 Variables:"
     echo "  kubeconfig_path=$kubeconfig_path"
     echo "  context_arg=$context_arg"
     echo "  Controller namespace=$controller_namespace"
-    echo "  Project namespace=$project_namespace"
+    echo "  Project namespace=${project_namespace[@]}"
     echo "  resource_types=${resource_types[@]}"
     echo "  api_groups=${api_groups[@]}"
     echo "-----------------------------------------"
 
-    echo "-----------------------------------------"
-    echo "🔍 Fetching resources in namespace '$controller_namespace' for Kubecontext '$kubecontext'"
-    echo "-----------------------------------------"
-
     # Fetch details of a resource and save it in a directory
     for namespace in "$controller_namespace" "${project_namespace[@]}"; do
-        fetch_resource_details "$kubeconfig_path" "$kubecontext" "$namespace" "$date"
-    done
-
-    echo "-----------------------------------------"
-    echo "✅ Resource details fetched successfully for namespace '$namespace' in Kubecontext '$kubecontext' and saved in ./$date/$kubecontext/$namespace Folder.."
-    echo "-----------------------------------------"
-
-    echo "✅ Resource fetching in controller Kubecontext $kubecontext complete."
-
-}
-
-# Function to fetch the details of resources in the worker
-fetch_worker_resources() {
-    echo "🔍 Starting to fetch the details of resources in the worker..."
-
-    for ((i = 0; i < ${#KUBESLICE_WORKERS[@]}; i++)); do
-        local worker_name=$(yq e ".kubeslice_worker_egs[$i].name" "$EGS_INPUT_YAML")
-        local use_global_kubeconfig=$(yq e ".kubeslice_worker_egs[$i].use_global_kubeconfig" "$EGS_INPUT_YAML")
-        local kubeconfig=$(yq e ".kubeslice_worker_egs[$i].kubeconfig" "$EGS_INPUT_YAML")
-        local kubecontext=$(yq e ".kubeslice_worker_egs[$i].kubecontext" "$EGS_INPUT_YAML")
-        local namespace=$(yq e ".kubeslice_worker_egs[$i].namespace" "$EGS_INPUT_YAML")
-
-        read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-            "Fetch Worker $worker_name Resources" \
-            "$use_global_kubeconfig" \
-            "$GLOBAL_KUBECONFIG" \
-            "$GLOBAL_KUBECONTEXT" \
-            "$kubeconfig" \
-            "$kubecontext")
-
-        # Print output variables after calling kubeaccess_precheck
-        echo "🔧 kubeaccess_precheck - Output Variables: Fetch Worker Resources "
-        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-        echo "-----------------------------------------"
-
-        # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
-        if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-            echo "🔍 Validating Kubecontext:"
-            echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
-
-            validate_kubecontext "$kubeconfig_path" "$kubecontext"
-        else
-            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-            echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
-            exit 1
-        fi
-
-        local context_arg=""
-        if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
-            context_arg="--context $kubecontext"
-        fi
-
-        local resource_types=($(get_json_array_as_string '.enable_troubleshoot.resource_types'))
-        local api_groups=($(get_json_array_as_string '.enable_troubleshoot.api_groups'))
-        local date=$1
-
-        echo "🔧 Variables:"
-        echo "  kubeconfig_path=$kubeconfig_path"
-        echo "  context_arg=$context_arg"
-        echo "  Worker namespace=$namespace"
-        echo "  resource_types=${resource_types[@]}"
-        echo "  api_groups=${api_groups[@]}"
-        echo "-----------------------------------------"
-
         echo "-----------------------------------------"
         echo "🔍 Fetching resources in namespace '$namespace' for Kubecontext '$kubecontext'"
         echo "-----------------------------------------"
 
-        # Fetch details of a resource and save it in a directory
-        fetch_resource_details "$kubeconfig_path" "$kubecontext" "$namespace" "$date"
-
-        echo "-----------------------------------------"
-        echo "✅ Resource details fetched successfully for namespace '$namespace' in Kubecontext '$kubecontext' and saved in ./$date/$kubecontext/$namespace Folders.."
-        echo "-----------------------------------------"
-
-        echo "✅ Resource fetching in worker Kubecontext $kubecontext complete."
-    done
-}
-
-# Function to fetch the details of resources in the additional applications
-fetch_additional_app_resources() {
-    echo "🔍 Starting to fetch the details of resources in the additional applications..."
-
-    for app_index in $(seq 0 $((${#ADDITIONAL_APPS[@]} - 1))); do
-        # Extracting application configuration from YAML using yq
-        local app=$(yq e ".additional_apps[$app_index]" "$EGS_INPUT_YAML")
-        local app_name=$(echo "$app" | yq e '.name' -)
-        local use_global_kubeconfig=$(echo "$app" | yq e '.use_global_kubeconfig' -)
-        local kubeconfig=$(echo "$app" | yq e '.kubeconfig' -)
-        local kubecontext=$(echo "$app" | yq e '.kubecontext' -)
-        local namespace=$(echo "$app" | yq e '.namespace' -)
-
-        read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-            "Fetch application $app_name Resources" \
-            "$use_global_kubeconfig" \
-            "$GLOBAL_KUBECONFIG" \
-            "$GLOBAL_KUBECONTEXT" \
-            "$kubeconfig" \
-            "$kubecontext")
-
-        # Print output variables after calling kubeaccess_precheck
-        echo "🔧 kubeaccess_precheck - Output Variables: Fetch Worker Resources "
-        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-        echo "-----------------------------------------"
-
-        # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
-        if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-            echo "🔍 Validating Kubecontext:"
-            echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
-
-            validate_kubecontext "$kubeconfig_path" "$kubecontext"
-        else
-            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-            echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
-            exit 1
-        fi
-
-        local context_arg=""
-        if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
-            context_arg="--context $kubecontext"
-        fi
-
-        local resource_types=($(get_json_array_as_string '.enable_troubleshoot.resource_types'))
-        local api_groups=($(get_json_array_as_string '.enable_troubleshoot.api_groups'))
-        local date=$1
-
-        echo "🔧 Variables:"
-        echo "  kubeconfig_path=$kubeconfig_path"
-        echo "  context_arg=$context_arg"
-        echo "  Additional app namespace=$namespace"
-        echo "  resource_types=${resource_types[@]}"
-        echo "  api_groups=${api_groups[@]}"
-        echo "-----------------------------------------"
-
-        echo "-----------------------------------------"
-        echo "🔍 Fetching resources in namespace '$namespace' for Kubecontext '$kubecontext'"
-        echo "-----------------------------------------"
-
-        # Fetch details of a resource and save it in a directory
         fetch_resource_details "$kubeconfig_path" "$kubecontext" "$namespace" "$date"
 
         echo "-----------------------------------------"
         echo "✅ Resource details fetched successfully for namespace '$namespace' in Kubecontext '$kubecontext' and saved in ./$date/$kubecontext/$namespace Folder.."
         echo "-----------------------------------------"
-
-        echo "✅ Resource fetching in additional application $app_name complete."
     done
+
+    echo "✅ Resource fetching in controller Kubecontext $kubecontext complete."
+
+}
+
+# Function to fetch the details of resources in the worker & additional applications
+fetch_worker_app_resources() {
+    local name=$1
+    local use_global_kubeconfig=$2
+    local kubeconfig_path=$3
+    local kubecontext=$4
+    local namespace=$5
+    local date=$6
+
+    local resource_types=($(get_json_array_as_string '.enable_troubleshoot.resource_types'))
+    local api_groups=($(get_json_array_as_string '.enable_troubleshoot.api_groups'))
+
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "Fetch $name Resources" \
+        "$use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$kubeconfig" \
+        "$kubecontext")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: Fetch Worker Resources "
+    echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
+
+    local context_arg=""
+    if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+        context_arg="--context $kubecontext"
+    fi
+
+    echo "🔧 Variables:"
+    echo "  kubeconfig_path=$kubeconfig_path"
+    echo "  context_arg=$context_arg"
+    echo "  $name namespace=$namespace"
+    echo "  resource_types=${resource_types[@]}"
+    echo "  api_groups=${api_groups[@]}"
+    echo "-----------------------------------------"
+
+    echo "-----------------------------------------"
+    echo "🔍 Fetching resources in namespace '$namespace' for Kubecontext '$kubecontext'"
+    echo "-----------------------------------------"
+
+    # Fetch details of a resource and save it in a directory
+    fetch_resource_details "$kubeconfig_path" "$kubecontext" "$namespace" "$date"
+
+    echo "-----------------------------------------"
+    echo "✅ Resource details fetched successfully for namespace '$namespace' in Kubecontext '$kubecontext' and saved in ./$date/$kubecontext/$namespace Folders.."
+    echo "-----------------------------------------"
+
+    echo "✅ Resource fetching in $name Kubecontext $kubecontext complete."
 }
 
 # Parse command-line arguments for options
@@ -3320,27 +3304,34 @@ if [ -n "$EGS_INPUT_YAML" ]; then
 fi
 
 # Create a unique directory for the resources
-date=$(date +%Y%m%d_%H%M%S)
+DATE=$(date +%Y%m%d_%H%M%S)
 
 # Fetch Resource details of controller
 if [ "$KUBESLICE_CONTROLLER_ENABLE_TROUBLESHOOT" = "true" ]; then
-    echo "🔍 Fectching the resource details resources of controller..."
-    fetch_controller_resources "$date"
+    echo "🔍 Starting to fetch the details of resources in the controller..."
+    fetch_controller_resources "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_NAMESPACE" "$DATE"
 fi
 
 # Fetch Resource details of worker
-if [ "$KUBESLICE_WORKER_ENABLE_TROUBLESHOOT" = "true" ]; then
-    echo "🔍 Fectching the resource details resources of worker..."
-    fetch_worker_resources "$date"
-fi
+for worker in "${KUBESLICE_WORKERS_TROUBLESHOOT[@]}"; do
+    IFS="|" read -r WORKER_NAME WORKER_USE_GLOBAL_KUBECONFIG WORKER_KUBECONFIG WORKER_KUBECONTEXT WORKER_NAMESPACE WORKER_ENABLE_TROUBLESHOOT <<<"$worker"
+    if [ "$WORKER_ENABLE_TROUBLESHOOT" = "true" ]; then
+        echo "🔍 Starting to fetch the details of resources in the worker $WORKER_NAME..."
+        fetch_worker_app_resources "$WORKER_NAME" "$WORKER_USE_GLOBAL_KUBECONFIG" "$WORKER_KUBECONFIG" "$WORKER_KUBECONTEXT" "$WORKER_NAMESPACE" "$DATE"
+    fi
+done
 
 # Fetch Resource details of additional applications
-if [ "$APPS_ENABLE_TROUBLESHOOT" = "true" ]; then
-    echo "🔍 Fectching the resource details of additional applications..."
-    fetch_additional_app_resources "$date"
-fi
+for app in "${ADDITIONAL_APPS_TROUBLESHOOT[@]}"; do
+    IFS="|" read -r APP_NAME APP_USE_GLOBAL_KUBECONFIG APP_KUBECONFIG APP_KUBECONTEXT APP_NAMESPACE APP_ENABLE_TROUBLESHOOT <<<"$app"
+    if [ "$APP_ENABLE_TROUBLESHOOT" = "true" ]; then
+        echo "🔍 Starting to fetch the details of resources in the additional application $APP_NAME..."
+        fetch_worker_app_resources "$APP_NAME" "$APP_USE_GLOBAL_KUBECONFIG" "$APP_KUBECONFIG" "$APP_KUBECONTEXT" "$APP_NAMESPACE" "$DATE"
+    fi
+done
 
-if [ "$KUBESLICE_CONTROLLER_ENABLE_TROUBLESHOOT" = "true" ] || [ "$KUBESLICE_WORKER_ENABLE_TROUBLESHOOT" = "true" ] || [ "$APPS_ENABLE_TROUBLESHOOT" = "true" ]; then
+if [ "$(ls -A "$DATE" 2>/dev/null)" ]; then
+    tar -czf "${DATE}.tar.gz" "$DATE"
     exit 0
 fi
 
