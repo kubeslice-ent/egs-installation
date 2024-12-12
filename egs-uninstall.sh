@@ -1922,7 +1922,10 @@ delete_projects_in_controller() {
         else
             echo "✔️  Project '$project_name' deleted successfully or was not found in namespace '$namespace'."
         fi
-
+        echo "✔️ deletion of all objects Project '$project_name' starting."
+        api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
+        continue_on_error cleanup_resources_and_webhooks "kubeslice-$project_name" "${api_groups[@]}"
+        echo "✔️ deletion of all objects Project '$project_name' completed."
         echo "-----------------------------------------"
     done
     echo "✔️ Project deletion in controller cluster complete."
@@ -2211,7 +2214,7 @@ if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
     api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
     continue_on_error cleanup_resources_and_webhooks "$KUBESLICE_CONTROLLER_NAMESPACE" "${api_groups[@]}"
-    $namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
+    namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
     continue_on_error delete_kubernetes_objects
 fi
 
@@ -2219,6 +2222,8 @@ fi
 if [ "$ENABLE_INSTALL_UI" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
 fi
+
+
 
 trap display_summary EXIT
 
