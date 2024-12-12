@@ -2011,12 +2011,6 @@ cleanup_resources_and_webhooks() {
         echo "The following resources will be cleaned up:"
         echo "$resources"
 
-        # Confirmation prompt
-        read -p "Do you want to proceed with cleaning resources for API group $api_group? (yes/no): " confirmation
-        if [[ "$confirmation" != "yes" ]]; then
-            echo "⛔ Operation aborted for API group: $api_group"
-            continue
-        fi
 
         # Process each resource
         echo "$resources" | while read -r resource; do
