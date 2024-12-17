@@ -1906,11 +1906,11 @@ delete_projects_in_controller() {
                     echo "⚠️  Warning: Failed to delete project '$project_name' in namespace '$namespace'. Retrying in $retry_delay seconds... ($i/$max_retries)"
                     sleep $retry_delay
                 else
-                    echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace' after $max_retries attempts."
+                    echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace' after $max_retries attempts." >&2 
                     return 1
                 fi
             else
-                echo "⚠️  Warning: Project '$project_name' not found in namespace '$namespace'. Proceeding to the next project."
+                echo "⚠️  Warning: Project '$project_name' not found in namespace '$namespace'. Proceeding to the next project." >&2
                 break
             fi
         done
@@ -1920,16 +1920,16 @@ delete_projects_in_controller() {
             echo "❌ Error: Project '$project_name' still exists in namespace '$namespace'."
             return 1
         else
-            echo "✔️  Project '$project_name' deleted successfully or was not found in namespace '$namespace'."
+            echo "✔️  Project '$project_name' deleted successfully or was not found in namespace '$namespace'." >&2
         fi
-        echo "✔️ deletion of all objects Project '$project_name' starting."
+        echo "✔️ deletion of all objects Project '$project_name' starting." >&2
         api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
         webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
         continue_on_error cleanup_resources_and_webhooks "kubeslice-$project_name" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$kubeconfig_path" "$kubecontext" "${api_groups[@]}" "${webhooks[@]}"
-        echo "✔️ deletion of all objects Project '$project_name' completed."
+        echo "✔️ deletion of all objects Project '$project_name' completed." >&2
         echo "-----------------------------------------"
     done
-    echo "✔️ Project deletion in controller cluster complete."
+    echo "✔️ Project deletion in controller cluster complete." >&2
 }
 
 ########################## EGS ALL Clear ##################################################
@@ -1981,12 +1981,12 @@ remove_finalizers() {
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
 
-    echo "🗑 Processing resource: $resource in namespace: $namespace"
+    echo "🗑 Processing resource: $resource in namespace: $namespace" >&2
 
     # Fetch the resource YAML and remove unwanted fields
     kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" get "$resource" -o json > ./resource.json
     if [[ $? -ne 0 ]]; then
-        echo "❌ Failed to fetch resource: $resource"
+        echo "❌ Failed to fetch resource: $resource" >&2
         return
     fi
 
@@ -1998,9 +1998,9 @@ remove_finalizers() {
     # Apply the patched resource
     kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" replace -f ./patched-resource.json
     if [[ $? -eq 0 ]]; then
-        echo "✅ Finalizers removed from $resource"
+        echo "✅ Finalizers removed from $resource" >&2
     else
-        echo "❌ Failed to remove finalizers from $resource"
+        echo "❌ Failed to remove finalizers from $resource" >&2
     fi
 
     # Clean up temporary files
@@ -2023,12 +2023,12 @@ delete_validating_webhooks() {
         "$specific_kubecontext")
 
     for webhook in "${webhooks[@]}"; do
-        echo "🗑 Removing validating webhook configuration: $webhook"
+        echo "🗑 Removing validating webhook configuration: $webhook" >&2
         kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext delete validatingwebhookconfigurations "$webhook" --ignore-not-found
         if [[ $? -eq 0 ]]; then
-            echo "✅ Validating webhook configuration '$webhook' removed"
+            echo "✅ Validating webhook configuration '$webhook' removed" >&2
         else
-            echo "❌ Failed to remove validating webhook configuration '$webhook'"
+            echo "❌ Failed to remove validating webhook configuration '$webhook'" >&2
         fi
     done
 }
@@ -2051,17 +2051,17 @@ cleanup_resources_and_webhooks() {
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
 
-    echo "🛠 Cleaning up namespace: $namespace"
+    echo "🛠 Cleaning up namespace: $namespace" >&2
     for api_group in "${api_groups[@]}"; do
-        echo "🔍 Processing API group: $api_group"
+        echo "🔍 Processing API group: $api_group" >&2
         resources=$(list_resources_in_group "$namespace" "$api_group" "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext" )
 
         if [[ -z "$resources" ]]; then
-            echo "⚠️  No resources found in API group: $api_group"
+            echo "⚠️  No resources found in API group: $api_group" >&2
             continue
         fi
 
-        echo "The following resources will be cleaned up:"
+        echo "The following resources will be cleaned up:" >&2
         echo "$resources"
 
 
@@ -2073,7 +2073,7 @@ cleanup_resources_and_webhooks() {
 
     delete_validating_webhooks "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext" "${webhooks[@]}"
 
-    echo "🎉 Cleanup completed for namespace: $namespace"
+    echo "🎉 Cleanup completed for namespace: $namespace" >&2
 }
 
 
