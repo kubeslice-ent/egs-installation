@@ -1951,14 +1951,6 @@ list_resources_in_group() {
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
 
-    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
-    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        validate_kubecontext "$kubeconfig_path" "$kubecontext"
-    else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        exit 1
-    fi
-
     # Collect resource kinds in the API group
     resource_kinds=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" api-resources --verbs=list --namespaced -o name | grep "$api_group")
 
@@ -1988,21 +1980,6 @@ remove_finalizers() {
         "$GLOBAL_KUBECONTEXT" \
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
-
-
-    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
-    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-
-        validate_kubecontext "$kubeconfig_path" "$kubecontext"
-    else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-        exit 1
-    fi
 
     echo "🗑 Processing resource: $resource in namespace: $namespace"
 
@@ -2037,30 +2014,13 @@ delete_validating_webhooks() {
     local specific_kubecontext=$3
     local webhooks=("$@")
 
-
-    # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-        "delete validating webhooks" \
+        "delete_validating_webhooks" \
         "$specific_use_global_kubeconfig" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
-
-
-    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
-    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-
-        validate_kubecontext "$kubeconfig_path" "$kubecontext"
-    else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-        exit 1
-    fi
 
     for webhook in "${webhooks[@]}"; do
         echo "🗑 Removing validating webhook configuration: $webhook"
@@ -2090,20 +2050,6 @@ cleanup_resources_and_webhooks() {
         "$GLOBAL_KUBECONTEXT" \
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
-
-    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
-    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-
-        validate_kubecontext "$kubeconfig_path" "$kubecontext"
-    else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-        exit 1
-    fi
 
     echo "🛠 Cleaning up namespace: $namespace"
     for api_group in "${api_groups[@]}"; do
