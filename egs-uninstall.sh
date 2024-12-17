@@ -1934,13 +1934,13 @@ delete_projects_in_controller() {
 
 ########################## EGS ALL Clear ##################################################
 
-# Function to list all resources for a specific API group in the namespace
 list_resources_in_group() {
     local namespace=$1
     local api_group=$2
     local specific_use_global_kubeconfig=$3
     local specific_kubeconfig_path=$4
     local specific_kubecontext=$5
+    local resources=()  # Array to store the collected resources
 
     echo "-----------------------------------------"
     echo "🚀 Processing list resources in group uninstallation"
@@ -1959,7 +1959,7 @@ list_resources_in_group() {
         "$specific_kubecontext")
 
     # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
+    echo "🔧 kubeaccess_precheck - Output Variables:"
     echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
     echo "  🌐 Kubecontext: $kubecontext"
     echo "-----------------------------------------"
@@ -1978,11 +1978,24 @@ list_resources_in_group() {
         exit 1
     fi
 
+    echo "🔎 Fetching resource kinds for API group: $api_group"
+
     # Get all resource kinds in the API group
-    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext api-resources --verbs=list --namespaced -o name | grep "$api_group" | while read -r resource; do
-        # List all resources of this kind in the namespace
-        kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" get "$resource" -o name
+    kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" api-resources --verbs=list --namespaced -o name | grep "$api_group" | while read -r resource; do
+        echo "📋 Processing resource: $resource"
+        # List all resources of this kind in the namespace and append them to the resources array
+        mapfile -t temp_resources < <(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" -o name)
+        resources+=("${temp_resources[@]}")
     done
+
+    # Print all collected resources
+    echo "-----------------------------------------"
+    echo "✅ List of Resources in Group '$api_group' in Namespace '$namespace':"
+    printf "%s\n" "${resources[@]}"
+    echo "-----------------------------------------"
+
+    # Return collected resources
+    echo "${resources[@]}"
 }
 
 # Function to remove finalizers from a resource
@@ -2126,7 +2139,7 @@ cleanup_resources_and_webhooks() {
 
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-        "clean up resources and webhooks" \
+        "clean_up_resources_and_webhooks" \
         "$specific_use_global_kubeconfig" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
@@ -2134,7 +2147,6 @@ cleanup_resources_and_webhooks() {
         "$specific_kubecontext")
 
     # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
     echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
     echo "  🌐 Kubecontext: $kubecontext"
     echo "-----------------------------------------"
