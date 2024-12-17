@@ -1937,9 +1937,9 @@ delete_projects_in_controller() {
 list_resources_in_group() {
     local namespace=$1
     local api_group=$2
-    local $specific_use_global_kubeconfig=$3
-    local $specific_kubeconfig_path=$4
-    local $specific_kubecontext=$5
+    local specific_use_global_kubeconfig=$3
+    local specific_kubeconfig_path=$4
+    local specific_kubecontext=$5
 
     echo "-----------------------------------------"
     echo "🚀 Processing list resources in group uninstallation"
@@ -1988,9 +1988,9 @@ list_resources_in_group() {
 remove_finalizers() {
     local namespace=$1
     local resource=$2
-    local $specific_use_global_kubeconfig=$3
-    local $specific_kubeconfig_path=$4
-    local $specific_kubecontext=$5
+    local specific_use_global_kubeconfig=$3
+    local specific_kubeconfig_path=$4
+    local specific_kubecontext=$5
 
     echo "-----------------------------------------"
     echo "🚀 Processing list resources in group uninstallation"
@@ -2057,9 +2057,9 @@ remove_finalizers() {
 # Function to delete validating webhook configurations
 delete_validating_webhooks() {
     local webhooks=("$@")
-    local $specific_use_global_kubeconfig=$1
-    local $specific_kubeconfig_path=$2
-    local $specific_kubecontext=$3
+    local specific_use_global_kubeconfig=$1
+    local specific_kubeconfig_path=$2
+    local specific_kubecontext=$3
 
     echo "-----------------------------------------"
     echo "🚀 Processing list resources in group uninstallation"
@@ -2113,9 +2113,9 @@ cleanup_resources_and_webhooks() {
     local namespace=$1
     local api_groups=("$@")
     local webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
-    local $specific_use_global_kubeconfig=$2
-    local $specific_kubeconfig_path=$3
-    local $specific_kubecontext=$4
+    local specific_use_global_kubeconfig=$2
+    local specific_kubeconfig_path=$3
+    local specific_kubecontext=$4
 
     echo "-----------------------------------------"
     echo "🚀 Processing list resources in group uninstallation"
