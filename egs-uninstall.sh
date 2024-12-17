@@ -2169,12 +2169,12 @@ cleanup_resources_and_webhooks() {
 
         # Process each resource
         echo "$resources" | while read -r resource; do
-            remove_finalizers "$namespace" "$resource"
+            remove_finalizers "$namespace" "$resource" "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext"
         done
     done
 
     echo "🛠 Cleaning up validating webhook configurations"
-    delete_validating_webhooks "${webhooks[@]}"
+    delete_validating_webhooks "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext" "${webhooks[@]}"
 
     echo "🎉 Cleanup completed for namespace: $namespace"
 }
