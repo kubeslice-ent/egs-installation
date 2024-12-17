@@ -2035,7 +2035,6 @@ cleanup_resources_and_webhooks() {
     local specific_kubecontext=$4
     shift 4
     local api_groups=("$@")
-    shift 5
     local webhooks=("$@")
 
     # Use kubeaccess_precheck to determine kubeconfig path and context
