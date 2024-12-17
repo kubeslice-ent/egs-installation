@@ -1966,7 +1966,7 @@ list_resources_in_group() {
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
         echo "🔍 Validating Kubecontext:"
-        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
         echo "  🌐 Kubecontext: $kubecontext"
 
         validate_kubecontext "$kubeconfig_path" "$kubecontext"
@@ -2156,7 +2156,7 @@ cleanup_resources_and_webhooks() {
     echo "🛠 Cleaning up namespace: $namespace"
     for api_group in "${api_groups[@]}"; do
         echo "🔍 Processing API group: $api_group"
-        resources=$(list_resources_in_group "$namespace" "$api_group")
+        resources=$(list_resources_in_group "$namespace" "$api_group" "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext" )
 
         if [[ -z "$resources" ]]; then
             echo "⚠️  No resources found in API group: $api_group"
