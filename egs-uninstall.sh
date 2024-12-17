@@ -1942,13 +1942,6 @@ list_resources_in_group() {
     local specific_kubecontext=$5
     local resources=()  # Array to store resources
 
-    echo "-----------------------------------------"
-    echo "🚀 Processing list resources in group uninstallation"
-    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig"
-    echo "Specific Kubeconfig Path: $specific_kubeconfig_path"
-    echo "Specific Kubecontext: $specific_kubecontext"
-    echo "-----------------------------------------"
-
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "list resources in group $api_group in namespace $namespace" \
