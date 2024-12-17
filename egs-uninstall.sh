@@ -1980,13 +1980,6 @@ remove_finalizers() {
     local specific_kubeconfig_path=$4
     local specific_kubecontext=$5
 
-    echo "-----------------------------------------"
-    echo "🚀 Processing list resources in group uninstallation"
-    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig"
-    echo "Specific Kubeconfig Path: $specific_kubeconfig_path"
-    echo "Specific Kubecontext: $specific_kubecontext"
-    echo "-----------------------------------------"
-
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "removing_finalizers" \
@@ -1996,10 +1989,6 @@ remove_finalizers() {
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
 
-    # Print output variables after calling kubeaccess_precheck
-    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
 
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
@@ -2048,12 +2037,6 @@ delete_validating_webhooks() {
     local specific_kubecontext=$3
     local webhooks=("$@")
 
-    echo "-----------------------------------------"
-    echo "🚀 Processing list resources in group uninstallation"
-    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig"
-    echo "Specific Kubeconfig Path: $specific_kubeconfig_path"
-    echo "Specific Kubecontext: $specific_kubecontext"
-    echo "-----------------------------------------"
 
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
@@ -2064,11 +2047,6 @@ delete_validating_webhooks() {
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
 
-    # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
-    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
 
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
@@ -2104,13 +2082,6 @@ cleanup_resources_and_webhooks() {
     local api_groups=("$@")
     local webhooks=("$@")
 
-    echo "-----------------------------------------"
-    echo "🚀 Processing list resources in group uninstallation"
-    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig"
-    echo "Specific Kubeconfig Path: $specific_kubeconfig_path"
-    echo "Specific Kubecontext: $specific_kubecontext"
-    echo "-----------------------------------------"
-
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "clean_up_resources_and_webhooks" \
@@ -2119,11 +2090,6 @@ cleanup_resources_and_webhooks() {
         "$GLOBAL_KUBECONTEXT" \
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
-
-    # Print output variables after calling kubeaccess_precheck
-    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
 
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
