@@ -2001,14 +2001,28 @@ remove_finalizers() {
 delete_validating_webhooks() {
     local kubeconfig_path=$1
     local kubecontext=$2
+    shift 2  # Remove the first two arguments
     local webhooks=("$@")
 
+    # Sanity check: Ensure at least one webhook name is provided
+    if [[ ${#webhooks[@]} -eq 0 ]]; then
+        echo "⚠️  No validating webhook configurations specified for deletion." >&2
+        return 1
+    fi
+
     for webhook in "${webhooks[@]}"; do
-        kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext delete validatingwebhookconfigurations "$webhook" --ignore-not-found
+        # Skip invalid inputs (paths or context names mistakenly passed as webhooks)
+        if [[ $webhook == */* || $webhook == *context* || $webhook == *kubeconfig* ]]; then
+            echo "⚠️  Skipping invalid webhook name: '$webhook'" >&2
+            continue
+        fi
+
+        # Delete the webhook and handle errors
+        kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" delete validatingwebhookconfiguration "$webhook" --ignore-not-found > /dev/null 2>&1
         if [[ $? -eq 0 ]]; then
-            echo "✅ Validating webhook configuration '$webhook' removed" >&2
+            echo "✅ Validating webhook configuration '$webhook' removed." >&2
         else
-            echo "❌ Failed to remove validating webhook configuration '$webhook'" >&2
+            echo "❌ Failed to remove validating webhook configuration '$webhook'." >&2
         fi
     done
 }
@@ -2019,7 +2033,9 @@ cleanup_resources_and_webhooks() {
     local specific_use_global_kubeconfig=$2
     local specific_kubeconfig_path=$3
     local specific_kubecontext=$4
+    shift 4
     local api_groups=("$@")
+    shift 5
     local webhooks=("$@")
 
     # Use kubeaccess_precheck to determine kubeconfig path and context
