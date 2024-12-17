@@ -1968,18 +1968,8 @@ list_resources_in_group() {
 remove_finalizers() {
     local namespace=$1
     local resource=$2
-    local specific_use_global_kubeconfig=$3
-    local specific_kubeconfig_path=$4
-    local specific_kubecontext=$5
-
-    # Use kubeaccess_precheck to determine kubeconfig path and context
-    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-        "removing_finalizers" \
-        "$specific_use_global_kubeconfig" \
-        "$GLOBAL_KUBECONFIG" \
-        "$GLOBAL_KUBECONTEXT" \
-        "$specific_kubeconfig_path" \
-        "$specific_kubecontext")
+    local kubeconfig_path=$3
+    local kubecontext=$4
 
     echo "🗑 Processing resource: $resource in namespace: $namespace" >&2
 
@@ -2009,18 +1999,9 @@ remove_finalizers() {
 
 # Function to delete validating webhook configurations
 delete_validating_webhooks() {
-    local specific_use_global_kubeconfig=$1
-    local specific_kubeconfig_path=$2
-    local specific_kubecontext=$3
+    local kubeconfig_path=$1
+    local kubecontext=$2
     local webhooks=("$@")
-
-    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-        "delete_validating_webhooks" \
-        "$specific_use_global_kubeconfig" \
-        "$GLOBAL_KUBECONFIG" \
-        "$GLOBAL_KUBECONTEXT" \
-        "$specific_kubeconfig_path" \
-        "$specific_kubecontext")
 
     for webhook in "${webhooks[@]}"; do
         kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext delete validatingwebhookconfigurations "$webhook" --ignore-not-found
@@ -2066,11 +2047,11 @@ cleanup_resources_and_webhooks() {
 
         # Process each resource
         echo "$resources" | while read -r resource; do
-            remove_finalizers "$namespace" "$resource" "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext"
+            remove_finalizers "$namespace" "$resource" "$kubeconfig_path" "$kubecontext"
         done
     done
 
-    delete_validating_webhooks "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext" "${webhooks[@]}"
+    delete_validating_webhooks "$kubeconfig_path" "$kubecontext" "${webhooks[@]}"
 
     echo "🎉 Cleanup completed for namespace: $namespace" >&2
 }
