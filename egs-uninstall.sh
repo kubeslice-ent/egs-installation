@@ -1944,7 +1944,7 @@ list_resources_in_group() {
 
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-        "list resources in group $api_group in namespace $namespace" \
+        "list_resources_in_group" \
         "$specific_use_global_kubeconfig" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
@@ -2071,7 +2071,6 @@ cleanup_resources_and_webhooks() {
         done
     done
 
-    echo "🛠 Cleaning up validating webhook configurations"
     delete_validating_webhooks "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext" "${webhooks[@]}"
 
     echo "🎉 Cleanup completed for namespace: $namespace"
