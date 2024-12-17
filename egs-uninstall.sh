@@ -1198,26 +1198,26 @@ remove_helm_repo() {
         echo "⚠️  Helm repository '$repo_name' does not exist. Nothing to remove."
     fi
 
-    echo "✔️ Helm repository removal complete."
+    echo "✔️ Helm repository removal complete."  >&2
 }
 
 delete_manifests_from_yaml() {
     local yaml_file=$1
     local base_path=$(yq e '.base_path' "$yaml_file")
 
-    echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"
-    echo "🔧 Global Variables:"
-    echo "  🗂️  global_kubeconfig_path=$GLOBAL_KUBECONFIG"
-    echo "  🌐  global_kubecontext= --context $GLOBAL_KUBECONTEXT"
-    echo "  🗂️  base_path=$base_path"
-    echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
-    echo "-----------------------------------------"
+    echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"  >&2
+    echo "🔧 Global Variables:"  >&2
+    echo "  🗂️  global_kubeconfig_path=$GLOBAL_KUBECONFIG"   >&2
+    echo "  🌐  global_kubecontext= --context $GLOBAL_KUBECONTEXT"  >&2
+    echo "  🗂️  base_path=$base_path"  >&2
+    echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"  >&2
+    echo "-----------------------------------------"  >&2
 
     # Check if the manifests section exists
     manifests_exist=$(yq e '.manifests' "$yaml_file")
 
     if [ "$manifests_exist" == "null" ]; then
-        echo "⚠️  Warning: No 'manifests' section found in the YAML file. Skipping manifest application."
+        echo "⚠️  Warning: No 'manifests' section found in the YAML file. Skipping manifest application."  >&2
         return
     fi
 
@@ -1225,7 +1225,7 @@ delete_manifests_from_yaml() {
     manifests_length=$(yq e '.manifests | length' "$yaml_file")
 
     if [ "$manifests_length" -eq 0 ]; then
-        echo "⚠️  Warning: 'manifests' section is defined, but no manifests found. Skipping manifest application."
+        echo "⚠️  Warning: 'manifests' section is defined, but no manifests found. Skipping manifest application."  >&2
         return
     fi
 
@@ -1255,22 +1255,22 @@ delete_manifests_from_yaml() {
             "$kubecontext")
 
         # Print output variables after calling kubeaccess_precheck
-        echo "🔧 kubeaccess_precheck - Output Variables:"
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-        echo "-----------------------------------------"
+        echo "🔧 kubeaccess_precheck - Output Variables:"  >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"  >&2
+        echo "  🌐 Kubecontext: $kubecontext"  >&2
+        echo "-----------------------------------------"  >&2
 
         # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
         if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-            echo "🔍 Validating Kubecontext:"
-            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "🔍 Validating Kubecontext:"  >&2
+            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"  >&2
+            echo "  🌐 Kubecontext: $kubecontext"  >&2
 
             validate_kubecontext "$kubeconfig_path" "$kubecontext"
         else
-            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."  >&2
+            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"  >&2
+            echo "  🌐 Kubecontext: $kubecontext"  >&2
             exit 1
         fi
 
@@ -1280,19 +1280,19 @@ delete_manifests_from_yaml() {
             context_arg="--context $kubecontext"
         fi
 
-        echo "🔧 App Variables for '$appname':"
-        echo "  🗂️  base_manifest=$base_manifest"
-        echo "  🗂️  overrides_yaml=$overrides_yaml"
-        echo "  📄 inline_yaml=${inline_yaml:+Provided}"
-        echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"
-        echo "  🗂️  kubeconfig_path=$kubeconfig_path"
-        echo "  🌐 kubecontext=$kubecontext"
-        echo "  🚫 skip_installation=$skip_installation"
-        echo "  🔍 verify_install=$verify_install"
-        echo "  ⏰ verify_install_timeout=$verify_install_timeout"
-        echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
-        echo "  🏷️ namespace=$namespace"
-        echo "-----------------------------------------"
+        echo "🔧 App Variables for '$appname':"  >&2
+        echo "  🗂️  base_manifest=$base_manifest"  >&2
+        echo "  🗂️  overrides_yaml=$overrides_yaml"  >&2
+        echo "  📄 inline_yaml=${inline_yaml:+Provided}"  >&2
+        echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"  >&2
+        echo "  🗂️  kubeconfig_path=$kubeconfig_path"  >&2
+        echo "  🌐 kubecontext=$kubecontext"  >&2
+        echo "  🚫 skip_installation=$skip_installation"  >&2
+        echo "  🔍 verify_install=$verify_install"  >&2
+        echo "  ⏰ verify_install_timeout=$verify_install_timeout"  >&2
+        echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"  >&2
+        echo "  🏷️ namespace=$namespace"  >&2
+        echo "-----------------------------------------"  >&2
 
         # Handle HTTPS file URLs or local base manifest files
         if [ -n "$base_manifest" ] && [ "$base_manifest" != "null" ]; then
@@ -1312,11 +1312,11 @@ delete_manifests_from_yaml() {
         else
             # If no base manifest, start with inline YAML if provided
             if [ -n "$inline_yaml" ] && [ "$inline_yaml" != "null" ]; then
-                echo "📄 Using inline YAML as the base manifest for $appname"
+                echo "📄 Using inline YAML as the base manifest for $appname"  >&2
                 temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
                 echo "$inline_yaml" >"$temp_manifest"
             else
-                echo "❌ Error: Neither base manifest nor inline YAML provided for app: $appname"
+                echo "❌ Error: Neither base manifest nor inline YAML provided for app: $appname"  >&2
                 return 1
             fi
         fi
@@ -1328,7 +1328,7 @@ delete_manifests_from_yaml() {
 
         # Merge inline YAML with the base manifest if provided
         if [ -n "$inline_yaml" ] && [ "$inline_yaml" != "null" ] && [ -f "$temp_manifest" ]; then
-            echo "🔄 Merging inline YAML for $appname into the base manifest"
+            echo "🔄 Merging inline YAML for $appname into the base manifest"  >&2
             echo "$inline_yaml" | yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "-")' - "$temp_manifest" >"${temp_manifest}_merged"
             mv "${temp_manifest}_merged" "$temp_manifest"
         fi
@@ -1339,23 +1339,23 @@ delete_manifests_from_yaml() {
             yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "'"$overrides_yaml"'")' "$temp_manifest" "$overrides_yaml" >"${temp_manifest}_merged"
             mv "${temp_manifest}_merged" "$temp_manifest"
         else
-            echo "⚠️  No overrides YAML file found for app: $appname. Proceeding with base/inline manifest."
+            echo "⚠️  No overrides YAML file found for app: $appname. Proceeding with base/inline manifest."  >&2
         fi
 
-        echo "📄 Deleting manifest for app: $appname in namespace: ${namespace}"
+        echo "📄 Deleting manifest for app: $appname in namespace: ${namespace}"  >&2
         kubectl delete -f "$temp_manifest" --namespace "${namespace}" --kubeconfig "$kubeconfig_path" $context_arg
         if [ $? -ne 0 ]; then
-            echo "❌ Error: Failed to delete manifest for app: $appname"
+            echo "❌ Error: Failed to delete manifest for app: $appname"  >&2
             return 1
         fi
-        echo "✔️ Successfully deleted manifest for app: $appname"
+        echo "✔️ Successfully deleted manifest for app: $appname"  >&2
 
         # Clean up the temporary manifest file
         rm -f "$temp_manifest"
     done
 
-    echo "✅ All applicable manifests deleted successfully."
-    echo "-----------------------------------------"
+    echo "✅ All applicable manifests deleted successfully."  >&2
+    echo "-----------------------------------------"  >&2
 }
 
 # Function to fetch and display summary information
@@ -1365,7 +1365,7 @@ display_summary() {
     echo "========================================="
 
     # Summary of all Helm chart uninstallations (including controller, UI, workers, and additional apps)
-    echo "🛠️ **Application Uninstallations Summary**:"
+    echo "🛠️ **Application Uninstallations Summary**:"  >&2
 
     # Helper function to check Helm release status, ensure it is removed, and show resources
     check_helm_release_uninstalled() {
@@ -1374,24 +1374,24 @@ display_summary() {
         local kubeconfig=$3
         local kubecontext=$4
 
-        echo "-----------------------------------------"
-        echo "🚀 **Helm Release: $release_name**"
+        echo "-----------------------------------------"  >&2
+        echo "🚀 **Helm Release: $release_name**"  >&2
         if helm status "$release_name" --namespace "$namespace" --kubeconfig "$kubeconfig" --kube-context "$kubecontext" >/dev/null 2>&1; then
-            echo "⚠️ Warning: Release '$release_name' in namespace '$namespace' still exists. It was not successfully uninstalled."
+            echo "⚠️ Warning: Release '$release_name' in namespace '$namespace' still exists. It was not successfully uninstalled."  >&2
         else
-            echo "✔️ Release '$release_name' in namespace '$namespace' has been successfully uninstalled."
+            echo "✔️ Release '$release_name' in namespace '$namespace' has been successfully uninstalled."  >&2
             # Display resources in the namespace after uninstallation
-            echo "📋 Resources in namespace '$namespace' after uninstallation:"
+            echo "📋 Resources in namespace '$namespace' after uninstallation:"  >&2
             kubectl get all --namespace "$namespace" --kubeconfig "$kubeconfig" --context "$kubecontext"
         fi
-        echo "-----------------------------------------"
+        echo "-----------------------------------------"  >&2
     }
 
     # Kubeslice Controller Uninstallation
     if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ] && [ "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" = "false" ]; then
         check_helm_release_uninstalled "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT"
     else
-        echo "⏩ **Kubeslice Controller** uninstallation was skipped or disabled."
+        echo "⏩ **Kubeslice Controller** uninstallation was skipped or disabled."  >&2
     fi
 
     # Worker Cluster Uninstallations
@@ -1418,11 +1418,11 @@ display_summary() {
             if [ "$skip_installation" = "false" ]; then
                 check_helm_release_uninstalled "$release_name" "$namespace" "$kubeconfig" "$kubecontext"
             else
-                echo "⏩ **Worker Cluster '$worker_name'** uninstallation was skipped."
+                echo "⏩ **Worker Cluster '$worker_name'** uninstallation was skipped."  >&2
             fi
         done
     else
-        echo "⏩ **Worker uninstallation was skipped or disabled.**"
+        echo "⏩ **Worker uninstallation was skipped or disabled.**"  >&2
     fi
 
     # Additional Application Uninstallations
@@ -1449,11 +1449,11 @@ display_summary() {
             if [ "$skip_installation" = "false" ]; then
                 check_helm_release_uninstalled "$release_name" "$namespace" "$kubeconfig" "$kubecontext"
             else
-                echo "⏩ **Additional Application '$app_name'** uninstallation was skipped."
+                echo "⏩ **Additional Application '$app_name'** uninstallation was skipped."  >&2
             fi
         done
     else
-        echo "⏩ **Additional application uninstallation was skipped or disabled.**"
+        echo "⏩ **Additional application uninstallation was skipped or disabled.**"  >&2 
     fi
 
     echo "========================================="
@@ -1530,12 +1530,12 @@ uninstall_helm_chart_and_cleanup() {
     echo "Helm Command Base: $helm_cmd" >&2
 
     uninstall_helm_chart() {
-        echo "Executing: helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg"
+        echo "Executing: helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg" >&2
         helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg
     }
 
     delete_kubernetes_objects() {
-        echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'"
+        echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'" >&2
         kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
         kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
         kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
@@ -1729,7 +1729,7 @@ delete_projects_in_controller() {
             fi
         done
 
-        echo "🔍 Verifying project '$project_name' deletion..."
+        echo "🔍 Verifying project '$project_name' deletion..."  >&2
         if kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
             echo "❌ Error: Project '$project_name' still exists in namespace '$namespace'." >&2
             return 1
@@ -1758,7 +1758,7 @@ delete_slices_in_controller() {
         "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
     # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "  >&2
     echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
     echo "  🌐 Kubecontext: $kubecontext" >&2
     echo "-----------------------------------------" >&2
@@ -1841,7 +1841,7 @@ delete_slices_in_controller() {
 }
 
 delete_projects_in_controller() {
-    echo "🚀 Starting project deletion in controller cluster..."
+    echo "🚀 Starting project deletion in controller cluster..."  >&2
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
     local max_retries=3 # Number of retries
@@ -2089,12 +2089,12 @@ while [[ "$#" -gt 0 ]]; do
         shift
         ;;
     --help)
-        echo "Usage: $0 --input-yaml <yaml_file>"
+        echo "Usage: $0 --input-yaml <yaml_file>"  >&2
         exit 0
         ;;
     *)
-        echo "Unknown parameter passed: $1"
-        echo "Use --help for usage information."
+        echo "Unknown parameter passed: $1"  >&2
+        echo "Use --help for usage information."  >&2 
         exit 1
         ;;
     esac
@@ -2103,8 +2103,8 @@ done
 
 # Validation for input-yaml flag
 if [ -z "$EGS_INPUT_YAML" ]; then
-    echo "❌ Error: --input-yaml flag is required."
-    echo "Use --help for usage information."
+    echo "❌ Error: --input-yaml flag is required."  >&2
+    echo "Use --help for usage information."  >&2
     exit 1
 fi
 
@@ -2114,10 +2114,10 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     prerequisite_check
     if command -v yq &>/dev/null; then
         parse_yaml "$EGS_INPUT_YAML"
-        echo " calling validate_paths..."
+        echo " calling validate_paths..."  >&2 
         validate_paths
     else
-        echo "❌ yq command not found. Please install yq to use the --input-yaml option."
+        echo "❌ yq command not found. Please install yq to use the --input-yaml option."  >&2
         exit 1
     fi
 fi
@@ -2131,18 +2131,18 @@ fi
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
 
 if [ "$enable_custom_apps" = "true" ]; then
-    echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."
+    echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."  >&2
 
     # Check if the manifests section is defined
     manifests_exist=$(yq e '.manifests // "null"' "$EGS_INPUT_YAML")
 
     if [ "$manifests_exist" = "null" ]; then
-        echo "⚠️  No 'manifests' section found in the YAML file. Skipping manifest application."
+        echo "⚠️  No 'manifests' section found in the YAML file. Skipping manifest application."  >&2 
     else
         manifests_length=$(yq e '.manifests | length' "$EGS_INPUT_YAML")
 
         if [ "$manifests_length" -eq 0 ]; then
-            echo "⚠️  'manifests' section is defined but contains no entries. Skipping manifest application."
+            echo "⚠️  'manifests' section is defined but contains no entries. Skipping manifest application."  >&2
         else
             for index in $(seq 0 $((manifests_length - 1))); do
                 echo "🔄 Applying manifest $((index + 1)) of $manifests_length..."
@@ -2173,7 +2173,7 @@ if [ "$enable_custom_apps" = "true" ]; then
         fi
     fi
 else
-    echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."
+    echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."  >&2 
 fi
 
 # Process additional applications if any are defined and installation is enabled
@@ -2205,9 +2205,9 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
 
     done
-    echo "✔️ Installation of additional applications complete."
+    echo "✔️ Installation of additional applications complete."  >&2
 else
-    echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
+    echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."  >&2
 fi
 
 #Delete Slice
