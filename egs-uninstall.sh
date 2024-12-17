@@ -1510,7 +1510,7 @@ uninstall_helm_chart_and_cleanup() {
         validate_kubecontext "$kubeconfig_path" "$kubecontext"
     else
         echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
         echo "  🌐 Kubecontext: $kubecontext"
         exit 1
     fi
@@ -1759,7 +1759,7 @@ delete_slices_in_controller() {
 
     # Print output variables after calling kubeaccess_precheck
     echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "
-    echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
+    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
     echo "  🌐 Kubecontext: $kubecontext"
     echo "-----------------------------------------"
 
@@ -1865,7 +1865,7 @@ delete_projects_in_controller() {
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
         echo "🔍 Validating Kubecontext:"
-        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
         echo "  🌐 Kubecontext: $kubecontext"
 
         validate_kubecontext "$kubeconfig_path" "$kubecontext"
@@ -1924,7 +1924,7 @@ delete_projects_in_controller() {
         fi
         echo "✔️ deletion of all objects Project '$project_name' starting."
         api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
-        continue_on_error cleanup_resources_and_webhooks "kubeslice-$project_name" "${api_groups[@]}"
+        continue_on_error cleanup_resources_and_webhooks "kubeslice-$project_name" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$kubeconfig_path" "$kubecontext" "${api_groups[@]}"
         echo "✔️ deletion of all objects Project '$project_name' completed."
         echo "-----------------------------------------"
     done
@@ -1937,11 +1937,50 @@ delete_projects_in_controller() {
 list_resources_in_group() {
     local namespace=$1
     local api_group=$2
+    local $specific_use_global_kubeconfig=$3
+    local $specific_kubeconfig_path=$4
+    local $specific_kubecontext=$5
+
+    echo "-----------------------------------------"
+    echo "🚀 Processing list resources in group uninstallation"
+    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig"
+    echo "Specific Kubeconfig Path: $specific_kubeconfig_path"
+    echo "Specific Kubecontext: $specific_kubecontext"
+    echo "-----------------------------------------"
+
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "list resources in group $api_group in namespace $namespace" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
+    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
 
     # Get all resource kinds in the API group
-    kubectl api-resources --verbs=list --namespaced -o name | grep "$api_group" | while read -r resource; do
+    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext api-resources --verbs=list --namespaced -o name | grep "$api_group" | while read -r resource; do
         # List all resources of this kind in the namespace
-        kubectl -n "$namespace" get "$resource" -o name
+        kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" get "$resource" -o name
     done
 }
 
@@ -1949,11 +1988,50 @@ list_resources_in_group() {
 remove_finalizers() {
     local namespace=$1
     local resource=$2
+    local $specific_use_global_kubeconfig=$3
+    local $specific_kubeconfig_path=$4
+    local $specific_kubecontext=$5
+
+    echo "-----------------------------------------"
+    echo "🚀 Processing list resources in group uninstallation"
+    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig"
+    echo "Specific Kubeconfig Path: $specific_kubeconfig_path"
+    echo "Specific Kubecontext: $specific_kubecontext"
+    echo "-----------------------------------------"
+
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "removing finalizers" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
+    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
 
     echo "🗑 Processing resource: $resource in namespace: $namespace"
 
     # Fetch the resource YAML and remove unwanted fields
-    kubectl -n "$namespace" get "$resource" -o json > ./resource.json
+    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" get "$resource" -o json > ./resource.json
     if [[ $? -ne 0 ]]; then
         echo "❌ Failed to fetch resource: $resource"
         return
@@ -1965,7 +2043,7 @@ remove_finalizers() {
         del(.metadata.managedFields)' ./resource.json > ./patched-resource.json
 
     # Apply the patched resource
-    kubectl -n "$namespace" replace -f ./patched-resource.json
+    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" replace -f ./patched-resource.json
     if [[ $? -eq 0 ]]; then
         echo "✅ Finalizers removed from $resource"
     else
@@ -1979,10 +2057,49 @@ remove_finalizers() {
 # Function to delete validating webhook configurations
 delete_validating_webhooks() {
     local webhooks=("$@")
+    local $specific_use_global_kubeconfig=$1
+    local $specific_kubeconfig_path=$2
+    local $specific_kubecontext=$3
+
+    echo "-----------------------------------------"
+    echo "🚀 Processing list resources in group uninstallation"
+    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig"
+    echo "Specific Kubeconfig Path: $specific_kubeconfig_path"
+    echo "Specific Kubecontext: $specific_kubecontext"
+    echo "-----------------------------------------"
+
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "delete validating webhooks" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
+    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
 
     for webhook in "${webhooks[@]}"; do
         echo "🗑 Removing validating webhook configuration: $webhook"
-        kubectl delete validatingwebhookconfigurations "$webhook" --ignore-not-found
+        kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext delete validatingwebhookconfigurations "$webhook" --ignore-not-found
         if [[ $? -eq 0 ]]; then
             echo "✅ Validating webhook configuration '$webhook' removed"
         else
@@ -1994,9 +2111,47 @@ delete_validating_webhooks() {
 # Main function to process all API groups and validating webhooks
 cleanup_resources_and_webhooks() {
     local namespace=$1
-    shift
     local api_groups=("$@")
     local webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
+    local $specific_use_global_kubeconfig=$2
+    local $specific_kubeconfig_path=$3
+    local $specific_kubecontext=$4
+
+    echo "-----------------------------------------"
+    echo "🚀 Processing list resources in group uninstallation"
+    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig"
+    echo "Specific Kubeconfig Path: $specific_kubeconfig_path"
+    echo "Specific Kubecontext: $specific_kubecontext"
+    echo "-----------------------------------------"
+
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "clean up resources and webhooks" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
+    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
 
     echo "🛠 Cleaning up namespace: $namespace"
     for api_group in "${api_groups[@]}"; do
@@ -2192,7 +2347,7 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
         api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
-        continue_on_error cleanup_resources_and_webhooks "$namespace" "${api_groups[@]}"
+        continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}"
         continue_on_error delete_kubernetes_objects
     done
 fi
@@ -2207,7 +2362,7 @@ fi
 if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
     api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
-    continue_on_error cleanup_resources_and_webhooks "$KUBESLICE_CONTROLLER_NAMESPACE" "${api_groups[@]}"
+    continue_on_error cleanup_resources_and_webhooks "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "${api_groups[@]}"
 fi
 
 # Process kubeslice-ui uninstallation if enabled
