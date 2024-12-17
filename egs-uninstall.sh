@@ -496,34 +496,34 @@ kubeslice_pre_check() {
             fi
 
             worker_cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
-            echo "✔️  Successfully accessed worker cluster '$worker_name'. Kubernetes endpoint: $worker_cluster_endpoint"
+            echo "✔️  Successfully accessed worker cluster '$worker_name'. Kubernetes endpoint: $worker_cluster_endpoint"  >&2 
 
             # Check for nodes labeled with 'kubeslice.io/node-type=gateway'
-            echo "🔍 Checking for nodes labeled 'kubeslice.io/node-type=gateway' in worker cluster '$worker_name'..."
+            echo "🔍 Checking for nodes labeled 'kubeslice.io/node-type=gateway' in worker cluster '$worker_name'..."  >&2 
             gateway_nodes=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg -l kubeslice.io/node-type=gateway --no-headers -o custom-columns=NAME:.metadata.name)
 
             if [ -z "$gateway_nodes" ]; then
-                echo "✔️  No nodes labeled with 'kubeslice.io/node-type=gateway' found."
+                echo "✔️  No nodes labeled with 'kubeslice.io/node-type=gateway' found."  >&2 
             else
-                echo "🔧 Removing label 'kubeslice.io/node-type=gateway' from nodes in worker cluster '$worker_name'..."
+                echo "🔧 Removing label 'kubeslice.io/node-type=gateway' from nodes in worker cluster '$worker_name'..."  >&2 
                 for node in $gateway_nodes; do
                     kubectl label node "$node" kubeslice.io/node-type- --kubeconfig $kubeconfig_path $context_arg --overwrite
-                    echo "✔️  Label removed from node '$node'."
+                    echo "✔️  Label removed from node '$node'."  >&2 
                 done
-                echo "✔️  All gateway labels removed successfully."
+                echo "✔️  All gateway labels removed successfully."  >&2 
             fi
-            echo "-----------------------------------------"
+            echo "-----------------------------------------"  >&2 
         else
-            echo "⏩ Skipping validation for worker cluster '$worker_name' as installation is skipped."
+            echo "⏩ Skipping validation for worker cluster '$worker_name' as installation is skipped."  >&2 
         fi
     done
 
-    echo "✔️ Kubeslice pre-checks completed successfully."
+    echo "✔️ Kubeslice pre-checks completed successfully."  >&2 
     echo ""
 }
 
 validate_paths() {
-    echo "🚀 Validating paths..."
+    echo "🚀 Validating paths..."  >&2 
     local error_found=false
 
     # Check BASE_PATH
@@ -2023,7 +2023,6 @@ delete_validating_webhooks() {
         "$specific_kubecontext")
 
     for webhook in "${webhooks[@]}"; do
-        # echo "🗑 Removing validating webhook configuration: $webhook" >&2
         kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext delete validatingwebhookconfigurations "$webhook" --ignore-not-found
         if [[ $? -eq 0 ]]; then
             echo "✅ Validating webhook configuration '$webhook' removed" >&2
@@ -2062,7 +2061,7 @@ cleanup_resources_and_webhooks() {
         fi
 
         echo "The following resources will be cleaned up:" >&2
-        echo "$resources"
+        echo "$resources" >&2
 
 
         # Process each resource
