@@ -1925,7 +1925,7 @@ delete_projects_in_controller() {
         echo "✔️ deletion of all objects Project '$project_name' starting." >&2
         api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
         webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
-        continue_on_error cleanup_resources_and_webhooks "kubeslice-$project_name" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$kubeconfig_path" "$kubecontext" "${api_groups[@]}" "${webhooks[@]}"
+        continue_on_error cleanup_resources_and_webhooks "kubeslice-$project_name" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$kubeconfig_path" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
         echo "✔️ deletion of all objects Project '$project_name' completed." >&2
         echo "-----------------------------------------"
     done
@@ -2033,9 +2033,27 @@ cleanup_resources_and_webhooks() {
     local specific_use_global_kubeconfig=$2
     local specific_kubeconfig_path=$3
     local specific_kubecontext=$4
+
+    # Shift the first 4 arguments to process the remaining ones
     shift 4
-    local api_groups=("$@")
-    local webhooks=("$@")
+
+    # Split remaining arguments into API groups and webhooks
+    local api_groups=()
+    local webhooks=()
+    local is_webhook_section=false
+
+    for arg in "$@"; do
+        if [[ "$arg" == "--webhooks" ]]; then
+            is_webhook_section=true
+            continue
+        fi
+
+        if [[ "$is_webhook_section" == true ]]; then
+            webhooks+=("$arg")
+        else
+            api_groups+=("$arg")
+        fi
+    done
 
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
@@ -2049,7 +2067,7 @@ cleanup_resources_and_webhooks() {
     echo "🛠 Cleaning up namespace: $namespace" >&2
     for api_group in "${api_groups[@]}"; do
         echo "🔍 Processing API group: $api_group" >&2
-        resources=$(list_resources_in_group "$namespace" "$api_group" "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext" )
+        resources=$(list_resources_in_group "$namespace" "$api_group" "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext")
 
         if [[ -z "$resources" ]]; then
             echo "⚠️  No resources found in API group: $api_group" >&2
@@ -2059,17 +2077,21 @@ cleanup_resources_and_webhooks() {
         echo "The following resources will be cleaned up:" >&2
         echo "$resources" >&2
 
-
         # Process each resource
         echo "$resources" | while read -r resource; do
             remove_finalizers "$namespace" "$resource" "$kubeconfig_path" "$kubecontext"
         done
     done
 
-    delete_validating_webhooks "$kubeconfig_path" "$kubecontext" "${webhooks[@]}"
+    # Delete webhooks
+    if [[ ${#webhooks[@]} -gt 0 ]]; then
+        echo "🧹 Deleting validating webhooks..." >&2
+        delete_validating_webhooks "$kubeconfig_path" "$kubecontext" "${webhooks[@]}"
+    fi
 
     echo "🎉 Cleanup completed for namespace: $namespace" >&2
 }
+
 
 
 ############################### EGS ALL Clear ########################################################################
@@ -2240,7 +2262,7 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
         api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
         webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
-        continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}" "${webhooks[@]}"
+        continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
         continue_on_error delete_kubernetes_objects
     done
 fi
@@ -2256,7 +2278,7 @@ if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
     api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
     webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
-    continue_on_error cleanup_resources_and_webhooks "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "${api_groups[@]}" "${webhooks[@]}"
+    continue_on_error cleanup_resources_and_webhooks "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "${api_groups[@]}" --webhooks "${webhooks[@]}"
 fi
 
 # Process kubeslice-ui uninstallation if enabled
@@ -2273,3 +2295,4 @@ trap display_summary EXIT
 echo "========================================="
 echo "    EGS UnInstaller Script Complete        "
 echo "========================================="
+
