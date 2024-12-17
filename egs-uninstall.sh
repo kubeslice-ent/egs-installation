@@ -2002,7 +2002,7 @@ remove_finalizers() {
 
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
-        "removing finalizers" \
+        "removing_finalizers" \
         "$specific_use_global_kubeconfig" \
         "$GLOBAL_KUBECONFIG" \
         "$GLOBAL_KUBECONTEXT" \
@@ -2056,10 +2056,10 @@ remove_finalizers() {
 
 # Function to delete validating webhook configurations
 delete_validating_webhooks() {
-    local webhooks=("$@")
     local specific_use_global_kubeconfig=$1
     local specific_kubeconfig_path=$2
     local specific_kubecontext=$3
+    local webhooks=("$@")
 
     echo "-----------------------------------------"
     echo "🚀 Processing list resources in group uninstallation"
