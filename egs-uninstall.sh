@@ -2115,7 +2115,7 @@ cleanup_resources_and_webhooks() {
     local specific_kubeconfig_path=$3
     local specific_kubecontext=$4
     local api_groups=("$@")
-    local webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
+    local webhooks=("$@")
 
     echo "-----------------------------------------"
     echo "🚀 Processing list resources in group uninstallation"
