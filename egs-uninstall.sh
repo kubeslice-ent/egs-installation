@@ -1940,7 +1940,7 @@ list_resources_in_group() {
     local specific_use_global_kubeconfig=$3
     local specific_kubeconfig_path=$4
     local specific_kubecontext=$5
-    local resources=()  # Array to store the collected resources
+    local resources=()  # Array to store resources
 
     echo "-----------------------------------------"
     echo "🚀 Processing list resources in group uninstallation"
@@ -1958,44 +1958,25 @@ list_resources_in_group() {
         "$specific_kubeconfig_path" \
         "$specific_kubecontext")
 
-    # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables:"
-    echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
-
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-
         validate_kubecontext "$kubeconfig_path" "$kubecontext"
     else
         echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
         exit 1
     fi
 
-    echo "🔎 Fetching resource kinds for API group: $api_group"
+    # Collect resource kinds in the API group
+    resource_kinds=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" api-resources --verbs=list --namespaced -o name | grep "$api_group")
 
-    # Get all resource kinds in the API group
-    kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" api-resources --verbs=list --namespaced -o name | grep "$api_group" | while read -r resource; do
-        echo "📋 Processing resource: $resource"
-        # List all resources of this kind in the namespace and append them to the resources array
-        mapfile -t temp_resources < <(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" -o name)
+    # Collect all resources of these kinds in the namespace
+    for resource in $resource_kinds; do
+        mapfile -t temp_resources < <(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" -o name 2>/dev/null)
         resources+=("${temp_resources[@]}")
     done
 
-    # Print all collected resources
-    echo "-----------------------------------------"
-    echo "✅ List of Resources in Group '$api_group' in Namespace '$namespace':"
+    # Final output: Only resource names
     printf "%s\n" "${resources[@]}"
-    echo "-----------------------------------------"
-
-    # Return collected resources
-    echo "${resources[@]}"
 }
 
 # Function to remove finalizers from a resource
