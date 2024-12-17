@@ -267,13 +267,13 @@ kubeslice_pre_check() {
     if [[ "$ENABLE_INSTALL_CONTROLLER" == "true" && "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" == "false" ]]; then
 
         # Print the input values to kubeaccess_precheck
-        echo "🔧 Input Values to kubeaccess_precheck:"
-        echo "  📛 Component Name: kubeslice-controller"
-        echo "  🌐 Use Global Kubeconfig: $KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG"
-        echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG"
-        echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT"
-        echo "  🗂️  Component Kubeconfig: $KUBESLICE_CONTROLLER_KUBECONFIG"
-        echo "  🌐 Component Kubecontext: $KUBESLICE_CONTROLLER_KUBECONTEXT"
+        echo "🔧 Input Values to kubeaccess_precheck:" >&2
+        echo "  📛 Component Name: kubeslice-controller" >&2
+        echo "  🌐 Use Global Kubeconfig: $KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" >&2
+        echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG" >&2
+        echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT" >&2
+        echo "  🗂️  Component Kubeconfig: $KUBESLICE_CONTROLLER_KUBECONFIG" >&2
+        echo "  🌐 Component Kubecontext: $KUBESLICE_CONTROLLER_KUBECONTEXT" >&2
         echo "-----------------------------------------"
 
         # Using the kubeaccess_precheck function to determine kubeconfig and kubecontext
@@ -286,21 +286,21 @@ kubeslice_pre_check() {
             "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
         # Print the return values with icons
-        echo "🔧 Return Values from kubeaccess_precheck:"
-        echo "  🗂️  kubeconfig_path=$kubeconfig_path"
-        echo "  🌐 kubecontext=$kubecontext"
+        echo "🔧 Return Values from kubeaccess_precheck:" >&2
+        echo "  🗂️  kubeconfig_path=$kubeconfig_path" >&2
+        echo "  🌐 kubecontext=$kubecontext" >&2
 
         # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
         if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-            echo "🔍 Validating Kubecontext:"
-            echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "🔍 Validating Kubecontext:" >&2
+            echo "  🗂️  Kubeconfig Path: $kubeconfig_path" >&2
+            echo "  🌐 Kubecontext: $kubecontext" >&2
 
             validate_kubecontext "$kubeconfig_path" "$kubecontext"
         else
-            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-            echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2
+            echo "  🗂️  Kubeconfig Path: $kubeconfig_path" >&2
+            echo "  🌐 Kubecontext: $kubecontext" >&2
             exit 1
         fi
 
@@ -310,44 +310,44 @@ kubeslice_pre_check() {
             context_arg="--context $kubecontext"
         fi
 
-        echo "-----------------------------------------"
-        echo "🔍 Validating access to the kubeslice-controller cluster using kubeconfig '$kubeconfig_path'..."
-        echo "🔧 Variables:"
-        echo "  ENABLE_INSTALL_CONTROLLER=$ENABLE_INSTALL_CONTROLLER"
-        echo "  KUBESLICE_CONTROLLER_SKIP_INSTALLATION=$KUBESLICE_CONTROLLER_SKIP_INSTALLATION"
-        echo "  kubeconfig_path=$kubeconfig_path"
-        echo "  kubecontext=$kubecontext"
-        echo "  KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG=$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG"
-        echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG"
-        echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT"
-        echo "  context_arg=$context_arg"
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2
+        echo "🔍 Validating access to the kubeslice-controller cluster using kubeconfig '$kubeconfig_path'..." >&2
+        echo "🔧 Variables:" >&2
+        echo "  ENABLE_INSTALL_CONTROLLER=$ENABLE_INSTALL_CONTROLLER" >&2
+        echo "  KUBESLICE_CONTROLLER_SKIP_INSTALLATION=$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" >&2
+        echo "  kubeconfig_path=$kubeconfig_path" >&2
+        echo "  kubecontext=$kubecontext" >&2
+        echo "  KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG=$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" >&2
+        echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG" >&2
+        echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT" >&2
+        echo "  context_arg=$context_arg" >&2
+        echo "-----------------------------------------" >&2
 
         cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" $context_arg 2>&1)
         if [[ $? -ne 0 ]]; then
-            echo "❌ Error: Unable to access the kubeslice-controller cluster using kubeconfig '$kubeconfig_path'."
-            echo "Details: $cluster_info"
+            echo "❌ Error: Unable to access the kubeslice-controller cluster using kubeconfig '$kubeconfig_path'." >&2 
+            echo "Details: $cluster_info" >&2
             exit 1
         fi
 
         controller_cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
-        echo "✔️  Successfully accessed kubeslice-controller cluster. Kubernetes endpoint: $controller_cluster_endpoint"
-        echo "-----------------------------------------"
+        echo "✔️  Successfully accessed kubeslice-controller cluster. Kubernetes endpoint: $controller_cluster_endpoint" >&2 
+        echo "-----------------------------------------" >&2
     else
-        echo "⏩ Skipping kubeslice-controller cluster validation as installation is skipped or not enabled."
+        echo "⏩ Skipping kubeslice-controller cluster validation as installation is skipped or not enabled." >&2 
     fi
     # Validate access to the kubeslice-ui cluster if installation is not skipped
     if [[ "$ENABLE_INSTALL_UI" == "true" && "$KUBESLICE_UI_SKIP_INSTALLATION" == "false" ]]; then
 
         # Print the input variables
-        echo "🔧 kubeaccess_precheck - Input Variables:"
-        echo "  📛 Component Name: kubeslice-ui"
-        echo "  🌐 Use Global Kubeconfig: $KUBESLICE_UI_USE_GLOBAL_KUBECONFIG"
-        echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG"
-        echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT"
-        echo "  🗂️  Component Kubeconfig: $KUBESLICE_UI_KUBECONFIG"
-        echo "  🌐 Component Kubecontext: $KUBESLICE_UI_KUBECONTEXT"
+        echo "🔧 kubeaccess_precheck - Input Variables:" >&2 
+        echo "  📛 Component Name: kubeslice-ui" >&2 
+        echo "  🌐 Use Global Kubeconfig: $KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" >&2 
+        echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG" >&2  
+        echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT" >&2 
+        echo "  🗂️  Component Kubeconfig: $KUBESLICE_UI_KUBECONFIG" >&2 
+        echo "  🌐 Component Kubecontext: $KUBESLICE_UI_KUBECONTEXT" >&2 
         echo "-----------------------------------------"
 
         # Using the kubeaccess_precheck function to determine kubeconfig and kubecontext
@@ -360,22 +360,22 @@ kubeslice_pre_check() {
             "$KUBESLICE_UI_KUBECONTEXT")
 
         # Print the output variables
-        echo "🔧 kubeaccess_precheck - Output Variables:"
-        echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "🔧 kubeaccess_precheck - Output Variables:" >&2 
+        echo "  🗂️  Kubeconfig Path: $kubeconfig_path" >&2 
+        echo "  🌐 Kubecontext: $kubecontext" >&2  
         echo "-----------------------------------------"
 
         # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
         if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-            echo "🔍 Validating Kubecontext:"
-            echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "🔍 Validating Kubecontext:" >&2 
+            echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2 
+            echo "  🌐 Kubecontext: $kubecontext" >&2 
 
             validate_kubecontext "$kubeconfig_path" "$kubecontext"
         else
-            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-            echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2 
+            echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2 
+            echo "  🌐 Kubecontext: $kubecontext" >&2 
             exit 1
         fi
 
@@ -384,31 +384,31 @@ kubeslice_pre_check() {
         if [[ -n "$kubecontext" && "$kubecontext" != "null" ]]; then
             context_arg="--context $kubecontext"
         fi
-        echo "-----------------------------------------"
-        echo "🔍 Validating access to the kubeslice-ui cluster using kubeconfig '$kubeconfig_path'..."
-        echo "🔧 Variables:"
-        echo "  ENABLE_INSTALL_UI=$ENABLE_INSTALL_UI"
-        echo "  KUBESLICE_UI_SKIP_INSTALLATION=$KUBESLICE_UI_SKIP_INSTALLATION"
-        echo "  kubeconfig_path=$kubeconfig_path"
-        echo "  kubecontext=$kubecontext"
-        echo "  KUBESLICE_UI_USE_GLOBAL_KUBECONFIG=$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG"
-        echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG"
-        echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT"
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2 
+        echo "🔍 Validating access to the kubeslice-ui cluster using kubeconfig '$kubeconfig_path'..." >&2 
+        echo "🔧 Variables:" >&2 
+        echo "  ENABLE_INSTALL_UI=$ENABLE_INSTALL_UI" >&2 
+        echo "  KUBESLICE_UI_SKIP_INSTALLATION=$KUBESLICE_UI_SKIP_INSTALLATION" >&2 
+        echo "  kubeconfig_path=$kubeconfig_path" >&2 
+        echo "  kubecontext=$kubecontext" >&2 
+        echo "  KUBESLICE_UI_USE_GLOBAL_KUBECONFIG=$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" >&2 
+        echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG" >&2 
+        echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT" >&2 
+        echo "-----------------------------------------" >&2 
 
         cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" $context_arg 2>&1)
         if [[ $? -ne 0 ]]; then
-            echo "❌ Error: Unable to access the kubeslice-ui cluster using kubeconfig '$kubeconfig_path'."
+            echo "❌ Error: Unable to access the kubeslice-ui cluster using kubeconfig '$kubeconfig_path'." >&2 
             echo "Details: $cluster_info"
             exit 1
         fi
 
         ui_cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
-        echo "✔️  Successfully accessed kubeslice-ui cluster. Kubernetes endpoint: $ui_cluster_endpoint"
-        echo "-----------------------------------------"
+        echo "✔️  Successfully accessed kubeslice-ui cluster. Kubernetes endpoint: $ui_cluster_endpoint" >&2 
+        echo "-----------------------------------------" >&2 
     else
-        echo "⏩ Skipping kubeslice-ui cluster validation as installation is skipped or not enabled."
+        echo "⏩ Skipping kubeslice-ui cluster validation as installation is skipped or not enabled." >&2 
     fi
 
     # Iterate through each worker configuration and validate access if installation is not skipped
@@ -416,25 +416,25 @@ kubeslice_pre_check() {
         IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"$worker"
 
         if [[ "$skip_installation" == "false" ]]; then
-            # Print the input variables for the kubeaccess_precheck function
-            echo "🔧 Input Variables for kubeaccess_precheck:"
-            echo "  📛 Component Name: $worker_name"
-            echo "  🌐 Use Global Kubeconfig: $use_global_kubeconfig"
-            echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG"
-            echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT"
-            echo "  🗂️  Component Kubeconfig: $kubeconfig"
-            echo "  🌐 Component Kubecontext: $kubecontext"
-            echo "-----------------------------------------"
+            # Print the input variables for the kubeaccess_precheck function 
+            echo "🔧 Input Variables for kubeaccess_precheck:" >&2 
+            echo "  📛 Component Name: $worker_name" >&2 
+            echo "  🌐 Use Global Kubeconfig: $use_global_kubeconfig" >&2 
+            echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG" >&2 
+            echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT" >&2 
+            echo "  🗂️  Component Kubeconfig: $kubeconfig" >&2 
+            echo "  🌐 Component Kubecontext: $kubecontext" >&2 
+            echo "-----------------------------------------" >&2 
 
-            # Print input variables before calling kubeaccess_precheck
-            echo "🔧 kubeaccess_precheck - Input Variables:"
-            echo "  📛 Worker Name: $worker_name"
-            echo "  🌐 Use Global Kubeconfig: $use_global_kubeconfig"
-            echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG"
-            echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT"
-            echo "  🗂️  Component Kubeconfig: $kubeconfig"
-            echo "  🌐 Component Kubecontext: $kubecontext"
-            echo "-----------------------------------------"
+            # Print input variables before calling kubeaccess_precheck 
+            echo "🔧 kubeaccess_precheck - Input Variables:" >&2 
+            echo "  📛 Worker Name: $worker_name" >&2 
+            echo "  🌐 Use Global Kubeconfig: $use_global_kubeconfig" >&2 
+            echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG" >&2 
+            echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT" >&2 
+            echo "  🗂️  Component Kubeconfig: $kubeconfig" >&2 
+            echo "  🌐 Component Kubecontext: $kubecontext" >&2 
+            echo "-----------------------------------------" >&2 
 
             # Call the kubeaccess_precheck function and capture output
             read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
@@ -446,22 +446,22 @@ kubeslice_pre_check() {
                 "$kubecontext")
 
             # Print output variables after calling kubeaccess_precheck
-            echo "🔧 kubeaccess_precheck - Output Variables:"
-            echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
-            echo "-----------------------------------------"
+            echo "🔧 kubeaccess_precheck - Output Variables:" >&2  
+            echo "  🗂️  Kubeconfig Path: $kubeconfig_path" >&2 
+            echo "  🌐 Kubecontext: $kubecontext" >&2 
+            echo "-----------------------------------------" >&2 
 
             # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
             if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-                echo "🔍 Validating Kubecontext:"
-                echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-                echo "  🌐 Kubecontext: $kubecontext"
+                echo "🔍 Validating Kubecontext:" >&2 
+                echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2 
+                echo "  🌐 Kubecontext: $kubecontext" >&2 
 
                 validate_kubecontext "$kubeconfig_path" "$kubecontext"
             else
-                echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-                echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-                echo "  🌐 Kubecontext: $kubecontext"
+                echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2 
+                echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2  
+                echo "  🌐 Kubecontext: $kubecontext" >&2 
                 exit 1
             fi
 
@@ -471,27 +471,27 @@ kubeslice_pre_check() {
                 context_arg="--context $kubecontext"
             fi
 
-            echo "-----------------------------------------"
-            echo "🔍 Validating access to the worker cluster '$worker_name' using kubeconfig '$kubeconfig_path'..."
-            echo "🔧 Variables:"
-            echo "  worker_name=$worker_name"
-            echo "  skip_installation=$skip_installation"
-            echo "  use_global_kubeconfig=$use_global_kubeconfig"
-            echo "  kubeconfig=$kubeconfig_path"
-            echo "  kubecontext=$kubecontext"
-            echo "  context_arg=$context_arg"
-            echo "  namespace=$namespace"
-            echo "  release_name=$release_name"
-            echo "  chart_name=$chart_name"
-            echo "  repo_url=$repo_url"
-            echo "  username=$username"
-            echo "  password=$password"
-            echo "-----------------------------------------"
+            echo "-----------------------------------------" >&2 
+            echo "🔍 Validating access to the worker cluster '$worker_name' using kubeconfig '$kubeconfig_path'..." >&2 
+            echo "🔧 Variables:" >&2 
+            echo "  worker_name=$worker_name" >&2  
+            echo "  skip_installation=$skip_installation" >&2 
+            echo "  use_global_kubeconfig=$use_global_kubeconfig" >&2 
+            echo "  kubeconfig=$kubeconfig_path" >&2 
+            echo "  kubecontext=$kubecontext" >&2 
+            echo "  context_arg=$context_arg" >&2 
+            echo "  namespace=$namespace" >&2  
+            echo "  release_name=$release_name" >&2 
+            echo "  chart_name=$chart_name" >&2 
+            echo "  repo_url=$repo_url" >&2 
+            echo "  username=$username" >&2 
+            echo "  password=$password" >&2  
+            echo "-----------------------------------------" >&2 
 
             cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" $context_arg 2>&1)
             if [[ $? -ne 0 ]]; then
-                echo "❌ Error: Unable to access the worker cluster '$worker_name' using kubeconfig '$kubeconfig_path'."
-                echo "Details: $cluster_info"
+                echo "❌ Error: Unable to access the worker cluster '$worker_name' using kubeconfig '$kubeconfig_path'." >&2 
+                echo "Details: $cluster_info" >&2 
                 exit 1
             fi
 
