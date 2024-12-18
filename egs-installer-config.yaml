@@ -215,6 +215,13 @@ additional_apps:
         service:
           type: ClusterIP
         prometheusSpec:
+          storageSpec: {}
+            # volumeClaimTemplate:
+            #   spec:
+            #     accessModes: ["ReadWriteOnce"]
+            #     resources:
+            #       requests:
+            #         storage: 50Gi
           additionalScrapeConfigs:
           - job_name: tgi
             kubernetes_sd_configs:
@@ -224,8 +231,6 @@ additional_apps:
               target_label: pod_name
             - source_labels: [__meta_kubernetes_pod_container_name]
               target_label: container_name
-            static_configs:
-              - targets: ["llm-inference.demo.svc.cluster.local:80"]
           - job_name: gpu-metrics
             scrape_interval: 1s
             metrics_path: /metrics
@@ -280,7 +285,7 @@ additional_apps:
         database: "postgres"  # Default database to create
       primary:
         persistence:
-          enabled: true  # Enable persistent storage for PostgreSQL
+          enabled: false  # Enable persistent storage for PostgreSQL
           size: 10Gi  # Size of the Persistent Volume Claim
     helm_flags: "--wait"  # Additional Helm flags for this application's installation
     verify_install: true  # Verify the installation of postgresql
