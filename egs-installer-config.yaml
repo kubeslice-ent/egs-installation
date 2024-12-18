@@ -77,12 +77,10 @@ kubeslice_controller_egs:
         postgresPassword:                    # Optional, can be specified here or retrieved from the secret
         postgresDB:                         # Optional, can be specified here or retrieved from the secret
         postgresSslmode: require
+        prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090
     kubeslice:
       controller: 
         endpoint: ""  # Endpoint of the controller API server; auto-fetched if left empty
-        migration:
-          minio:
-            install: "false"  # Do not install MinIO during migration
     prometheus:
       server:
         persistentVolume:       # Enable/disable Persistent Volume Claim for Prometheus data
@@ -106,6 +104,8 @@ kubeslice_ui_egs:
     global:
       imageRegistry: docker.io/aveshasystems
     kubeslice:
+      prometheus:
+        url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  
       dashboard:
         enabled: false     # Enable or disable kubernetes-dashboard, bydefault false
       uiproxy:
