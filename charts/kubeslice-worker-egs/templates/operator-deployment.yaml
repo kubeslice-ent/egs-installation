@@ -154,15 +154,15 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubeslice.io/node-type
-                operator: In
-                values:
-                - gateway
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #       - matchExpressions:
+      #         - key: kubeslice.io/node-type
+      #           operator: In
+      #           values:
+      #           - gateway
       tolerations:
         - operator: "Exists"
 ---
