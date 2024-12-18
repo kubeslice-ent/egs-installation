@@ -11,7 +11,7 @@ spec:
     - name: http
       port: 80
       protocol: TCP
-      targetPort: 80
+      targetPort: 8080
   selector:
     app: kubeslice-ui-v2
   type: ClusterIP
@@ -47,7 +47,7 @@ spec:
                 - ALL
             readOnlyRootFilesystem: false
           ports:
-            - containerPort: 3000
+            - containerPort: 8080
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
