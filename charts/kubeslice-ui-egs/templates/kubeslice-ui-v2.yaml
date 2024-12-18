@@ -32,14 +32,31 @@ spec:
         app: kubeslice-ui-v2
     spec:
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.uiv2.image }}:{{ .Values.kubeslice.uiv2.tag }}'
+        - image: 'aveshadev/{{ .Values.kubeslice.uiv2.image }}:{{ .Values.kubeslice.uiv2.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.uiv2.pullPolicy }}'
           name: kubeslice-ui-v2
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           ports:
             - containerPort: 3000
-          {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+      {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
-        - name: kubeslice-ui-image-pull-secret
-          {{- end }}
+        - name: {{ .Values.imagePullSecretsName }}
+      {{- end }}
       tolerations:
         - operator: "Exists"
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault

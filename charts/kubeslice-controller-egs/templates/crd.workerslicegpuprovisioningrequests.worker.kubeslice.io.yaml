@@ -11,6 +11,9 @@ spec:
     kind: WorkerSliceGPUProvisioningRequest
     listKind: WorkerSliceGPUProvisioningRequestList
     plural: workerslicegpuprovisioningrequests
+    shortNames:
+    - slicegpr
+    - slicegprs
     singular: workerslicegpuprovisioningrequest
   scope: Namespaced
   versions:
@@ -51,9 +54,13 @@ spec:
                 type: boolean
               enableSecondaryNetwork:
                 type: boolean
+              enforceIdleTimeOut:
+                type: boolean
               exitDuration:
                 type: string
               gpuSharingMode:
+                type: string
+              idleTimeOutDuration:
                 type: string
               instanceType:
                 type: string
@@ -93,17 +100,32 @@ spec:
                 type: string
               failureReason:
                 type: string
+              gpuUtilizationInfo:
+                properties:
+                  gpuMetrices:
+                    items:
+                      properties:
+                        metricName:
+                          type: string
+                        metricValue:
+                          type: string
+                        timeStamp:
+                          format: date-time
+                          type: string
+                      type: object
+                    type: array
+                  timeSinceNoUtilization:
+                    format: date-time
+                    type: string
+                  unUtilizedDuration:
+                    type: string
+                type: object
               numGPUsAllocated:
                 type: integer
               provisioningStatus:
-                enum:
-                - Pending
-                - Queued
-                - Failed
-                - Successful
-                - Running
-                - Complete
-                - EarlyReleased
+                description: |-
+                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
                 type: string
               startTimestamp:
                 format: date-time

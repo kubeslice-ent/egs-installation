@@ -39,7 +39,7 @@ webhooks:
       name: kubeslice-webhook-service
       namespace: {{ .Release.Namespace }}
       path: /mutate-webhook
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: webhook.kubeslice.io
   rules:
   - apiGroups:
@@ -89,7 +89,7 @@ webhooks:
       name: kubeslice-webhook-service
       namespace: {{ .Release.Namespace }}
       path: /validating-webhook
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: vwebhook.kubeslice.io
   rules:
     - apiGroups:
@@ -131,7 +131,7 @@ webhooks:
       name: kubeslice-webhook-service
       namespace: {{ .Release.Namespace }}
       path: /validate-networking-kubeslice-io-v1alpha1-vpcserviceimport
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: vvpcserviceimport.kb.io
   rules:
   - apiGroups:

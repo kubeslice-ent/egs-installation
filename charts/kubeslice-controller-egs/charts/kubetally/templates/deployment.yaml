@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app: pricing-service
-  name: {{ .Release.Name }}-kubetally-pricing-service
+  name: kubetally-pricing-service
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
@@ -20,7 +20,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
+        - image:  '{{ .Values.global.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
           imagePullPolicy: {{.Values.kubetally.pricingService.imagePullPolicy}}
           name: pricing-service
           ports:
@@ -29,21 +29,35 @@ spec:
             - name: APP_ENV
               value: Production
             - name: PRICE_DATABASE_ADDR
-              value: {{.Values.global.kubeTally.postgresAddr}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresAddr
             - name: PRICE_DATABASE_PORT
-              value: "{{.Values.global.kubeTally.postgresPort}}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresPort
             - name: PRICE_DATABASE_USER
               valueFrom:
                 secretKeyRef:
-                  name: kubetally-db-credentials
-                  key: username
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresUser
             - name: PRICE_DATABASE_PASS
               valueFrom:
                 secretKeyRef:
-                  name: kubetally-db-credentials
-                  key: password
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresPassword
             - name: PRICE_DATABASE_NAME
-              value: {{.Values.global.kubeTally.postgresDB}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresDB
+            - name: DATABASE_SSL_MODE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresSslmode
             - name: PORT
               value: "8088"
             - name: PROM_HOST
@@ -64,13 +78,11 @@ spec:
         - name: {{ .Values.kubetally.imagePullSecretName }}
       tolerations:
         - operator: "Exists"
-
-
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Release.Name }}-kubetally-pricing-updater
+  name: kubetally-pricing-updater
   namespace: {{ .Release.Namespace }}
 spec:
   schedule: "{{ .Values.global.kubeTally.pricingUpdaterSchedule }}"
@@ -96,27 +108,43 @@ spec:
                 - name: APP_ENV
                   value: Production
                 - name: PRICE_DATABASE_ADDR
-                  value: {{.Values.global.kubeTally.postgresAddr}}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                      key: postgresAddr
                 - name: PRICE_DATABASE_PORT
-                  value: "{{.Values.global.kubeTally.postgresPort}}"
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                      key: postgresPort
                 - name: PRICE_DATABASE_USER
                   valueFrom:
                     secretKeyRef:
-                      name: kubetally-db-credentials
-                      key: username
+                      name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                      key: postgresUser
                 - name: PRICE_DATABASE_PASS
                   valueFrom:
                     secretKeyRef:
-                      name: kubetally-db-credentials
-                      key: password
+                      name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                      key: postgresPassword
                 - name: PRICE_DATABASE_NAME
-                  value: {{.Values.global.kubeTally.postgresDB}}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                      key: postgresDB
+                - name: DATABASE_SSL_MODE
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                      key: postgresSslmode
                 - name: NUM_AWS_PULL_WORKERS
                   value: "{{.Values.global.kubeTally.priceUpdaterWorkers}}"
                 - name: JOB_MODE
                   value: PRICE_UPDATE
                 - name: PROMETHEUS_ENDPOINT
                   value: {{ .Values.global.kubeTally.prometheusUrl }}
+                - name: CLOUD_PROVIDERS
+                  value: {{ .Values.global.kubeTally.pricingUpdaterCloudProviders }}
                 - name: CONTROLLER_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -135,7 +163,7 @@ kind: Deployment
 metadata:
   labels:
     app: report-service
-  name: {{ .Release.Name }}-kubetally-report
+  name: kubetally-report
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
@@ -159,21 +187,35 @@ spec:
             - name: APP_ENV
               value: production
             - name: PRICE_DATABASE_ADDR
-              value: {{.Values.global.kubeTally.postgresAddr}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresAddr
             - name: PRICE_DATABASE_PORT
-              value: "{{.Values.global.kubeTally.postgresPort}}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresPort
             - name: PRICE_DATABASE_USER
               valueFrom:
                 secretKeyRef:
-                  name: kubetally-db-credentials
-                  key: username
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresUser
             - name: PRICE_DATABASE_PASS
               valueFrom:
                 secretKeyRef:
-                  name: kubetally-db-credentials
-                  key: password
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresPassword
             - name: PRICE_DATABASE_NAME
-              value: {{.Values.global.kubeTally.postgresDB}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresDB
+            - name: DATABASE_SSL_MODE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresSslmode
             - name: HOURS_AGO
               value: '{{ .Values.global.kubeTally.dataProcessingHoursAgo }}'
             - name: PROMETHEUS_ENDPOINT
@@ -192,15 +234,14 @@ spec:
       tolerations:
         - operator: "Exists"
 
+
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-kubetally-pricing-updater-job
+  name: kubetally-pricing-updater-job
   namespace: {{ .Release.Namespace }}
   annotations:
-    # This is what defines this resource as a hook. Without this line, the
-    # job is considered part of the release.
     "helm.sh/hook-weight": "-1"
 spec:
   template:
@@ -220,21 +261,35 @@ spec:
             - name: APP_ENV
               value: Production
             - name: PRICE_DATABASE_ADDR
-              value: {{.Values.global.kubeTally.postgresAddr}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresAddr
             - name: PRICE_DATABASE_PORT
-              value: "{{.Values.global.kubeTally.postgresPort}}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresPort
             - name: PRICE_DATABASE_USER
               valueFrom:
                 secretKeyRef:
-                  name: kubetally-db-credentials
-                  key: username
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresUser
             - name: PRICE_DATABASE_PASS
               valueFrom:
                 secretKeyRef:
-                  name: kubetally-db-credentials
-                  key: password
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresPassword
             - name: PRICE_DATABASE_NAME
-              value: {{.Values.global.kubeTally.postgresDB}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresDB
+            - name: DATABASE_SSL_MODE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  key: postgresSslmode
             - name: NUM_AWS_PULL_WORKERS
               value: "{{.Values.global.kubeTally.priceUpdaterWorkers}}"
             - name: JOB_MODE

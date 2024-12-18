@@ -11,6 +11,9 @@ spec:
     kind: GPUProvisioningRequest
     listKind: GPUProvisioningRequestList
     plural: gpuprovisioningrequests
+    shortNames:
+    - aiopsgpr
+    - aiopsgprs
     singular: gpuprovisioningrequest
   scope: Namespaced
   versions:
@@ -76,11 +79,38 @@ spec:
               enableSecondaryNetwork:
                 description: setup secondary network for workloads
                 type: boolean
+              enforceIdleTimeOut:
+                description: enforce idle timeout flag
+                type: boolean
               exitDuration:
                 description: estimated usage duration of the GPUs; optional
                 type: string
               gpuSharingMode:
                 description: desired type of GPU sharing mechanism
+                type: string
+              gpuUtilizationInfo:
+                description: GPU utilisation info for idle timeout
+                properties:
+                  gpuMetrices:
+                    items:
+                      properties:
+                        metricName:
+                          type: string
+                        metricValue:
+                          type: string
+                        timeStamp:
+                          format: date-time
+                          type: string
+                      type: object
+                    type: array
+                  timeSinceNoUtilization:
+                    format: date-time
+                    type: string
+                  unUtilizedDuration:
+                    type: string
+                type: object
+              idleTimeOutDuration:
+                description: idle time duration
                 type: string
               instanceType:
                 description: Instance Type of the GPU Node

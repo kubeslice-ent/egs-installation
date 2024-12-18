@@ -24,7 +24,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
           - /manager
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.egs.inventory.image }}:{{ .Values.egs.inventory.tag }}"
+        image: "aveshadev/{{ .Values.egs.inventory.image }}:{{ .Values.egs.inventory.tag }}"
         imagePullPolicy: "{{ .Values.egs.inventory.pullPolicy }}"
         env:
           - name: LOG_LEVEL
@@ -52,17 +52,27 @@ spec:
             cpu: 10m
             memory: 64Mi
         securityContext:
+          runAsUser: 65536
+          runAsGroup: 65536
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
           allowPrivilegeEscalation: false
           capabilities:
             drop:
-            - ALL
+              - ALL
+          readOnlyRootFilesystem: true
       securityContext:
-        runAsNonRoot: true
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: inventory-manager-access
       terminationGracePeriodSeconds: 10
-      {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+      {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
-        - name: kubeslice-image-pull-secret
+        - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
       tolerations:
         - operator: "Exists"

@@ -76,3 +76,55 @@ webhooks:
         - spire
         - kubeslice-system
         - kubeslice-controller
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: aiops-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: {{ $ca.Cert | b64enc }}
+    service:
+      name: aiops-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-webhook
+  failurePolicy: Fail
+  name: webhook.aiops.io
+  rules:
+  - apiGroups:
+    - ""
+    - apps
+    - batch
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+    - jobs
+    - deployments
+    - statefulsets
+    - daemonsets
+  sideEffects: NoneOnDryRun
+  namespaceSelector:
+    matchExpressions:
+    - key: kubeslice.io/slice
+      operator: Exists
+    - key: name
+      operator: NotIn
+      values:
+        - kube-system
+        - spire
+        - kubeslice-system
+        - kubeslice-controller
+    - key: kubernetes.io/metadata.name
+      operator: NotIn
+      values:
+        - kube-system
+        - spire
+        - kubeslice-system
+        - kubeslice-controller

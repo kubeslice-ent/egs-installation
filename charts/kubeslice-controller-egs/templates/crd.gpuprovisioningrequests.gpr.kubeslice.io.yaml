@@ -8,9 +8,14 @@ metadata:
 spec:
   group: gpr.kubeslice.io
   names:
+    categories:
+    - all
     kind: GPUProvisioningRequest
     listKind: GPUProvisioningRequestList
     plural: gpuprovisioningrequests
+    shortNames:
+    - gpr
+    - gprs
     singular: gpuprovisioningrequest
   scope: Namespaced
   versions:
@@ -50,6 +55,8 @@ spec:
                 type: boolean
               enableSecondaryNetwork:
                 type: boolean
+              enforceIdleTimeOut:
+                type: boolean
               estimatedStartTime:
                 type: string
               estimatedWaitTime:
@@ -59,6 +66,8 @@ spec:
               gpuShape:
                 type: string
               gpuSharingMode:
+                type: string
+              idleTimeOutDuration:
                 type: string
               instanceType:
                 type: string
@@ -108,15 +117,6 @@ spec:
               numGPUsAllocated:
                 type: integer
               provisioningStatus:
-                enum:
-                - Pending
-                - Queued
-                - Failed
-                - Successful
-                - Running
-                - Complete
-                - EarlyReleased
-                - Evicted
                 type: string
               retryCount:
                 type: integer

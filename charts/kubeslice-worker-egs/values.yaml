@@ -1,9 +1,10 @@
 operator:
   image: worker-operator-ent-egs
-  tag: 0.5.0
+  tag: 1.1.0-RELEASE-a0dd6dc9
   pullPolicy: IfNotPresent
   logLevel: INFO
 
+controllerSecretName: kubeslice-hub #default name used if not specify any name
 ## Base64 encoded secret values from controller cluster
 controllerSecret:
   namespace:
@@ -18,65 +19,17 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: 0.9.0
-  pullPolicy: IfNotPresent
+  tag: 0.10.0-RELEASE-d5a11dbd
+  pullPolicy: Always
   logLevel: INFO
 
 egs:
   prometheusEndpoint: ""
   grafanaDashboardBaseUrl: ""
 
-router:
-  image: cmd-nse-vl3
-  tag: 1.0.4
-  pullPolicy: IfNotPresent                                                                                     
-
-routerSidecar:
-  image: kubeslice-router-sidecar
-  tag: 1.4.4
-  pullPolicy: IfNotPresent
-
-gateway:
-  image: gw-sidecar
-  tag: 0.3.1
-  pullPolicy: IfNotPresent
-  logLevel: INFO
-
-gatewayEdge:
-  image: slicegw-edge
-  tag: 1.0.4
-
-openvpn:
-  server:
-    image: openvpn-server.alpine.amd64
-    tag: 1.0.1
-    pullPolicy: IfNotPresent
-  client:
-    image: openvpn-client.alpine.amd64
-    tag: 1.0.0
-    pullPolicy: IfNotPresent
-
-dns:
-  image: dns
-  tag: 0.1.0
-  pullPolicy: IfNotPresent
-
-envoy:
-  gateway:
-    image: envoygateway
-    tag: 1.0.2
-  proxy:
-    image: envoyproxy-distroless
-    tag: 1.0.1
-
-istio:
-  proxy:
-    image: proxyv2
-    tag: 1.16.0
-
 workerInstaller:
   image: worker-installer
-  tag: 1.2.0
+  tag: 1.5.0
 
 jaeger:
   enabled: false
@@ -89,12 +42,26 @@ metrics:
   metricResolution: "15s"
   imagePullPolicy: IfNotPresent
 
-# username & password & email values for imagePullSecrets has to provided to create a secret
+rbacproxy:
+  # Image name for the RBAC proxy
+  image: kubebuilder-kube-rbac-proxy
+  # Image tag for the RBAC proxy
+  tag: v0.18.0
+
+alpine:
+  # Image name for the alpine
+  image: alpine-k8s
+  # Image tag for the alpine
+  tag: 1.0.1
+
+imagePullSecretsName: "kubeslice-image-pull-secret"
+# leave the below fields empty if secrets are managed externally.
 imagePullSecrets:
-  repository: https://index.docker.io/v1/
+  repository: https://index.docker.io/v1/ ## Value to be used incase using the docker hub images-  https://index.docker.io/v1/
   username:
   password:
   email:
+  dockerconfigjson: ## Value to be used if using external secret managers
 
 controllerNamespace: kubeslice-controller
 
@@ -103,6 +70,3 @@ global:
   profile:
     openshift: false
 
-# enable/disable network component installation
-kubesliceNetworking:
-  enabled: false

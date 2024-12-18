@@ -1,21 +1,3 @@
-  {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
-apiVersion: v1
-data:
-  .dockerconfigjson: {{
-                        printf "{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\",\"email\":\"%s\",\"auth\":\"%s\"}}}"
-                        .Values.imagePullSecrets.repository
-                        .Values.imagePullSecrets.username
-                        .Values.imagePullSecrets.password
-                        .Values.imagePullSecrets.email
-                        (printf "%s:%s" .Values.imagePullSecrets.username .Values.imagePullSecrets.password | b64enc)
-                         | b64enc
-                     }}
-kind: Secret
-metadata:
-  name: kubeslice-image-pull-secret
-  namespace: kubeslice-system
-type: kubernetes.io/dockerconfigjson
-  {{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,8 +28,19 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=10
-        image: '{{ .Values.global.imageRegistry }}/kubebuilder-kube-rbac-proxy:v0.8.0'
+        image: '{{ .Values.global.imageRegistry }}/{{ .Values.rbacproxy.image }}:{{ .Values.rbacproxy.tag }}'
         name: kube-rbac-proxy
+        securityContext:
+          runAsUser: 65536
+          runAsGroup: 65536
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
         ports:
         - containerPort: 8443
           name: https
@@ -60,7 +53,7 @@ spec:
         - --num-of-app-services-per-cr=50
         command:
         - /manager
-        image: '{{ .Values.global.imageRegistry }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
+        image: 'aveshadev/{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
         imagePullPolicy: '{{ .Values.operator.pullPolicy }}'
         env:
           - name: LOG_LEVEL
@@ -68,48 +61,20 @@ spec:
           - name: HUB_HOST_ENDPOINT
             valueFrom:
               secretKeyRef:
-                name: kubeslice-hub
+                name: {{ .Values.controllerSecretName }}
                 key: endpoint
           - name: HUB_PROJECT_NAMESPACE
             valueFrom:
               secretKeyRef:
-                name: kubeslice-hub
+                name: {{ .Values.controllerSecretName }}
                 key: namespace
           - name: CLUSTER_NAME
             value: {{ .Values.cluster.name }}
-          - name: AVESHA_VL3_ROUTER_IMAGE
-            value: "{{ .Values.global.imageRegistry }}/{{ .Values.router.image }}:{{ .Values.router.tag }}"
-          - name: AVESHA_VL3_ROUTER_PULLPOLICY
-            value: {{ .Values.router.pullPolicy }}
-          - name: AVESHA_VL3_SIDECAR_IMAGE
-            value: "{{ .Values.global.imageRegistry }}/{{ .Values.routerSidecar.image }}:{{ .Values.routerSidecar.tag }}"
-          - name: AVESHA_VL3_SIDECAR_IMAGE_PULLPOLICY
-            value: {{ .Values.routerSidecar.pullPolicy }}
           - name: CLUSTER_ENDPOINT
             value: "{{ .Values.cluster.endpoint }}"
-          - name: AVESHA_GW_SIDECAR_IMAGE
-            value: '{{ .Values.global.imageRegistry }}/{{ .Values.gateway.image }}:{{ .Values.gateway.tag }}'
-          - name: AVESHA_GW_SIDECAR_IMAGE_PULLPOLICY
-            value: '{{ .Values.gateway.pullPolicy }}'
-          - name: AVESHA_OPENVPN_SERVER_IMAGE
-            value: '{{ .Values.global.imageRegistry }}/{{ .Values.openvpn.server.image }}:{{ .Values.openvpn.server.tag }}'
-          - name: AVESHA_OPENVPN_SERVER_PULLPOLICY
-            value: '{{ .Values.openvpn.server.pullPolicy }}'
-          - name: AVESHA_OPENVPN_CLIENT_IMAGE
-            value: '{{ .Values.global.imageRegistry }}/{{ .Values.openvpn.client.image }}:{{ .Values.openvpn.client.tag }}'
-          - name: AVESHA_OPENVPN_CLIENT_PULLPOLICY
-            value: '{{ .Values.openvpn.client.pullPolicy }}'
-          - name: AVESHA_SLICE_GW_EDGE_IMAGE
-            value: "{{ .Values.global.imageRegistry }}/{{ .Values.gatewayEdge.image }}:{{ .Values.gatewayEdge.tag }}"
-          - name: AVESHA_ENVOY_PROXY_IMAGE
-            value: "{{ .Values.global.imageRegistry }}/{{ .Values.envoy.proxy.image }}:{{ .Values.envoy.proxy.tag }}"
-          - name: AVESHA_ENVOY_GW_IMAGE
-            value: "{{ .Values.global.imageRegistry }}/{{ .Values.envoy.gateway.image }}:{{ .Values.envoy.gateway.tag }}"
-          - name: AVESHA_ISTIO_PROXY_IMAGE
-            value: "{{ .Values.global.imageRegistry }}/{{ .Values.istio.proxy.image }}:{{ .Values.istio.proxy.tag }}"
-              {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
           - name: WORKER_INSTALLER_IMAGE
             value: "{{ .Values.global.imageRegistry }}/{{ .Values.workerInstaller.image }}:{{ .Values.workerInstaller.tag }}"
+              {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
           - name: IMAGE_PULL_SECRET_NAME
             value: kubeslice-image-pull-secret
               {{- end }}
@@ -123,6 +88,17 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        securityContext:
+          runAsUser: 65536
+          runAsGroup: 65536
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
         ports:
         - containerPort: 9443
           name: webhook-server
@@ -140,8 +116,6 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
         volumeMounts:
           - name: kubeslice-worker-event-schema-conf
             mountPath: /events/event-schema/
@@ -152,6 +126,12 @@ spec:
             name: webhook-certs
             readOnly: true
       serviceAccountName: kubeslice-controller-manager
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 10
       volumes:
         - name: kubeslice-worker-event-schema-conf
@@ -164,16 +144,16 @@ spec:
         - name: hub-secret
           secret:
             defaultMode: 420
-            secretName: kubeslice-hub
+            secretName: {{ .Values.controllerSecretName }}
             items:
             - key: "ca.crt"
               path: "ca.crt"
             - key: "token"
               path: "token"
-        {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+      {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
-      - name: kubeslice-image-pull-secret
-        {{- end }}
+        - name: {{ .Values.imagePullSecretsName }}
+      {{- end }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

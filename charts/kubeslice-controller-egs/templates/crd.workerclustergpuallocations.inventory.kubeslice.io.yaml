@@ -48,20 +48,6 @@ spec:
               nodeInventory:
                 items:
                   properties:
-                    allocation:
-                      properties:
-                        allocationTimestamp:
-                          format: date-time
-                          type: string
-                        gprName:
-                          type: string
-                        sliceName:
-                          type: string
-                        totalGPUs:
-                          type: integer
-                        totalGPUsAllocated:
-                          type: integer
-                      type: object
                     cloudProvider:
                       type: string
                     free:
@@ -77,12 +63,26 @@ spec:
                     gpuSlicingProfile:
                       items:
                         properties:
-                          memory:
+                          allocationStatus:
+                            description: AllocationStatus is the allocation status
+                              of the MIG device
                             type: string
-                          numGPUs:
+                          availableGPUs:
+                            description: AvailableGPUs is the available GPU count
                             type: integer
-                          profileName:
+                          deviceName:
+                            description: DeviceName is the name of the GPU slice
                             type: string
+                          memoryPerGPU:
+                            description: MemoryPerGPU is the memory available per
+                              GPU
+                            type: string
+                          profileName:
+                            description: ProfileName is the name of the GPU profile
+                            type: string
+                          totalGPUs:
+                            description: TotalGPUs is the total GPU count
+                            type: integer
                         type: object
                       type: array
                     gpuTempThreshold:
@@ -91,6 +91,8 @@ spec:
                       type: string
                     memory:
                       type: integer
+                    migStrategy:
+                      type: string
                     nodeHealth:
                       enum:
                       - Healthy
@@ -122,12 +124,26 @@ spec:
                     gpuSlicingProfile:
                       items:
                         properties:
-                          memory:
+                          allocationStatus:
+                            description: AllocationStatus is the allocation status
+                              of the MIG device
                             type: string
-                          numGPUs:
+                          availableGPUs:
+                            description: AvailableGPUs is the available GPU count
                             type: integer
-                          profileName:
+                          deviceName:
+                            description: DeviceName is the name of the GPU slice
                             type: string
+                          memoryPerGPU:
+                            description: MemoryPerGPU is the memory available per
+                              GPU
+                            type: string
+                          profileName:
+                            description: ProfileName is the name of the GPU profile
+                            type: string
+                          totalGPUs:
+                            description: TotalGPUs is the total GPU count
+                            type: integer
                         type: object
                       type: array
                     gpuTempThreshold:
@@ -136,6 +152,8 @@ spec:
                       type: string
                     memory:
                       type: integer
+                    migStrategy:
+                      type: string
                     nodeHealth:
                       enum:
                       - Healthy
