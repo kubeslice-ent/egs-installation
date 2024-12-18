@@ -6481,9 +6481,13 @@ metadata:
 spec:
   ports:
     - name: https
-      port: 8443
       protocol: TCP
+      port: 8443
       targetPort: https
+    - name: metrics
+      protocol: TCP
+      port: 18080
+      targetPort: 18080
   selector:
     control-plane: controller-manager
 ---
