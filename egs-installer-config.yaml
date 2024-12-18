@@ -280,7 +280,7 @@ additional_apps:
         database: "postgres"  # Default database to create
       primary:
         persistence:
-          enabled: true  # Enable persistent storage for PostgreSQL
+          enabled: false  # Enable persistent storage for PostgreSQL
           size: 10Gi  # Size of the Persistent Volume Claim
     helm_flags: "--wait"  # Additional Helm flags for this application's installation
     verify_install: true  # Verify the installation of postgresql
