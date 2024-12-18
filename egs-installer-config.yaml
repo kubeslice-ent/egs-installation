@@ -71,12 +71,12 @@ kubeslice_controller_egs:
       kubeTally:
         enabled: true
         postgresSecretName: kubetally-db-credentials   # Default value, secret name can be overridden
-        postgresAddr:                     # Optional, can be specified here or retrieved from the secret
-        postgresPort:                           # Optional, can be specified here or retrieved from the secret
-        postgresUser:                       # Optional, can be specified here or retrieved from the secret
-        postgresPassword:                    # Optional, can be specified here or retrieved from the secret
-        postgresDB:                         # Optional, can be specified here or retrieved from the secret
-        postgresSslmode: require
+        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"                     # Optional, can be specified here or retrieved from the secret
+        postgresPort: 5432                          # Optional, can be specified here or retrieved from the secret
+        postgresUser: "postgres"                      # Optional, can be specified here or retrieved from the secret
+        postgresPassword: "postgres"                   # Optional, can be specified here or retrieved from the secret
+        postgresDB: "postgres"                        # Optional, can be specified here or retrieved from the secret
+        postgresSslmode: disable
         prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090
     kubeslice:
       controller: 
