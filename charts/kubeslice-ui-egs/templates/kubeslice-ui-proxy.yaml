@@ -44,7 +44,7 @@ spec:
             capabilities:
               drop:
                 - ALL
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
           image: 'aveshadev/{{ .Values.kubeslice.uiproxy.image }}:{{ .Values.kubeslice.uiproxy.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.uiproxy.pullPolicy }}'
           env:

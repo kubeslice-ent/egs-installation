@@ -45,7 +45,7 @@ spec:
             capabilities:
               drop:
                 - ALL
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
           ports:
             - containerPort: 3000
       {{- if .Values.imagePullSecretsName }}

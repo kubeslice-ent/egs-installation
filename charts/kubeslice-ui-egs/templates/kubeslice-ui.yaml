@@ -45,7 +45,7 @@ spec:
           capabilities:
             drop:
               - ALL
-          readOnlyRootFilesystem: true
+          readOnlyRootFilesystem: false
         env:
         - name: KUBESLICE_CONTROLLER_PROMETHEUS
           value: {{ .Values.kubeslice.prometheus.url }}
