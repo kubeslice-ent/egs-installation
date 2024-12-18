@@ -23,6 +23,17 @@ spec:
         - image:  '{{ .Values.global.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
           imagePullPolicy: {{.Values.kubetally.pricingService.imagePullPolicy}}
           name: pricing-service
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           ports:
             - containerPort: 5000
           env:
@@ -74,6 +85,12 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       imagePullSecrets:
         - name: {{ .Values.kubetally.imagePullSecretName }}
       tolerations:
@@ -97,11 +114,19 @@ spec:
             prometheus.io/port: '9999'
             prometheus.io/scrape: 'true'
         spec:
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
           containers:
             - name: pricing-updater
+              securityContext:
+                runAsUser: 65536
+                runAsGroup: 65536
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
               imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
               image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
               env:
@@ -150,6 +175,12 @@ spec:
                     fieldRef:
                       apiVersion: v1
                       fieldPath: metadata.namespace
+          securityContext:
+            runAsUser: 65536               # Non-root user
+            runAsGroup: 65536              # Non-root group
+            runAsNonRoot: true             # Ensure the container does not run as root
+            seccompProfile:
+              type: RuntimeDefault
           imagePullSecrets:
             - name: {{ .Values.kubetally.imagePullSecretName }}
           restartPolicy: Never
@@ -176,11 +207,19 @@ spec:
       labels:
         app: report-service
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: report-service
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           imagePullPolicy: {{ .Values.kubetally.kubeTallyReport.imagePullPolicy }}
           image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
           env:
@@ -229,6 +268,12 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       imagePullSecrets:
         - name: {{ .Values.kubetally.imagePullSecretName }}
       tolerations:
@@ -250,11 +295,19 @@ spec:
         prometheus.io/port: '9999'
         prometheus.io/scrape: 'true'
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: pricing-updater
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
           image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
           env:
@@ -301,6 +354,12 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       imagePullSecrets:
         - name: {{ .Values.kubetally.imagePullSecretName }}
       restartPolicy: Never
