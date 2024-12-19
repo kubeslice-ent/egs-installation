@@ -106,7 +106,7 @@ kubeslice_ui_egs:
         service:
           type: LoadBalancer
       egsCoreApis:
-        enabled: false
+        enabled: true
         service:
           type: LoadBalancer
   helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the UI installation
