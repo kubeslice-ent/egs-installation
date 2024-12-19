@@ -32,7 +32,7 @@ global_image_pull_secret:
   password: ""  # Global Docker registry password
 
 # Node labeling settings
-add_node_label: true  # Enable node labeling during installation
+add_node_label: false  # Enable node labeling during installation
 
 # Kubeconfig settings
 global_kubeconfig: ""  # Relative Path to the global kubeconfig file must be in script directory (used if no specific kubeconfig is provided) - Mandatory
@@ -81,12 +81,6 @@ kubeslice_controller_egs:
     kubeslice:
       controller: 
         endpoint: ""  # Endpoint of the controller API server; auto-fetched if left empty
-    prometheus:
-      server:
-        persistentVolume:       # Enable/disable Persistent Volume Claim for Prometheus data
-          enabled: false         # Enable/disable Persistent Volume Claim for Prometheus data
-          size: 5Gi             # Size of the PVC
-      retention: "30d"          # Retention period for Prometheus data
   helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the installation
   verify_install: false  # Verify the installation of the controller
   verify_install_timeout: 30  # Timeout for the controller installation verification (in seconds)
@@ -97,6 +91,8 @@ kubeslice_controller_egs:
 kubeslice_ui_egs:
   skip_installation: false  # Do not skip the installation of the UI
   use_global_kubeconfig: true  # Use global kubeconfig for the UI installation
+  kubeconfig: ""  # Path to the kubeconfig file specific to the ui
+  kubecontext: ""  # Kubecontext specific to the ui; if empty, uses the global context
   namespace: "kubeslice-controller"  # Kubernetes namespace where the UI will be installed
   release: "egs-ui"  # Helm release name for the UI
   chart: "kubeslice-ui-egs"  # Helm chart name for the UI
@@ -106,9 +102,11 @@ kubeslice_ui_egs:
     kubeslice:
       prometheus:
         url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  
-      dashboard:
-        enabled: false     # Enable or disable kubernetes-dashboard, bydefault false
       uiproxy:
+        service:
+          type: LoadBalancer
+      egsCoreApis:
+        enabled: false
         service:
           type: LoadBalancer
   helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the UI installation
@@ -121,6 +119,8 @@ kubeslice_ui_egs:
 kubeslice_worker_egs:
   - name: "worker-1"
     use_global_kubeconfig: true  # Use global kubeconfig for this worker
+    kubeconfig: ""  # Path to the kubeconfig file specific to the worker
+    kubecontext: ""  # Kubecontext specific to the worker; if empty, uses the global context
     skip_installation: false  # Do not skip the installation of the worker
     specific_use_local_charts: true  # Override to use local charts for this worker
     namespace: "kubeslice-system"  # Kubernetes namespace for this worker
@@ -129,8 +129,6 @@ kubeslice_worker_egs:
     inline_values:  # Inline Helm values for the worker chart
       global:
         imageRegistry: docker.io/aveshasystems
-      kubesliceNetworking:
-        enabled: false  # Disable Kubeslice networking for this worker
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
@@ -178,6 +176,8 @@ additional_apps:
   - name: "gpu-operator"
     skip_installation: false  # Do not skip the installation of the GPU operator
     use_global_kubeconfig: true  # Use global kubeconfig for this application
+    kubeconfig: ""  # Path to the kubeconfig file specific to this application
+    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
     namespace: "egs-gpu-operator"  # Namespace where the GPU operator will be installed
     release: "gpu-operator"  # Helm release name for the GPU operator
     chart: "gpu-operator"  # Helm chart name for the GPU operator
@@ -203,6 +203,8 @@ additional_apps:
   - name: "prometheus"
     skip_installation: false  # Do not skip the installation of Prometheus
     use_global_kubeconfig: true  # Use global kubeconfig for Prometheus
+    kubeconfig: ""  # Path to the kubeconfig file specific to this application
+    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
     namespace: "egs-monitoring"  # Namespace where Prometheus will be installed
     release: "prometheus"  # Helm release name for Prometheus
     chart: "kube-prometheus-stack"  # Helm chart name for Prometheus
@@ -270,6 +272,8 @@ additional_apps:
   - name: "postgresql"
     skip_installation: false  # Do not skip the installation of postgresql
     use_global_kubeconfig: true  # Use global kubeconfig for postgresql
+    kubeconfig: ""  # Path to the kubeconfig file specific to this application
+    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
     namespace: "kt-postgresql"  # Namespace where postgresql will be installed
     release: "kt-postgresql"  # Helm release name for postgresql
     chart: "postgresql"  # Helm chart name for postgresql
@@ -328,6 +332,8 @@ manifests:
     overrides_yaml: ""  # Path to an external YAML file with overrides, if any
     inline_yaml: null  # Inline YAML content for this application
     use_global_kubeconfig: true  # Use global kubeconfig for this application
+    kubeconfig: ""  # Path to the kubeconfig file specific to this application
+    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
     skip_installation: false  # Do not skip the installation of this application
     verify_install: false  # Verify the installation of this application
     verify_install_timeout: 200  # Timeout for verification (in seconds)
@@ -340,6 +346,8 @@ run_commands: false  # Enable the execution of commands defined in the YAML
 # Define commands to execute
 commands:
   - use_global_kubeconfig: true  # Use global kubeconfig for these commands
+    kubeconfig: ""  # Path to the kubeconfig file specific to this application
+    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
     skip_installation: true  # Do not skip the execution of these commands
     verify_install: false  # Verify the execution of these commands
     verify_install_timeout: 200  # Timeout for verification (in seconds)

@@ -526,42 +526,42 @@ kubeslice_pre_check() {
             echo "✔️  Successfully accessed worker cluster '$worker_name'. Kubernetes endpoint: $worker_cluster_endpoint"
 
             # Check for nodes labeled with 'kubeslice.io/node-type=gateway'
-            echo "🔍 Checking for nodes labeled 'kubeslice.io/node-type=gateway' in worker cluster '$worker_name'..."
-            gateway_node_count=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg -l kubeslice.io/node-type=gateway --no-headers | wc -l)
+            # echo "🔍 Checking for nodes labeled 'kubeslice.io/node-type=gateway' in worker cluster '$worker_name'..."
+            # gateway_node_count=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg -l kubeslice.io/node-type=gateway --no-headers | wc -l)
 
-            if [ "$gateway_node_count" -lt 1 ]; then
-                if [ "$ADD_NODE_LABEL" = "true" ]; then
-                    echo "⚠️  No nodes labeled with 'kubeslice.io/node-type=gateway' found. Attempting to label nodes..."
+            # if [ "$gateway_node_count" -lt 1 ]; then
+            #     if [ "$ADD_NODE_LABEL" = "true" ]; then
+            #         echo "⚠️  No nodes labeled with 'kubeslice.io/node-type=gateway' found. Attempting to label nodes..."
 
-                    # Attempt to label nodes with external IPs first
-                    nodes_with_external_ips=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg -o jsonpath='{range .items[*]}{@.metadata.name} {@.status.addresses[?(@.type=="ExternalIP")].address}{"\n"}{end}' | grep -v '^\s*$' | awk '{print $1}' | head -n 2)
+            #         # Attempt to label nodes with external IPs first
+            #         nodes_with_external_ips=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg -o jsonpath='{range .items[*]}{@.metadata.name} {@.status.addresses[?(@.type=="ExternalIP")].address}{"\n"}{end}' | grep -v '^\s*$' | awk '{print $1}' | head -n 2)
 
-                    if [ -n "$nodes_with_external_ips" ]; then
-                        echo "✔️  Nodes with external IPs found: $nodes_with_external_ips"
-                        nodes_to_label=$nodes_with_external_ips
-                    else
-                        echo "⚠️  No nodes with external IPs found. Falling back to any available nodes."
-                        nodes_to_label=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg --no-headers | awk '{print $1}' | head -n 2)
-                    fi
+            #         if [ -n "$nodes_with_external_ips" ]; then
+            #             echo "✔️  Nodes with external IPs found: $nodes_with_external_ips"
+            #             nodes_to_label=$nodes_with_external_ips
+            #         else
+            #             echo "⚠️  No nodes with external IPs found. Falling back to any available nodes."
+            #             nodes_to_label=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg --no-headers | awk '{print $1}' | head -n 2)
+            #         fi
 
-                    if [ -z "$nodes_to_label" ]; then
-                        echo "❌ Error: No nodes available to label."
-                        exit 1
-                    fi
+            #         if [ -z "$nodes_to_label" ]; then
+            #             echo "❌ Error: No nodes available to label."
+            #             exit 1
+            #         fi
 
-                    for node in $nodes_to_label; do
-                        echo "🔧 Labeling node '$node' with 'kubeslice.io/node-type=gateway'..."
-                        kubectl label node "$node" kubeslice.io/node-type=gateway --kubeconfig $kubeconfig_path $context_arg --overwrite
-                    done
-                    echo "✔️  Nodes labeled successfully."
-                else
-                    echo "❌ Error: ADD_NODE_LABEL is not enabled, and no nodes are labeled with 'kubeslice.io/node-type=gateway'."
-                    exit 1
-                fi
-            else
-                echo "✔️  Worker cluster '$worker_name' has at least one node labeled with 'kubeslice.io/node-type=gateway'."
-            fi
-            echo "-----------------------------------------"
+            #         for node in $nodes_to_label; do
+            #             echo "🔧 Labeling node '$node' with 'kubeslice.io/node-type=gateway'..."
+            #             kubectl label node "$node" kubeslice.io/node-type=gateway --kubeconfig $kubeconfig_path $context_arg --overwrite
+            #         done
+            #         echo "✔️  Nodes labeled successfully."
+            #     else
+            #         echo "❌ Error: ADD_NODE_LABEL is not enabled, and no nodes are labeled with 'kubeslice.io/node-type=gateway'."
+            #         exit 1
+            #     fi
+            # else
+            #     echo "✔️  Worker cluster '$worker_name' has at least one node labeled with 'kubeslice.io/node-type=gateway'."
+            # fi
+            # echo "-----------------------------------------"
         else
             echo "⏩ Skipping validation for worker cluster '$worker_name' as installation is skipped."
         fi
