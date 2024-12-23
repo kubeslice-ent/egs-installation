@@ -2519,7 +2519,11 @@ get_prometheus_external_ip() {
     echo "  🛠️  Service: $service_name" >&2
     echo "  🔧 Service Type: $service_type" >&2
 
-    if [ "$service_type" = "LoadBalancer" ]; then
+    service_type_existing=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.type}')
+
+    if [ "$service_type_existing" != "$service_type" ]; then
+        echo "${service_name}.${namespace}.svc.cluster.local:9090"
+    elif [ "$service_type" = "LoadBalancer" ]; then
         ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
         echo "$ip"
     elif [ "$service_type" = "NodePort" ]; then
@@ -2531,7 +2535,8 @@ get_prometheus_external_ip() {
         service_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].port}')
         echo "$cluster_ip:$service_port"
     else
-        echo "${service_name}.${namespace}.svc.cluster.local:9090"
+        echo "Unsupported service type: $service_type" >&2
+        return 1
     fi
 }
 
