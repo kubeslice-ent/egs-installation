@@ -336,3 +336,7 @@ enable_troubleshoot:
     - aiops.kubeslice.io
     - networking.kubeslice.io
     - monitoring.coreos.com
+  upload_logs:  # Upload log settings
+    enabled: false  # Enable log upload functionality
+    command: |  # Command to execute
+      
