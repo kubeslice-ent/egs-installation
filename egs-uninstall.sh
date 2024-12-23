@@ -267,13 +267,13 @@ kubeslice_pre_check() {
     if [[ "$ENABLE_INSTALL_CONTROLLER" == "true" && "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" == "false" ]]; then
 
         # Print the input values to kubeaccess_precheck
-        echo "🔧 Input Values to kubeaccess_precheck:"
-        echo "  📛 Component Name: kubeslice-controller"
-        echo "  🌐 Use Global Kubeconfig: $KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG"
-        echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG"
-        echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT"
-        echo "  🗂️  Component Kubeconfig: $KUBESLICE_CONTROLLER_KUBECONFIG"
-        echo "  🌐 Component Kubecontext: $KUBESLICE_CONTROLLER_KUBECONTEXT"
+        echo "🔧 Input Values to kubeaccess_precheck:" >&2
+        echo "  📛 Component Name: kubeslice-controller" >&2
+        echo "  🌐 Use Global Kubeconfig: $KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" >&2
+        echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG" >&2
+        echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT" >&2
+        echo "  🗂️  Component Kubeconfig: $KUBESLICE_CONTROLLER_KUBECONFIG" >&2
+        echo "  🌐 Component Kubecontext: $KUBESLICE_CONTROLLER_KUBECONTEXT" >&2
         echo "-----------------------------------------"
 
         # Using the kubeaccess_precheck function to determine kubeconfig and kubecontext
@@ -286,21 +286,21 @@ kubeslice_pre_check() {
             "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
         # Print the return values with icons
-        echo "🔧 Return Values from kubeaccess_precheck:"
-        echo "  🗂️  kubeconfig_path=$kubeconfig_path"
-        echo "  🌐 kubecontext=$kubecontext"
+        echo "🔧 Return Values from kubeaccess_precheck:" >&2
+        echo "  🗂️  kubeconfig_path=$kubeconfig_path" >&2
+        echo "  🌐 kubecontext=$kubecontext" >&2
 
         # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
         if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-            echo "🔍 Validating Kubecontext:"
-            echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "🔍 Validating Kubecontext:" >&2
+            echo "  🗂️  Kubeconfig Path: $kubeconfig_path" >&2
+            echo "  🌐 Kubecontext: $kubecontext" >&2
 
             validate_kubecontext "$kubeconfig_path" "$kubecontext"
         else
-            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-            echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2
+            echo "  🗂️  Kubeconfig Path: $kubeconfig_path" >&2
+            echo "  🌐 Kubecontext: $kubecontext" >&2
             exit 1
         fi
 
@@ -310,44 +310,44 @@ kubeslice_pre_check() {
             context_arg="--context $kubecontext"
         fi
 
-        echo "-----------------------------------------"
-        echo "🔍 Validating access to the kubeslice-controller cluster using kubeconfig '$kubeconfig_path'..."
-        echo "🔧 Variables:"
-        echo "  ENABLE_INSTALL_CONTROLLER=$ENABLE_INSTALL_CONTROLLER"
-        echo "  KUBESLICE_CONTROLLER_SKIP_INSTALLATION=$KUBESLICE_CONTROLLER_SKIP_INSTALLATION"
-        echo "  kubeconfig_path=$kubeconfig_path"
-        echo "  kubecontext=$kubecontext"
-        echo "  KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG=$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG"
-        echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG"
-        echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT"
-        echo "  context_arg=$context_arg"
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2
+        echo "🔍 Validating access to the kubeslice-controller cluster using kubeconfig '$kubeconfig_path'..." >&2
+        echo "🔧 Variables:" >&2
+        echo "  ENABLE_INSTALL_CONTROLLER=$ENABLE_INSTALL_CONTROLLER" >&2
+        echo "  KUBESLICE_CONTROLLER_SKIP_INSTALLATION=$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" >&2
+        echo "  kubeconfig_path=$kubeconfig_path" >&2
+        echo "  kubecontext=$kubecontext" >&2
+        echo "  KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG=$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" >&2
+        echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG" >&2
+        echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT" >&2
+        echo "  context_arg=$context_arg" >&2
+        echo "-----------------------------------------" >&2
 
         cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" $context_arg 2>&1)
         if [[ $? -ne 0 ]]; then
-            echo "❌ Error: Unable to access the kubeslice-controller cluster using kubeconfig '$kubeconfig_path'."
-            echo "Details: $cluster_info"
+            echo "❌ Error: Unable to access the kubeslice-controller cluster using kubeconfig '$kubeconfig_path'." >&2 
+            echo "Details: $cluster_info" >&2
             exit 1
         fi
 
         controller_cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
-        echo "✔️  Successfully accessed kubeslice-controller cluster. Kubernetes endpoint: $controller_cluster_endpoint"
-        echo "-----------------------------------------"
+        echo "✔️  Successfully accessed kubeslice-controller cluster. Kubernetes endpoint: $controller_cluster_endpoint" >&2 
+        echo "-----------------------------------------" >&2
     else
-        echo "⏩ Skipping kubeslice-controller cluster validation as installation is skipped or not enabled."
+        echo "⏩ Skipping kubeslice-controller cluster validation as installation is skipped or not enabled." >&2 
     fi
     # Validate access to the kubeslice-ui cluster if installation is not skipped
     if [[ "$ENABLE_INSTALL_UI" == "true" && "$KUBESLICE_UI_SKIP_INSTALLATION" == "false" ]]; then
 
         # Print the input variables
-        echo "🔧 kubeaccess_precheck - Input Variables:"
-        echo "  📛 Component Name: kubeslice-ui"
-        echo "  🌐 Use Global Kubeconfig: $KUBESLICE_UI_USE_GLOBAL_KUBECONFIG"
-        echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG"
-        echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT"
-        echo "  🗂️  Component Kubeconfig: $KUBESLICE_UI_KUBECONFIG"
-        echo "  🌐 Component Kubecontext: $KUBESLICE_UI_KUBECONTEXT"
+        echo "🔧 kubeaccess_precheck - Input Variables:" >&2 
+        echo "  📛 Component Name: kubeslice-ui" >&2 
+        echo "  🌐 Use Global Kubeconfig: $KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" >&2 
+        echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG" >&2  
+        echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT" >&2 
+        echo "  🗂️  Component Kubeconfig: $KUBESLICE_UI_KUBECONFIG" >&2 
+        echo "  🌐 Component Kubecontext: $KUBESLICE_UI_KUBECONTEXT" >&2 
         echo "-----------------------------------------"
 
         # Using the kubeaccess_precheck function to determine kubeconfig and kubecontext
@@ -360,22 +360,22 @@ kubeslice_pre_check() {
             "$KUBESLICE_UI_KUBECONTEXT")
 
         # Print the output variables
-        echo "🔧 kubeaccess_precheck - Output Variables:"
-        echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "🔧 kubeaccess_precheck - Output Variables:" >&2 
+        echo "  🗂️  Kubeconfig Path: $kubeconfig_path" >&2 
+        echo "  🌐 Kubecontext: $kubecontext" >&2  
         echo "-----------------------------------------"
 
         # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
         if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-            echo "🔍 Validating Kubecontext:"
-            echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "🔍 Validating Kubecontext:" >&2 
+            echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2 
+            echo "  🌐 Kubecontext: $kubecontext" >&2 
 
             validate_kubecontext "$kubeconfig_path" "$kubecontext"
         else
-            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-            echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2 
+            echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2 
+            echo "  🌐 Kubecontext: $kubecontext" >&2 
             exit 1
         fi
 
@@ -384,31 +384,31 @@ kubeslice_pre_check() {
         if [[ -n "$kubecontext" && "$kubecontext" != "null" ]]; then
             context_arg="--context $kubecontext"
         fi
-        echo "-----------------------------------------"
-        echo "🔍 Validating access to the kubeslice-ui cluster using kubeconfig '$kubeconfig_path'..."
-        echo "🔧 Variables:"
-        echo "  ENABLE_INSTALL_UI=$ENABLE_INSTALL_UI"
-        echo "  KUBESLICE_UI_SKIP_INSTALLATION=$KUBESLICE_UI_SKIP_INSTALLATION"
-        echo "  kubeconfig_path=$kubeconfig_path"
-        echo "  kubecontext=$kubecontext"
-        echo "  KUBESLICE_UI_USE_GLOBAL_KUBECONFIG=$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG"
-        echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG"
-        echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT"
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2 
+        echo "🔍 Validating access to the kubeslice-ui cluster using kubeconfig '$kubeconfig_path'..." >&2 
+        echo "🔧 Variables:" >&2 
+        echo "  ENABLE_INSTALL_UI=$ENABLE_INSTALL_UI" >&2 
+        echo "  KUBESLICE_UI_SKIP_INSTALLATION=$KUBESLICE_UI_SKIP_INSTALLATION" >&2 
+        echo "  kubeconfig_path=$kubeconfig_path" >&2 
+        echo "  kubecontext=$kubecontext" >&2 
+        echo "  KUBESLICE_UI_USE_GLOBAL_KUBECONFIG=$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" >&2 
+        echo "  GLOBAL_KUBECONFIG=$GLOBAL_KUBECONFIG" >&2 
+        echo "  GLOBAL_KUBECONTEXT=$GLOBAL_KUBECONTEXT" >&2 
+        echo "-----------------------------------------" >&2 
 
         cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" $context_arg 2>&1)
         if [[ $? -ne 0 ]]; then
-            echo "❌ Error: Unable to access the kubeslice-ui cluster using kubeconfig '$kubeconfig_path'."
+            echo "❌ Error: Unable to access the kubeslice-ui cluster using kubeconfig '$kubeconfig_path'." >&2 
             echo "Details: $cluster_info"
             exit 1
         fi
 
         ui_cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
-        echo "✔️  Successfully accessed kubeslice-ui cluster. Kubernetes endpoint: $ui_cluster_endpoint"
-        echo "-----------------------------------------"
+        echo "✔️  Successfully accessed kubeslice-ui cluster. Kubernetes endpoint: $ui_cluster_endpoint" >&2 
+        echo "-----------------------------------------" >&2 
     else
-        echo "⏩ Skipping kubeslice-ui cluster validation as installation is skipped or not enabled."
+        echo "⏩ Skipping kubeslice-ui cluster validation as installation is skipped or not enabled." >&2 
     fi
 
     # Iterate through each worker configuration and validate access if installation is not skipped
@@ -416,25 +416,25 @@ kubeslice_pre_check() {
         IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"$worker"
 
         if [[ "$skip_installation" == "false" ]]; then
-            # Print the input variables for the kubeaccess_precheck function
-            echo "🔧 Input Variables for kubeaccess_precheck:"
-            echo "  📛 Component Name: $worker_name"
-            echo "  🌐 Use Global Kubeconfig: $use_global_kubeconfig"
-            echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG"
-            echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT"
-            echo "  🗂️  Component Kubeconfig: $kubeconfig"
-            echo "  🌐 Component Kubecontext: $kubecontext"
-            echo "-----------------------------------------"
+            # Print the input variables for the kubeaccess_precheck function 
+            echo "🔧 Input Variables for kubeaccess_precheck:" >&2 
+            echo "  📛 Component Name: $worker_name" >&2 
+            echo "  🌐 Use Global Kubeconfig: $use_global_kubeconfig" >&2 
+            echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG" >&2 
+            echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT" >&2 
+            echo "  🗂️  Component Kubeconfig: $kubeconfig" >&2 
+            echo "  🌐 Component Kubecontext: $kubecontext" >&2 
+            echo "-----------------------------------------" >&2 
 
-            # Print input variables before calling kubeaccess_precheck
-            echo "🔧 kubeaccess_precheck - Input Variables:"
-            echo "  📛 Worker Name: $worker_name"
-            echo "  🌐 Use Global Kubeconfig: $use_global_kubeconfig"
-            echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG"
-            echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT"
-            echo "  🗂️  Component Kubeconfig: $kubeconfig"
-            echo "  🌐 Component Kubecontext: $kubecontext"
-            echo "-----------------------------------------"
+            # Print input variables before calling kubeaccess_precheck 
+            echo "🔧 kubeaccess_precheck - Input Variables:" >&2 
+            echo "  📛 Worker Name: $worker_name" >&2 
+            echo "  🌐 Use Global Kubeconfig: $use_global_kubeconfig" >&2 
+            echo "  🗂️  Global Kubeconfig: $GLOBAL_KUBECONFIG" >&2 
+            echo "  🌐 Global Kubecontext: $GLOBAL_KUBECONTEXT" >&2 
+            echo "  🗂️  Component Kubeconfig: $kubeconfig" >&2 
+            echo "  🌐 Component Kubecontext: $kubecontext" >&2 
+            echo "-----------------------------------------" >&2 
 
             # Call the kubeaccess_precheck function and capture output
             read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
@@ -446,22 +446,22 @@ kubeslice_pre_check() {
                 "$kubecontext")
 
             # Print output variables after calling kubeaccess_precheck
-            echo "🔧 kubeaccess_precheck - Output Variables:"
-            echo "  🗂️  Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
-            echo "-----------------------------------------"
+            echo "🔧 kubeaccess_precheck - Output Variables:" >&2  
+            echo "  🗂️  Kubeconfig Path: $kubeconfig_path" >&2 
+            echo "  🌐 Kubecontext: $kubecontext" >&2 
+            echo "-----------------------------------------" >&2 
 
             # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
             if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-                echo "🔍 Validating Kubecontext:"
-                echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-                echo "  🌐 Kubecontext: $kubecontext"
+                echo "🔍 Validating Kubecontext:" >&2 
+                echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2 
+                echo "  🌐 Kubecontext: $kubecontext" >&2 
 
                 validate_kubecontext "$kubeconfig_path" "$kubecontext"
             else
-                echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-                echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-                echo "  🌐 Kubecontext: $kubecontext"
+                echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2 
+                echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2  
+                echo "  🌐 Kubecontext: $kubecontext" >&2 
                 exit 1
             fi
 
@@ -471,59 +471,59 @@ kubeslice_pre_check() {
                 context_arg="--context $kubecontext"
             fi
 
-            echo "-----------------------------------------"
-            echo "🔍 Validating access to the worker cluster '$worker_name' using kubeconfig '$kubeconfig_path'..."
-            echo "🔧 Variables:"
-            echo "  worker_name=$worker_name"
-            echo "  skip_installation=$skip_installation"
-            echo "  use_global_kubeconfig=$use_global_kubeconfig"
-            echo "  kubeconfig=$kubeconfig_path"
-            echo "  kubecontext=$kubecontext"
-            echo "  context_arg=$context_arg"
-            echo "  namespace=$namespace"
-            echo "  release_name=$release_name"
-            echo "  chart_name=$chart_name"
-            echo "  repo_url=$repo_url"
-            echo "  username=$username"
-            echo "  password=$password"
-            echo "-----------------------------------------"
+            echo "-----------------------------------------" >&2 
+            echo "🔍 Validating access to the worker cluster '$worker_name' using kubeconfig '$kubeconfig_path'..." >&2 
+            echo "🔧 Variables:" >&2 
+            echo "  worker_name=$worker_name" >&2  
+            echo "  skip_installation=$skip_installation" >&2 
+            echo "  use_global_kubeconfig=$use_global_kubeconfig" >&2 
+            echo "  kubeconfig=$kubeconfig_path" >&2 
+            echo "  kubecontext=$kubecontext" >&2 
+            echo "  context_arg=$context_arg" >&2 
+            echo "  namespace=$namespace" >&2  
+            echo "  release_name=$release_name" >&2 
+            echo "  chart_name=$chart_name" >&2 
+            echo "  repo_url=$repo_url" >&2 
+            echo "  username=$username" >&2 
+            echo "  password=$password" >&2  
+            echo "-----------------------------------------" >&2 
 
             cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" $context_arg 2>&1)
             if [[ $? -ne 0 ]]; then
-                echo "❌ Error: Unable to access the worker cluster '$worker_name' using kubeconfig '$kubeconfig_path'."
-                echo "Details: $cluster_info"
+                echo "❌ Error: Unable to access the worker cluster '$worker_name' using kubeconfig '$kubeconfig_path'." >&2 
+                echo "Details: $cluster_info" >&2 
                 exit 1
             fi
 
             worker_cluster_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
-            echo "✔️  Successfully accessed worker cluster '$worker_name'. Kubernetes endpoint: $worker_cluster_endpoint"
+            echo "✔️  Successfully accessed worker cluster '$worker_name'. Kubernetes endpoint: $worker_cluster_endpoint"  >&2 
 
             # Check for nodes labeled with 'kubeslice.io/node-type=gateway'
-            echo "🔍 Checking for nodes labeled 'kubeslice.io/node-type=gateway' in worker cluster '$worker_name'..."
+            echo "🔍 Checking for nodes labeled 'kubeslice.io/node-type=gateway' in worker cluster '$worker_name'..."  >&2 
             gateway_nodes=$(kubectl get nodes --kubeconfig $kubeconfig_path $context_arg -l kubeslice.io/node-type=gateway --no-headers -o custom-columns=NAME:.metadata.name)
 
             if [ -z "$gateway_nodes" ]; then
-                echo "✔️  No nodes labeled with 'kubeslice.io/node-type=gateway' found."
+                echo "✔️  No nodes labeled with 'kubeslice.io/node-type=gateway' found."  >&2 
             else
-                echo "🔧 Removing label 'kubeslice.io/node-type=gateway' from nodes in worker cluster '$worker_name'..."
+                echo "🔧 Removing label 'kubeslice.io/node-type=gateway' from nodes in worker cluster '$worker_name'..."  >&2 
                 for node in $gateway_nodes; do
                     kubectl label node "$node" kubeslice.io/node-type- --kubeconfig $kubeconfig_path $context_arg --overwrite
-                    echo "✔️  Label removed from node '$node'."
+                    echo "✔️  Label removed from node '$node'."  >&2 
                 done
-                echo "✔️  All gateway labels removed successfully."
+                echo "✔️  All gateway labels removed successfully."  >&2 
             fi
-            echo "-----------------------------------------"
+            echo "-----------------------------------------"  >&2 
         else
-            echo "⏩ Skipping validation for worker cluster '$worker_name' as installation is skipped."
+            echo "⏩ Skipping validation for worker cluster '$worker_name' as installation is skipped."  >&2 
         fi
     done
 
-    echo "✔️ Kubeslice pre-checks completed successfully."
+    echo "✔️ Kubeslice pre-checks completed successfully."  >&2 
     echo ""
 }
 
 validate_paths() {
-    echo "🚀 Validating paths..."
+    echo "🚀 Validating paths..."  >&2 
     local error_found=false
 
     # Check BASE_PATH
@@ -1198,26 +1198,26 @@ remove_helm_repo() {
         echo "⚠️  Helm repository '$repo_name' does not exist. Nothing to remove."
     fi
 
-    echo "✔️ Helm repository removal complete."
+    echo "✔️ Helm repository removal complete."  >&2
 }
 
 delete_manifests_from_yaml() {
     local yaml_file=$1
     local base_path=$(yq e '.base_path' "$yaml_file")
 
-    echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"
-    echo "🔧 Global Variables:"
-    echo "  🗂️  global_kubeconfig_path=$GLOBAL_KUBECONFIG"
-    echo "  🌐  global_kubecontext= --context $GLOBAL_KUBECONTEXT"
-    echo "  🗂️  base_path=$base_path"
-    echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"
-    echo "-----------------------------------------"
+    echo "🚀 Starting the application of Kubernetes manifests from YAML file: $yaml_file"  >&2
+    echo "🔧 Global Variables:"  >&2
+    echo "  🗂️  global_kubeconfig_path=$GLOBAL_KUBECONFIG"   >&2
+    echo "  🌐  global_kubecontext= --context $GLOBAL_KUBECONTEXT"  >&2
+    echo "  🗂️  base_path=$base_path"  >&2
+    echo "  🗂️  installation_files_path=$INSTALLATION_FILES_PATH"  >&2
+    echo "-----------------------------------------"  >&2
 
     # Check if the manifests section exists
     manifests_exist=$(yq e '.manifests' "$yaml_file")
 
     if [ "$manifests_exist" == "null" ]; then
-        echo "⚠️  Warning: No 'manifests' section found in the YAML file. Skipping manifest application."
+        echo "⚠️  Warning: No 'manifests' section found in the YAML file. Skipping manifest application."  >&2
         return
     fi
 
@@ -1225,7 +1225,7 @@ delete_manifests_from_yaml() {
     manifests_length=$(yq e '.manifests | length' "$yaml_file")
 
     if [ "$manifests_length" -eq 0 ]; then
-        echo "⚠️  Warning: 'manifests' section is defined, but no manifests found. Skipping manifest application."
+        echo "⚠️  Warning: 'manifests' section is defined, but no manifests found. Skipping manifest application."  >&2
         return
     fi
 
@@ -1255,22 +1255,22 @@ delete_manifests_from_yaml() {
             "$kubecontext")
 
         # Print output variables after calling kubeaccess_precheck
-        echo "🔧 kubeaccess_precheck - Output Variables:"
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-        echo "-----------------------------------------"
+        echo "🔧 kubeaccess_precheck - Output Variables:"  >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"  >&2
+        echo "  🌐 Kubecontext: $kubecontext"  >&2
+        echo "-----------------------------------------"  >&2
 
         # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
         if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-            echo "🔍 Validating Kubecontext:"
-            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "🔍 Validating Kubecontext:"  >&2
+            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"  >&2
+            echo "  🌐 Kubecontext: $kubecontext"  >&2
 
             validate_kubecontext "$kubeconfig_path" "$kubecontext"
         else
-            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-            echo "  🌐 Kubecontext: $kubecontext"
+            echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."  >&2
+            echo "  🗂️ Kubeconfig Path: $kubeconfig_path"  >&2
+            echo "  🌐 Kubecontext: $kubecontext"  >&2
             exit 1
         fi
 
@@ -1280,19 +1280,19 @@ delete_manifests_from_yaml() {
             context_arg="--context $kubecontext"
         fi
 
-        echo "🔧 App Variables for '$appname':"
-        echo "  🗂️  base_manifest=$base_manifest"
-        echo "  🗂️  overrides_yaml=$overrides_yaml"
-        echo "  📄 inline_yaml=${inline_yaml:+Provided}"
-        echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"
-        echo "  🗂️  kubeconfig_path=$kubeconfig_path"
-        echo "  🌐 kubecontext=$kubecontext"
-        echo "  🚫 skip_installation=$skip_installation"
-        echo "  🔍 verify_install=$verify_install"
-        echo "  ⏰ verify_install_timeout=$verify_install_timeout"
-        echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"
-        echo "  🏷️ namespace=$namespace"
-        echo "-----------------------------------------"
+        echo "🔧 App Variables for '$appname':"  >&2
+        echo "  🗂️  base_manifest=$base_manifest"  >&2
+        echo "  🗂️  overrides_yaml=$overrides_yaml"  >&2
+        echo "  📄 inline_yaml=${inline_yaml:+Provided}"  >&2
+        echo "  🌐 use_global_kubeconfig=$use_global_kubeconfig"  >&2
+        echo "  🗂️  kubeconfig_path=$kubeconfig_path"  >&2
+        echo "  🌐 kubecontext=$kubecontext"  >&2
+        echo "  🚫 skip_installation=$skip_installation"  >&2
+        echo "  🔍 verify_install=$verify_install"  >&2
+        echo "  ⏰ verify_install_timeout=$verify_install_timeout"  >&2
+        echo "  ❌ skip_on_verify_fail=$skip_on_verify_fail"  >&2
+        echo "  🏷️ namespace=$namespace"  >&2
+        echo "-----------------------------------------"  >&2
 
         # Handle HTTPS file URLs or local base manifest files
         if [ -n "$base_manifest" ] && [ "$base_manifest" != "null" ]; then
@@ -1312,11 +1312,11 @@ delete_manifests_from_yaml() {
         else
             # If no base manifest, start with inline YAML if provided
             if [ -n "$inline_yaml" ] && [ "$inline_yaml" != "null" ]; then
-                echo "📄 Using inline YAML as the base manifest for $appname"
+                echo "📄 Using inline YAML as the base manifest for $appname"  >&2
                 temp_manifest="$INSTALLATION_FILES_PATH/${appname}_manifest.yaml"
                 echo "$inline_yaml" >"$temp_manifest"
             else
-                echo "❌ Error: Neither base manifest nor inline YAML provided for app: $appname"
+                echo "❌ Error: Neither base manifest nor inline YAML provided for app: $appname"  >&2
                 return 1
             fi
         fi
@@ -1328,7 +1328,7 @@ delete_manifests_from_yaml() {
 
         # Merge inline YAML with the base manifest if provided
         if [ -n "$inline_yaml" ] && [ "$inline_yaml" != "null" ] && [ -f "$temp_manifest" ]; then
-            echo "🔄 Merging inline YAML for $appname into the base manifest"
+            echo "🔄 Merging inline YAML for $appname into the base manifest"  >&2
             echo "$inline_yaml" | yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "-")' - "$temp_manifest" >"${temp_manifest}_merged"
             mv "${temp_manifest}_merged" "$temp_manifest"
         fi
@@ -1339,23 +1339,23 @@ delete_manifests_from_yaml() {
             yq eval-all 'select(filename == "'"$temp_manifest"'") * select(filename == "'"$overrides_yaml"'")' "$temp_manifest" "$overrides_yaml" >"${temp_manifest}_merged"
             mv "${temp_manifest}_merged" "$temp_manifest"
         else
-            echo "⚠️  No overrides YAML file found for app: $appname. Proceeding with base/inline manifest."
+            echo "⚠️  No overrides YAML file found for app: $appname. Proceeding with base/inline manifest."  >&2
         fi
 
-        echo "📄 Deleting manifest for app: $appname in namespace: ${namespace}"
+        echo "📄 Deleting manifest for app: $appname in namespace: ${namespace}"  >&2
         kubectl delete -f "$temp_manifest" --namespace "${namespace}" --kubeconfig "$kubeconfig_path" $context_arg
         if [ $? -ne 0 ]; then
-            echo "❌ Error: Failed to delete manifest for app: $appname"
+            echo "❌ Error: Failed to delete manifest for app: $appname"  >&2
             return 1
         fi
-        echo "✔️ Successfully deleted manifest for app: $appname"
+        echo "✔️ Successfully deleted manifest for app: $appname"  >&2
 
         # Clean up the temporary manifest file
         rm -f "$temp_manifest"
     done
 
-    echo "✅ All applicable manifests deleted successfully."
-    echo "-----------------------------------------"
+    echo "✅ All applicable manifests deleted successfully."  >&2
+    echo "-----------------------------------------"  >&2
 }
 
 # Function to fetch and display summary information
@@ -1365,7 +1365,7 @@ display_summary() {
     echo "========================================="
 
     # Summary of all Helm chart uninstallations (including controller, UI, workers, and additional apps)
-    echo "🛠️ **Application Uninstallations Summary**:"
+    echo "🛠️ **Application Uninstallations Summary**:"  >&2
 
     # Helper function to check Helm release status, ensure it is removed, and show resources
     check_helm_release_uninstalled() {
@@ -1374,24 +1374,24 @@ display_summary() {
         local kubeconfig=$3
         local kubecontext=$4
 
-        echo "-----------------------------------------"
-        echo "🚀 **Helm Release: $release_name**"
+        echo "-----------------------------------------"  >&2
+        echo "🚀 **Helm Release: $release_name**"  >&2
         if helm status "$release_name" --namespace "$namespace" --kubeconfig "$kubeconfig" --kube-context "$kubecontext" >/dev/null 2>&1; then
-            echo "⚠️ Warning: Release '$release_name' in namespace '$namespace' still exists. It was not successfully uninstalled."
+            echo "⚠️ Warning: Release '$release_name' in namespace '$namespace' still exists. It was not successfully uninstalled."  >&2
         else
-            echo "✔️ Release '$release_name' in namespace '$namespace' has been successfully uninstalled."
+            echo "✔️ Release '$release_name' in namespace '$namespace' has been successfully uninstalled."  >&2
             # Display resources in the namespace after uninstallation
-            echo "📋 Resources in namespace '$namespace' after uninstallation:"
+            echo "📋 Resources in namespace '$namespace' after uninstallation:"  >&2
             kubectl get all --namespace "$namespace" --kubeconfig "$kubeconfig" --context "$kubecontext"
         fi
-        echo "-----------------------------------------"
+        echo "-----------------------------------------"  >&2
     }
 
     # Kubeslice Controller Uninstallation
     if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ] && [ "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" = "false" ]; then
         check_helm_release_uninstalled "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT"
     else
-        echo "⏩ **Kubeslice Controller** uninstallation was skipped or disabled."
+        echo "⏩ **Kubeslice Controller** uninstallation was skipped or disabled."  >&2
     fi
 
     # Worker Cluster Uninstallations
@@ -1418,11 +1418,11 @@ display_summary() {
             if [ "$skip_installation" = "false" ]; then
                 check_helm_release_uninstalled "$release_name" "$namespace" "$kubeconfig" "$kubecontext"
             else
-                echo "⏩ **Worker Cluster '$worker_name'** uninstallation was skipped."
+                echo "⏩ **Worker Cluster '$worker_name'** uninstallation was skipped."  >&2
             fi
         done
     else
-        echo "⏩ **Worker uninstallation was skipped or disabled.**"
+        echo "⏩ **Worker uninstallation was skipped or disabled.**"  >&2
     fi
 
     # Additional Application Uninstallations
@@ -1449,11 +1449,11 @@ display_summary() {
             if [ "$skip_installation" = "false" ]; then
                 check_helm_release_uninstalled "$release_name" "$namespace" "$kubeconfig" "$kubecontext"
             else
-                echo "⏩ **Additional Application '$app_name'** uninstallation was skipped."
+                echo "⏩ **Additional Application '$app_name'** uninstallation was skipped."  >&2
             fi
         done
     else
-        echo "⏩ **Additional application uninstallation was skipped or disabled.**"
+        echo "⏩ **Additional application uninstallation was skipped or disabled.**"  >&2 
     fi
 
     echo "========================================="
@@ -1472,18 +1472,18 @@ uninstall_helm_chart_and_cleanup() {
     local verify_uninstall_timeout=${8:-300}
     local skip_on_verify_fail=${9:-false}
 
-    echo "-----------------------------------------"
-    echo "🚀 Processing Helm chart uninstallation"
-    echo "Release Name: $release_name"
-    echo "Namespace: $namespace"
-    echo "Skip Uninstallation: $skip_uninstallation"
-    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig"
-    echo "Specific Kubeconfig Path: $specific_kubeconfig_path"
-    echo "Specific Kubecontext: $specific_kubecontext"
-    echo "Verify Uninstall: $verify_uninstall"
-    echo "Verify Uninstall Timeout: $verify_uninstall_timeout"
-    echo "Skip on Verify Fail: $skip_on_verify_fail"
-    echo "-----------------------------------------"
+    echo "-----------------------------------------" >&2
+    echo "🚀 Processing Helm chart uninstallation" >&2
+    echo "Release Name: $release_name" >&2
+    echo "Namespace: $namespace" >&2
+    echo "Skip Uninstallation: $skip_uninstallation" >&2
+    echo "Specific Use Global Kubeconfig: $specific_use_global_kubeconfig" >&2
+    echo "Specific Kubeconfig Path: $specific_kubeconfig_path" >&2
+    echo "Specific Kubecontext: $specific_kubecontext" >&2
+    echo "Verify Uninstall: $verify_uninstall" >&2
+    echo "Verify Uninstall Timeout: $verify_uninstall_timeout" >&2
+    echo "Skip on Verify Fail: $skip_on_verify_fail" >&2
+    echo "-----------------------------------------" >&2
 
     local script_dir=$(dirname "$(realpath "$0")")
     # Use kubeaccess_precheck to determine kubeconfig path and context
@@ -1496,22 +1496,22 @@ uninstall_helm_chart_and_cleanup() {
         "$specific_kubecontext")
 
     # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: $release_name"
-    echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
+    echo "🔧 kubeaccess_precheck - Output Variables: $release_name" >&2
+    echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+    echo "-----------------------------------------" >&2
 
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "🔍 Validating Kubecontext:" >&2
+        echo "  🗂️   Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
 
         validate_kubecontext "$kubeconfig_path" "$kubecontext"
     else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️   Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
         exit 1
     fi
 
@@ -1519,23 +1519,23 @@ uninstall_helm_chart_and_cleanup() {
     if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
         context_arg="--kube-context $kubecontext"
     fi
-    echo "Context Argument: $context_arg"
+    echo "Context Argument: $context_arg" >&2
 
     if [ "$skip_uninstallation" = "true" ]; then
-        echo "⏩ Skipping uninstallation of Helm chart '$release_name' in namespace '$namespace' as per configuration."
+        echo "⏩ Skipping uninstallation of Helm chart '$release_name' in namespace '$namespace' as per configuration." >&2
         return
     fi
 
     helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path"
-    echo "Helm Command Base: $helm_cmd"
+    echo "Helm Command Base: $helm_cmd" >&2
 
     uninstall_helm_chart() {
-        echo "Executing: helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg"
+        echo "Executing: helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg" >&2
         helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg
     }
 
     delete_kubernetes_objects() {
-        echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'"
+        echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'" >&2
         kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
         kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
         kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
@@ -1543,56 +1543,52 @@ uninstall_helm_chart_and_cleanup() {
     }
 
     if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-        echo "🔄 Helm release '$release_name' found. Preparing to uninstall..."
+        echo "🔄 Helm release '$release_name' found. Preparing to uninstall..." >&2
         uninstall_helm_chart
 
         if [ "$verify_uninstall" = "true" ]; then
-            echo "🔍 Verifying uninstallation of Helm release '$release_name'..."
+            echo "🔍 Verifying uninstallation of Helm release '$release_name'..." >&2
             end_time=$((SECONDS + verify_uninstall_timeout))
             while [ $SECONDS -lt $end_time ]; do
                 if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-                    echo "⏳ Waiting for Helm release '$release_name' to be fully uninstalled..."
+                    echo "⏳ Waiting for Helm release '$release_name' to be fully uninstalled..." >&2
                     sleep 5
                 else
-                    echo "✔️ Helm release '$release_name' has been successfully uninstalled."
+                    echo "✔️ Helm release '$release_name' has been successfully uninstalled." >&2
                     break
                 fi
             done
 
             if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-                echo "❌ Error: Helm release '$release_name' was not fully uninstalled. Deleting all resources manually..."
-                delete_kubernetes_objects
-                echo "🔄 Retrying Helm uninstallation..."
+                echo "❌ Error: Helm release '$release_name' was not fully uninstalled. Deleting all resources manually..." >&2
+                #delete_kubernetes_objects
+                echo "🔄 Retrying Helm uninstallation..." >&2
                 uninstall_helm_chart
                 if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
                     if [ "$skip_on_verify_fail" = "true" ]; then
-                        echo "⚠️ Warning: Helm release '$release_name' was not fully uninstalled after retry, but skipping as per configuration."
+                        echo "⚠️ Warning: Helm release '$release_name' was not fully uninstalled after retry, but skipping as per configuration." >&2
                     else
-                        echo "❌ Error: Helm release '$release_name' failed to uninstall even after retrying. Manual intervention may be required."
+                        echo "❌ Error: Helm release '$release_name' failed to uninstall even after retrying. Manual intervention may be required." >&2
                         return 1
                     fi
                 else
-                    echo "✔️ Helm release '$release_name' has been successfully uninstalled after manual cleanup."
+                    echo "✔️ Helm release '$release_name' has been successfully uninstalled after manual cleanup." >&2
                 fi
             fi
         else
-            echo "✔️ Helm release '$release_name' has been uninstalled (unverified)."
+            echo "✔️ Helm release '$release_name' has been uninstalled (unverified)." >&2
         fi
     else
-        echo "⚠️ Warning: Helm release '$release_name' not found in namespace '$namespace'."
+        echo "⚠️ Warning: Helm release '$release_name' not found in namespace '$namespace'." >&2
     fi
 
-    echo "-----------------------------------------"
-    echo "🧹 Cleaning up any remaining Kubernetes objects..."
-    delete_kubernetes_objects
-
-    echo "-----------------------------------------"
-    echo "✔️ Completed uninstallation and cleanup for release: $release_name"
-    echo "-----------------------------------------"
+    echo "-----------------------------------------" >&2
+    echo "✔️ Completed uninstallation and cleanup for release: $release_name" >&2
+    echo "-----------------------------------------" >&2
 }
 
 unregister_clusters_in_controller() {
-    echo "🚀 Starting cluster unregistration in controller cluster..."
+    echo "🚀 Starting cluster unregistration in controller cluster..." >&2
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "Kubeslice Controller Project Deletion" \
@@ -1603,22 +1599,22 @@ unregister_clusters_in_controller() {
         "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
     # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "
-    echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation " >&2
+    echo "  🗂️    Kubeconfig Path: $kubeconfig_path" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+    echo "-----------------------------------------" >&2
 
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "🔍 Validating Kubecontext:" >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
 
         validate_kubecontext "$kubeconfig_path" "$kubecontext"
     else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
         exit 1
     fi
 
@@ -1629,37 +1625,37 @@ unregister_clusters_in_controller() {
 
     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
 
-    echo "🔧 Variables:"
-    echo "  kubeconfig_path=$kubeconfig_path"
-    echo "  context_arg=$context_arg"
-    echo "  namespace=$namespace"
-    echo "-----------------------------------------"
+    echo "🔧 Variables:" >&2
+    echo "  kubeconfig_path=$kubeconfig_path" >&2
+    echo "  context_arg=$context_arg" >&2
+    echo "  namespace=$namespace" >&2
+    echo "-----------------------------------------" >&2
 
 
     for registration in "${KUBESLICE_CLUSTER_REGISTRATIONS[@]}"; do
         IFS="|" read -r cluster_name project_name telemetry_enabled telemetry_endpoint telemetry_provider geo_location_provider geo_location_region <<<"$registration"
 
-        echo "-----------------------------------------"
-        echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'"
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2
+        echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'" >&2
+        echo "-----------------------------------------" >&2
 
-        kubectl delete cluster "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
+        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
         if [ $? -ne 0 ]; then
-            echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'."
+            echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'." >&2
             return 1
         fi
 
-        echo "🔍 Verifying cluster unregistration for '$cluster_name'..."
-        if kubectl get cluster "$cluster_name" -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-            echo "❌ Error: Cluster '$cluster_name' still exists in project '$project_name'."
+        echo "🔍 Verifying cluster unregistration for '$cluster_name'..." >&2
+        if kubectl get cluster.controller.kubeslice.io "$cluster_name" -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+            echo "❌ Error: Cluster '$cluster_name' still exists in project '$project_name'." >&2
             return 1
         else
-            echo "✔️  Cluster '$cluster_name' unregistered successfully from project '$project_name'."
+            echo "✔️  Cluster '$cluster_name' unregistered successfully from project '$project_name'." >&2
         fi
 
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2
     done
-    echo "✔️ Cluster unregistration in controller cluster complete."
+    echo "✔️ Cluster unregistration in controller cluster complete." >&2
 }
 
 
@@ -1669,7 +1665,7 @@ delete_projects_in_controller() {
 
     local retry_interval=120 # Default wait time of 1 minute between retries
     local max_retries=5      # Maximum number of retries
-    echo "🚀 Starting project deletion in controller cluster..."
+    echo "🚀 Starting project deletion in controller cluster..." >&2
     # Use kubeaccess_precheck to determine kubeconfig path and context
     read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
         "Kubeslice Controller Project Deletion" \
@@ -1680,22 +1676,22 @@ delete_projects_in_controller() {
         "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
     # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "
-    echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation " >&2
+    echo "  🗂️    Kubeconfig Path: $kubeconfig_path" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+    echo "-----------------------------------------" >&2
 
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "🔍 Validating Kubecontext:" >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
 
         validate_kubecontext "$kubeconfig_path" "$kubecontext"
     else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
         exit 1
     fi
 
@@ -1706,44 +1702,44 @@ delete_projects_in_controller() {
 
     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
 
-    echo "🔧 Variables:"
-    echo "  kubeconfig_path=$kubeconfig_path"
-    echo "  context_arg=$context_arg"
-    echo "  namespace=$namespace"
-    echo "-----------------------------------------"
+    echo "🔧 Variables:" >&2
+    echo "  kubeconfig_path=$kubeconfig_path" >&2
+    echo "  context_arg=$context_arg" >&2
+    echo "  namespace=$namespace" >&2
+    echo "-----------------------------------------" >&2
 
     for project in "${KUBESLICE_PROJECTS[@]}"; do
         IFS="|" read -r project_name project_username <<<"$project"
 
-        echo "-----------------------------------------"
-        echo "🚀 Deleting project '$project_name' in namespace '$namespace'"
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2
+        echo "🚀 Deleting project '$project_name' in namespace '$namespace'" >&2
+        echo "-----------------------------------------" >&2
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
             if [ $? -eq 0 ]; then
                 break
             elif [ $i -lt $max_retries ]; then
-                echo "⚠️  Warning: Failed to delete project '$project_name' in namespace '$namespace'. Retrying in $retry_delay seconds... ($i/$max_retries)"
+                echo "⚠️  Warning: Failed to delete project '$project_name' in namespace '$namespace'. Retrying in $retry_delay seconds... ($i/$max_retries)" >&2
                 sleep $retry_delay
             else
-                echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace' after $max_retries attempts."
+                echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace' after $max_retries attempts." >&2
                 return 1
             fi
         done
 
-        echo "🔍 Verifying project '$project_name' deletion..."
-        if kubectl get project "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-            echo "❌ Error: Project '$project_name' still exists in namespace '$namespace'."
+        echo "🔍 Verifying project '$project_name' deletion..."  >&2
+        if kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+            echo "❌ Error: Project '$project_name' still exists in namespace '$namespace'." >&2
             return 1
         else
-            echo "✔️  Project '$project_name' deleted successfully in namespace '$namespace'."
+            echo "✔️  Project '$project_name' deleted successfully in namespace '$namespace'." >&2
         fi
 
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2
     done
-    echo "✔️ Project deletion in controller cluster complete."
+    echo "✔️ Project deletion in controller cluster complete." >&2
 }
 
 delete_slices_in_controller() {
@@ -1762,22 +1758,22 @@ delete_slices_in_controller() {
         "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
     # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "
-    echo "  🗂️    Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Project Creation "  >&2
+    echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+    echo "-----------------------------------------" >&2
 
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "🔍 Validating Kubecontext:" >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
 
         validate_kubecontext "$kubeconfig_path" "$kubecontext"
     else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️ Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
         exit 1
     fi
     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
@@ -1790,57 +1786,62 @@ delete_slices_in_controller() {
     for project in "${KUBESLICE_PROJECTS[@]}"; do
         IFS="|" read -r project_name project_username <<<"$project"
 
-        echo "-----------------------------------------"
-        echo "🚀 Deleting all slices in '$project_name' in namespace 'kubeslice-$project_name'"
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2
+        echo "🚀 Deleting all slices in '$project_name' in namespace 'kubeslice-$project_name'" >&2
+        echo "-----------------------------------------" >&2
 
-        kubectl get sliceconfig --kubeconfig $kubeconfig_path $context_arg -n "kubeslice-$project_name" -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name --no-headers | while read namespace name; do
+        kubectl get sliceconfig.controller.kubeslice.io --kubeconfig $kubeconfig_path $context_arg -n "kubeslice-$project_name" -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name --no-headers | while read namespace name; do
             retry_count=0
             success=false
             until [ $retry_count -ge $max_retries ]; do
                 # Patch the SliceConfig to remove the specific entry
-                kubectl patch sliceconfig --kubeconfig $kubeconfig_path $context_arg $name -n $namespace --type=json -p='[
+                kubectl patch sliceconfig.controller.kubeslice.io --kubeconfig $kubeconfig_path $context_arg $name -n $namespace --type=json -p='[
                     {
                         "op": "remove",
                         "path": "/spec/namespaceIsolationProfile/applicationNamespaces/0"
                     }
                 ]'
-                # Check if the patch was successful
-                if [ $? -eq 0 ]; then
-                    # Delete the SliceConfig after patching
-                    kubectl delete sliceconfig $name -n $namespace --kubeconfig $kubeconfig_path $context_arg
-                    if [ $? -eq 0 ]; then
-                        success=true
-                        break
-                    fi
+                patch_status=$?
+
+                if [ $patch_status -eq 0 ]; then
+                    echo "✅ Successfully patched SliceConfig '$name'. Proceeding with deletion." >&2
+                elif [ $patch_status -ne 0 ]; then
+                    echo "⚠️  Nothing to patch or patch failed. Proceeding with deletion." >&2  
                 fi
 
-                echo "⚠️  Retrying deletion of SliceConfig '$name' in namespace '$namespace' ($((retry_count + 1))/$max_retries)..."
+                # Attempt to delete the SliceConfig after patching
+                kubectl delete sliceconfig.controller.kubeslice.io $name -n $namespace --kubeconfig $kubeconfig_path $context_arg
+                if [ $? -eq 0 ]; then
+                    success=true
+                    break
+                fi
+
+                echo "⚠️  Retrying deletion of SliceConfig '$name' in namespace '$namespace' ($((retry_count + 1))/$max_retries)..." >&2
                 retry_count=$((retry_count + 1))
                 sleep $retry_interval
             done
 
             if [ "$success" = false ]; then
-                echo "❌ Error: Failed to delete SliceConfig '$name' in namespace '$namespace' after $max_retries attempts."
+                echo "❌ Error: Failed to delete SliceConfig '$name' in namespace '$namespace' after $max_retries attempts." >&2
                 exit 1
             fi
         done
 
-        echo "🔍 Verifying sliceconfig in 'kubeslice-$project_name' deletion..."
-        if kubectl get sliceconfig --all -n "kubeslice-$project_name" --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-            echo "❌ Error: sliceconfig in '$project_name' still exists in namespace kubeslice-$project_name."
+        echo "🔍 Verifying sliceconfig in 'kubeslice-$project_name' deletion..." >&2
+        if kubectl get sliceconfig.controller.kubeslice.io --all -n "kubeslice-$project_name" --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+            echo "❌ Error: sliceconfig in '$project_name' still exists in namespace kubeslice-$project_name." >&2
             exit 1
         else
-            echo "✔️  sliceconfig in '$project_name' deleted successfully in namespace kubeslice-$project_name."
+            echo "✔️  sliceconfig in '$project_name' deleted successfully in namespace kubeslice-$project_name." >&2
         fi
 
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2
     done
-    echo "✔️ slice config in kubeslice-$project_name deletion in controller cluster complete."
+    echo "✔️ slice config in kubeslice-$project_name deletion in controller cluster complete." >&2
 }
 
 delete_projects_in_controller() {
-    echo "🚀 Starting project deletion in controller cluster..."
+    echo "🚀 Starting project deletion in controller cluster..."  >&2
     local kubeconfig_path="$KUBESLICE_CONTROLLER_KUBECONFIG"
     local context_arg=""
     local max_retries=3 # Number of retries
@@ -1856,23 +1857,23 @@ delete_projects_in_controller() {
         "$KUBESLICE_CONTROLLER_KUBECONTEXT")
 
     # Print output variables after calling kubeaccess_precheck
-    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Cluster Registration "
-    echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-    echo "  🌐 Kubecontext: $kubecontext"
-    echo "-----------------------------------------"
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Cluster Registration " >&2
+    echo "  🗂️     Kubeconfig Path: $kubeconfig_path" >&2
+    echo "  🌐 Kubecontext: $kubecontext" >&2
+    echo "-----------------------------------------" >&2
 
     # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
     if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
-        echo "🔍 Validating Kubecontext:"
-        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
+        echo "🔍 Validating Kubecontext:" >&2
+        echo "  🗂️ Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
 
         validate_kubecontext "$kubeconfig_path" "$kubecontext"
     else
-        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
-        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
-        echo "  🌐 Kubecontext: $kubecontext"
-        exit 1
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null." >&2
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path" >&2
+        echo "  🌐 Kubecontext: $kubecontext" >&2
+        exit 1 
     fi
 
     local context_arg=""
@@ -1882,50 +1883,220 @@ delete_projects_in_controller() {
 
     local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
 
-    echo "🔧 Variables:"
-    echo "  kubeconfig_path=$kubeconfig_path"
-    echo "  context_arg=$context_arg"
-    echo "  namespace=$namespace"
+    echo "🔧 Variables:" >&2 
+    echo "  kubeconfig_path=$kubeconfig_path" >&2
+    echo "  context_arg=$context_arg" >&2
+    echo "  namespace=$namespace" >&2
     echo "-----------------------------------------"
 
     for project in "${KUBESLICE_PROJECTS[@]}"; do
         IFS="|" read -r project_name project_username <<<"$project"
 
-        echo "-----------------------------------------"
-        echo "🚀 Deleting project '$project_name' in namespace '$namespace'"
-        echo "-----------------------------------------"
+        echo "-----------------------------------------" >&2
+        echo "🚀 Deleting project '$project_name' in namespace '$namespace'" >&2
+        echo "-----------------------------------------" >&2
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
             if [ $? -eq 0 ]; then
                 break
-            elif kubectl get project "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+            elif kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
                 if [ $i -lt $max_retries ]; then
-                    echo "⚠️  Warning: Failed to delete project '$project_name' in namespace '$namespace'. Retrying in $retry_delay seconds... ($i/$max_retries)"
+                    echo "⚠️  Warning: Failed to delete project '$project_name' in namespace '$namespace'. Retrying in $retry_delay seconds... ($i/$max_retries)" >&2
                     sleep $retry_delay
                 else
-                    echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace' after $max_retries attempts."
+                    echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace' after $max_retries attempts." >&2 
                     return 1
                 fi
             else
-                echo "⚠️  Warning: Project '$project_name' not found in namespace '$namespace'. Proceeding to the next project."
+                echo "⚠️  Warning: Project '$project_name' not found in namespace '$namespace'. Proceeding to the next project." >&2
                 break
             fi
         done
 
-        echo "🔍 Verifying project '$project_name' deletion..."
-        if kubectl get project "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+        echo "🔍 Verifying project '$project_name' deletion..." >&2
+        if kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
             echo "❌ Error: Project '$project_name' still exists in namespace '$namespace'."
             return 1
         else
-            echo "✔️  Project '$project_name' deleted successfully or was not found in namespace '$namespace'."
+            echo "✔️  Project '$project_name' deleted successfully or was not found in namespace '$namespace'." >&2
         fi
-
+        echo "✔️ deletion of all objects Project '$project_name' starting." >&2
+        api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
+        webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
+        continue_on_error cleanup_resources_and_webhooks "kubeslice-$project_name" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$kubeconfig_path" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
+        echo "✔️ deletion of all objects Project '$project_name' completed." >&2
         echo "-----------------------------------------"
     done
-    echo "✔️ Project deletion in controller cluster complete."
+    echo "✔️ Project deletion in controller cluster complete." >&2
 }
+
+########################## EGS ALL Clear ##################################################
+
+list_resources_in_group() {
+    local namespace=$1
+    local api_group=$2
+    local specific_use_global_kubeconfig=$3
+    local specific_kubeconfig_path=$4
+    local specific_kubecontext=$5
+    local resources=()  # Array to store resources
+
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "list_resources_in_group" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
+
+    # Collect resource kinds in the API group
+    resource_kinds=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" api-resources --verbs=list --namespaced -o name | grep "$api_group")
+
+    # Collect all resources of these kinds in the namespace
+    for resource in $resource_kinds; do
+        mapfile -t temp_resources < <(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" -o name 2>/dev/null)
+        resources+=("${temp_resources[@]}")
+    done
+
+    # Final output: Only resource names
+    printf "%s\n" "${resources[@]}"
+}
+
+# Function to remove finalizers from a resource
+remove_finalizers() {
+    local namespace=$1
+    local resource=$2
+    local kubeconfig_path=$3
+    local kubecontext=$4
+
+    echo "🗑 Processing resource: $resource in namespace: $namespace" >&2
+
+    # Fetch the resource YAML and remove unwanted fields
+    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" get "$resource" -o json > ./resource.json
+    if [[ $? -ne 0 ]]; then
+        echo "❌ Failed to fetch resource: $resource" >&2
+        return
+    fi
+
+    # Remove the finalizers and clean up unnecessary metadata
+    jq 'del(.metadata.finalizers[]? | select(. == "inventory.kubeslice.io/hubspoke-gpunodeinventory-finalizer")) |
+        del(.metadata.ownerReferences) |
+        del(.metadata.managedFields)' ./resource.json > ./patched-resource.json
+
+    # Apply the patched resource
+    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" replace -f ./patched-resource.json
+    if [[ $? -eq 0 ]]; then
+        echo "✅ Finalizers removed from $resource" >&2
+    else
+        echo "❌ Failed to remove finalizers from $resource" >&2
+    fi
+
+    # Clean up temporary files
+    rm -f ./resource.json ./patched-resource.json
+}
+
+# Function to delete validating webhook configurations
+delete_validating_webhooks() {
+    local kubeconfig_path=$1
+    local kubecontext=$2
+    shift 2  # Remove the first two arguments
+    local webhooks=("$@")
+
+    # Sanity check: Ensure at least one webhook name is provided
+    if [[ ${#webhooks[@]} -eq 0 ]]; then
+        echo "⚠️  No validating webhook configurations specified for deletion." >&2
+        return 1
+    fi
+
+    for webhook in "${webhooks[@]}"; do
+        # Skip invalid inputs (paths or context names mistakenly passed as webhooks)
+        if [[ $webhook == */* || $webhook == *context* || $webhook == *kubeconfig* ]]; then
+            echo "⚠️  Skipping invalid webhook name: '$webhook'" >&2
+            continue
+        fi
+
+        # Delete the webhook and handle errors
+        kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" delete validatingwebhookconfiguration "$webhook" --ignore-not-found > /dev/null 2>&1
+        if [[ $? -eq 0 ]]; then
+            echo "✅ Validating webhook configuration '$webhook' removed." >&2
+        else
+            echo "❌ Failed to remove validating webhook configuration '$webhook'." >&2
+        fi
+    done
+}
+
+# Main function to process all API groups and validating webhooks
+cleanup_resources_and_webhooks() {
+    local namespace=$1
+    local specific_use_global_kubeconfig=$2
+    local specific_kubeconfig_path=$3
+    local specific_kubecontext=$4
+
+    # Shift the first 4 arguments to process the remaining ones
+    shift 4
+
+    # Split remaining arguments into API groups and webhooks
+    local api_groups=()
+    local webhooks=()
+    local is_webhook_section=false
+
+    for arg in "$@"; do
+        if [[ "$arg" == "--webhooks" ]]; then
+            is_webhook_section=true
+            continue
+        fi
+
+        if [[ "$is_webhook_section" == true ]]; then
+            webhooks+=("$arg")
+        else
+            api_groups+=("$arg")
+        fi
+    done
+
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "clean_up_resources_and_webhooks" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
+
+    echo "🛠 Cleaning up namespace: $namespace" >&2
+    for api_group in "${api_groups[@]}"; do
+        echo "🔍 Processing API group: $api_group" >&2
+        resources=$(list_resources_in_group "$namespace" "$api_group" "$specific_use_global_kubeconfig" "$kubeconfig_path" "$kubecontext")
+
+        if [[ -z "$resources" ]]; then
+            echo "⚠️  No resources found in API group: $api_group" >&2
+            continue
+        fi
+
+        echo "The following resources will be cleaned up:" >&2
+        echo "$resources" >&2
+
+        # Process each resource
+        echo "$resources" | while read -r resource; do
+            remove_finalizers "$namespace" "$resource" "$kubeconfig_path" "$kubecontext"
+        done
+    done
+
+    # Delete webhooks
+    if [[ ${#webhooks[@]} -gt 0 ]]; then
+        echo "🧹 Deleting validating webhooks..." >&2
+        delete_validating_webhooks "$kubeconfig_path" "$kubecontext" "${webhooks[@]}"
+    fi
+
+    echo "🎉 Cleanup completed for namespace: $namespace" >&2
+}
+
+
+
+############################### EGS ALL Clear ########################################################################
+
+
 
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
@@ -1935,12 +2106,12 @@ while [[ "$#" -gt 0 ]]; do
         shift
         ;;
     --help)
-        echo "Usage: $0 --input-yaml <yaml_file>"
+        echo "Usage: $0 --input-yaml <yaml_file>"  >&2
         exit 0
         ;;
     *)
-        echo "Unknown parameter passed: $1"
-        echo "Use --help for usage information."
+        echo "Unknown parameter passed: $1"  >&2
+        echo "Use --help for usage information."  >&2 
         exit 1
         ;;
     esac
@@ -1949,8 +2120,8 @@ done
 
 # Validation for input-yaml flag
 if [ -z "$EGS_INPUT_YAML" ]; then
-    echo "❌ Error: --input-yaml flag is required."
-    echo "Use --help for usage information."
+    echo "❌ Error: --input-yaml flag is required."  >&2
+    echo "Use --help for usage information."  >&2
     exit 1
 fi
 
@@ -1960,10 +2131,10 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     prerequisite_check
     if command -v yq &>/dev/null; then
         parse_yaml "$EGS_INPUT_YAML"
-        echo " calling validate_paths..."
+        echo " calling validate_paths..."  >&2 
         validate_paths
     else
-        echo "❌ yq command not found. Please install yq to use the --input-yaml option."
+        echo "❌ yq command not found. Please install yq to use the --input-yaml option."  >&2
         exit 1
     fi
 fi
@@ -1977,18 +2148,18 @@ fi
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
 
 if [ "$enable_custom_apps" = "true" ]; then
-    echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."
+    echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."  >&2
 
     # Check if the manifests section is defined
     manifests_exist=$(yq e '.manifests // "null"' "$EGS_INPUT_YAML")
 
     if [ "$manifests_exist" = "null" ]; then
-        echo "⚠️  No 'manifests' section found in the YAML file. Skipping manifest application."
+        echo "⚠️  No 'manifests' section found in the YAML file. Skipping manifest application."  >&2 
     else
         manifests_length=$(yq e '.manifests | length' "$EGS_INPUT_YAML")
 
         if [ "$manifests_length" -eq 0 ]; then
-            echo "⚠️  'manifests' section is defined but contains no entries. Skipping manifest application."
+            echo "⚠️  'manifests' section is defined but contains no entries. Skipping manifest application."  >&2
         else
             for index in $(seq 0 $((manifests_length - 1))); do
                 echo "🔄 Applying manifest $((index + 1)) of $manifests_length..."
@@ -2019,7 +2190,7 @@ if [ "$enable_custom_apps" = "true" ]; then
         fi
     fi
 else
-    echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."
+    echo "⏩ Custom apps are disabled or not defined. Skipping manifest application."  >&2 
 fi
 
 # Process additional applications if any are defined and installation is enabled
@@ -2051,13 +2222,18 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
 
     done
-    echo "✔️ Installation of additional applications complete."
+    echo "✔️ Installation of additional applications complete."  >&2
 else
-    echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
+    echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."  >&2
 fi
 
 #Delete Slice
 continue_on_error delete_slices_in_controller
+
+# UnRegister clusters in the controller cluster after projects have been created
+if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
+    continue_on_error unregister_clusters_in_controller
+fi
 
 # Inside the loop where you process each worker
 if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
@@ -2084,6 +2260,10 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
 
         # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+        api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
+        webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
+        continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
+        continue_on_error delete_kubernetes_objects
     done
 fi
 
@@ -2092,23 +2272,27 @@ if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
     continue_on_error delete_projects_in_controller
 fi
 
-# UnRegister clusters in the controller cluster after projects have been created
-if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
-    continue_on_error unregister_clusters_in_controller
+
+# Process kubeslice-controller uninstallation if enabled
+if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
+    continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
+    api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
+    webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
+    continue_on_error cleanup_resources_and_webhooks "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "${api_groups[@]}" --webhooks "${webhooks[@]}"
 fi
 
 # Process kubeslice-ui uninstallation if enabled
 if [ "$ENABLE_INSTALL_UI" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
+    namespace="$KUBESLICE_UI_NAMESPACE"
+    continue_on_error delete_kubernetes_objects
 fi
 
-# Process kubeslice-controller uninstallation if enabled
-if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
-    continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
-fi
+
 
 trap display_summary EXIT
 
 echo "========================================="
 echo "    EGS UnInstaller Script Complete        "
 echo "========================================="
+

@@ -7,15 +7,15 @@ metadata:
     component: daemonset-toleration-config
 data:
   daemonsets: |
-    gpu-operator/gpu-feature-discovery
-    gpu-operator/gpu-operator-release-node-feature-discovery-worker
-    gpu-operator/nvidia-container-toolkit-daemonset
-    gpu-operator/nvidia-dcgm-exporter
-    gpu-operator/nvidia-device-plugin-daemonset
-    gpu-operator/nvidia-device-plugin-mps-control-daemon
-    gpu-operator/nvidia-mig-manager
-    gpu-operator/nvidia-operator-validator
-    monitoring/prometheus-prometheus-node-exporter
+    egs-gpu-operator/gpu-feature-discovery
+    egs-gpu-operator/gpu-operator-release-node-feature-discovery-worker
+    egs-gpu-operator/nvidia-container-toolkit-daemonset
+    egs-gpu-operator/nvidia-dcgm-exporter
+    egs-gpu-operator/nvidia-device-plugin-daemonset
+    egs-gpu-operator/nvidia-device-plugin-mps-control-daemon
+    egs-gpu-operator/nvidia-mig-manager
+    egs-gpu-operator/nvidia-operator-validator
+    egs-monitoring/prometheus-prometheus-node-exporter
     kube-system/nvidia-driver-installer
     kube-system/nvidia-gpu-device-plugin-large-cos
     kube-system/nvidia-gpu-device-plugin-large-ubuntu

@@ -84,6 +84,7 @@ kubeslice_controller_egs:
   verify_install: false  # Verify the installation of the controller
   verify_install_timeout: 30  # Timeout for the controller installation verification (in seconds)
   skip_on_verify_fail: true  # If verification fails, do not skip the step
+  enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
 
 # Kubeslice UI installation settings
 kubeslice_ui_egs:
@@ -130,6 +131,7 @@ kubeslice_worker_egs:
     verify_install: true  # Verify the installation of the worker
     verify_install_timeout: 60  # Timeout for the worker installation verification (in seconds)
     skip_on_verify_fail: false  # Do not skip if worker verification fails
+    enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
     # local_auto_fetch_endpoint: true  # Enable automatic fetching of monitoring endpoints
     # local_grafana_namespace: egs-monitoring  # Namespace where Grafana is deployed
     # local_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana
@@ -187,6 +189,7 @@ additional_apps:
     verify_install: false  # Verify the installation of the GPU operator
     verify_install_timeout: 600  # Timeout for verification (in seconds)
     skip_on_verify_fail: true  # Do not skip if verification fails
+    enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
 
   - name: "prometheus"
     skip_installation: false  # Do not skip the installation of Prometheus
@@ -248,6 +251,7 @@ additional_apps:
     verify_install: false  # Verify the installation of Prometheus
     verify_install_timeout: 600  # Timeout for verification (in seconds)
     skip_on_verify_fail: true  # Do not skip if verification fails
+    enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
 
 # Enable custom applications
 enable_custom_apps: true  # Set to true to enable custom apps
@@ -307,3 +311,28 @@ commands:
        kubectl create namespace egs-gpu-operator --dry-run=client -o yaml | kubectl apply -f -
        get nodes
        get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
+
+# Troubleshooting mode settings
+enable_troubleshoot:
+  enabled: false # Global Enable Troubleshooting mode for additional logs and checks
+  resource_types:
+    - pods
+    - deployments
+    - daemonsets
+    - statefulsets
+    - replicasets
+    - jobs
+    - configmaps
+    - secrets
+    - services
+    - serviceaccounts
+    - roles
+    - rolebindings
+    - crds
+  api_groups:
+    - controller.kubeslice.io
+    - worker.kubeslice.io
+    - inventory.kubeslice.io
+    - aiops.kubeslice.io
+    - networking.kubeslice.io
+    - monitoring.coreos.com
