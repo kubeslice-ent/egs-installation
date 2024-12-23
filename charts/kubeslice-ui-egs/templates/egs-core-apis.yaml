@@ -76,6 +76,17 @@ spec:
     spec:
       containers:
         - name: egs-core-apis
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
           env:
             - name: EGS_CORE_APIS_API_KEY_SECRET_NAMESPACE
               valueFrom:
@@ -95,6 +106,12 @@ spec:
         - name: kubeslice-ui-image-pull-secret
       {{- end }}
       serviceAccountName: egs-core-apis
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
   replicas: 1
 ---
 apiVersion: v1

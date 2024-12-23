@@ -19,8 +19,8 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: 0.10.0-RELEASE-d5a11dbd
-  pullPolicy: Always
+  tag: 0.10.0-RELEASE-aa7036e0
+  pullPolicy: IfNotPresent
   logLevel: INFO
 
 egs:

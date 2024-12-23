@@ -58,6 +58,7 @@ rules:
   - get
   - list
   - watch
+  - update
 - apiGroups:
   - controller.kubeslice.io
   resources:
@@ -65,6 +66,12 @@ rules:
   verbs:
   - get
   - patch
+  - update
+- apiGroups:
+  - controller.kubeslice.io
+  resources:
+  - clusters/finalizers
+  verbs:
   - update
 - apiGroups:
   - inventory.kubeslice.io
