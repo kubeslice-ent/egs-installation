@@ -60,13 +60,16 @@ spec:
             capabilities:
               drop:
                 - ALL
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
           ports:
             - containerPort: 3000
               protocol: TCP
           volumeMounts:
             - mountPath: /app/secrets
               name: oidc-secrets
+            - mountPath: /app/config/product.json
+              subPath: product.json
+              name: product-config
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
@@ -85,6 +88,13 @@ spec:
           secret:
             secretName: kubeslice-ui-oidc
             optional: true
+
+        - name: product-config
+          projected:
+            sources:
+              - configMap:
+                  name: kubeslice-ui-json-config
+                  
       tolerations:
         - operator: "Exists"
 ---
