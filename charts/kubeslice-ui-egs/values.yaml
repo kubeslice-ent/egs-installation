@@ -17,7 +17,7 @@ kubeslice:
     pullPolicy: IfNotPresent
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 0.10.0-RELEASE-bd3b992b
+    tag: 0.10.0-RELEASE-8018b970
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false
@@ -50,13 +50,13 @@ kubeslice:
       # nodePort:
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 0.10.0-RELEASE-4ee78fd6
+    tag: 0.10.0-RELEASE-bb6d748d
     pullPolicy: IfNotPresent
 
   egsCoreApis:
     enabled: false
     image: egs-core-apis
-    tag: 0.8.0
+    tag: 1.1.0-RELEASE-9164d812
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
