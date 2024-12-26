@@ -13,11 +13,11 @@ kubeslice:
 
   ui:
     image: kubeslice-ui-ent-egs
-    tag: 0.8.1-RELEASE-863f87a5
+    tag: 0.8.1-RELEASE-6bfd1bd2
     pullPolicy: IfNotPresent
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 0.10.0-RELEASE-00e74889
+    tag: 0.10.0-RELEASE-1c92311e
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false

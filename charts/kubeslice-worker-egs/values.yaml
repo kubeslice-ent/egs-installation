@@ -19,7 +19,7 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: 0.10.0-RELEASE-aa7036e0
+  tag: 0.10.0-RELEASE-b077ed09
   pullPolicy: IfNotPresent
   logLevel: INFO
 
