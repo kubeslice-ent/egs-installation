@@ -1607,7 +1607,7 @@ spec:
       serviceAccountName: kubeslice-install-crds
       containers:
         - name: kubectl
-          image: '{{ .Values.global.imageRegistry }}/alpine-k8s:1.22.9'
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}'
           command:
             - /bin/sh
             - -c
@@ -1622,4 +1622,8 @@ spec:
             items:
             - key: "crds.yaml"
               path: "crds.yaml"
+      {{- if .Values.imagePullSecretsName }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecretsName }}
+      {{- end }}
       restartPolicy: OnFailure

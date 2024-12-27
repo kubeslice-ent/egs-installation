@@ -11,7 +11,7 @@ spec:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 80
+    targetPort: 8080
   selector:
     app: kubeslice-ui
   type: ClusterIP
@@ -35,18 +35,35 @@ spec:
       - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.ui.image }}:{{ .Values.kubeslice.ui.tag }}'
         imagePullPolicy: '{{ .Values.kubeslice.ui.pullPolicy }}'
         name: kubeslice-ui
+        securityContext:
+          runAsUser: 65536
+          runAsGroup: 65536
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: false
         env:
         - name: KUBESLICE_CONTROLLER_PROMETHEUS
           value: {{ .Values.kubeslice.prometheus.url }}
         - name: REACT_APP_SOCKET_URL
           value: 'ws://kubeslice-api-gw.kubeslice-controller.svc.cluster.local:3000'
         ports:
-        - containerPort: 3000
-        {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+        - containerPort: 8080
+      {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
-      - name: kubeslice-ui-image-pull-secret
-        {{- end }}
+        - name: {{ .Values.imagePullSecretsName }}
+      {{- end }}
       serviceAccountName: kubeslice-api-gw
       serviceAccount: kubeslice-api-gw
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       tolerations:
         - operator: "Exists"

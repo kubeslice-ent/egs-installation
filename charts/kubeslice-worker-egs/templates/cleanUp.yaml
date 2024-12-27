@@ -85,9 +85,13 @@ spec:
       serviceAccountName: kubeslice-cleanup
       containers:
         - name: kubectl
-          image: "{{ .Values.global.imageRegistry }}/alpine-k8s:1.22.9"
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}"
           command:
             - /bin/sh
             - -c
             - kubectl delete cm nsm-config --ignore-not-found -n {{ .Release.Namespace }}
       restartPolicy: OnFailure
+      {{- if .Values.imagePullSecretsName }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecretsName }}
+      {{- end }}

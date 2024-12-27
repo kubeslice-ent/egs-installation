@@ -17,6 +17,37 @@ metadata:
 data:
   metrics-server.yaml: |-
     # source https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml
+    ---
+    {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+    apiVersion: v1
+    data:
+      .dockerconfigjson: {{
+                            printf "{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\",\"email\":\"%s\",\"auth\":\"%s\"}}}"
+                            .Values.imagePullSecrets.repository
+                            .Values.imagePullSecrets.username
+                            .Values.imagePullSecrets.password
+                            .Values.imagePullSecrets.email
+                            (printf "%s:%s" .Values.imagePullSecrets.username .Values.imagePullSecrets.password | b64enc)
+                             | b64enc
+                         }}
+    kind: Secret
+    metadata:
+      name: {{ .Values.imagePullSecretsName }}
+      namespace: kube-system
+    type: kubernetes.io/dockerconfigjson
+    {{- end }}
+    ---
+    {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.dockerconfigjson }}
+    apiVersion: v1
+    data:
+      .dockerconfigjson: {{ .Values.imagePullSecrets.dockerconfigjson }}
+    kind: Secret
+    metadata:
+      name: {{ .Values.imagePullSecretsName }}
+      namespace: kube-system
+    type: kubernetes.io/dockerconfigjson
+    {{- end }}
+    ---
     apiVersion: v1
     kind: ServiceAccount
     metadata:
@@ -200,6 +231,10 @@ data:
           volumes:
             - emptyDir: {}
               name: tmp-dir
+          {{- if .Values.imagePullSecretsName }}
+          imagePullSecrets:
+            - name: {{ .Values.imagePullSecretsName }}
+          {{- end }}
     ---
     apiVersion: apiregistration.k8s.io/v1
     kind: APIService

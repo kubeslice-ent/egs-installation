@@ -3,14 +3,14 @@ global:
 kubetally:
   pricingService:
     image: pricing-service
-    tag: 1.2.0
+    tag: 1.4.0
     imagePullPolicy: IfNotPresent
   chargeUpdater:
     image: price-updater
-    tag: 1.1.0
+    tag: 1.4.0
     imagePullPolicy: IfNotPresent
   kubeTallyReport:
     image: kubetally-report
-    tag: 1.1.0
+    tag: 1.3.0
     imagePullPolicy: IfNotPresent
   imagePullSecretName: kubeslice-image-pull-secret

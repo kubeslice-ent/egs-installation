@@ -46,6 +46,17 @@ spec:
             - --v=0
           image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.rbacproxy.image }}:{{ .Values.kubeslice.rbacproxy.tag }}'
           name: kube-rbac-proxy
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           ports:
             - containerPort: 8443
               name: https
@@ -58,8 +69,7 @@ spec:
             - --rbac-resource-prefix={{ required "A valid value is required!" .Values.kubeslice.controller.rbacResourcePrefix }}
             - --project-namespace-prefix={{ required "A valid value is required!" .Values.kubeslice.controller.projectnsPrefix }}
             - --controller-end-point={{ required "A valid value is required!" .Values.kubeslice.controller.endpoint }}
-            - --prometheus-service-endpoint={{ required "A valid value is required!" .Values.kubeslice.prometheus.url}}
-            - --ovpn-job-image={{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.ovpnJob.image }}:{{ .Values.kubeslice.ovpnJob.tag }}
+            - --prometheus-service-endpoint={{ required "A valid value is required!" .Values.global.kubeTally.prometheusUrl }}
             - --license-mode={{ .Values.kubeslice.license.mode }}
             - --license-customer-name={{ .Values.kubeslice.license.customerName }}
             - --license-type={{.Values.kubeslice.license.type }}
@@ -83,6 +93,17 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           name: manager
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           ports:
             - containerPort: 9443
               name: webhook-server
@@ -100,8 +121,6 @@ spec:
             requests:
               cpu: 10m
               memory: 64Mi
-          securityContext:
-            allowPrivilegeEscalation: false
           volumeMounts:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
@@ -111,7 +130,11 @@ spec:
             - name: kubeslice-controller-license-conf
               mountPath: /etc/license/config
       securityContext:
-        runAsNonRoot: true
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: kubeslice-controller-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
@@ -127,10 +150,10 @@ spec:
           secret:
             defaultMode: 420
             secretName: webhook-server-cert-secret
-        {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+      {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
-        - name: kubeslice-image-pull-secret
-        {{- end }}
+        - name: {{ .Values.imagePullSecretsName }}
+      {{- end }}
       tolerations:
         - operator: "Exists"
 ---

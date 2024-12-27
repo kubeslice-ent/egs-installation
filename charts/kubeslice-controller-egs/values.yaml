@@ -12,12 +12,15 @@ global:
     # Enable or disable KubeTally
     enabled: false
 
+    postgresSecretName: kubetally-db-credentials   # Default value, secret name can be overridden
+
     # Ensure to configure the mandatory PostgreSQL database settings when 'kubetally enable' is true.
-    postgresAddr:
-    postgresPort:
-    postgresUser:
-    postgresPassword:
-    postgresDB:
+    postgresAddr:                         # Optional, can be specified here or retrieved from the secret
+    postgresPort:                          # Optional, can be specified here or retrieved from the secret
+    postgresUser:                        # Optional, can be specified here or retrieved from the secret
+    postgresPassword:                     # Optional, can be specified here or retrieved from the secret
+    postgresDB:                          # Optional, can be specified here or retrieved from the secret
+    postgresSslmode: require            # optional, default: require other values: disable
 
     # Service type for price Service Type
     priceServiceType: ClusterIP
@@ -25,14 +28,17 @@ global:
     # Number of workers for the price updater
     priceUpdaterWorkers: 5
 
-    # Prometheus URL for monitoring
-    prometheusUrl: http://kubeslice-controller-prometheus-service:9090
+    # Prometheus URL for monitoring(should be specified if needed)
+    prometheusUrl: http://prometheus-service:9090
 
     # Data processing time window (hours ago)
     dataProcessingHoursAgo: 720
 
     # Schedule for the pricing updater (cron expression)
     pricingUpdaterSchedule: 0 0 1 * *
+    
+    # updates price for listed cloud providers
+    pricingUpdaterCloudProviders: "aws,linode"
 
 kubeslice:
   # Configuration for the RBAC proxy
@@ -40,7 +46,7 @@ kubeslice:
     # Image name for the RBAC proxy
     image: kubebuilder-kube-rbac-proxy
     # Image tag for the RBAC proxy
-    tag: v0.8.0
+    tag: v0.18.0
 
   # Configuration for the KubeSlice controller
   controller:
@@ -55,38 +61,14 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 0.8.2
+    tag: 1.10.0
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
     kubeTally:
       # Interval for cleaning up metrics when a worker cluster stops communicating
       metricsCleanupInterval: 15m
-    # Configuration for migration using MinIO
-    migration:
-      minio:
-        # Whether to install MinIO
-        install: "false"
-        # Storage size for MinIO
-        storage: 1Gi
-        # Username for MinIO
-        username: minioadmin
-        # Password for MinIO
-        password: minioadmin
 
-  # Configuration for the OpenVPN job
-  ovpnJob:
-    # Image name for the gateway certificates generator
-    image: gateway-certs-generator
-    # Image tag for the gateway certificates generator
-    tag: 0.3.0
-
-  # Configuration for Prometheus
-  prometheus:
-    # Whether Prometheus is enabled
-    enabled: true
-    # URL for Prometheus service
-    url: http://kubeslice-controller-prometheus-service:9090
 
   # Configuration for events
   events:
@@ -95,11 +77,11 @@ kubeslice:
 
   # license details by default mode set to auto and license set to trial - please give company-name or user-name as customerName
   license:
-    # Type of license - possible license type values ["kubeslice-trial-license-30d"]
-    type: kubeslice-trial-license-30d
-    # Mode for the license (auto or manual)
+    # possible license type values ["kubeslice-trial-license"]
+    type: kubeslice-trial-license
+    # possible license mode - ["auto", "manual"]
     mode: auto
-    # Customer name for the license (company or username)
+    # please give company-name or user-name as customerName
     customerName: ""
 
 egs:
@@ -107,7 +89,7 @@ egs:
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: 0.8.0
+    tag: 1.10.0
     imagePullPolicy: IfNotPresent
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60
@@ -133,73 +115,19 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 0.9.0
+    tag: 1.10.0
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
       name: egs-inventory-manager
       port: 80
 
-prometheus:
-  # Secrets for image pulling
-  imagePullSecrets:
-    - name: "kubeslice-image-pull-secret"
 
-  # Configuration for Prometheus config reloader
-  configmapReload:
-    prometheus:
-      image:
-        # Repository for Prometheus config reloader image
-        repository: docker.io/aveshasystems/prometheus-config-reloader
-        # Tag for Prometheus config reloader image
-        tag: v0.72.0
-        # Digest for Prometheus config reloader image (use tag if empty)
-        digest: ""
-        # Pull policy for Prometheus config reloader image
-        pullPolicy: IfNotPresent
-
-  # Configuration for Prometheus server
-  server:
-    image:
-      # Repository for Prometheus server image
-      repository: docker.io/aveshasystems/prometheus
-      # Tag for Prometheus server image (uses appVersion from Chart.yaml if not set)
-      tag: v2.51.2
-      # Digest for Prometheus server image (use tag if empty)
-      digest: ""
-      # Pull policy for Prometheus server image
-      pullPolicy: IfNotPresent
-
-    # Service configuration for Prometheus server
-    service:
-      # Service type for Prometheus server
-      type: ClusterIP
-
-    # Persistent volume configuration for Prometheus server
-    persistentVolume:
-      # Enable/disable Persistent Volume Claim for Prometheus data
-      enabled: true
-      # Override name for the created PVC (empty uses stateful set name)
-      statefulSetNameOverride: ""
-      # Access modes for the PVC
-      accessModes:
-        - ReadWriteOnce
-      # Labels for the PVC
-      labels: {}
-      # Annotations for the PVC
-      annotations: {}
-      # Name of existing PVC to use (create manually if set)
-      existingClaim: ""
-      # Mount path for Prometheus data
-      mountPath: /data
-      # Size of the PVC
-      size: 5Gi
-      # Retention period for Prometheus data
-    retention: "30d"
-
-# username & password & email values for imagePullSecrets has to provided to create a secret
+imagePullSecretsName: "kubeslice-image-pull-secret"
+# leave the below fields empty if secrets are managed externally.
 imagePullSecrets:
-  repository: https://index.docker.io/v1/
+  repository: https://index.docker.io/v1/ ## Value to be used incase using the docker hub images-  https://index.docker.io/v1/
   username:
   password:
   email:
+  dockerconfigjson: ## Value to be used if using external secret managers

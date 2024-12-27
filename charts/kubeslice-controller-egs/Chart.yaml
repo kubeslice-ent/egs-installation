@@ -34,9 +34,5 @@ dependencies:
     repository: file://./charts/kubetally
     version: 1.*.*
     condition: global.kubeTally.enabled
-  - name: prometheus
-    repository: file://./charts/prometheus
-    version: 25.*.*
-    condition: kubeslice.prometheus.enabled
-version: 0.9.0
-appVersion: 0.9.0
+version: 1.10.0
+appVersion: 1.10.0

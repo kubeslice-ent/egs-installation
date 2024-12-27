@@ -50,17 +50,37 @@ spec:
             - name: QUEUE_MANAGER_ADDRESS
               value: {{ .Values.egs.QueueManagerAddress }}  
           name: kubeslice-api-gw
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
           ports:
             - containerPort: 3000
               protocol: TCP
           volumeMounts:
             - mountPath: /app/secrets
               name: oidc-secrets
-      {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+            - mountPath: /app/config/product.json
+              subPath: product.json
+              name: product-config
+      {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
-        - name: kubeslice-ui-image-pull-secret
+        - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
       restartPolicy: Always
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccount: kubeslice-api-gw
       serviceAccountName: kubeslice-api-gw
       volumes:
@@ -68,6 +88,13 @@ spec:
           secret:
             secretName: kubeslice-ui-oidc
             optional: true
+
+        - name: product-config
+          projected:
+            sources:
+              - configMap:
+                  name: kubeslice-ui-json-config
+                  
       tolerations:
         - operator: "Exists"
 ---
@@ -80,12 +107,14 @@ data:
   # set the chart options
   workerChartOptions.yaml: |
     workerChartOptions:
+      controllerChartName: {{- if eq .Values.kubeslice.productName "kubetally" }} kubetally-controller {{- end }} # [Optional] Name of the controller chart. Default is `kubeslice-controller`
       metricsInsecure: # [Optional] Default is false. Set to true if required to disable TLS for metrics server.
-      repository: # [Optional] Helm repository URL for worker charts. Default is `https://kubeslice.aveshalabs.io/repository/kubeslice-helm-ent-prod/`
-      releaseName: # [Optional] Release name of kubeslice-worker. Default is `kubeslice-worker`
-      chartName: # [Optional] Name of the chart. Default is `kubeslice-worker`
+      networkingEnabled: {{- if eq .Values.kubeslice.productName "kubetally" }} false   {{- end }} # [Optional] Default is true. Set to false if required to disable networking.
+      repository:  {{- if eq .Values.kubeslice.productName "kubetally" }} 'https://kubeslice.aveshalabs.io/repository/kubetally-helm-ent-prod/'   {{- end }}  # [Optional] Helm repository URL for worker charts. Default is `https://kubeslice.aveshalabs.io/repository/kubeslice-helm-ent-prod/`
+      releaseName:  {{- if eq .Values.kubeslice.productName "kubetally" }} kubetally-worker   {{- end }}  # [Optional] Release name of kubeslice-worker. Default is `kubeslice-worker`
+      chartName: {{- if eq .Values.kubeslice.productName "kubetally" }} kubetally-worker   {{- end }}  # [Optional] Name of the chart. Default is `kubeslice-worker`
       chartVersion: # [Optional] Version of the chart. Default is the latest version
-      debug: # [Optional] Default is false. Set to true if required to enable debug logs for kubeslice-worker
+      debug: # [Optional] Default is false. Set to true if required to enable debug mode.
       helmCredentials:
         username: # [Optional] Required for dev-charts/dev-charts-ent
         password: # [Optional] Required for dev-charts/dev-charts-ent

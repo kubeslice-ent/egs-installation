@@ -118,16 +118,26 @@ spec:
             cpu: 10m
             memory: 64Mi
         securityContext:
+          runAsUser: 65536
+          runAsGroup: 65536
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
           allowPrivilegeEscalation: false
           capabilities:
             drop:
-            - ALL
+              - ALL
+          readOnlyRootFilesystem: true
         volumeMounts:
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: webhook-certs
             readOnly: true
       securityContext:
-        runAsNonRoot: true
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: gpr-manager-access
       terminationGracePeriodSeconds: 10
       volumes:
@@ -135,9 +145,9 @@ spec:
           secret:
             defaultMode: 420
             secretName: gpr-admission-webhook-certs
-      {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+      {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
-        - name: kubeslice-image-pull-secret
+        - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
       tolerations:
         - operator: "Exists"

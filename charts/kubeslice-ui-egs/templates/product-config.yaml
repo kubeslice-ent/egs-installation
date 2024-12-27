@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubeslice-ui-json-config
+data:
+  product.json: |
+    {{- if eq .Values.kubeslice.productName "egs" }}
+    {
+        "productName": "egs",
+        "featuresList": [
+            {
+                "name": "exportServices",
+                "disabledFeatures": [],
+                "isDisabled": true
+            },
+            {
+                "name": "replicate",
+                "disabledFeatures": [],
+                "isDisabled": true
+            },
+            {
+                "name": "manage-rbac",
+                "disabledFeatures": [],
+                "isDisabled": true
+            },
+            {
+                "name": "dashboard",
+                "disabledFeatures": [
+                    "metrics",
+                    "services"
+                ],
+                "isDisabled": true
+            },
+            {
+                "name": "kubetally-dashboard",
+                "disabledFeatures": [],
+                "isDisabled": false
+            }
+        ]
+    }
+    {{- else }}
+    {
+        "productName": "kubeslice",
+        "featuresList": [
+           {
+              "name": "kubetally-dashboard",
+              "disabledFeatures": [],
+              "isDisabled": true
+           }
+        ]
+    }
+    {{- end }}

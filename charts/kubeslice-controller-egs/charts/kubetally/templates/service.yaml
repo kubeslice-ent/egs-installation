@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-kubetally-pricing-service
+  name: kubetally-pricing-service
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
