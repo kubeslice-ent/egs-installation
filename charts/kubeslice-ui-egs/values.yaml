@@ -50,7 +50,7 @@ kubeslice:
       # nodePort:
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 0.10.0-RELEASE-c37ca5f8
+    tag: 0.10.0-RELEASE-926cfe46
     pullPolicy: IfNotPresent
 
   egsCoreApis:
