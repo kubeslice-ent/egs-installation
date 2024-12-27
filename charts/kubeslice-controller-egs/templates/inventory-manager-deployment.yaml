@@ -24,7 +24,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
           - /manager
-        image: "aveshadev/{{ .Values.egs.inventory.image }}:{{ .Values.egs.inventory.tag }}"
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.egs.inventory.image }}:{{ .Values.egs.inventory.tag }}"
         imagePullPolicy: "{{ .Values.egs.inventory.pullPolicy }}"
         env:
           - name: LOG_LEVEL

@@ -13,11 +13,11 @@ kubeslice:
 
   ui:
     image: kubeslice-ui-ent-egs
-    tag: 0.8.1-RELEASE-6bfd1bd2
+    tag: 1.10.0
     pullPolicy: IfNotPresent
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 0.10.0-RELEASE-1c92311e
+    tag: 1.10.0
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false
@@ -39,7 +39,7 @@ kubeslice:
       tag: 7.5.1
   uiproxy:
     image: kubeslice-ui-proxy-egs
-    tag: 0.8.1-RELEASE-0f94c89e
+    tag: 1.10.0
     pullPolicy: IfNotPresent
     service:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
@@ -50,13 +50,13 @@ kubeslice:
       # nodePort:
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 0.10.0-RELEASE-926cfe46
+    tag: 1.10.0
     pullPolicy: IfNotPresent
 
   egsCoreApis:
     enabled: false
     image: egs-core-apis
-    tag: 1.1.0-RELEASE-0b72720f
+    tag: 1.10.0
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer

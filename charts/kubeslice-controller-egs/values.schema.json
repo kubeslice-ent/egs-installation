@@ -86,7 +86,7 @@
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["kubeslice-trial-license", "kubeslice-trial-license-1d", "kubeslice-trial-license-7d", "kubeslice-trial-license-30d", "kubeslice-vcpu-license"]
+              "enum": ["kubeslice-trial-license", "kubeslice-vcpu-license"]
             },
             "mode": {
               "type": "string",

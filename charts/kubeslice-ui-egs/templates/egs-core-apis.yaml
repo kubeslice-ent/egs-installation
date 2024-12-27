@@ -98,7 +98,7 @@ spec:
               value: "http://kubeslice-api-gw:8080/"
           ports:
             - containerPort: 8080
-          image: 'aveshadev/{{ .Values.kubeslice.egsCoreApis.image }}:{{ .Values.kubeslice.egsCoreApis.tag }}'
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.egsCoreApis.image }}:{{ .Values.kubeslice.egsCoreApis.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.egsCoreApis.pullPolicy }}'
       restartPolicy: Always
       {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}

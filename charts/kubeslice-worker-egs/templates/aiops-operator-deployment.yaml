@@ -58,7 +58,7 @@ spec:
             - --workload-reconciler-interval=30s
           command:
             - /manager
-          image: "aveshadev/{{ .Values.aiops.image }}:{{ .Values.aiops.tag }}"
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.aiops.image }}:{{ .Values.aiops.tag }}"
           imagePullPolicy: "{{ .Values.aiops.pullPolicy }}"
           env:
             - name: LOG_LEVEL

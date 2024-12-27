@@ -1,6 +1,6 @@
 operator:
   image: worker-operator-ent-egs
-  tag: 1.1.0-RELEASE-a0dd6dc9
+  tag: 1.10.0
   pullPolicy: IfNotPresent
   logLevel: INFO
 
@@ -19,7 +19,7 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: 0.10.0-RELEASE-b077ed09
+  tag: 1.10.0
   pullPolicy: IfNotPresent
   logLevel: INFO
 
