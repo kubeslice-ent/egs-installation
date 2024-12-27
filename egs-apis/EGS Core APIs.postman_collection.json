@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "3cf54b25-259b-4fc5-ba35-2a3b359027b0",
+		"_postman_id": "babfc466-e83c-4f30-9874-b77f9f4afa27",
 		"name": "EGS Core APIs",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "25042100"
+		"_exporter_id": "23234280"
 	},
 	"item": [
 		{
@@ -620,7 +620,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"gprName\":\"created-by-apigw\",\r\n    \"sliceName\":\"{{workspaceName}}\",\r\n    \"clusterName\":\"worker-1\",\r\n    \"numberOfGPUs\":1,\r\n    \"instanceType\":\"n1-standard-8\",\r\n    \"exitDuration\":\"0d0h5m\",\r\n    \"numberOfGPUNodes\": 1,\r\n    \"priority\":201,\r\n    \"memoryPerGPU\":15,\r\n    \"gpuShape\":\"Tesla-T4\"\r\n}",
+							"raw": "{\r\n    \"gprName\":\"created-by-coreapi\",\r\n    \"clusterName\":\"worker-1\",\r\n    \"sliceName\":\"pink\",\r\n    \"numberOfGPUs\":1,\r\n    \"instanceType\":\"n1-highcpu-2\",\r\n    \"exitDuration\":\"0d0h1m\",\r\n    \"numberOfGPUNodes\": 1,\r\n    \"priority\":201,\r\n    \"memoryPerGPU\":15,\r\n    \"gpuShape\":\"Tesla-T4\",\r\n    \"idleTimeOutDuration\":\"0d0h1m\",\r\n    \"multiNode\":false,\r\n    \"enforceIdleTimeOut\":true\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -640,52 +640,6 @@
 						}
 					},
 					"response": [
-						{
-							"name": "Success",
-							"originalRequest": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"gprName\":\"created-by-apigw\",\r\n    \"sliceName\":\"{{workspaceName}}\",\r\n    \"clusterName\":\"worker-1\",\r\n    \"numberOfGPUs\":1,\r\n    \"instanceType\":\"n1-standard-8\",\r\n    \"exitDuration\":\"0d0h5m\",\r\n    \"numberOfGPUNodes\": 1,\r\n    \"priority\":201,\r\n    \"memoryPerGPU\":15,\r\n    \"gpuShape\":\"Tesla-T4\"\r\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}/api/v1/gpr",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"gpr"
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								},
-								{
-									"key": "Date",
-									"value": "Tue, 22 Oct 2024 09:12:39 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "89"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"gprId\": \"gpr-1bb22a0b-9388\"\n    }\n}"
-						},
 						{
 							"name": "Bad Request",
 							"originalRequest": {
@@ -731,6 +685,52 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"statusCode\": 422,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error while fetching GPR wait time\\\",\\\"Status\\\":422,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"\\\\\\\"exitDuration\\\\\\\" is not allowed to be empty\\\",\\\"Reason\\\":\\\"\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":422,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						},
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"gprName\":\"created-by-coreapi\",\r\n    \"clusterName\":\"worker-1\",\r\n    \"sliceName\":\"pink\",\r\n    \"numberOfGPUs\":1,\r\n    \"instanceType\":\"n1-highcpu-2\",\r\n    \"exitDuration\":\"0d0h1m\",\r\n    \"numberOfGPUNodes\": 1,\r\n    \"priority\":201,\r\n    \"memoryPerGPU\":15,\r\n    \"gpuShape\":\"Tesla-T4\",\r\n    \"idleTimeOutDuration\":\"0d0h1m\",\r\n    \"multiNode\":false,\r\n    \"enforceIdleTimeOut\":false\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{host}}/api/v1/gpr",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 08:10:57 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "89"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"gprId\": \"gpr-7c29e338-ebda\"\n    }\n}"
 						}
 					]
 				},
@@ -1094,50 +1094,6 @@
 					},
 					"response": [
 						{
-							"name": "Success",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}/api/v1/gpr/list?sliceName={{workspaceName}}",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"gpr",
-										"list"
-									],
-									"query": [
-										{
-											"key": "sliceName",
-											"value": "{{workspaceName}}"
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								},
-								{
-									"key": "Date",
-									"value": "Tue, 22 Oct 2024 09:18:08 GMT"
-								},
-								{
-									"key": "Transfer-Encoding",
-									"value": "chunked"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"items\": [\n            {\n                \"gprId\": \"gpr-1bb22a0b-9388\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T09:12:38Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h5m0s\",\n                \"earlyRelease\": true,\n                \"gprName\": \"created-by-apigw\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"EarlyReleased\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T09:17:12Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-5d278fd3-e868\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 101,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T06:30:39Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h10m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"for-testing\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T06:41:17Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-784039ab-0cda\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 101,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T06:41:17Z\",\n                \"estimatedWaitTime\": \"0h2m40s\",\n                \"exitDuration\": \"0h10m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"for-testing3\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T06:52:17Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-85e2e884-f09a\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T07:30:28Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h2m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-apigw\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T07:32:44Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-c9ddbf88-b68b\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T08:18:38Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h2m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-apigw\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T08:21:34Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            },\n            {\n                \"gprId\": \"gpr-e4e38fc5-4742\",\n                \"sliceName\": \"evening\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-standard-8\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-10-22T07:20:34Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-apigw\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-10-22T07:21:44Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                }\n            }\n        ]\n    }\n}"
-						},
-						{
 							"name": "Not Found",
 							"originalRequest": {
 								"method": "GET",
@@ -1180,6 +1136,50 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"statusCode\": 404,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error in listing GPR's for slice evening-x\\\",\\\"Status\\\":404,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"sliceconfigs.controller.kubeslice.io \\\\\\\"evening-x\\\\\\\" not found\\\",\\\"Reason\\\":\\\"NotFound\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":404,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						},
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/gpr/list?sliceName={{workspaceName}}",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr",
+										"list"
+									],
+									"query": [
+										{
+											"key": "sliceName",
+											"value": "{{workspaceName}}"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 08:14:59 GMT"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"items\": [\n            {\n                \"gprId\": \"gpr-11e67c20-0744\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-23T07:52:05Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-coreapis03\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": true,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-23T07:54:03Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-9161\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": true,\n                \"idleTimeOutDuration\": \"0h1m0s\"\n            },\n            {\n                \"gprId\": \"gpr-14b0f9b6-d584\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 101,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-23T08:15:08Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h5m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"for-testing\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-23T08:21:03Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-9161\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": true,\n                \"idleTimeOutDuration\": \"0h5m0s\"\n            },\n            {\n                \"gprId\": \"gpr-225a8b18-bea5\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 22,\n                \"priority\": 102,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-24T07:24:03Z\",\n                \"estimatedWaitTime\": \"0d0h0m0s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"apigw99\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Queued\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"\",\n                    \"cost\": \"\",\n                    \"nodes\": null,\n                    \"internalState\": \"\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": false,\n                \"idleTimeOutDuration\": \"\"\n            },\n            {\n                \"gprId\": \"gpr-23781705-e0ae\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-20T11:24:25Z\",\n                \"estimatedWaitTime\": \"0h0m14s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-coreapis02\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-20T11:25:25Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-fhf8\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": false,\n                \"idleTimeOutDuration\": \"\"\n            },\n            {\n                \"gprId\": \"gpr-2620bade-0c10\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-20T11:23:12Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-coreapis02\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": true,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-20T11:24:25Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-fhf8\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": true,\n                \"idleTimeOutDuration\": \"0h1m0s\"\n            },\n            {\n                \"gprId\": \"gpr-2833a34d-4159\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-24T08:28:03Z\",\n                \"estimatedWaitTime\": \"20h51m45s\",\n                \"exitDuration\": \"0h3m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-coreapis04\",\n                \"gpuShape\": \"gpr-T4\",\n                \"multiNode\": true,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-23T12:42:03Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-9161\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": true,\n                \"idleTimeOutDuration\": \"0h3m0s\"\n            },\n            {\n                \"gprId\": \"gpr-55930f07-cc14\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 101,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-17T12:06:03Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h5m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"gpu-1\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"TimedOut\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-17T12:08:57Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-07jh\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": true,\n                \"idleTimeOutDuration\": \"0h2m0s\"\n            },\n            {\n                \"gprId\": \"gpr-579941e5-6a67\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-20T11:15:25Z\",\n                \"estimatedWaitTime\": \"0h9m5s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-coreapis\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-20T11:16:25Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-9161\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": false,\n                \"idleTimeOutDuration\": \"0h1m0s\"\n            },\n            {\n                \"gprId\": \"gpr-71a6a7e0-eaa3\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-23T12:59:03Z\",\n                \"estimatedWaitTime\": \"0d0h20m0s\",\n                \"exitDuration\": \"0h3m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-coreapis011\",\n                \"gpuShape\": \"tesla-T4\",\n                \"multiNode\": true,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-23T12:46:03Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-49t7\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": true,\n                \"idleTimeOutDuration\": \"0h3m0s\"\n            },\n            {\n                \"gprId\": \"gpr-7c29e338-ebda\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-24T08:10:55Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-coreapi\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-24T08:12:03Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-kcxz\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": false,\n                \"idleTimeOutDuration\": \"0h1m0s\"\n            },\n            {\n                \"gprId\": \"gpr-9aded019-185e\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-24T06:55:31Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h10m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"bug-test\",\n                \"gpuShape\": \"tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-24T07:06:03Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-klfn\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": true,\n                \"idleTimeOutDuration\": \"0h10m0s\"\n            },\n            {\n                \"gprId\": \"gpr-9edaf114-9dbe\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 22,\n                \"priority\": 199,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-24T05:59:03Z\",\n                \"estimatedWaitTime\": \"0d0h0m0s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"request from apigw99\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Queued\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"\",\n                    \"cost\": \"\",\n                    \"nodes\": null,\n                    \"internalState\": \"\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": false,\n                \"idleTimeOutDuration\": \"\"\n            },\n            {\n                \"gprId\": \"gpr-a87dbb99-64ac\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 101,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-23T12:50:03Z\",\n                \"estimatedWaitTime\": \"0h2m22s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"from-ui\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-23T12:49:03Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-49t7\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": false,\n                \"idleTimeOutDuration\": \"\"\n            },\n            {\n                \"gprId\": \"gpr-a9aac2fc-5ee0\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 101,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-19T08:10:46Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h30m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"prom\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-19T08:41:25Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-9161\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": false,\n                \"idleTimeOutDuration\": \"\"\n            },\n            {\n                \"gprId\": \"gpr-b900c98b-27a6\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 201,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-24T08:13:08Z\",\n                \"estimatedWaitTime\": \"0h0m0s\",\n                \"exitDuration\": \"0h1m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"created-by-coreapi\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Successful\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"2024-12-24T08:14:03Z\",\n                    \"completionTimestamp\": \"\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-kcxz\"\n                    ],\n                    \"internalState\": \"Reserved\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": true,\n                \"idleTimeOutDuration\": \"0h1m0s\"\n            },\n            {\n                \"gprId\": \"gpr-d224ad6a-8e09\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 15,\n                \"priority\": 101,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-17T11:40:57Z\",\n                \"estimatedWaitTime\": \"0h4m57s\",\n                \"exitDuration\": \"0h5m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"multi-slice-02\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Complete\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"2024-12-17T11:45:57Z\",\n                    \"cost\": \"\",\n                    \"nodes\": [\n                        \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-07jh\"\n                    ],\n                    \"internalState\": \"Released\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": false,\n                \"idleTimeOutDuration\": \"\"\n            },\n            {\n                \"gprId\": \"gpr-ef2610ec-7816\",\n                \"sliceName\": \"pink\",\n                \"clusterName\": \"worker-1\",\n                \"numberOfGPUs\": 1,\n                \"numberOfGPUNodes\": 1,\n                \"instanceType\": \"n1-highcpu-2\",\n                \"memoryPerGPU\": 25,\n                \"priority\": 210,\n                \"gpuSharingMode\": \"Virtual Machine\",\n                \"estimatedStartTime\": \"2024-12-24T07:09:03Z\",\n                \"estimatedWaitTime\": \"0d0h0m0s\",\n                \"exitDuration\": \"0h10m0s\",\n                \"earlyRelease\": false,\n                \"gprName\": \"bug-test02\",\n                \"gpuShape\": \"tesla-T4\",\n                \"multiNode\": false,\n                \"dedicatedNodes\": false,\n                \"enableRDMA\": false,\n                \"enableSecondaryNetwork\": false,\n                \"status\": {\n                    \"provisioningStatus\": \"Queued\",\n                    \"failureReason\": \"\",\n                    \"numGpusAllocated\": 0,\n                    \"startTimestamp\": \"\",\n                    \"completionTimestamp\": \"\",\n                    \"cost\": \"\",\n                    \"nodes\": null,\n                    \"internalState\": \"\",\n                    \"retryCount\": 0,\n                    \"delayedCount\": 0\n                },\n                \"enforceIdleTimeOut\": true,\n                \"idleTimeOutDuration\": \"0h10m0s\"\n            }\n        ]\n    }\n}"
 						}
 					]
 				},
@@ -1207,49 +1207,6 @@
 						}
 					},
 					"response": [
-						{
-							"name": "Success",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}/api/v1/gpr?gprId={{gprId}}",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"gpr"
-									],
-									"query": [
-										{
-											"key": "gprId",
-											"value": "{{gprId}}"
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								},
-								{
-									"key": "Date",
-									"value": "Tue, 22 Oct 2024 09:17:33 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "818"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"gprId\": \"gpr-1bb22a0b-9388\",\n        \"sliceName\": \"evening\",\n        \"clusterName\": \"worker-1\",\n        \"numberOfGPUs\": 1,\n        \"numberOfGPUNodes\": 1,\n        \"instanceType\": \"n1-standard-8\",\n        \"memoryPerGPU\": 15,\n        \"priority\": 201,\n        \"gpuSharingMode\": \"Virtual Machine\",\n        \"estimatedStartTime\": \"2024-10-22T09:12:38Z\",\n        \"estimatedWaitTime\": \"0h0m0s\",\n        \"exitDuration\": \"0h5m0s\",\n        \"earlyRelease\": true,\n        \"gprName\": \"created-by-apigw\",\n        \"gpuShape\": \"Tesla-T4\",\n        \"multiNode\": false,\n        \"dedicatedNodes\": false,\n        \"enableRDMA\": false,\n        \"enableSecondaryNetwork\": false,\n        \"status\": {\n            \"provisioningStatus\": \"EarlyReleased\",\n            \"failureReason\": \"\",\n            \"numGpusAllocated\": 0,\n            \"startTimestamp\": \"\",\n            \"completionTimestamp\": \"2024-10-22T09:17:12Z\",\n            \"cost\": \"\",\n            \"nodes\": [\n                \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n            ],\n            \"internalState\": \"Released\",\n            \"retryCount\": 0,\n            \"delayedCount\": 0\n        }\n    }\n}"
-						},
 						{
 							"name": "Not Found",
 							"originalRequest": {
@@ -1292,6 +1249,49 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"statusCode\": 404,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error while fetching GPRs\\\",\\\"Status\\\":404,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"gpuprovisioningrequests.gpr.kubeslice.io \\\\\\\"gpr-1bb22a0b-9388-x\\\\\\\" not found\\\",\\\"Reason\\\":\\\"NotFound\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":404,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						},
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/gpr?gprId={{gprId}}",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"gpr"
+									],
+									"query": [
+										{
+											"key": "gprId",
+											"value": "{{gprId}}"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 08:13:35 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "788"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"gprId\": \"gpr-b900c98b-27a6\",\n        \"sliceName\": \"pink\",\n        \"clusterName\": \"worker-1\",\n        \"numberOfGPUs\": 1,\n        \"numberOfGPUNodes\": 1,\n        \"instanceType\": \"n1-highcpu-2\",\n        \"memoryPerGPU\": 15,\n        \"priority\": 201,\n        \"gpuSharingMode\": \"Virtual Machine\",\n        \"estimatedStartTime\": \"2024-12-24T08:13:08Z\",\n        \"estimatedWaitTime\": \"0h0m0s\",\n        \"exitDuration\": \"0h1m0s\",\n        \"earlyRelease\": false,\n        \"gprName\": \"created-by-coreapi\",\n        \"gpuShape\": \"Tesla-T4\",\n        \"multiNode\": false,\n        \"dedicatedNodes\": false,\n        \"enableRDMA\": false,\n        \"enableSecondaryNetwork\": false,\n        \"status\": {\n            \"provisioningStatus\": \"Queued\",\n            \"failureReason\": \"\",\n            \"numGpusAllocated\": 0,\n            \"startTimestamp\": \"\",\n            \"completionTimestamp\": \"\",\n            \"cost\": \"\",\n            \"nodes\": null,\n            \"internalState\": \"\",\n            \"retryCount\": 0,\n            \"delayedCount\": 0\n        },\n        \"enforceIdleTimeOut\": true,\n        \"idleTimeOutDuration\": \"0h1m0s\"\n    }\n}"
 						}
 					]
 				}
@@ -1347,15 +1347,15 @@
 								},
 								{
 									"key": "Date",
-									"value": "Tue, 22 Oct 2024 09:19:28 GMT"
+									"value": "Tue, 24 Dec 2024 08:08:04 GMT"
 								},
 								{
 									"key": "Content-Length",
-									"value": "413"
+									"value": "945"
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"items\": [\n            {\n                \"gpuNodeName\": \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\",\n                \"gpuShape\": \"n1-standard-8\",\n                \"gpuModelName\": \"Tesla-T4\",\n                \"instanceType\": \"n1-standard-8\",\n                \"clusterName\": \"worker-1\",\n                \"memory\": 15360,\n                \"gpuCount\": 1,\n                \"gpuTempThreshold\": \"\",\n                \"gpuPowerThreshold\": \"\",\n                \"cloudProvider\": \"gcp\",\n                \"region\": \"\",\n                \"nodeHealth\": \"Healthy\",\n                \"gpuNodeStatus\": \"NODE_AVAILABLE\"\n            }\n        ]\n    }\n}"
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"managedNodes\": [\n            {\n                \"gpuNodeName\": \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-klfn\",\n                \"gpuShape\": \"n1-highcpu-2\",\n                \"gpuModelName\": \"Tesla-T4\",\n                \"instanceType\": \"n1-highcpu-2\",\n                \"clusterName\": \"worker-1\",\n                \"memory\": 15,\n                \"gpuCount\": 1,\n                \"gpuTempThreshold\": \"\",\n                \"gpuPowerThreshold\": \"\",\n                \"cloudProvider\": \"gcp\",\n                \"region\": \"\",\n                \"nodeHealth\": \"Healthy\",\n                \"gpuNodeState\": \"NODE_RESERVED\",\n                \"cloud\": \"gcp\",\n                \"allocation\": [\n                    {\n                        \"gprName\": \"gpr-b45a1d34-bf9c\",\n                        \"sliceName\": \"avesha\",\n                        \"totalGPUsAllocated\": 1,\n                        \"allocationTimeStamp\": {\n                            \"seconds\": \"1735025703\",\n                            \"nanos\": 0\n                        }\n                    }\n                ]\n            },\n            {\n                \"gpuNodeName\": \"gke-dev-2-gke-cluste-dev-2-gke-cluste-33478855-kcxz\",\n                \"gpuShape\": \"n1-highcpu-2\",\n                \"gpuModelName\": \"Tesla-T4\",\n                \"instanceType\": \"n1-highcpu-2\",\n                \"clusterName\": \"worker-1\",\n                \"memory\": 15,\n                \"gpuCount\": 1,\n                \"gpuTempThreshold\": \"\",\n                \"gpuPowerThreshold\": \"\",\n                \"cloudProvider\": \"gcp\",\n                \"region\": \"\",\n                \"nodeHealth\": \"Healthy\",\n                \"gpuNodeState\": \"NODE_AVAILABLE\",\n                \"cloud\": \"gcp\"\n            }\n        ],\n        \"unmanagedNodes\": []\n    }\n}"
 						}
 					]
 				},
@@ -1383,49 +1383,6 @@
 						}
 					},
 					"response": [
-						{
-							"name": "Success",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{host}}/api/v1/inventory?sliceName=evening",
-									"host": [
-										"{{host}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"inventory"
-									],
-									"query": [
-										{
-											"key": "sliceName",
-											"value": "evening"
-										}
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								},
-								{
-									"key": "Date",
-									"value": "Tue, 22 Oct 2024 09:19:39 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "222"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"items\": [\n            {\n                \"nodeName\": [\n                    \"gke-dev-2-gke-cluste-dev-2-gke-cluste-9d71107a-hs19\"\n                ],\n                \"instanceType\": \"n1-standard-8\",\n                \"memory\": 15360,\n                \"totalGpus\": 1,\n                \"gpuShape\": \"Tesla-T4\"\n            }\n        ]\n    }\n}"
-						},
 						{
 							"name": "Not Found",
 							"originalRequest": {
@@ -1468,6 +1425,49 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"statusCode\": 404,\n    \"status\": \"UNKNOWN\",\n    \"message\": \"UNKNOWN\",\n    \"data\": null,\n    \"error\": {\n        \"errorKey\": \"UNKNOWN\",\n        \"message\": \"UNKNOWN\",\n        \"data\": \"{\\\"error\\\":{\\\"Message\\\":\\\"Error occurred while fetching the inventory details\\\",\\\"Status\\\":404,\\\"DetailedError\\\":{\\\"Errormessage\\\":\\\"sliceconfigs.controller.kubeslice.io \\\\\\\"evening-x\\\\\\\" not found\\\",\\\"Reason\\\":\\\"NotFound\\\",\\\"Details\\\":\\\"\\\"},\\\"StatusCode\\\":404,\\\"ReferenceDocumentation\\\":\\\"NA\\\"}}\"\n    }\n}"
+						},
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}/api/v1/inventory?sliceName={{workspaceName}}",
+									"host": [
+										"{{host}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"inventory"
+									],
+									"query": [
+										{
+											"key": "sliceName",
+											"value": "{{workspaceName}}"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 24 Dec 2024 08:08:47 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "224"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"statusCode\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"data\": {\n        \"items\": [\n            {\n                \"instanceType\": \"n1-highcpu-2\",\n                \"gpuShape\": \"Tesla-T4\",\n                \"gpuSlicingProfile\": [],\n                \"memoryPerGpu\": 15,\n                \"gpuPerNode\": 1,\n                \"totalGpuNodes\": 2,\n                \"clusterName\": \"worker-1\"\n            }\n        ]\n    }\n}"
 						}
 					]
 				}
@@ -1504,6 +1504,13 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": "http://localhost",
+			"type": "default"
 		}
 	]
 }
