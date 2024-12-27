@@ -2671,9 +2671,9 @@ prepare_worker_values_file() {
                 
                 sed -i "s|endpoint: .*|endpoint: ${prometheus_url}|" "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml"
                 echo "updating cluster registration..."
-                kubectl apply -f "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml" --kubeconfig $kubeconfigname --context "$kubecontext"  -n kubeslice-$project_name
+                kubectl apply -f "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml" --kubeconfig $kubeconfigname  -n kubeslice-$project_name
                 echo "🔍 Verifying cluster registration for '$cluster_name'..."
-                kubectl get cluster.controller.kubeslice.io -n kubeslice-$project_name --kubeconfig $kubeconfigname --context "$kubecontext"  | grep $cluster_name
+                kubectl get cluster.controller.kubeslice.io -n kubeslice-$project_name --kubeconfig $kubeconfigname  | grep $cluster_name
 
                 echo "Waiting for Grafana service to get an IP or port for worker..."
                 external_ip=""
