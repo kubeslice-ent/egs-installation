@@ -69,7 +69,7 @@ spec:
             - --rbac-resource-prefix={{ required "A valid value is required!" .Values.kubeslice.controller.rbacResourcePrefix }}
             - --project-namespace-prefix={{ required "A valid value is required!" .Values.kubeslice.controller.projectnsPrefix }}
             - --controller-end-point={{ required "A valid value is required!" .Values.kubeslice.controller.endpoint }}
-            - --prometheus-service-endpoint={{ required "A valid value is required!" .Values.global.kubeTally.prometheusUrl}}
+            - --prometheus-service-endpoint={{ required "A valid value is required!" .Values.global.kubeTally.prometheusUrl }}
             - --license-mode={{ .Values.kubeslice.license.mode }}
             - --license-customer-name={{ .Values.kubeslice.license.customerName }}
             - --license-type={{.Values.kubeslice.license.type }}
