@@ -19,7 +19,10 @@ service_name="egs-test-service"
 watch_resources="true"
 watch_duration="30"
 function_debug_input="true"
-generate_summary_flag="true" 
+generate_summary_flag="true"
+# Global default resource_action_pairs
+default_resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch,pod:create,pod:delete,pod:get,pod:list,pod:watch,service:create,service:delete,service:get,service:list,service:watch,configmap:create,configmap:delete,configmap:get,configmap:list,configmap:watch,secret:create,secret:delete,secret:get,secret:list,secret:watch,serviceaccount:create,serviceaccount:delete,serviceaccount:get,serviceaccount:list,serviceaccount:watch,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:delete,clusterrolebinding:get,clusterrolebinding:list"
+
 # Array to store summary information
 declare -A summary
 # Initialize arrays for tracking commands and their inputs
@@ -49,22 +52,38 @@ display_help() {
   echo -e "  ⚡  --kubectl-path <path>                           Override default kubectl binary path."
   echo -e "  🐞  --function-debug-input <true|false>            Enable or disable function debugging (default: false)."
   echo -e "  📊  --generate-summary <true|false>                Enable or disable summary generation (default: true)."
+  echo -e "  🔐  --resource-action-pairs <pairs>                Override default resource-action pairs (e.g., pod:create,service:get)."
   echo -e "  ❓  --help                                          Display this help message."
   echo -e "
-Wrapper Functions:"
-  echo -e "  🗂️  namespace_preflight_checks                     Validates namespace creation and existence."
-  echo -e "  📂  pvc_preflight_checks                           Validates PVC creation, deletion, and storage properties."
-  echo -e "  ⚙️  service_preflight_checks                       Validates the creation and deletion of services (ClusterIP, NodePort, LoadBalancer)."
-  echo -e "
-Examples:"
-  echo -e "  $0 --namespace-to-check my-namespace --test-namespace test-ns --invoke-wrappers namespace_preflight_checks"
-  echo -e "  $0 --pvc-test-namespace pvc-ns --pvc-name test-pvc --storage-class standard --storage-size 1Gi --invoke-wrappers pvc_preflight_checks"
-  echo -e "  $0 --test-namespace service-ns --service-name test-service --service-type NodePort --watch-resources true --watch-duration 60 --invoke-wrappers service_preflight_checks"
-  echo -e "  $0 --invoke-wrappers namespace_preflight_checks,pvc_preflight_checks,service_preflight_checks"
-  echo -e "  $0 --function-debug-input true --invoke-wrappers namespace_preflight_checks"
-  echo -e "  $0 --generate-summary false --invoke-wrappers namespace_preflight_checks"
+Default Resource-Action Pairs:
+  📌 The default resource-action pairs used for privilege checks are:
+      namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch,
+      pod:create,pod:delete,pod:get,pod:list,pod:watch,
+      service:create,service:delete,service:get,service:list,service:watch,
+      configmap:create,configmap:delete,configmap:get,configmap:list,configmap:watch,
+      secret:create,secret:delete,secret:get,secret:list,secret:watch,
+      serviceaccount:create,serviceaccount:delete,serviceaccount:get,serviceaccount:list,serviceaccount:watch,
+      clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,
+      clusterrolebinding:create,clusterrolebinding:delete,clusterrolebinding:get,clusterrolebinding:list
+
+Wrapper Functions:
+  🗂️  namespace_preflight_checks                     Validates namespace creation and existence.
+  📂  pvc_preflight_checks                           Validates PVC creation, deletion, and storage properties.
+  ⚙️  service_preflight_checks                       Validates the creation and deletion of services (ClusterIP, NodePort, LoadBalancer).
+  🔐  k8s_privilege_preflight_checks                 Validates privileges for Kubernetes actions on resources.
+
+Examples:
+  $0 --namespace-to-check my-namespace --test-namespace test-ns --invoke-wrappers namespace_preflight_checks
+  $0 --pvc-test-namespace pvc-ns --pvc-name test-pvc --storage-class standard --storage-size 1Gi --invoke-wrappers pvc_preflight_checks
+  $0 --test-namespace service-ns --service-name test-service --service-type NodePort --watch-resources true --watch-duration 60 --invoke-wrappers service_preflight_checks
+  $0 --invoke-wrappers namespace_preflight_checks,pvc_preflight_checks,service_preflight_checks
+  $0 --resource-action-pairs pod:create,namespace:delete --invoke-wrappers k8s_privilege_preflight_checks
+  $0 --function-debug-input true --invoke-wrappers namespace_preflight_checks
+  $0 --generate-summary false --invoke-wrappers namespace_preflight_checks"
   exit 0
 }
+
+
 
 # Function to add summary details
 log_summary() {
@@ -223,8 +242,9 @@ while [[ $# -gt 0 ]]; do
     --display-resources) display_resources="$2"; shift 2 ;;
     --global-wait) global_wait="$2"; shift 2 ;;
     --kubectl-path) KUBECTL_BIN="$2"; shift 2 ;;
-    --function-debug-input) function_debug_input="$2"; shift 2 ;; 
-    --generate-summary) generate_summary_flag="$2"; shift 2 ;; 
+    --function-debug-input) function_debug_input="$2"; shift 2 ;;
+    --generate-summary) generate_summary_flag="$2"; shift 2 ;;
+    --resource-action-pairs) resource_action_pairs="$2"; shift 2 ;; # New parameter
     --help) display_help ;;
     *) echo -e "❌ Unknown parameter: $1"; display_help ;;
   esac
@@ -735,6 +755,36 @@ spec:
   fi
 }
 
+k8s_privilege_preflight_checks() {
+  local kubeconfig="$1"
+  local kubecontext="$2"
+  local resource_action_pairs="${3:-$default_resource_action_pairs}"
+  local test_resource="${4:-clusterrole}"
+  local cleanup="$5"
+  local display_resources_flag="$6"
+  local global_wait="$7"
+  local watch_resources="${8:-false}"       # Flag to enable or disable watching
+  local watch_duration="${9:-30}"          # Duration to watch the resource
+
+  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, resource_action_pairs=$resource_action_pairs, test_resource=$test_resource, cleanup=$cleanup, display_resources=$display_resources_flag, watch_resources=$watch_resources, watch_duration=$watch_duration"
+
+  # Split the resource_action_pairs string into an array
+  IFS=',' read -r -a pair_array <<< "$resource_action_pairs"
+  for pair in "${pair_array[@]}"; do
+    resource=$(echo "$pair" | cut -d':' -f1)
+    action=$(echo "$pair" | cut -d':' -f2)
+    echo "🔍 Testing privilege for action '$action' on resource '$resource'"
+
+    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext auth can-i $action $resource >/dev/null 2>&1"; then
+      echo -e "✅ Privilege exists for action '$action' on resource '$resource'."
+      log_summary "Privilege Check - $resource:$action" "Privilege Exists:Success"
+    else
+      echo -e "❌ Privilege missing for action '$action' on resource '$resource'."
+      log_summary "Privilege Check - $resource:$action" "Privilege Missing:Failure"
+    fi
+    wait_after_command "$global_wait"
+  done
+}
 
 
 
@@ -742,7 +792,7 @@ spec:
 # Function to display the summary of parameters
 print_summary() {
   echo "--- Parameter Summary ---"
-  echo -e "🔹 Namespace to check: ${namespace_to_check:-Not provided}"
+  echo -e "🔹 Namespace to check: ${namespaces_to_check:-Not provided}"
   echo -e "🔹 Test namespace: ${test_namespace:-egs-test-namespace}"
   echo -e "🔹 PVC test namespace: ${pvc_test_namespace:-egs-test-namespace}"
   echo -e "🔹 PVC name: ${pvc_name:-egs-test-pvc}"
@@ -754,6 +804,7 @@ print_summary() {
   echo -e "🔹 Kubecontext: ${kubecontext:-Not provided}"
   echo -e "🔹 Cleanup flag: ${cleanup:-true}"
   echo -e "🔹 Wrappers to invoke: ${wrappers_to_invoke:-Not provided}"
+  echo -e "🔹 Resource-action pairs: ${resource_action_pairs:-Default set}"
   echo "-------------------------"
 }
 
@@ -762,98 +813,100 @@ main() {
 
     echo "Entering main with arguments: $@"
 
-
-
-# Process command-line arguments
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --namespace-to-check)
-            namespaces_to_check="$2"
-            shift 2
-            ;;
-        --test-namespace)
-            test_namespace="$2"
-            shift 2
-            ;;
-        --pvc-test-namespace)
-            pvc_test_namespace="$2"
-            shift 2
-            ;;
-        --invoke-wrappers)
-            wrappers_to_invoke="$2"
-            shift 2
-            ;;
-        --kubeconfig)
-            kubeconfig="--kubeconfig=$2"
-            shift 2
-            ;;
-        --kubecontext)
-            kubecontext="$2"
-            shift 2
-            ;;
-        --pvc-name)
-            pvc_name="$2"
-            shift 2
-            ;;
-        --storage-class)
-            storage_class="$2"
-            shift 2
-            ;;
-        --storage-size)
-            storage_size="$2"
-            shift 2
-            ;;
-        --service-name)
-            service_name="$2"
-            shift 2
-            ;;
-        --service-type)
-            service_type="$2"
-            shift 2
-            ;;
-        --cleanup)
-            cleanup="$2"
-            shift 2
-            ;;
-        --display-resources)
-            display_resources="$2"
-            shift 2
-            ;;
-        --global-wait)
-            global_wait="$2"
-            shift 2
-            ;;
-        --watch-resources)
-            watch_resources="$2"
-            shift 2
-            ;;
-        --watch-duration)
-            watch_duration="$2"
-            shift 2
-            ;;
-        --generate-summary)
-            generate_summary_flag="$2"
-            shift 2
-            ;;
-        --help)
-            display_help
-            exit 0
-            ;;
-        --kubectl-path)
-            KUBECTL_BIN="$2"
-            shift 2
-            ;;
-        --function-debug-input)
-            function_debug_input="$2"
-            shift 2
-            ;;
-        *)
-            echo -e "❌ Unknown parameter: $1"
-            display_help
-            exit 1
-            ;;
-    esac
-done
+    # Process command-line arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --namespace-to-check)
+                namespaces_to_check="$2"
+                shift 2
+                ;;
+            --test-namespace)
+                test_namespace="$2"
+                shift 2
+                ;;
+            --pvc-test-namespace)
+                pvc_test_namespace="$2"
+                shift 2
+                ;;
+            --invoke-wrappers)
+                wrappers_to_invoke="$2"
+                shift 2
+                ;;
+            --kubeconfig)
+                kubeconfig="--kubeconfig=$2"
+                shift 2
+                ;;
+            --kubecontext)
+                kubecontext="$2"
+                shift 2
+                ;;
+            --pvc-name)
+                pvc_name="$2"
+                shift 2
+                ;;
+            --storage-class)
+                storage_class="$2"
+                shift 2
+                ;;
+            --storage-size)
+                storage_size="$2"
+                shift 2
+                ;;
+            --service-name)
+                service_name="$2"
+                shift 2
+                ;;
+            --service-type)
+                service_type="$2"
+                shift 2
+                ;;
+            --cleanup)
+                cleanup="$2"
+                shift 2
+                ;;
+            --display-resources)
+                display_resources="$2"
+                shift 2
+                ;;
+            --global-wait)
+                global_wait="$2"
+                shift 2
+                ;;
+            --watch-resources)
+                watch_resources="$2"
+                shift 2
+                ;;
+            --watch-duration)
+                watch_duration="$2"
+                shift 2
+                ;;
+            --generate-summary)
+                generate_summary_flag="$2"
+                shift 2
+                ;;
+            --kubectl-path)
+                KUBECTL_BIN="$2"
+                shift 2
+                ;;
+            --function-debug-input)
+                function_debug_input="$2"
+                shift 2
+                ;;
+            --resource-action-pairs)
+                resource_action_pairs="$2"
+                shift 2
+                ;;
+            --help)
+                display_help
+                exit 0
+                ;;
+            *)
+                echo -e "❌ Unknown parameter: $1"
+                display_help
+                exit 1
+                ;;
+        esac
+    done
 
 
 
@@ -877,15 +930,20 @@ done
     echo "🔹 watch_duration: ${watch_duration:-Not provided}"
     echo "🔹 global_wait: ${global_wait:-Not provided}"
     echo "🔹 KUBECTL_BIN: ${KUBECTL_BIN:-Not provided}"
-    echo "🔹 function_debug_input: ${function_debug_input}"
-    echo "🔹 generate_summary_flag: ${generate_summary_flag}"
+    echo "🔹 function_debug_input: ${function_debug_input:-Not provided}"
+    echo "🔹 generate_summary_flag: ${generate_summary_flag:-Not provided}"
+    echo "🔹 resource_action_pairs: ${resource_action_pairs:-Default set}"
     echo "-------------------------------"
+
 
 # Handle wrappers_to_invoke
 if [[ -n "$wrappers_to_invoke" ]]; then
     IFS=',' read -r -a wrappers <<< "$wrappers_to_invoke"
     for wrapper in "${wrappers[@]}"; do
         case "$wrapper" in
+            k8s_privilege_preflight_checks)
+                log_inputs_and_time "$function_debug_input" k8s_privilege_preflight_checks "$kubeconfig" "$kubecontext" "$resource_action_pairs" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+                ;;
             namespace_preflight_checks)
                 log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
                 ;;
@@ -903,6 +961,7 @@ if [[ -n "$wrappers_to_invoke" ]]; then
     done
 else
     echo "🔍 Executing all preflight checks by default"
+    log_inputs_and_time "$function_debug_input" k8s_privilege_preflight_checks "$kubeconfig" "$kubecontext" "$resource_action_pairs" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
     log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
     log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
     log_inputs_and_time "$function_debug_input" service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_resources" "$watch_duration"
