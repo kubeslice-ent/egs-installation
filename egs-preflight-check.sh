@@ -156,7 +156,7 @@ generate_summary() {
     echo "=================================================================================================="
 
     echo -e "\n📄 ====================== RESOURCE DETAILS =================================================="
-    printf "| %-40s | %-30s | %-15s |\n" "🔍 Resource Type" "📝 Resource Name" "📂 Namespace"
+    printf "| %-40s | %-30s | %-15s |\n" "🔍 Resource Type" "📝 Resource Name" "📈 Status"
     echo "----------------------------------------------------------------------------------------------------"
 
     # Display resource details, skipping cluster-related keys
