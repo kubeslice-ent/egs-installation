@@ -92,15 +92,13 @@ log_summary() {
   summary["$key"]="$value"
 }
 
-# Function to generate summary with adjusted column formatting
+
 generate_summary() {
   if [ "$generate_summary_flag" == "true" ]; then
 
     echo -e "\n📥 ====================== INPUTS USED ======================"
     printf "| %-30s | %-50s |\n" "🔧 Input Parameter" "🔢 Value"
     echo "-----------------------------------------------------------------------------------------"
-    printf "| %-30s | %-50s |\n" "Kubeconfig" "${kubeconfig:-None}"
-    printf "| %-30s | %-50s |\n" "Kubecontext" "${kubecontext:-default-context}"
     printf "| %-30s | %-50s |\n" "Namespaces to Check" "${namespaces_to_check:-None}"
     printf "| %-30s | %-50s |\n" "Test Namespace" "${test_namespace:-egs-test-namespace}"
     printf "| %-30s | %-50s |\n" "PVC Test Namespace" "${pvc_test_namespace:-egs-test-namespace}"
@@ -118,13 +116,41 @@ generate_summary() {
     printf "| %-30s | %-50s |\n" "Function Debug Input" "${function_debug_input:-false}"
     echo "=============================================================================================="
 
+    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS ====================================="
+    printf "| %-30s | %-50s |\n" "🔧 Parameter" "📦 Value"
+    echo "-----------------------------------------------------------------------------------------"
+    printf "| %-30s | %-50s |\n" "Kubeconfig" "${kubeconfig:-None}"
+    printf "| %-30s | %-50s |\n" "Kubecontext" "${kubecontext:-default-context}"
+    if [[ -n "${summary[K8S Cluster Endpoint]}" ]]; then
+      printf "| %-30s | %-50s |\n" "Cluster Endpoint" "${summary[K8S Cluster Endpoint]}"
+    else
+      echo "❌ Missing cluster endpoint."
+    fi
+    if [[ -n "${summary[Kubernetes Cluster Access]}" ]]; then
+      printf "| %-30s | %-50s |\n" "Cluster Access" "${summary[Kubernetes Cluster Access]}"
+    else
+      echo "❌ Missing cluster access."
+    fi
+    echo "=============================================================================================="
+
     echo -e "\n📊 ====================== SUMMARY ======================================================="
     printf "| %-40s | %-30s | %-15s |\n" "🔧 Parameter/Function" "📦 Object Created" "📈 Status"
     echo "-----------------------------------------------------------------------------------------------"
+
+    # Display all other summary entries
     for key in "${!summary[@]}"; do
+      if [[ "$key" == "K8S Cluster Endpoint" || "$key" == "Kubernetes Cluster Access" ]]; then
+        continue
+      fi
       parameter_function=$(echo "$key" | cut -c1-40)
       object_created=$(echo "${summary[$key]%:*}" | cut -c1-30)
       status=$(echo "${summary[$key]##*:}" | cut -c1-15)
+
+      if [[ -z "$parameter_function" || -z "$object_created" || -z "$status" ]]; then
+        echo "❌ Missing values for key: $key, value: ${summary[$key]}"
+        continue
+      fi
+
       printf "| %-40s | %-30s | %-20s |\n" "$parameter_function" "$object_created" "$status"
     done
     echo "=================================================================================================="
@@ -132,27 +158,29 @@ generate_summary() {
     echo -e "\n📄 ====================== RESOURCE DETAILS =================================================="
     printf "| %-40s | %-30s | %-15s |\n" "🔍 Resource Type" "📝 Resource Name" "📂 Namespace"
     echo "----------------------------------------------------------------------------------------------------"
+
+    # Display resource details, skipping cluster-related keys
     for key in "${!summary[@]}"; do
+      if [[ "$key" == "K8S Cluster Endpoint" || "$key" == "Kubernetes Cluster Access" ]]; then
+        continue
+      fi
       resource_details=$(echo "$key" | awk -F' - ' '{print $1}' | cut -c1-40)
       resource_name=$(echo "$key" | awk -F' - ' '{print $2}' | cut -c1-30)
       namespace=$(echo "${summary[$key]%:*}" | awk '{print $NF}' | cut -c1-15)
+
+      if [[ -z "$resource_details" || -z "$resource_name" || -z "$namespace" ]]; then
+        echo "❌ Missing values for resource: $key, value: ${summary[$key]}"
+        continue
+      fi
+
       printf "| %-40s | %-30s | %-15s |\n" "$resource_details" "$resource_name" "$namespace"
     done
     echo "===================================================================================================="
-
-    if [ "$enable_command_output" == "true" ]; then
-      echo -e "\n📜 ====================== COMMANDS INVOKED =================================================="
-      printf "| %-50s | %-50s |\n" "🔧 Command Executed" "🔢 Final Inputs Used"
-      echo "---------------------------------------------------------------------------------------------------"
-      for command in "${commands[@]}"; do
-        printf "| %-50s | %-50s |\n" "$command" "${command_inputs[$command]}"
-      done
-      echo "===================================================================================================="
-    fi
   else
     echo "📋 Summary generation is disabled."
   fi
 }
+
 
 
 
@@ -387,11 +415,20 @@ check_k8s_cluster_access() {
     log_summary "Kubernetes Cluster Access" "cluster access successful:Success"
   fi
 
-  # Print cluster endpoint
+
+  run_command "$KUBECTL_BIN --kubeconfig=${kubeconfig#--kubeconfig=} --context=$kubecontext config view --minify -o jsonpath='{.clusters[0].cluster.server}'"
+  # Print cluster endpoint URL only
   local cluster_endpoint
-  cluster_endpoint=$(run_command "$KUBECTL_BIN --kubeconfig=${kubeconfig#--kubeconfig=} --context=$kubecontext config view --minify -o jsonpath='{.clusters[0].cluster.server}'")
-  echo -e "🔗 Cluster endpoint: $cluster_endpoint"
-  log_summary "Kubernetes Cluster Endpoint" "Cluster endpoint: $cluster_endpoint"
+  cluster_endpoint=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" config view --minify -o jsonpath='{.clusters[0].cluster.server}' 2>/dev/null)
+
+  if [[ -n "$cluster_endpoint" ]]; then
+    echo "$cluster_endpoint"
+    log_summary "K8S Cluster Endpoint" "$cluster_endpoint"
+  else
+    echo "❌ Failed to retrieve the cluster endpoint."
+    log_summary "K8S Cluster Endpoint" "Failed to retrieve cluster endpoint"
+  fi
+
 }
 
 
