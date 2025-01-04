@@ -16,8 +16,9 @@ global_wait="5"
 KUBECTL_BIN=$(which kubectl)
 service_type="all"
 service_name="egs-test-service"
-watch_flag="true"
+watch_resources="true"
 watch_duration="30"
+function_debug_input="true"
 
 
 # Function to display help information
@@ -36,11 +37,12 @@ display_help() {
   echo -e "  --kubecontext <context>                         Context from the kubeconfig file (mandatory)."
   echo -e "  --cleanup <true|false>                          Whether to delete test resources (default: true)."
   echo -e "  --global-wait <seconds>                         Time to wait after each command execution (default: 0)."
-  echo -e "  --watch-flag <true|false>                       Enable or disable watching resources after creation (default: false)."
+  echo -e "  --watch-resources <true|false>                       Enable or disable watching resources after creation (default: false)."
   echo -e "  --watch-duration <seconds>                      Duration to watch resources after creation (default: 30 seconds)."
   echo -e "  --invoke-wrappers <wrapper1,wrapper2,...>       Comma-separated list of wrapper functions to invoke."
   echo -e "  --display-resources <true|false>               Whether to display resources created (default: true)."
   echo -e "  --kubectl-path <path>                          Override default kubectl binary path."
+  echo -e "  --function-debug-input <true|false>            Enable or disable function debugging (default: false)."
   echo -e "  --help                                          Display this help message."
   echo -e "\nWrapper Functions:"
   echo -e "  namespace_preflight_checks                     Validates namespace creation and existence."
@@ -49,25 +51,42 @@ display_help() {
   echo -e "\nExamples:"
   echo -e "  $0 --namespace-to-check my-namespace --test-namespace test-ns --invoke-wrappers namespace_preflight_checks"
   echo -e "  $0 --pvc-test-namespace pvc-ns --pvc-name test-pvc --storage-class standard --storage-size 1Gi --invoke-wrappers pvc_preflight_checks"
-  echo -e "  $0 --test-namespace service-ns --service-name test-service --service-type NodePort --watch-flag true --watch-duration 60 --invoke-wrappers service_preflight_checks"
+  echo -e "  $0 --test-namespace service-ns --service-name test-service --service-type NodePort --watch-resources true --watch-duration 60 --invoke-wrappers service_preflight_checks"
   echo -e "  $0 --invoke-wrappers namespace_preflight_checks,pvc_preflight_checks,service_preflight_checks"
+  echo -e "  $0 --function-debug-input true --invoke-wrappers namespace_preflight_checks"
   exit 0
 }
 
 
-# Log inputs and execution details
+# Log inputs and execution details based on a global or passed flag
 log_inputs_and_time() {
-  local function_name="$1"
-  shift
+  local execute_flag="${function_debug_input:-true}" # Use global flag variable, default to 'true'
+  local function_name
   local start_time
   local end_time
 
-  echo -e "🛠 Executing function: $function_name"
-  
-  echo -e "🔹 Parameters passed:"
+  if [[ "$1" == "true" || "$1" == "false" ]]; then
+    execute_flag="$1"             # Override global flag if passed explicitly
+    function_name="$2"            # Function name
+    shift 2                       # Shift to access remaining arguments
+  else
+    function_name="$1"            # Function name when flag is not passed
+    shift                         # Shift to access remaining arguments
+  fi
+
+  if [[ "$execute_flag" != "true" ]]; then
+    echo -e "🚫 Skipping logging and timing for function: $function_name (Flag set to false)"
+    "$function_name" "$@" # Execute the function without logging or timing
+    return 0
+  fi
+
+  echo -e "🛠️  **Starting Execution**"
+  echo -e "🚀 Function: \e[1m$function_name\e[0m"
+
+  echo -e "📦 **Parameters passed:**"
   local index=1
   for arg in "$@"; do
-    echo -e "   $index. $arg"
+    echo -e "  🔸 \e[1m$index\e[0m: $arg"
     index=$((index + 1))
   done
 
@@ -75,8 +94,10 @@ log_inputs_and_time() {
   "$function_name" "$@"
   end_time=$(date +%s)
 
-  echo -e "⏱ Total time taken by $function_name: $((end_time - start_time)) seconds"
+  echo -e "✅ **Execution Complete**"
+  echo -e "⏳ Total Time Taken: \e[1m$((end_time - start_time)) seconds\e[0m"
 }
+
 
 
 # Function to log and run commands
@@ -91,7 +112,7 @@ run_command() {
 # Determine the correct kubectl binary
 KUBECTL_BIN=$(which kubectl)
 
-# Parse command-line arguments
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --namespace-to-check) namespaces_to_check="$2"; shift 2 ;;
@@ -105,16 +126,18 @@ while [[ $# -gt 0 ]]; do
     --storage-size) storage_size="$2"; shift 2 ;;
     --service-name) service_name="$2"; shift 2 ;;
     --service-type) service_type="$2"; shift 2 ;;
-    --watch-flag) watch_flag="$2"; shift 2 ;;
+    --watch-resources) watch_resources="$2"; shift 2 ;;
     --watch-duration) watch_duration="$2"; shift 2 ;;
     --cleanup) cleanup="$2"; shift 2 ;;
     --display-resources) display_resources="$2"; shift 2 ;;
     --global-wait) global_wait="$2"; shift 2 ;;
     --kubectl-path) KUBECTL_BIN="$2"; shift 2 ;;
+    --function-debug-input) function_debug_input="$2"; shift 2 ;; # New flag for function debugging
     --help) display_help ;;
     *) echo -e "❌ Unknown parameter: $1"; display_help ;;
   esac
 done
+
 
 
 # Debug: Initial parsed values
@@ -171,7 +194,7 @@ watch_resource() {
   local resource_type="$3"
   local resource_name="$4"
   local namespace="$5"
-  local watch_flag="$6"
+  local watch_resources="$6"
   local watch_duration="${7:-30}" # Default watch duration is 30 seconds if not specified
 
   echo -e "🔍 Watching $resource_type '$resource_name'${namespace:+ in namespace '$namespace'} for $watch_duration seconds..."
@@ -252,7 +275,7 @@ create_namespace() {
   local namespace="${3:-egs-test-namespace}"
   local display_resources_flag="$4"
   local global_wait="$5"
-  local watch_flag="${6:-false}"          
+  local watch_resources="${6:-false}"          
   local watch_duration="${7:-30}"       
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespace=$namespace"
 
@@ -266,8 +289,8 @@ create_namespace() {
       display_resource_details "$kubeconfig" "$kubecontext" "namespace" "$namespace" "" "$display_resources_flag"
 
       # Watch the namespace if enabled
-      if [[ "$watch_flag" == "true" ]]; then
-        watch_resource "$kubeconfig" "$kubecontext" "namespace" "$namespace" "" "$watch_flag" "$watch_duration"
+      if [[ "$watch_resources" == "true" ]]; then
+        watch_resource "$kubeconfig" "$kubecontext" "namespace" "$namespace" "" "$watch_resources" "$watch_duration"
       fi
     else
       echo -e "❌ Error: Unable to create namespace '$namespace'."
@@ -288,7 +311,7 @@ delete_namespace() {
   local cleanup="$4"
   local display_resources_flag="$5"
   local global_wait="$6"
-  local watch_flag="${7:-false}"          # Optional: Enable or disable watching
+  local watch_resources="${7:-false}"          # Optional: Enable or disable watching
   local watch_duration="${8:-30}"        # Optional: Duration to watch the resource
 
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespace=$namespace, cleanup=$cleanup"
@@ -299,8 +322,8 @@ delete_namespace() {
       echo -e "✅ Namespace '$namespace' deleted successfully."
 
       # Watch the namespace deletion if enabled
-      if [[ "$watch_flag" == "true" ]]; then
-        watch_resource "$kubeconfig" "$kubecontext" "namespace" "$namespace" "" "$watch_flag" "$watch_duration"
+      if [[ "$watch_resources" == "true" ]]; then
+        watch_resource "$kubeconfig" "$kubecontext" "namespace" "$namespace" "" "$watch_resources" "$watch_duration"
       fi
     else
       echo -e "❌ Error: Unable to delete namespace '$namespace'."
@@ -325,10 +348,10 @@ namespace_preflight_checks() {
   local cleanup="$5"
   local display_resources_flag="$6"
   local global_wait="$7"
-  local watch_flag="${8:-false}"          # Flag to enable or disable watching
+  local watch_resources="${8:-false}"          # Flag to enable or disable watching
   local watch_duration="${9:-30}"        # Duration to watch the resource
 
-  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespaces_to_check=$namespaces_to_check, test_namespace=$test_namespace, cleanup=$cleanup, display_resources=$display_resources_flag, watch_flag=$watch_flag, watch_duration=$watch_duration"
+  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespaces_to_check=$namespaces_to_check, test_namespace=$test_namespace, cleanup=$cleanup, display_resources=$display_resources_flag, watch_resources=$watch_resources, watch_duration=$watch_duration"
 
   # Split the namespaces_to_check string into an array
   IFS=',' read -r -a namespace_array <<< "$namespaces_to_check"
@@ -344,17 +367,17 @@ namespace_preflight_checks() {
 
   # Test namespace creation
   echo "🔍 Testing namespace creation for: '$test_namespace'"
-  log_inputs_and_time create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait"
+  log_inputs_and_time "$function_debug_input" create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait"
 
   # Watch the namespace if the watch flag is enabled
-  if [[ "$watch_flag" == "true" ]]; then
-    watch_resource "$kubeconfig" "$kubecontext" "namespace" "$test_namespace" "" "$watch_flag" "$watch_duration"
+  if [[ "$watch_resources" == "true" ]]; then
+    watch_resource "$kubeconfig" "$kubecontext" "namespace" "$test_namespace" "" "$watch_resources" "$watch_duration"
   fi
 
   # Test namespace deletion if cleanup is enabled
   if [[ "$cleanup" == "true" ]]; then
     echo "🔍 Testing namespace deletion for: '$test_namespace'"
-    log_inputs_and_time delete_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources_flag" "$global_wait"
+    log_inputs_and_time "$function_debug_input" delete_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources_flag" "$global_wait"
   else
     echo "⚠️ Skipping namespace deletion due to cleanup flag."
   fi
@@ -373,13 +396,13 @@ pvc_preflight_checks() {
   local cleanup="$7"
   local display_resources_flag="$8"
   local global_wait="$9"
-  local watch_flag="${10:-false}"         
+  local watch_resources="${10:-false}"         
   local watch_duration="${11:-30}"   
 
-  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, pvc_test_namespace=$pvc_test_namespace, pvc_name=$pvc_name, storage_class=$storage_class, storage_size=$storage_size, cleanup=$cleanup, display_resources=$display_resources_flag, watch_flag=$watch_flag, watch_duration=$watch_duration"
+  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, pvc_test_namespace=$pvc_test_namespace, pvc_name=$pvc_name, storage_class=$storage_class, storage_size=$storage_size, cleanup=$cleanup, display_resources=$display_resources_flag, watch_resources=$watch_resources, watch_duration=$watch_duration"
 
   # Create namespace for PVC testing
-  log_inputs_and_time create_namespace "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$display_resources_flag" "$global_wait"
+  log_inputs_and_time "$function_debug_input" create_namespace "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$display_resources_flag" "$global_wait"
 
   # Create the PVC
   echo "🔍 Creating PVC '$pvc_name' in namespace '$pvc_test_namespace'"
@@ -418,8 +441,8 @@ EOF
   display_resource_details "$kubeconfig" "$kubecontext" "pvc" "$pvc_test_namespace" "$pvc_name" "$display_resources_flag"
 
   # Watch the PVC if the watch flag is enabled
-  if [[ "$watch_flag" == "true" ]]; then
-    watch_resource "$kubeconfig" "$kubecontext" "pvc" "$pvc_name" "$pvc_test_namespace" "$watch_flag" "$watch_duration"
+  if [[ "$watch_resources" == "true" ]]; then
+    watch_resource "$kubeconfig" "$kubecontext" "pvc" "$pvc_name" "$pvc_test_namespace" "$watch_resources" "$watch_duration"
   fi
 
   # Delete the PVC if cleanup is enabled
@@ -432,7 +455,7 @@ EOF
   fi
 
   # Delete the namespace used for PVC testing if cleanup is enabled
-  log_inputs_and_time delete_namespace "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$cleanup" "$display_resources_flag" "$global_wait"
+  log_inputs_and_time "$function_debug_input" delete_namespace "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$cleanup" "$display_resources_flag" "$global_wait"
 }
 
 
@@ -447,13 +470,13 @@ service_preflight_checks() {
   local global_wait="$6"
   local service_name="${7:-egs-test-service}"  # Base name for services
   local service_type="${8:-all}"              # Parameter for specific service type
-  local watch_flag="$9"                       # Flag to enable or disable watching
+  local watch_resources="$9"                       # Flag to enable or disable watching
   local watch_duration="${10:-30}"           # Duration to watch the resource
 
-  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, test_namespace=$test_namespace, cleanup=$cleanup, display_resources=$display_resources_flag, service_name=$service_name, service_type=${service_type:-all}, watch_flag=$watch_flag, watch_duration=$watch_duration"
+  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, test_namespace=$test_namespace, cleanup=$cleanup, display_resources=$display_resources_flag, service_name=$service_name, service_type=${service_type:-all}, watch_resources=$watch_resources, watch_duration=$watch_duration"
 
   # Create a temporary namespace for service testing
-  log_inputs_and_time create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait"
+  log_inputs_and_time "$function_debug_input" create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait"
 
   local SUCCESS=true
 
@@ -469,8 +492,8 @@ service_preflight_checks() {
       display_resource_details "$kubeconfig" "$kubecontext" "service" "$test_namespace" "$name" "$display_resources_flag"
 
       # Watch the resource if the watch flag is enabled
-      if [[ "$watch_flag" == "true" ]]; then
-        watch_resource "$kubeconfig" "$kubecontext" "service" "$name" "$test_namespace" "$watch_flag" "$watch_duration"
+      if [[ "$watch_resources" == "true" ]]; then
+        watch_resource "$kubeconfig" "$kubecontext" "service" "$name" "$test_namespace" "$watch_resources" "$watch_duration"
       fi
 
       # Clean up the resource if cleanup flag is true
@@ -556,7 +579,7 @@ spec:
 
   # Clean up namespace if cleanup flag is true
   if [[ "$cleanup" == "true" ]]; then
-    log_inputs_and_time delete_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources_flag" "$global_wait"
+    log_inputs_and_time "$function_debug_input" delete_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources_flag" "$global_wait"
   else
     echo "⚠️ Namespace cleanup skipped as cleanup flag is set to false."
   fi
@@ -594,6 +617,7 @@ print_summary() {
 main() {
 
     echo "Entering main with arguments: $@"
+
 
 # Process command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -654,8 +678,8 @@ while [[ $# -gt 0 ]]; do
             global_wait="$2"
             shift 2
             ;;
-        --watch-flag)
-            watch_flag="$2"
+        --watch-resources)
+            watch_resources="$2"
             shift 2
             ;;
         --watch-duration)
@@ -670,6 +694,10 @@ while [[ $# -gt 0 ]]; do
             KUBECTL_BIN="$2"
             shift 2
             ;;
+        --function-debug-input)
+            function_debug_input="$2"
+            shift 2
+            ;;
         *)
             echo -e "❌ Unknown parameter: $1"
             display_help
@@ -679,25 +707,27 @@ while [[ $# -gt 0 ]]; do
 done
 
 
+
     # Print final values (debugging)
     echo "--- Final Parameter Values ---"
     echo "🔹 namespaces_to_check: ${namespaces_to_check:-Not provided}"
-    echo "🔹 test_namespace: ${test_namespace}"
-    echo "🔹 pvc_test_namespace: ${pvc_test_namespace}"
+    echo "🔹 test_namespace: ${test_namespace:-Not provided}"
+    echo "🔹 pvc_test_namespace: ${pvc_test_namespace:-Not provided}"
     echo "🔹 wrappers_to_invoke: ${wrappers_to_invoke:-Not provided}"
     echo "🔹 kubeconfig: ${kubeconfig:-Not provided}"
     echo "🔹 kubecontext: ${kubecontext:-Not provided}"
-    echo "🔹 pvc_name: ${pvc_name}"
+    echo "🔹 pvc_name: ${pvc_name:-Not provided}"
     echo "🔹 storage_class: ${storage_class:-Not provided}"
-    echo "🔹 storage_size: ${storage_size}"
-    echo "🔹 service_name: ${service_name}"
-    echo "🔹 service_type: ${service_type}"
-    echo "🔹 cleanup: ${cleanup}"
-    echo "🔹 display_resources: ${display_resources}"
-    echo "🔹 watch_flag: ${watch_flag}"
-    echo "🔹 watch_duration: ${watch_duration}"
-    echo "🔹 global_wait: ${global_wait}"
-    echo "🔹 KUBECTL_BIN: ${KUBECTL_BIN}"
+    echo "🔹 storage_size: ${storage_size:-Not provided}"
+    echo "🔹 service_name: ${service_name:-Not provided}"
+    echo "🔹 service_type: ${service_type:-Not provided}"
+    echo "🔹 cleanup: ${cleanup:-Not provided}"
+    echo "🔹 display_resources: ${display_resources:-Not provided}"
+    echo "🔹 watch_resources: ${watch_resources:-Not provided}"
+    echo "🔹 watch_duration: ${watch_duration:-Not provided}"
+    echo "🔹 global_wait: ${global_wait:-Not provided}"
+    echo "🔹 KUBECTL_BIN: ${KUBECTL_BIN:-Not provided}"
+    echo "🔹 function_debug_input: ${function_debug_input}"
     echo "-------------------------------"
 
 # Handle wrappers_to_invoke
@@ -706,13 +736,13 @@ if [[ -n "$wrappers_to_invoke" ]]; then
     for wrapper in "${wrappers[@]}"; do
         case "$wrapper" in
             namespace_preflight_checks)
-                log_inputs_and_time namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_flag" "$watch_duration"
+                log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
                 ;;
             pvc_preflight_checks)
-                log_inputs_and_time pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_flag" "$watch_duration"
+                log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
                 ;;
             service_preflight_checks)
-                log_inputs_and_time service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_flag" "$watch_duration"
+                log_inputs_and_time "$function_debug_input" service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_resources" "$watch_duration"
                 ;;
             *)
                 echo "❌ Unknown wrapper: $wrapper"
@@ -722,19 +752,20 @@ if [[ -n "$wrappers_to_invoke" ]]; then
     done
 else
     echo "🔍 Executing all preflight checks by default"
-    log_inputs_and_time namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_flag" "$watch_duration"
-    log_inputs_and_time pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_flag" "$watch_duration"
-    log_inputs_and_time service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_flag" "$watch_duration"
+    log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+    log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+    log_inputs_and_time "$function_debug_input" service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_resources" "$watch_duration"
 fi
 
 }
 
 
 # Verify input summary 
-log_inputs_and_time print_summary
+log_inputs_and_time "$function_debug_input" print_summary
   # Verify kubeconfig and kubecontext
-log_inputs_and_time check_k8s_cluster_access "$kubeconfig" "$kubecontext"
+log_inputs_and_time "$function_debug_input" check_k8s_cluster_access "$kubeconfig" "$kubecontext"
 
 
 echo "Debug: Arguments passed to the script: $@"
-log_inputs_and_time main "$@"
+log_inputs_and_time "$function_debug_input" main "$@"
+
