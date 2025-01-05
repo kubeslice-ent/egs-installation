@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Global default values
+# Global default values
 namespaces_to_check=""
 test_namespace="egs-test-namespace"
 pvc_test_namespace="egs-test-namespace"
@@ -20,8 +21,10 @@ watch_resources="true"
 watch_duration="30"
 function_debug_input="true"
 generate_summary_flag="true"
+fetch_resource_names="egs"
 # Global default resource_action_pairs
-default_resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch,pod:create,pod:delete,pod:get,pod:list,pod:watch,service:create,service:delete,service:get,service:list,service:watch,configmap:create,configmap:delete,configmap:get,configmap:list,configmap:watch,secret:create,secret:delete,secret:get,secret:list,secret:watch,serviceaccount:create,serviceaccount:delete,serviceaccount:get,serviceaccount:list,serviceaccount:watch,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:delete,clusterrolebinding:get,clusterrolebinding:list"
+default_resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch,pod:create,pod:delete,pod:get,pod:list,pod:watch,service:create,service:delete,service:get,service:list,service:watch,configmap:create,configmap:delete,configmap:get,configmap:list,configmap:watch,secret:create,secret:delete,secret:get,secret:list,secret:watch,serviceaccount:create,serviceaccount:delete,serviceaccount:get,serviceaccount:list,serviceaccount:watch,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:delete,clusterrolebinding:get,clusterrolebinding:list,deployment:create,deployment:delete,deployment:get,deployment:list,deployment:watch,statefulset:create,statefulset:delete,statefulset:get,statefulset:list,statefulset:watch"
+
 
 # Array to store summary information
 declare -A summary
@@ -29,7 +32,6 @@ declare -A summary
 declare -a commands
 declare -A command_inputs
 
-# Function to display help information
 display_help() {
   echo -e "🔹 Usage: $0 [options]"
   echo -e "Options:"
@@ -53,6 +55,7 @@ display_help() {
   echo -e "  🐞  --function-debug-input <true|false>            Enable or disable function debugging (default: false)."
   echo -e "  📊  --generate-summary <true|false>                Enable or disable summary generation (default: true)."
   echo -e "  🔐  --resource-action-pairs <pairs>                Override default resource-action pairs (e.g., pod:create,service:get)."
+  echo -e "  🔍  --fetch-resource-names <true|false>            Fetch all resource names from the cluster (default: false)."
   echo -e "  ❓  --help                                          Display this help message."
   echo -e "
 Default Resource-Action Pairs:
@@ -79,11 +82,10 @@ Examples:
   $0 --invoke-wrappers namespace_preflight_checks,pvc_preflight_checks,service_preflight_checks
   $0 --resource-action-pairs pod:create,namespace:delete --invoke-wrappers k8s_privilege_preflight_checks
   $0 --function-debug-input true --invoke-wrappers namespace_preflight_checks
-  $0 --generate-summary false --invoke-wrappers namespace_preflight_checks"
+  $0 --generate-summary false --invoke-wrappers namespace_preflight_checks
+  $0 --fetch-resource-names true --invoke-wrappers service_preflight_checks"
   exit 0
 }
-
-
 
 # Function to add summary details
 log_summary() {
@@ -96,6 +98,7 @@ log_summary() {
 generate_summary() {
   if [ "$generate_summary_flag" == "true" ]; then
 
+    # Display Inputs Used
     echo -e "\n📥 ====================== INPUTS USED ======================"
     printf "| %-30s | %-50s |\n" "🔧 Input Parameter" "🔢 Value"
     echo "-----------------------------------------------------------------------------------------"
@@ -114,74 +117,174 @@ generate_summary() {
     printf "| %-30s | %-50s |\n" "Watch Resources" "${watch_resources:-false}"
     printf "| %-30s | %-50s |\n" "Watch Duration" "${watch_duration:-30}"
     printf "| %-30s | %-50s |\n" "Function Debug Input" "${function_debug_input:-false}"
+    printf "| %-30s | %-50s |\n" "Fetch Resource Names" "${fetch_resource_names:-false}"
     echo "=============================================================================================="
 
+    # Display Kubernetes Cluster Info
     echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS ====================================="
     printf "| %-30s | %-50s |\n" "🔧 Parameter" "📦 Value"
     echo "-----------------------------------------------------------------------------------------"
     printf "| %-30s | %-50s |\n" "Kubeconfig" "${kubeconfig:-None}"
     printf "| %-30s | %-50s |\n" "Kubecontext" "${kubecontext:-default-context}"
-    if [[ -n "${summary[K8S Cluster Endpoint]}" ]]; then
-      printf "| %-30s | %-50s |\n" "Cluster Endpoint" "${summary[K8S Cluster Endpoint]}"
-    else
-      echo "❌ Missing cluster endpoint."
-    fi
-    if [[ -n "${summary[Kubernetes Cluster Access]}" ]]; then
-      printf "| %-30s | %-50s |\n" "Cluster Access" "${summary[Kubernetes Cluster Access]}"
-    else
-      echo "❌ Missing cluster access."
-    fi
+    printf "| %-30s | %-50s |\n" "Cluster Endpoint" "${summary[K8S Cluster Endpoint]:-❌ Missing}"
+    printf "| %-30s | %-50s |\n" "Cluster Access" "${summary[Kubernetes Cluster Access]:-❌ Missing}"
     echo "=============================================================================================="
 
-    echo -e "\n📊 ====================== SUMMARY ======================================================="
-    printf "| %-40s | %-30s | %-15s |\n" "🔧 Parameter/Function" "📦 Object Created" "📈 Status"
-    echo "-----------------------------------------------------------------------------------------------"
+    # Separate Success and Failure Summaries
+    declare -A successes
+    declare -A failures
 
-    # Display all other summary entries
     for key in "${!summary[@]}"; do
       if [[ "$key" == "K8S Cluster Endpoint" || "$key" == "Kubernetes Cluster Access" ]]; then
         continue
       fi
-      parameter_function=$(echo "$key" | cut -c1-40)
-      object_created=$(echo "${summary[$key]%:*}" | cut -c1-30)
-      status=$(echo "${summary[$key]##*:}" | cut -c1-15)
 
-      if [[ -z "$parameter_function" || -z "$object_created" || -z "$status" ]]; then
-        echo "❌ Missing values for key: $key, value: ${summary[$key]}"
-        continue
+      function_type=$(echo "$key" | awk -F' ' '{print $NF " Check"}')
+      parameter_function=$(echo "$key" | awk -F' - ' '{print $1}')
+      status=$(echo "${summary[$key]##*:}")
+
+      if [[ "$status" == "Success" ]]; then
+        successes["$function_type|$parameter_function"]="Found|$status|✅"
+      else
+        failures["$function_type|$parameter_function"]="Notfound|$status|❌"
       fi
-
-      printf "| %-40s | %-30s | %-20s |\n" "$parameter_function" "$object_created" "$status"
     done
-    echo "=================================================================================================="
 
-    echo -e "\n📄 ====================== RESOURCE DETAILS =================================================="
-    printf "| %-40s | %-30s | %-15s |\n" "🔍 Resource Type" "📝 Resource Name" "📈 Status"
-    echo "----------------------------------------------------------------------------------------------------"
-
-    # Display resource details, skipping cluster-related keys
-    for key in "${!summary[@]}"; do
-      if [[ "$key" == "K8S Cluster Endpoint" || "$key" == "Kubernetes Cluster Access" ]]; then
-        continue
-      fi
-      resource_details=$(echo "$key" | awk -F' - ' '{print $1}' | cut -c1-40)
-      resource_name=$(echo "$key" | awk -F' - ' '{print $2}' | cut -c1-30)
-      namespace=$(echo "${summary[$key]%:*}" | awk '{print $NF}' | cut -c1-15)
-
-      if [[ -z "$resource_details" || -z "$resource_name" || -z "$namespace" ]]; then
-        echo "❌ Missing values for resource: $key, value: ${summary[$key]}"
-        continue
-      fi
-
-      printf "| %-40s | %-30s | %-15s |\n" "$resource_details" "$resource_name" "$namespace"
+    # Display Success Table
+    echo -e "\n📊 ====================== RESOURCE FOUND SUCCESS SUMMARY ================================================================="
+    printf "| %-40s | %-40s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
+    echo "-------------------------------------------------------------------------------------------------------------------------------"
+    for key in "${!successes[@]}"; do
+      IFS='|' read -r function_type parameter_function <<< "$key"
+      IFS='|' read -r found_status status icon <<< "${successes[$key]}"
+      printf "| %-40s | %-40s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
     done
-    echo "===================================================================================================="
+    echo "================================================================================================================================"
+
+    # Display Failure Table
+    echo -e "\n📊 ====================== RESOURCE NOT FOUND FAILURE SUMMARY ==============================================================="
+    printf "| %-40s | %-40s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
+    echo "----------------------------------------------------------------------------------------------------------------------------------"
+    for key in "${!failures[@]}"; do
+      IFS='|' read -r function_type parameter_function <<< "$key"
+      IFS='|' read -r found_status status icon <<< "${failures[$key]}"
+      printf "| %-40s | %-40s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
+    done
+    echo "====================================================================================================================================="
+
   else
     echo "📋 Summary generation is disabled."
   fi
 }
 
+grep_k8s_resources_with_crds_and_webhooks() {
+  local kubeconfig="$1"
+  local kubecontext="$2"
+  local test_namespace="$3"       # Namespace for the test
+  local cleanup="$4"
+  local display_resources_flag="$5"
+  local global_wait="$6"
+  local watch_resources="${7:-false}"       # Flag to enable or disable watching
+  local watch_duration="${8:-30}"           # Duration to watch the resource
+  local fetch_resource_names="${9:-"egs"}"       # Fetch resource names, default empty
 
+  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, test_namespace=$test_namespace, cleanup=$cleanup, display_resources=$display_resources_flag, watch_resources=$watch_resources, watch_duration=$watch_duration, fetch_resource_names=$fetch_resource_names"
+  log_command "grep_k8s_resources_with_crds_and_webhooks" "kubeconfig=$kubeconfig, kubecontext=$kubecontext, test_namespace=$test_namespace, cleanup=$cleanup"
+
+  # Use global variable or CLI-provided resource names
+  local resource_name_array
+  if [[ -n "$fetch_resource_names" ]]; then
+    IFS=',' read -r -a resource_name_array <<< "$fetch_resource_names"
+  else
+    IFS=',' read -r -a resource_name_array <<< "$default_resource_action_pairs"
+  fi
+
+  # Fetch supported resource types
+  log_inputs_and_time "Fetching API Resources" "$kubeconfig" "$kubecontext"
+  local api_resources
+  api_resources=$(kubectl $kubeconfig --context=$kubecontext api-resources --no-headers 2>/dev/null)
+
+  if [[ -z "$api_resources" ]]; then
+    echo "❌ Failed to fetch api-resources. Ensure your Kubernetes context is valid."
+    log_summary "API Resources Check" "Not Found:Failure"
+    return
+  fi
+
+  local SUCCESS=true
+  declare -A resource_summaries
+
+  # Iterate over all API resources and match resource names
+  while read -r resource_line; do
+    local resource_type
+    resource_type=$(echo "$resource_line" | awk '{print $1}')
+
+    local resource_summary=""
+
+    for resource_name in "${resource_name_array[@]}"; do
+      echo -e "\n🔍 Searching for resource type: $resource_type with name containing '$resource_name'"
+      local resource_matches
+      resource_matches=$(kubectl $kubeconfig --context=$kubecontext get $resource_type -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$resource_name")
+
+      if [[ -n "$resource_matches" ]]; then
+        echo "✅ Found matching $resource_type for '$resource_name':"
+        echo "$resource_matches"
+        log_summary "$resource_type Check - $resource_name" "$resource_type Found:Success"
+        resource_summary+="✅ Found for '$resource_name':\n$resource_matches\n"
+      else
+        echo "❌ No $resource_type found containing '$resource_name'."
+        log_summary "$resource_type Check - $resource_name" "$resource_type Not Found:Failure"
+        resource_summary+="❌ Not Found for '$resource_name'\n"
+        SUCCESS=false
+      fi
+    done
+
+    # Store the summary for this resource type
+    if [[ -n "$resource_summary" ]]; then
+      resource_summaries["$resource_type"]="$resource_summary"
+    fi
+  done <<< "$api_resources"
+
+  # Search Mutating and Validating Webhooks
+  for webhook_type in "mutatingwebhookconfigurations" "validatingwebhookconfigurations"; do
+    local webhook_summary=""
+
+    for resource_name in "${resource_name_array[@]}"; do
+      echo "🔍 Searching for $webhook_type containing name '$resource_name'..."
+      local webhook_matches
+      webhook_matches=$(kubectl $kubeconfig --context=$kubecontext get $webhook_type -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$resource_name")
+
+      if [[ -n "$webhook_matches" ]]; then
+        echo "✅ Found $webhook_type for '$resource_name':"
+        echo "$webhook_matches"
+        log_summary "$webhook_type Check - $resource_name" "$webhook_type Found:Success"
+        webhook_summary+="✅ Found for '$resource_name':\n$webhook_matches\n"
+      else
+        echo "❌ No $webhook_type containing name '$resource_name' found."
+        log_summary "$webhook_type Check - $resource_name" "$webhook_type Not Found:Failure"
+        webhook_summary+="❌ Not Found for '$resource_name'\n"
+        SUCCESS=false
+      fi
+    done
+
+    # Store the summary for this webhook type
+    if [[ -n "$webhook_summary" ]]; then
+      resource_summaries["$webhook_type"]="$webhook_summary"
+    fi
+  done
+
+  # Final status
+  if [[ "$SUCCESS" == true ]]; then
+    echo "✅ Kubernetes resource and CRD checks completed successfully."
+  else
+    echo "⚠️ Kubernetes resource and CRD checks encountered errors, but execution will continue."
+  fi
+
+  # Display Summary
+  echo -e "\n📋 Resource Check Summary:\n"
+  for resource_type in "${!resource_summaries[@]}"; do
+    echo -e "\nResource Type: $resource_type\n${resource_summaries[$resource_type]}"
+  done
+}
 
 
 
@@ -272,7 +375,8 @@ while [[ $# -gt 0 ]]; do
     --kubectl-path) KUBECTL_BIN="$2"; shift 2 ;;
     --function-debug-input) function_debug_input="$2"; shift 2 ;;
     --generate-summary) generate_summary_flag="$2"; shift 2 ;;
-    --resource-action-pairs) resource_action_pairs="$2"; shift 2 ;; # New parameter
+    --resource-action-pairs) resource_action_pairs="$2"; shift 2 ;;
+    --fetch-resource-names) fetch_resource_names="$2"; shift 2 ;; # New parameter
     --help) display_help ;;
     *) echo -e "❌ Unknown parameter: $1"; display_help ;;
   esac
@@ -842,6 +946,7 @@ print_summary() {
   echo -e "🔹 Cleanup flag: ${cleanup:-true}"
   echo -e "🔹 Wrappers to invoke: ${wrappers_to_invoke:-Not provided}"
   echo -e "🔹 Resource-action pairs: ${resource_action_pairs:-Default set}"
+  echo -e "🔹 Fetch resource names: ${fetch_resource_names:-Not provided}"
   echo "-------------------------"
 }
 
@@ -933,6 +1038,10 @@ main() {
                 resource_action_pairs="$2"
                 shift 2
                 ;;
+            --fetch-resource-names)
+                fetch_resource_names="$2"
+                shift 2
+                ;;
             --help)
                 display_help
                 exit 0
@@ -944,9 +1053,6 @@ main() {
                 ;;
         esac
     done
-
-
-
 
     # Print final values (debugging)
     echo "--- Final Parameter Values ---"
@@ -970,40 +1076,44 @@ main() {
     echo "🔹 function_debug_input: ${function_debug_input:-Not provided}"
     echo "🔹 generate_summary_flag: ${generate_summary_flag:-Not provided}"
     echo "🔹 resource_action_pairs: ${resource_action_pairs:-Default set}"
+    echo "🔹 fetch_resource_names: ${fetch_resource_names:-Not provided}"
     echo "-------------------------------"
 
 
-# Handle wrappers_to_invoke
-if [[ -n "$wrappers_to_invoke" ]]; then
-    IFS=',' read -r -a wrappers <<< "$wrappers_to_invoke"
-    for wrapper in "${wrappers[@]}"; do
-        case "$wrapper" in
-            k8s_privilege_preflight_checks)
-                log_inputs_and_time "$function_debug_input" k8s_privilege_preflight_checks "$kubeconfig" "$kubecontext" "$resource_action_pairs" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-                ;;
-            namespace_preflight_checks)
-                log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-                ;;
-            pvc_preflight_checks)
-                log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-                ;;
-            service_preflight_checks)
-                log_inputs_and_time "$function_debug_input" service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_resources" "$watch_duration"
-                ;;
-            *)
-                echo "❌ Unknown wrapper: $wrapper"
-                exit 1
-                ;;
-        esac
-    done
-else
-    echo "🔍 Executing all preflight checks by default"
-    log_inputs_and_time "$function_debug_input" k8s_privilege_preflight_checks "$kubeconfig" "$kubecontext" "$resource_action_pairs" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-    log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-    log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-    log_inputs_and_time "$function_debug_input" service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_resources" "$watch_duration"
-fi
-
+    # Handle wrappers_to_invoke
+    if [[ -n "$wrappers_to_invoke" ]]; then
+        IFS=',' read -r -a wrappers <<< "$wrappers_to_invoke"
+        for wrapper in "${wrappers[@]}"; do
+            case "$wrapper" in
+                k8s_privilege_preflight_checks)
+                    log_inputs_and_time "$function_debug_input" k8s_privilege_preflight_checks "$kubeconfig" "$kubecontext" "$resource_action_pairs" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+                    ;;
+                namespace_preflight_checks)
+                    log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+                    ;;
+                pvc_preflight_checks)
+                    log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+                    ;;
+                service_preflight_checks)
+                    log_inputs_and_time "$function_debug_input" service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_resources" "$watch_duration"
+                    ;;
+                grep_k8s_resources_with_crds_and_webhooks)
+                    log_inputs_and_time "$function_debug_input" grep_k8s_resources_with_crds_and_webhooks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration" "$fetch_resource_names"
+                    ;;
+                *)
+                    echo "❌ Unknown wrapper: $wrapper"
+                    exit 1
+                    ;;
+            esac
+        done
+    else
+        echo "🔍 Executing all preflight checks by default"
+        log_inputs_and_time "$function_debug_input" k8s_privilege_preflight_checks "$kubeconfig" "$kubecontext" "$resource_action_pairs" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+        log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+        log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+        log_inputs_and_time "$function_debug_input" service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_resources" "$watch_duration"
+        log_inputs_and_time "$function_debug_input" grep_k8s_resources_with_crds_and_webhooks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration" "$fetch_resource_names"
+    fi
 }
 
 
