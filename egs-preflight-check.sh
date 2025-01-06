@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Global default values
-namespaces_to_check=""
+namespaces_to_check="kubeslice-controller,kubeslice-system,kubeslice-avesha"
 test_namespace="egs-test-namespace"
 pvc_test_namespace="egs-test-namespace"
 wrappers_to_invoke=""
@@ -12,20 +12,20 @@ storage_class=""
 storage_size="1Gi"
 cleanup="true"
 display_resources="false"
-global_wait="2"
+global_wait="4"
 KUBECTL_BIN=$(which kubectl)
 service_type="all"
 service_name="egs-test-service"
 watch_resources="true"
-watch_duration="5"
+watch_duration="15"
 function_debug_input="false"
 generate_summary_flag="true"
-fetch_resource_names="prometheus,gpu-operator,postgresql"
+fetch_resource_names="prometheus,gpu-operator"
 #fetch_resource_names=""
 #fetch_webhook_names="aiops-mutating-webhook-configuration,kubeslice-mutating-webhook-configuration,prometheus-kube-prometheus-admission,aiops-validating-webhook-configuration,gpr-validating-webhook-configuration,kubeslice-controller-validating-webhook-configuration,kubeslice-validating-webhook-configuration,prometheus-kube-prometheus-admission"
 #fetch_webhook_names=""
 # Global default resource_action_pairs
-resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch,pod:create,pod:delete,pod:list,pod:watch,service:create,watch,configmap:create,configmap:get,configmap:list,configmap:watch,secret:create,secret:list,secret:watch,serviceaccount:create,serviceaccount:list,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:get,clusterrolebinding:list,deployment:create,deployment:delete,deployment:get,deployment:list,deployment"
+resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,pod:create,pod:delete,pod:list,service:create,watch,configmap:create,configmap:get,configmap:list,configmap:watch,secret:create,secret:list,secret:watch,serviceaccount:create,serviceaccount:list,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:get,clusterrolebinding:list,deployment:create,deployment:delete,deployment:get,deployment:list,deployment"
 #resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch,pod:create,pod:delete,pod:get,pod:list,pod:watch,service:create,service:delete,service:get,service:list,service:watch,configmap:create,configmap:delete,configmap:get,configmap:list,configmap:watch,secret:create,secret:delete,secret:get,secret:list,secret:watch,serviceaccount:create,serviceaccount:delete,serviceaccount:get,serviceaccount:list,serviceaccount:watch,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:delete,clusterrolebinding:get,clusterrolebinding:list,deployment:create,deployment:delete,deployment:get,deployment:list,deployment:watch,statefulset:create,statefulset:delete,statefulset:get,statefulset:list,statefulset:watch"
 webhooks="all"
 # Define all API resources as a single variable
@@ -84,7 +84,7 @@ Wrapper Functions:
   🗂️  namespace_preflight_checks                     Validates namespace creation and existence.
   🗂️  grep_k8s_resources_with_crds_and_webhooks      Validates existing resources available in cluster based on resource names. (prometheus,gpu-operator,postgresql)
   📂  pvc_preflight_checks                           Validates PVC creation, deletion, and storage properties.
-  ⚙️  service_preflight_checks                        Validates the creation and deletion of services (ClusterIP, NodePort, LoadBalancer).
+  ⚙️   service_preflight_checks                       Validates the creation and deletion of services (ClusterIP, NodePort, LoadBalancer).
   🔐  k8s_privilege_preflight_checks                 Validates privileges for Kubernetes actions on resources.
   🌐  internet_access_preflight_checks               Validates internet connectivity from within the Kubernetes cluster.
 
@@ -114,7 +114,6 @@ log_summary() {
 # Function to generate a summary
 generate_summary() {
   if [ "$generate_summary_flag" == "true" ]; then
-
     # Display Inputs Used
     echo -e "\n📥 ====================== INPUTS USED ==============================================="
     printf "| %-30s | %-50s |\n" "🔧 Input Parameter" "🔢 Value"
@@ -139,7 +138,7 @@ generate_summary() {
     printf "| %-30s | %-50s |\n" "Webhooks" "${webhooks:-false}"
     printf "| %-30s | %-50s |\n" "Fetch Webhook Names" "${fetch_webhook_names:-false}"
     echo "============================================================================================"
-
+    
     # Display Kubernetes Cluster Info
     echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS =========================================================================================================================================================================================="
     printf "| %-30s | %-50s |\n" "🔧 Parameter" "📦 Value"
@@ -155,47 +154,70 @@ generate_summary() {
 
     echo "================================ END OF KUBERNETES CLUSTER DETAILS================================================================================================================================================================================="
 
-    # Separate Success and Failure Summaries
-    declare -A successes
-    declare -A failures
+      declare -A grouped_results
+      declare -A unspecified_results
+      declare -A privilege_checks
 
-    for key in "${!summary[@]}"; do
-      if [[ "$key" == "K8S Cluster Endpoint" || "$key" == "Kubernetes Cluster Access" || "$key" == "Node Details" ]]; then
-        continue
-      fi
+      # Loop through all summary keys and categorize
+      for key in "${!summary[@]}"; do
+        # Extract details
+        resource_name=$(echo "$key" | awk -F' - ' '{print $2}')
+        function_type=$(echo "$key" | awk -F' ' '{print $NF " Check"}')
+        parameter_function=$(echo "$key" | awk -F' - ' '{print $1}' | sed "s/ $function_type//")
+        status=$(echo "${summary[$key]##*:}")
+        found_status=$([[ "$status" == "Success" ]] && echo "Found" || echo "Notfound")
+        icon=$([[ "$status" == "Success" ]] && echo "✅" || echo "⚠️")
 
-      function_type=$(echo "$key" | awk -F' ' '{print $NF " Check"}')
-      parameter_function=$(echo "$key" | awk -F' - ' '{print $1}')
-      status=$(echo "${summary[$key]##*:}")
+        # Identify and group Privilege Checks separately
+        if [[ "$function_type" == "Privilege Check" ]]; then
+          privilege_checks["$resource_name"]+="$parameter_function|$found_status|$status|$icon;"
+        elif [[ -n "$resource_name" ]]; then
+          grouped_results["$resource_name"]+="$parameter_function|$found_status|$status|$icon;"
+        else
+          unspecified_results["$parameter_function"]="$found_status|$status|$icon"
+        fi
+      done
 
-      if [[ "$status" == "Success" ]]; then
-        successes["$function_type|$parameter_function"]="Found|$status|✅"
-      else
-        failures["$function_type|$parameter_function"]="Notfound|$status| ⚠️"
-      fi
-    done
+      # # Display Privilege Check results
+      # if [[ ${#privilege_checks[@]} -gt 0 ]]; then
+      #   echo -e "\n📊 ====================== VALIDATION SUMMARY FOR PRIVILEGE CHECKS ======================="
+      #   printf "| %-51s | %-15s | %-18s | %-5s |\n" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
+      #   echo "-----------------------------------------------------------------------------------------------"
+      #   for resource_name in "${!privilege_checks[@]}"; do
+      #     IFS=';' read -ra entries <<< "${privilege_checks[$resource_name]}"
+      #     for entry in "${entries[@]}"; do
+      #       IFS='|' read -r parameter_function found_status status icon <<< "$entry"
+      #       printf "| %-51s | %-15s | %-18s | %-5s |\n" "$resource_name" "$found_status" "$status" "$icon"
+      #     done
+      #   done
+      #   echo "=================================================================================================="
+      # fi
 
-    # Display Success Table
-    echo -e "\n📊 ====================== EGS AUTOMATED VALIDATION SUMMARY ==================================================================================================="
-    printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
-    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------------------"
-    for key in "${!successes[@]}"; do
-      IFS='|' read -r function_type parameter_function <<< "$key"
-      IFS='|' read -r found_status status icon <<< "${successes[$key]}"
-      printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
-    done
-    echo "====================================================================================================================================================================="
+      # Display grouped results
+      for resource_name in "${!grouped_results[@]}"; do
+        echo -e "\n📊 ====================== VALIDATION SUMMARY FOR RESOURCE: $resource_name ==========================="
+        printf "| %-51s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Found/Notfound" "📈 Status" "✔/✖"
+        echo "-------------------------------------------------------------------------------------------------"
+        IFS=';' read -ra entries <<< "${grouped_results[$resource_name]}"
+        for entry in "${entries[@]}"; do
+          IFS='|' read -r parameter_function found_status status icon <<< "$entry"
+          printf "| %-51s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$found_status" "$status" "$icon"
+        done
+        echo "===================================================================================================="
+      done
 
-    # Display Failure Table
-    echo -e "\n📊 ======================= EGS RESOURCE NOT FOUND, ENABLE IT IF REQUIRED ======================================================================================="
-    printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
-    echo "----------------------------------------------------------------------------------------------------------------------------------------------------------------------"
-    for key in "${!failures[@]}"; do
-      IFS='|' read -r function_type parameter_function <<< "$key"
-      IFS='|' read -r found_status status icon <<< "${failures[$key]}"
-      printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
-    done
-    echo "========================================================================================================================================================================"
+      # # Display unspecified results
+      # if [[ ${#unspecified_results[@]} -gt 0 ]]; then
+      #   echo -e "\n📊 ====================== VALIDATION SUMMARY FOR UNSPECIFIED RESULTS ================================"
+      #   printf "| %-51s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Found/Notfound" "📈 Status" "✔/✖"
+      #   echo "------------------------------------------------------------------------------------------------------------"
+      #   for key in "${!unspecified_results[@]}"; do
+      #     IFS='|' read -r found_status status icon <<< "${unspecified_results[$key]}"
+      #     printf "| %-51s | %-15s | %-18s | %-5s |\n" "$key" "$found_status" "$status" "$icon"
+      #   done
+      #   echo "=============================================================================================================="
+      # fi
+
 
   else
     echo "📋 Summary generation is disabled."
@@ -238,21 +260,28 @@ grep_k8s_resources_with_crds_and_webhooks() {
   if [[ -n "$fetch_resource_names" ]]; then
     for resource_type in "${resource_name_array[@]}"; do
       local resource_summary=""
+      if [[ "$function_debug_input" == "true" ]]; then
       echo -e "\n🔍 Searching for resource type: $resource_type"
-
+      fi
       IFS=',' read -r -a fetch_names_array <<< "$fetch_resource_names"
       for resource_name in "${fetch_names_array[@]}"; do
+       if [[ "$function_debug_input" == "true" ]]; then
         echo "🔍 Filtering for resource type '$resource_type' with name containing '$resource_name'..."
+        fi
         local resource_matches
         resource_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$resource_name")
 
         if [[ -n "$resource_matches" ]]; then
+          if [[ "$function_debug_input" == "true" ]]; then
           echo "✅ Found matching resources for type '$resource_type' with name '$resource_name':"
           echo "$resource_matches"
+          fi
           log_summary "$resource_type Check - $resource_name" "$resource_type Found:Success"
           resource_summary+="✅ Found for '$resource_name':\n$resource_matches\n"
         else
+          if [[ "$function_debug_input" == "true" ]]; then
           echo "❌ No resources found for type '$resource_type' containing name '$resource_name'."
+          fi
           log_summary "$resource_type Check - $resource_name" "$resource_type Not Found:Failure"
           resource_summary+="❌ Not Found for '$resource_name'\n"
         fi
@@ -291,34 +320,46 @@ grep_k8s_resources_with_crds_and_webhooks() {
 
       if [[ "$webhook_type" == "mutatingwebhookconfigurations" ]]; then
         for fetch_name in "${mutating_webhook_names[@]}"; do
+        if [[ "$function_debug_input" == "true" ]]; then
           echo "🔍 Filtering $webhook_type for name containing '$fetch_name'..."
+          fi
           local webhook_matches
           webhook_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type --all-namespaces -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
 
           if [[ -n "$webhook_matches" ]]; then
+          if [[ "$function_debug_input" == "true" ]]; then
             echo "✅ Found $webhook_type for '$fetch_name':"
             echo "$webhook_matches"
+            fi
             log_summary "$webhook_type Check - $fetch_name" "$webhook_type Found:Success"
             webhook_summary+="✅ Found for '$fetch_name':\n$webhook_matches\n"
           else
+          if [[ "$function_debug_input" == "true" ]]; then
             echo "❌ No $webhook_type containing name '$fetch_name' found."
+            fi
             log_summary "$webhook_type Check - $fetch_name" "$webhook_type Not Found:Failure"
             webhook_summary+="❌ Not Found for '$fetch_name'\n"
           fi
         done
       elif [[ "$webhook_type" == "validatingwebhookconfigurations" ]]; then
         for fetch_name in "${validating_webhook_names[@]}"; do
+        if [[ "$function_debug_input" == "true" ]]; then
           echo "🔍 Filtering $webhook_type for name containing '$fetch_name'..."
+          fi
           local webhook_matches
           webhook_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type --all-namespaces -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
 
           if [[ -n "$webhook_matches" ]]; then
+          if [[ "$function_debug_input" == "true" ]]; then
             echo "✅ Found $webhook_type for '$fetch_name':"
             echo "$webhook_matches"
+            fi
             log_summary "$webhook_type Check - $fetch_name" "$webhook_type Found:Success"
             webhook_summary+="✅ Found for '$fetch_name':\n$webhook_matches\n"
           else
+          if [[ "$function_debug_input" == "true" ]]; then
             echo "❌ No $webhook_type containing name '$fetch_name' found."
+            fi
             log_summary "$webhook_type Check - $fetch_name" "$webhook_type Not Found:Failure"
             webhook_summary+="❌ Not Found for '$fetch_name'\n"
           fi
@@ -695,7 +736,7 @@ create_namespace() {
       fi
     else
       echo -e "❌ Error: Unable to create namespace '$namespace'."
-      log_summary "Namespace Creation - $namespace" "Namespace creation failed:Failed"
+      #log_summary "Namespace Creation - $namespace" "Namespace creation failed:Failed"
       exit 1
     fi
   fi
@@ -722,7 +763,7 @@ delete_namespace() {
     # Attempt to delete the namespace
     if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $namespace --wait >/dev/null 2>&1"; then
       echo -e "✅ Namespace '$namespace' deleted successfully."
-      log_summary "Namespace Deletion - $namespace" "Namespace deleted:Success"
+     # log_summary "Namespace Deletion - $namespace" "Namespace deleted:Success"
 
       # Watch the namespace deletion if enabled
       if [[ "$watch_resources" == "true" ]]; then
@@ -730,12 +771,12 @@ delete_namespace() {
       fi
     else
       echo -e "❌ Error: Unable to delete namespace '$namespace'."
-      log_summary "Namespace Deletion - $namespace" "Namespace deletion failed:Failed"
+      #log_summary "Namespace Deletion - $namespace" "Namespace deletion failed:Failed"
       exit 1
     fi
   else
     echo -e "⚠️ Deletion of namespace '$namespace' skipped due to cleanup flag."
-    log_summary "Namespace Deletion - $namespace" "Namespace deletion skipped:Skipped"
+    #log_summary "Namespace Deletion - $namespace" "Namespace deletion skipped:Skipped"
   fi
 
   # Wait for the specified time, if any
@@ -781,17 +822,17 @@ namespace_preflight_checks() {
   # Watch the namespace if the watch flag is enabled
   if [[ "$watch_resources" == "true" ]]; then
     watch_resource "$kubeconfig" "$kubecontext" "namespace" "$test_namespace" "" "$watch_resources" "$watch_duration"
-    log_summary "Namespace Watch - $test_namespace" "Watched for $watch_duration seconds:Success"
+  # log_summary "Namespace Watch - $test_namespace" "Watched for $watch_duration seconds:Success"
   fi
 
   # Test namespace deletion if cleanup is enabled
   if [[ "$cleanup" == "true" ]]; then
     echo "🔍 Testing namespace deletion for: '$test_namespace'"
     log_inputs_and_time "$function_debug_input" delete_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources_flag" "$global_wait"
-    log_summary "Namespace Deletion - $test_namespace" "Namespace Deleted:Success"
+   # log_summary "Namespace Deletion - $test_namespace" "Namespace Deleted:Success"
   else
     echo "⚠️ Skipping namespace deletion due to cleanup flag."
-    log_summary "Namespace Deletion - $test_namespace" "Skipped:Cleanup Disabled"
+    #log_summary "Namespace Deletion - $test_namespace" "Skipped:Cleanup Disabled"
   fi
 }
 
@@ -830,7 +871,7 @@ internet_access_preflight_checks() {
   if [[ "$watch_resources" == "true" ]]; then
     echo "🔍 Watching pod: '$test_pod_name'"
     watch_resource "$kubeconfig" "$kubecontext" "pod" "$test_pod_name" "$test_namespace" "$watch_resources" "$watch_duration"
-    log_summary "Pod Watch - $test_pod_name" "Watched for $watch_duration seconds:Success"
+   # log_summary "Pod Watch - $test_pod_name" "Watched for $watch_duration seconds:Success"
   fi
 
   # Check internet connectivity from the pod
@@ -852,10 +893,10 @@ internet_access_preflight_checks() {
     echo "🔍 Cleaning up resources..."
     run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete pod $test_pod_name -n $test_namespace --ignore-not-found"
     run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $test_namespace --ignore-not-found"
-    log_summary "Cleanup - $test_namespace and $test_pod_name" "Resources Cleaned:Success"
+    #log_summary "Cleanup - $test_namespace and $test_pod_name" "Resources Cleaned:Success"
   else
     echo "⚠️ Skipping cleanup due to cleanup flag."
-    log_summary "Cleanup - $test_namespace and $test_pod_name" "Skipped:Cleanup Disabled"
+   # log_summary "Cleanup - $test_namespace and $test_pod_name" "Skipped:Cleanup Disabled"
   fi
 }
 
@@ -924,7 +965,7 @@ EOF
   # Watch the PVC if the watch flag is enabled
   if [[ "$watch_resources" == "true" ]]; then
     watch_resource "$kubeconfig" "$kubecontext" "pvc" "$pvc_name" "$pvc_test_namespace" "$watch_resources" "$watch_duration"
-    log_summary "PVC Watch - $pvc_name" "Watched for $watch_duration seconds:Success"
+   # log_summary "PVC Watch - $pvc_name" "Watched for $watch_duration seconds:Success"
   fi
 
   # Delete the PVC if cleanup is enabled
@@ -932,15 +973,15 @@ EOF
     echo "🔍 Deleting PVC '$pvc_name' in namespace '$pvc_test_namespace'"
     run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete pvc $pvc_name -n $pvc_test_namespace --wait >/dev/null 2>&1"
     echo "🧹 PVC '$pvc_name' deleted."
-    log_summary "PVC Deletion - $pvc_name" "PVC Deleted:Success"
+   # log_summary "PVC Deletion - $pvc_name" "PVC Deleted:Success"
   else
     echo "⚠️ Skipping PVC deletion due to cleanup flag."
-    log_summary "PVC Deletion - $pvc_name" "Skipped:Cleanup Disabled"
+   # log_summary "PVC Deletion - $pvc_name" "Skipped:Cleanup Disabled"
   fi
 
   # Delete the namespace used for PVC testing if cleanup is enabled
   log_inputs_and_time "$function_debug_input" delete_namespace "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$cleanup" "$display_resources_flag" "$global_wait"
-  log_summary "Namespace Cleanup - $pvc_test_namespace" "Namespace Deleted:Success"
+  #log_summary "Namespace Cleanup - $pvc_test_namespace" "Namespace Deleted:Success"
 }
 
 
@@ -984,21 +1025,21 @@ service_preflight_checks() {
       # Watch the resource if the watch flag is enabled
       if [[ "$watch_resources" == "true" ]]; then
         watch_resource "$kubeconfig" "$kubecontext" "service" "$name" "$test_namespace" "$watch_resources" "$watch_duration"
-        log_summary "Service Watch - $name" "Watched for $watch_duration seconds:Success"
+        #log_summary "Service Watch - $name" "Watched for $watch_duration seconds:Success"
       fi
 
       # Clean up the resource if cleanup flag is true
       if [[ "$cleanup" == "true" ]]; then
         run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete service $name -n $test_namespace --ignore-not-found"
         echo "🧹 Cleanup: $type service '$name' deleted."
-        log_summary "Service Deletion - $name" "$type Service Deleted:Success"
+        #log_summary "Service Deletion - $name" "$type Service Deleted:Success"
       else
         echo "⚠️ Cleanup for $type service '$name' skipped as cleanup flag is set to false."
-        log_summary "Service Deletion - $name" "$type Service Cleanup Skipped:Cleanup Disabled"
+        #log_summary "Service Deletion - $name" "$type Service Cleanup Skipped:Cleanup Disabled"
       fi
     else
       echo "❌ Error: Failed to create $type service '$name'."
-      log_summary "Service Creation - $name" "$type Service Creation Failed:Failure"
+      #log_summary "Service Creation - $name" "$type Service Creation Failed:Failure"
       SUCCESS=false
     fi
     wait_after_command "$global_wait"
@@ -1074,10 +1115,10 @@ spec:
   # Clean up namespace if cleanup flag is true
   if [[ "$cleanup" == "true" ]]; then
     log_inputs_and_time "$function_debug_input" delete_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources_flag" "$global_wait"
-    log_summary "Namespace Cleanup - $test_namespace" "Namespace Deleted:Success"
+    #log_summary "Namespace Cleanup - $test_namespace" "Namespace Deleted:Success"
   else
     echo "⚠️ Namespace cleanup skipped as cleanup flag is set to false."
-    log_summary "Namespace Cleanup - $test_namespace" "Namespace Cleanup Skipped:Cleanup Disabled"
+    #log_summary "Namespace Cleanup - $test_namespace" "Namespace Cleanup Skipped:Cleanup Disabled"
   fi
 
   # Final status
@@ -1107,8 +1148,9 @@ k8s_privilege_preflight_checks() {
   for pair in "${pair_array[@]}"; do
     resource=$(echo "$pair" | cut -d':' -f1)
     action=$(echo "$pair" | cut -d':' -f2)
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "🔍 Testing privilege for action '$action' on resource '$resource'"
-
+    fi
     if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext auth can-i $action $resource >/dev/null 2>&1"; then
       echo -e "✅ Privilege exists for action '$action' on resource '$resource'."
       log_summary "Privilege Check - $resource:$action" "Privilege Exists:Success"
