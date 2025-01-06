@@ -6,7 +6,7 @@
 output_file="egs-preflight-check-output.log"
 exec > >(tee -a "$output_file") 2>&1
 
-echo "=====================================EGS Preflight Check Script Script execution started at: $(date)===================================" >> "$output_file"
+echo "=====================================EGS Preflight Check Script execution started at: $(date)===================================" >> "$output_file"
 # Global default values
 namespaces_to_check="kubeslice-controller,kubeslice-system,kubeslice-avesha"
 test_namespace="egs-test-namespace"
