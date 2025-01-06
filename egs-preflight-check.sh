@@ -30,7 +30,7 @@ resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace
 webhooks="all"
 # Define all API resources as a single variable
 #api_resources="namespace,pod,daemonset,job,service,serviceaccount,ingress,configmap,secret,persistentvolume,persistentvolumeclaim,storageclass,clusterrole,clusterrolebinding,role,rolebinding,event"
-api_resources="namespace,pod,daemonset,service,serviceaccount,configmap,persistentvolume,persistentvolumeclaim,event"
+api_resources="namespace,pod,daemonset,service,persistentvolume,persistentvolumeclaim"
 
 
 
