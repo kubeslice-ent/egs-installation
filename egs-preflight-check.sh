@@ -141,15 +141,19 @@ generate_summary() {
     echo "============================================================================================"
 
     # Display Kubernetes Cluster Info
-    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS ==============================================================================================="
+    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS =========================================================================================================================================================================================="
     printf "| %-30s | %-50s |\n" "🔧 Parameter" "📦 Value"
-    echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
-    printf "| %-30s | %-50s |\n" "Kubeconfig" "${kubeconfig:-None}"
-    printf "| %-30s | %-50s |\n" "Kubecontext" "${kubecontext:-default-context}"
-    printf "| %-30s | %-50s |\n" "Cluster Endpoint" "${summary[K8S Cluster Endpoint]:-❌ Missing}"
-    printf "| %-30s | %-50s |\n" "Cluster Access" "${summary[Kubernetes Cluster Access]:-❌ Missing}"
-    printf "| %-30s | %-50s |\n" "Node Details" "${summary[Node Details]:-❌ Missing}"
-    echo "========================================================================================================================================================="
+    echo "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    printf "| %-30s | %-50s |\n" "🔧 Kubeconfig" "${kubeconfig:-None}"
+    printf "| %-30s | %-50s |\n" "🌐 Kubecontext" "${kubecontext:-default-context}"
+    printf "| %-30s | %-50s |\n" "📡 Cluster Endpoint" "$(echo "${summary[K8S Cluster Endpoint]:-❌ Missing}" | grep -oE 'https?://[^ ]+')"
+    printf "| %-30s | %-50s |\n" "🔒 Cluster Access" "${summary[Kubernetes Cluster Access]:-❌ Missing}"
+
+    echo -e "\n📊 ====================== KUBERNETES NODE DETAILS =========================================================================================================================================================================================="
+
+    printf "| %-30s | %-500s |\n" "📊 Node Details" "${summary[Node Details]:-❌ Missing}"
+
+    echo "================================ END OF KUBERNETES CLUSTER DETAILS================================================================================================================================================================================="
 
     # Separate Success and Failure Summaries
     declare -A successes
@@ -172,26 +176,26 @@ generate_summary() {
     done
 
     # Display Success Table
-    echo -e "\n📊 ====================== EGS AUTOMATED VALIDATION SUMMARY ==========================================================================================="
+    echo -e "\n📊 ====================== EGS AUTOMATED VALIDATION SUMMARY ==================================================================================================="
     printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
-    echo "-----------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------------------"
     for key in "${!successes[@]}"; do
       IFS='|' read -r function_type parameter_function <<< "$key"
       IFS='|' read -r found_status status icon <<< "${successes[$key]}"
       printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
     done
-    echo "============================================================================================================================================================="
+    echo "====================================================================================================================================================================="
 
     # Display Failure Table
-    echo -e "\n📊 ======================= EGS RESOURCE NOT FOUND, ENABLE IT IF REQUIRED ================================================================================"
+    echo -e "\n📊 ======================= EGS RESOURCE NOT FOUND, ENABLE IT IF REQUIRED ======================================================================================="
     printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
-    echo "---------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo "----------------------------------------------------------------------------------------------------------------------------------------------------------------------"
     for key in "${!failures[@]}"; do
       IFS='|' read -r function_type parameter_function <<< "$key"
       IFS='|' read -r found_status status icon <<< "${failures[$key]}"
       printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
     done
-    echo "================================================================================================================================================================"
+    echo "========================================================================================================================================================================"
 
   else
     echo "📋 Summary generation is disabled."
@@ -569,6 +573,7 @@ k8s_cluster_info_preflight_check() {
   # Retrieve and log cluster endpoint
   local cluster_endpoint
   cluster_endpoint=$(run_command "$KUBECTL_BIN --kubeconfig=\"${kubeconfig#--kubeconfig=}\" --context=\"$kubecontext\" config view --minify -o jsonpath='{.clusters[0].cluster.server}'")
+  
 
   if [[ -n "$cluster_endpoint" ]]; then
     echo -e "💻 Cluster Endpoint: $cluster_endpoint"
@@ -634,15 +639,16 @@ if [[ -n "$node_info" ]] && echo "$node_info" | jq empty >/dev/null 2>&1; then
     echo "  💾 Capacity (Memory): ${capacity_memory:-None}"
     fi
 
-  node_details+="Node: $node
-  Labels: $labels
-  Taints: ${taints:-None}
-  External IPs: ${external_ips:-None}
-  GPU Type: ${gpu_type:-None}
-  CPU Architecture: ${cpu_architecture:-None}
-  Instance Type: ${instance_type:-None}
-  Capacity (CPU): ${capacity_cpu:-None} cores
-  Capacity (Memory): ${capacity_memory:-None}
+node_details+="🔹 Node: $node
+  🏷️ Labels: $labels
+  🚫 Taints: ${taints:-None}
+  🌐 External IPs: ${external_ips:-None}
+  🎮 GPU Type: ${gpu_type:-None}
+  🖥️ CPU Architecture: ${cpu_architecture:-None}
+  📦 Instance Type: ${instance_type:-None}
+  ⚙️ Capacity (CPU): ${capacity_cpu:-None} cores
+  🧠 Capacity (Memory): ${capacity_memory:-None}
+
 
 "
   done
@@ -1119,6 +1125,7 @@ k8s_privilege_preflight_checks() {
 
 # Function to display the summary of parameters
 print_summary() {
+  if [[ "$function_debug_input" == "true" ]]; then
   echo "--- Parameter Summary ---"
   echo -e "🔹 Namespace to check: ${namespaces_to_check:-Not provided}"
   echo -e "🔹 Test namespace: ${test_namespace:-egs-test-namespace}"
@@ -1136,6 +1143,8 @@ print_summary() {
   echo -e "🔹 Fetch resource names: ${fetch_resource_names:-Not provided}"
   echo -e "🔹 Fetch webhook names: ${fetch_webhook_names:-Not provided}"
   echo "-------------------------"
+  fi
+
 }
 
 # Main execution
