@@ -413,7 +413,7 @@ while [[ $# -gt 0 ]]; do
     --generate-summary) generate_summary_flag="$2"; shift 2 ;;
     --resource-action-pairs) resource_action_pairs="$2"; shift 2 ;;
     --fetch-resource-names) fetch_resource_names="$2"; shift 2 ;;
-    --api-resources) api-resources="$2"; shift 2 ;;
+    --api-resources) api_resources="$2"; shift 2 ;;
     --webhooks) webhooks="$2"; shift 2 ;;  
     --fetch-webhook-names) fetch_webhook_names="$2"; shift 2 ;;
     --help) display_help ;;
