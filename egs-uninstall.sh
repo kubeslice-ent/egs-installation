@@ -2256,7 +2256,7 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         kubecontext=$(echo "$app" | yq e '.kubecontext' -)
 
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
-        continue_on_error delete_namespace $namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
+        continue_on_error delete_namespace "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
 
     done
     echo "✔️ Installation of additional applications complete."  >&2
