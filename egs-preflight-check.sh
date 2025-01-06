@@ -11,24 +11,26 @@ pvc_name="egs-test-pvc"
 storage_class=""
 storage_size="1Gi"
 cleanup="true"
-display_resources="true"
+display_resources="false"
 global_wait="2"
 KUBECTL_BIN=$(which kubectl)
 service_type="all"
 service_name="egs-test-service"
 watch_resources="true"
-watch_duration="10"
-function_debug_input="true"
+watch_duration="5"
+function_debug_input="false"
 generate_summary_flag="true"
-fetch_resource_names="prometheus,gpu-operator"
-fetch_webhook_names="aiops-mutating-webhook-configuration,kubeslice-mutating-webhook-configuration,prometheus-kube-prometheus-admission,aiops-validating-webhook-configuration,gpr-validating-webhook-configuration,kubeslice-controller-validating-webhook-configuration,kubeslice-validating-webhook-configuration,prometheus-kube-prometheus-admission"
+fetch_resource_names="prometheus,gpu-operator,postgresql"
+#fetch_resource_names=""
+#fetch_webhook_names="aiops-mutating-webhook-configuration,kubeslice-mutating-webhook-configuration,prometheus-kube-prometheus-admission,aiops-validating-webhook-configuration,gpr-validating-webhook-configuration,kubeslice-controller-validating-webhook-configuration,kubeslice-validating-webhook-configuration,prometheus-kube-prometheus-admission"
+#fetch_webhook_names=""
 # Global default resource_action_pairs
 resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch,pod:create,pod:delete,pod:list,pod:watch,service:create,watch,configmap:create,configmap:get,configmap:list,configmap:watch,secret:create,secret:list,secret:watch,serviceaccount:create,serviceaccount:list,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:get,clusterrolebinding:list,deployment:create,deployment:delete,deployment:get,deployment:list,deployment"
 #resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch,pod:create,pod:delete,pod:get,pod:list,pod:watch,service:create,service:delete,service:get,service:list,service:watch,configmap:create,configmap:delete,configmap:get,configmap:list,configmap:watch,secret:create,secret:delete,secret:get,secret:list,secret:watch,serviceaccount:create,serviceaccount:delete,serviceaccount:get,serviceaccount:list,serviceaccount:watch,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:delete,clusterrolebinding:get,clusterrolebinding:list,deployment:create,deployment:delete,deployment:get,deployment:list,deployment:watch,statefulset:create,statefulset:delete,statefulset:get,statefulset:list,statefulset:watch"
 webhooks="all"
 # Define all API resources as a single variable
 #api_resources="namespace,pod,daemonset,job,service,serviceaccount,ingress,configmap,secret,persistentvolume,persistentvolumeclaim,storageclass,clusterrole,clusterrolebinding,role,rolebinding,event"
-api_resources="namespace,pod,daemonset,job,service,serviceaccount,configmap,secret,persistentvolume,persistentvolumeclaim,event"
+api_resources="namespace,pod,daemonset,service,serviceaccount,configmap,persistentvolume,persistentvolumeclaim,event"
 
 
 
@@ -80,6 +82,7 @@ Default Resource-Action Pairs:
 
 Wrapper Functions:
   🗂️  namespace_preflight_checks                     Validates namespace creation and existence.
+  🗂️  grep_k8s_resources_with_crds_and_webhooks      Validates existing resources available in cluster based on resource names. (prometheus,gpu-operator,postgresql)
   📂  pvc_preflight_checks                           Validates PVC creation, deletion, and storage properties.
   ⚙️  service_preflight_checks                        Validates the creation and deletion of services (ClusterIP, NodePort, LoadBalancer).
   🔐  k8s_privilege_preflight_checks                 Validates privileges for Kubernetes actions on resources.
@@ -108,13 +111,14 @@ log_summary() {
 }
 
 
+# Function to generate a summary
 generate_summary() {
   if [ "$generate_summary_flag" == "true" ]; then
 
     # Display Inputs Used
-    echo -e "\n📥 ====================== INPUTS USED ======================"
+    echo -e "\n📥 ====================== INPUTS USED ==============================================="
     printf "| %-30s | %-50s |\n" "🔧 Input Parameter" "🔢 Value"
-    echo "-----------------------------------------------------------------------------------------"
+    echo "------------------------------------------------------------------------------------------"
     printf "| %-30s | %-50s |\n" "Namespaces to Check" "${namespaces_to_check:-None}"
     printf "| %-30s | %-50s |\n" "Test Namespace" "${test_namespace:-egs-test-namespace}"
     printf "| %-30s | %-50s |\n" "PVC Test Namespace" "${pvc_test_namespace:-egs-test-namespace}"
@@ -134,24 +138,29 @@ generate_summary() {
     printf "| %-30s | %-50s |\n" "API Resources" "${api_resources:-false}"
     printf "| %-30s | %-50s |\n" "Webhooks" "${webhooks:-false}"
     printf "| %-30s | %-50s |\n" "Fetch Webhook Names" "${fetch_webhook_names:-false}"
-    echo "=============================================================================================="
+    echo "============================================================================================"
 
     # Display Kubernetes Cluster Info
-    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS ====================================="
+    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS =========================================================================================================================================================================================="
     printf "| %-30s | %-50s |\n" "🔧 Parameter" "📦 Value"
-    echo "-----------------------------------------------------------------------------------------"
-    printf "| %-30s | %-50s |\n" "Kubeconfig" "${kubeconfig:-None}"
-    printf "| %-30s | %-50s |\n" "Kubecontext" "${kubecontext:-default-context}"
-    printf "| %-30s | %-50s |\n" "Cluster Endpoint" "${summary[K8S Cluster Endpoint]:-❌ Missing}"
-    printf "| %-30s | %-50s |\n" "Cluster Access" "${summary[Kubernetes Cluster Access]:-❌ Missing}"
-    echo "=============================================================================================="
+    echo "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    printf "| %-30s | %-50s |\n" "🔧 Kubeconfig" "${kubeconfig:-None}"
+    printf "| %-30s | %-50s |\n" "🌐 Kubecontext" "${kubecontext:-default-context}"
+    printf "| %-30s | %-50s |\n" "📡 Cluster Endpoint" "$(echo "${summary[K8S Cluster Endpoint]:-❌ Missing}" | grep -oE 'https?://[^ ]+')"
+    printf "| %-30s | %-50s |\n" "🔒 Cluster Access" "${summary[Kubernetes Cluster Access]:-❌ Missing}"
+
+    echo -e "\n📊 ====================== KUBERNETES NODE DETAILS =========================================================================================================================================================================================="
+
+    printf "| %-30s | %-500s |\n" "📊 Node Details" "${summary[Node Details]:-❌ Missing}"
+
+    echo "================================ END OF KUBERNETES CLUSTER DETAILS================================================================================================================================================================================="
 
     # Separate Success and Failure Summaries
     declare -A successes
     declare -A failures
 
     for key in "${!summary[@]}"; do
-      if [[ "$key" == "K8S Cluster Endpoint" || "$key" == "Kubernetes Cluster Access" ]]; then
+      if [[ "$key" == "K8S Cluster Endpoint" || "$key" == "Kubernetes Cluster Access" || "$key" == "Node Details" ]]; then
         continue
       fi
 
@@ -167,31 +176,32 @@ generate_summary() {
     done
 
     # Display Success Table
-    echo -e "\n📊 ====================== EGS AUTOMATED VALIDATION SUMMARY ============================================================================================"
-    printf "| %-55s | %-50s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
-    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "\n📊 ====================== EGS AUTOMATED VALIDATION SUMMARY ==================================================================================================="
+    printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
+    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------------------"
     for key in "${!successes[@]}"; do
       IFS='|' read -r function_type parameter_function <<< "$key"
       IFS='|' read -r found_status status icon <<< "${successes[$key]}"
-      printf "| %-55s | %-50s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
+      printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
     done
-    echo "==============================================================================================================================================================="
+    echo "====================================================================================================================================================================="
 
     # Display Failure Table
-    echo -e "\n📊 ======================= EGS MANUAL VALIDATION MAY REQUIRED ================================================================================================="
-    printf "| %-55s | %-50s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
-    echo "-----------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "\n📊 ======================= EGS RESOURCE NOT FOUND, ENABLE IT IF REQUIRED ======================================================================================="
+    printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
+    echo "----------------------------------------------------------------------------------------------------------------------------------------------------------------------"
     for key in "${!failures[@]}"; do
       IFS='|' read -r function_type parameter_function <<< "$key"
       IFS='|' read -r found_status status icon <<< "${failures[$key]}"
-      printf "| %-55s | %-50s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
+      printf "| %-51s | %-54s | %-15s | %-18s | %-5s |\n" "$parameter_function" "$function_type" "$found_status" "$status" "$icon"
     done
-    echo "==================================================================================================================================================================="
+    echo "========================================================================================================================================================================"
 
   else
     echo "📋 Summary generation is disabled."
   fi
 }
+
 
 grep_k8s_resources_with_crds_and_webhooks() {
   local kubeconfig="$1"
@@ -224,40 +234,12 @@ grep_k8s_resources_with_crds_and_webhooks() {
     IFS=',' read -r -a resource_name_array <<< "$api_resources"
   fi
 
-  # Determine the webhook names to process
-  local webhook_name_array
-  if [[ "$webhooks" == "all" ]]; then
-    webhook_name_array=("mutatingwebhookconfigurations" "validatingwebhookconfigurations")
-  else
-    IFS=',' read -r -a webhook_name_array <<< "$webhooks"
-  fi
+  # Perform resource checks if fetch_resource_names is provided
+  if [[ -n "$fetch_resource_names" ]]; then
+    for resource_type in "${resource_name_array[@]}"; do
+      local resource_summary=""
+      echo -e "\n🔍 Searching for resource type: $resource_type"
 
-  # Separate fetch_webhook_names into mutating and validating arrays
-  local mutating_webhook_names=()
-  local validating_webhook_names=()
-  if [[ -n "$fetch_webhook_names" ]]; then
-    IFS=',' read -r -a fetch_webhook_names_array <<< "$fetch_webhook_names"
-    for fetch_name in "${fetch_webhook_names_array[@]}"; do
-      if [[ "$fetch_name" =~ mutating ]]; then
-        mutating_webhook_names+=("$fetch_name")
-      elif [[ "$fetch_name" =~ validating ]]; then
-        validating_webhook_names+=("$fetch_name")
-      else
-        mutating_webhook_names+=("$fetch_name")
-        validating_webhook_names+=("$fetch_name")
-      fi
-    done
-  fi
-
-  local SUCCESS=true
-  declare -A resource_summaries
-
-  # Iterate over the determined resources
-  for resource_type in "${resource_name_array[@]}"; do
-    local resource_summary=""
-    echo -e "\n🔍 Searching for resource type: $resource_type"
-
-    if [[ -n "$fetch_resource_names" ]]; then
       IFS=',' read -r -a fetch_names_array <<< "$fetch_resource_names"
       for resource_name in "${fetch_names_array[@]}"; do
         echo "🔍 Filtering for resource type '$resource_type' with name containing '$resource_name'..."
@@ -273,95 +255,83 @@ grep_k8s_resources_with_crds_and_webhooks() {
           echo "❌ No resources found for type '$resource_type' containing name '$resource_name'."
           log_summary "$resource_type Check - $resource_name" "$resource_type Not Found:Failure"
           resource_summary+="❌ Not Found for '$resource_name'\n"
-          SUCCESS=false
         fi
       done
-    else
-      local resource_matches
-      resource_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAME:.metadata.name 2>/dev/null)
-
-      if [[ -n "$resource_matches" ]]; then
-        echo "✅ Found matching resources for type '$resource_type':"
-        echo "$resource_matches"
-        log_summary "$resource_type Check" "$resource_type Found:Success"
-        resource_summary+="✅ Found:\n$resource_matches\n"
-      else
-        echo "❌ No resources found for type '$resource_type'."
-        log_summary "$resource_type Check" "$resource_type Not Found:Failure"
-        resource_summary+="❌ Not Found\n"
-        SUCCESS=false
-      fi
-    fi
-
-    # Store the summary for this resource type
-    if [[ -n "$resource_summary" ]]; then
-      resource_summaries["$resource_type"]="$resource_summary"
-    fi
-  done
-
-  # Search webhooks based on webhook_name_array
-  for webhook_type in "${webhook_name_array[@]}"; do
-    local webhook_summary=""
-
-    if [[ "$webhook_type" == "mutatingwebhookconfigurations" ]]; then
-      for fetch_name in "${mutating_webhook_names[@]}"; do
-        echo "🔍 Filtering $webhook_type for name containing '$fetch_name'..."
-        local webhook_matches
-        webhook_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type --all-namespaces -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
-
-        if [[ -n "$webhook_matches" ]]; then
-          echo "✅ Found $webhook_type for '$fetch_name':"
-          echo "$webhook_matches"
-          log_summary "$webhook_type Check - $fetch_name" "$webhook_type Found:Success"
-          webhook_summary+="✅ Found for '$fetch_name':\n$webhook_matches\n"
-        else
-          echo "❌ No $webhook_type containing name '$fetch_name' found."
-          log_summary "$webhook_type Check - $fetch_name" "$webhook_type Not Found:Failure"
-          webhook_summary+="❌ Not Found for '$fetch_name'\n"
-          SUCCESS=false
-        fi
-      done
-    elif [[ "$webhook_type" == "validatingwebhookconfigurations" ]]; then
-      for fetch_name in "${validating_webhook_names[@]}"; do
-        echo "🔍 Filtering $webhook_type for name containing '$fetch_name'..."
-        local webhook_matches
-        webhook_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type --all-namespaces -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
-
-        if [[ -n "$webhook_matches" ]]; then
-          echo "✅ Found $webhook_type for '$fetch_name':"
-          echo "$webhook_matches"
-          log_summary "$webhook_type Check - $fetch_name" "$webhook_type Found:Success"
-          webhook_summary+="✅ Found for '$fetch_name':\n$webhook_matches\n"
-        else
-          echo "❌ No $webhook_type containing name '$fetch_name' found."
-          log_summary "$webhook_type Check - $fetch_name" "$webhook_type Not Found:Failure"
-          webhook_summary+="❌ Not Found for '$fetch_name'\n"
-          SUCCESS=false
-        fi
-      done
-    fi
-
-    # Store the summary for this webhook type
-    if [[ -n "$webhook_summary" ]]; then
-      resource_summaries["$webhook_type"]="$webhook_summary"
-    fi
-  done
-
-  # Final status
-  if [[ "$SUCCESS" == true ]]; then
-    echo "✅ Kubernetes resource and CRD checks completed successfully."
+    done
   else
-    echo "⚠️ Kubernetes resource and CRD checks encountered errors, but execution will continue."
+    echo "⏩ Skipping resource checks because fetch_resource_names is empty."
   fi
 
-  # Display Summary
-  echo -e "\n📋 Resource Check Summary:\n"
-  for resource_type in "${!resource_summaries[@]}"; do
-    echo -e "\nResource Type: $resource_type\n${resource_summaries[$resource_type]}"
-  done
+  # Determine the webhook names to process
+  local webhook_name_array
+  if [[ "$webhooks" == "all" ]]; then
+    webhook_name_array=("mutatingwebhookconfigurations" "validatingwebhookconfigurations")
+  else
+    IFS=',' read -r -a webhook_name_array <<< "$webhooks"
+  fi
+
+  # Perform webhook checks if fetch_webhook_names is provided
+  if [[ -n "$fetch_webhook_names" ]]; then
+    local mutating_webhook_names=()
+    local validating_webhook_names=()
+    IFS=',' read -r -a fetch_webhook_names_array <<< "$fetch_webhook_names"
+    for fetch_name in "${fetch_webhook_names_array[@]}"; do
+      if [[ "$fetch_name" =~ mutating ]]; then
+        mutating_webhook_names+=("$fetch_name")
+      elif [[ "$fetch_name" =~ validating ]]; then
+        validating_webhook_names+=("$fetch_name")
+      else
+        mutating_webhook_names+=("$fetch_name")
+        validating_webhook_names+=("$fetch_name")
+      fi
+    done
+
+    for webhook_type in "${webhook_name_array[@]}"; do
+      local webhook_summary=""
+
+      if [[ "$webhook_type" == "mutatingwebhookconfigurations" ]]; then
+        for fetch_name in "${mutating_webhook_names[@]}"; do
+          echo "🔍 Filtering $webhook_type for name containing '$fetch_name'..."
+          local webhook_matches
+          webhook_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type --all-namespaces -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
+
+          if [[ -n "$webhook_matches" ]]; then
+            echo "✅ Found $webhook_type for '$fetch_name':"
+            echo "$webhook_matches"
+            log_summary "$webhook_type Check - $fetch_name" "$webhook_type Found:Success"
+            webhook_summary+="✅ Found for '$fetch_name':\n$webhook_matches\n"
+          else
+            echo "❌ No $webhook_type containing name '$fetch_name' found."
+            log_summary "$webhook_type Check - $fetch_name" "$webhook_type Not Found:Failure"
+            webhook_summary+="❌ Not Found for '$fetch_name'\n"
+          fi
+        done
+      elif [[ "$webhook_type" == "validatingwebhookconfigurations" ]]; then
+        for fetch_name in "${validating_webhook_names[@]}"; do
+          echo "🔍 Filtering $webhook_type for name containing '$fetch_name'..."
+          local webhook_matches
+          webhook_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type --all-namespaces -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
+
+          if [[ -n "$webhook_matches" ]]; then
+            echo "✅ Found $webhook_type for '$fetch_name':"
+            echo "$webhook_matches"
+            log_summary "$webhook_type Check - $fetch_name" "$webhook_type Found:Success"
+            webhook_summary+="✅ Found for '$fetch_name':\n$webhook_matches\n"
+          else
+            echo "❌ No $webhook_type containing name '$fetch_name' found."
+            log_summary "$webhook_type Check - $fetch_name" "$webhook_type Not Found:Failure"
+            webhook_summary+="❌ Not Found for '$fetch_name'\n"
+          fi
+        done
+      fi
+    done
+  else
+    echo "⏩ Skipping webhook checks because fetch_webhook_names is empty."
+  fi
+
+  echo "✅ Kubernetes resource and webhook checks completed."
+
 }
-
-
 
 
 # Function to log commands executed
@@ -450,7 +420,7 @@ while [[ $# -gt 0 ]]; do
     --generate-summary) generate_summary_flag="$2"; shift 2 ;;
     --resource-action-pairs) resource_action_pairs="$2"; shift 2 ;;
     --fetch-resource-names) fetch_resource_names="$2"; shift 2 ;;
-    --api-resources) api-resources="$2"; shift 2 ;;
+    --api-resources) api_resources="$2"; shift 2 ;;
     --webhooks) webhooks="$2"; shift 2 ;;  
     --fetch-webhook-names) fetch_webhook_names="$2"; shift 2 ;;
     --help) display_help ;;
@@ -558,12 +528,17 @@ display_resource_details() {
 
 
 # Function to check if the Kubernetes cluster is accessible
-check_k8s_cluster_access() {
+# Function to check if the Kubernetes cluster is accessible
+k8s_cluster_info_preflight_check() {
   local kubeconfig="$1"
   local kubecontext="$2"
+  local display_resources_flag="$3"
+  local global_wait="$4"
+  local watch_resources="${5:-false}"
+  local watch_duration="${6:-30}"
 
-  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext"
-  log_command "check_k8s_cluster_access" "kubeconfig=$kubeconfig, kubecontext=$kubecontext"
+  echo -e "🔍 Verifying K8s Cluster info..."
+  log_command "k8s_cluster_info_preflight_check" "kubeconfig=$kubeconfig, kubecontext=$kubecontext"
 
   # Validate kubeconfig file exists
   if [[ ! -f "${kubeconfig#--kubeconfig=}" ]]; then
@@ -595,20 +570,98 @@ check_k8s_cluster_access() {
     log_summary "Kubernetes Cluster Access" "cluster access successful:Success"
   fi
 
-
-  run_command "$KUBECTL_BIN --kubeconfig=${kubeconfig#--kubeconfig=} --context=$kubecontext config view --minify -o jsonpath='{.clusters[0].cluster.server}'"
-  # Print cluster endpoint URL only
+  # Retrieve and log cluster endpoint
   local cluster_endpoint
-  cluster_endpoint=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" config view --minify -o jsonpath='{.clusters[0].cluster.server}' 2>/dev/null)
+  cluster_endpoint=$(run_command "$KUBECTL_BIN --kubeconfig=\"${kubeconfig#--kubeconfig=}\" --context=\"$kubecontext\" config view --minify -o jsonpath='{.clusters[0].cluster.server}'")
+  
 
   if [[ -n "$cluster_endpoint" ]]; then
-    echo "$cluster_endpoint"
+    echo -e "💻 Cluster Endpoint: $cluster_endpoint"
     log_summary "K8S Cluster Endpoint" "$cluster_endpoint"
   else
-    echo "❌ Failed to retrieve the cluster endpoint."
+    echo -e "❌ Failed to retrieve the cluster endpoint."
     log_summary "K8S Cluster Endpoint" "Failed to retrieve cluster endpoint"
   fi
 
+# Fetch node details
+echo -e "▶ Fetching node details..."
+local node_info
+node_info=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get nodes -o json 2>/dev/null)
+
+# Validate JSON output
+if [[ -n "$node_info" ]] && echo "$node_info" | jq empty >/dev/null 2>&1; then
+  local node_details=""
+  local node_names
+  node_names=$(echo "$node_info" | jq -r '.items[].metadata.name')
+
+  for node in $node_names; do
+    echo -e "\n• Node: $node"
+
+    # Fetch details with error handling
+    local labels
+    labels=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.metadata.labels}' 2>/dev/null || echo "{}")
+    if [[ "$function_debug_input" == "true" ]]; then
+    echo "  💡 Labels: ${labels:-None}"
+    fi
+    local taints
+    taints=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.spec.taints}' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
+    echo "  🚫 Taints: ${taints:-None}"
+    fi
+    local external_ips
+    external_ips=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
+    echo "  📶 External IPs: ${external_ips:-None}"
+    fi
+    local gpu_type
+    gpu_type=$(echo "$labels" | jq -r 'to_entries[] | select(.key | test("nvidia.com/gpu.product")) | .value' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
+    echo "  ⚙ GPU Type: ${gpu_type:-None}"
+    fi
+    local cpu_architecture
+    cpu_architecture=$(echo "$labels" | jq -r 'to_entries[] | select(.key == "kubernetes.io/arch") | .value' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
+    echo "  🛠 CPU Architecture: ${cpu_architecture:-None}"
+    fi
+    local instance_type
+    instance_type=$(echo "$labels" | jq -r 'to_entries[] | select(.key == "node.kubernetes.io/instance-type") | .value' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
+    echo "  👷 Instance Type: ${instance_type:-None}"
+    fi
+    local capacity_cpu
+    capacity_cpu=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.status.capacity.cpu}' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
+    echo "  🏋 Capacity (CPU): ${capacity_cpu:-None} cores"
+    fi
+    local capacity_memory
+    capacity_memory=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.status.capacity.memory}' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
+    echo "  💾 Capacity (Memory): ${capacity_memory:-None}"
+    fi
+
+node_details+="🔹 Node: $node
+  🏷️ Labels: $labels
+  🚫 Taints: ${taints:-None}
+  🌐 External IPs: ${external_ips:-None}
+  🎮 GPU Type: ${gpu_type:-None}
+  🖥️ CPU Architecture: ${cpu_architecture:-None}
+  📦 Instance Type: ${instance_type:-None}
+  ⚙️ Capacity (CPU): ${capacity_cpu:-None} cores
+  🧠 Capacity (Memory): ${capacity_memory:-None}
+
+
+"
+  done
+
+  # Add consolidated node details to the summary
+  summary["Node Details"]="$node_details"
+else
+  echo -e "❌ Failed to fetch or parse node details."
+  summary["Node Details"]="Failed to fetch node details"
+fi
+
+  # Wait for the specified time, if any
+  wait_after_command "$global_wait"
 }
 
 
@@ -1072,6 +1125,7 @@ k8s_privilege_preflight_checks() {
 
 # Function to display the summary of parameters
 print_summary() {
+  if [[ "$function_debug_input" == "true" ]]; then
   echo "--- Parameter Summary ---"
   echo -e "🔹 Namespace to check: ${namespaces_to_check:-Not provided}"
   echo -e "🔹 Test namespace: ${test_namespace:-egs-test-namespace}"
@@ -1089,12 +1143,16 @@ print_summary() {
   echo -e "🔹 Fetch resource names: ${fetch_resource_names:-Not provided}"
   echo -e "🔹 Fetch webhook names: ${fetch_webhook_names:-Not provided}"
   echo "-------------------------"
+  fi
+
 }
 
 # Main execution
 main() {
 
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "Entering main with arguments: $@"
+    fi
 
     # Process command-line arguments
     while [[ $# -gt 0 ]]; do
@@ -1207,6 +1265,10 @@ main() {
         esac
     done
 
+
+
+if [[ "$function_debug_input" == "true" ]]; then
+  # Statements to execute only when function_debug_input is true
     # Print final values (debugging)
     echo "--- Final Parameter Values ---"
     echo "🔹 namespaces_to_check: ${namespaces_to_check:-Not provided}"
@@ -1234,6 +1296,9 @@ main() {
     echo "🔹 webhooks: ${webhooks:-Not provided}"
     echo "🔹 fetch_webhook_names: ${fetch_webhook_names:-Not provided}"
     echo "-------------------------------"
+fi
+
+
 
 
 # Handle wrappers_to_invoke
@@ -1283,8 +1348,8 @@ echo "📋 Verifying input summary..."
 log_inputs_and_time "$function_debug_input" print_summary
 
 # Verify kubeconfig and kubecontext
-echo "🔍 Verifying kubeconfig and kubecontext access..."
-log_inputs_and_time "$function_debug_input" check_k8s_cluster_access "$kubeconfig" "$kubecontext"
+echo "🔍 Verifying K8s Cluster info..."
+log_inputs_and_time "$function_debug_input" k8s_cluster_info_preflight_check "$kubeconfig" "$kubecontext" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
 
 # Debugging the passed arguments
 echo "🐞 Debug: Arguments passed to the script: $@"
