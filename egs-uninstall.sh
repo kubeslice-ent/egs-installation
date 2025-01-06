@@ -2301,7 +2301,7 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
         continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
         continue_on_error delete_kubernetes_objects
-        continue_on_error delete_namespace $namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
+        continue_on_error delete_namespace "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
     done
 fi
 
