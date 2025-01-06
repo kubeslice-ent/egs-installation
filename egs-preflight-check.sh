@@ -82,6 +82,7 @@ Default Resource-Action Pairs:
 
 Wrapper Functions:
   🗂️  namespace_preflight_checks                     Validates namespace creation and existence.
+  🗂️  grep_k8s_resources_with_crds_and_webhooks      Validates existing resources available in cluster based on resource names. (prometheus,gpu-operator,postgresql)
   📂  pvc_preflight_checks                           Validates PVC creation, deletion, and storage properties.
   ⚙️  service_preflight_checks                        Validates the creation and deletion of services (ClusterIP, NodePort, LoadBalancer).
   🔐  k8s_privilege_preflight_checks                 Validates privileges for Kubernetes actions on resources.
