@@ -111,6 +111,7 @@ log_summary() {
 }
 
 
+# Function to generate a summary
 generate_summary() {
   if [ "$generate_summary_flag" == "true" ]; then
 
@@ -140,21 +141,22 @@ generate_summary() {
     echo "=============================================================================================="
 
     # Display Kubernetes Cluster Info
-    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS ====================================="
+    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS ======================================================================================="
     printf "| %-30s | %-50s |\n" "🔧 Parameter" "📦 Value"
     echo "-----------------------------------------------------------------------------------------"
     printf "| %-30s | %-50s |\n" "Kubeconfig" "${kubeconfig:-None}"
     printf "| %-30s | %-50s |\n" "Kubecontext" "${kubecontext:-default-context}"
     printf "| %-30s | %-50s |\n" "Cluster Endpoint" "${summary[K8S Cluster Endpoint]:-❌ Missing}"
     printf "| %-30s | %-50s |\n" "Cluster Access" "${summary[Kubernetes Cluster Access]:-❌ Missing}"
-    echo "=============================================================================================="
+    printf "| %-30s | %-50s |\n" "Node Details" "${summary[Node Details]:-❌ Missing}"
+    echo "=================================================================================================================================================="
 
     # Separate Success and Failure Summaries
     declare -A successes
     declare -A failures
 
     for key in "${!summary[@]}"; do
-      if [[ "$key" == "K8S Cluster Endpoint" || "$key" == "Kubernetes Cluster Access" ]]; then
+      if [[ "$key" == "K8S Cluster Endpoint" || "$key" == "Kubernetes Cluster Access" || "$key" == "Node Details" ]]; then
         continue
       fi
 
@@ -195,6 +197,7 @@ generate_summary() {
     echo "📋 Summary generation is disabled."
   fi
 }
+
 
 grep_k8s_resources_with_crds_and_webhooks() {
   local kubeconfig="$1"
@@ -521,12 +524,17 @@ display_resource_details() {
 
 
 # Function to check if the Kubernetes cluster is accessible
-check_k8s_cluster_access() {
+# Function to check if the Kubernetes cluster is accessible
+k8s_cluster_info_preflight_check() {
   local kubeconfig="$1"
   local kubecontext="$2"
+  local display_resources_flag="$3"
+  local global_wait="$4"
+  local watch_resources="${5:-false}"
+  local watch_duration="${6:-30}"
 
-  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext"
-  log_command "check_k8s_cluster_access" "kubeconfig=$kubeconfig, kubecontext=$kubecontext"
+  echo -e "🔍 Verifying K8s Cluster info..."
+  log_command "k8s_cluster_info_preflight_check" "kubeconfig=$kubeconfig, kubecontext=$kubecontext"
 
   # Validate kubeconfig file exists
   if [[ ! -f "${kubeconfig#--kubeconfig=}" ]]; then
@@ -558,20 +566,87 @@ check_k8s_cluster_access() {
     log_summary "Kubernetes Cluster Access" "cluster access successful:Success"
   fi
 
-
-  run_command "$KUBECTL_BIN --kubeconfig=${kubeconfig#--kubeconfig=} --context=$kubecontext config view --minify -o jsonpath='{.clusters[0].cluster.server}'"
-  # Print cluster endpoint URL only
+  # Retrieve and log cluster endpoint
   local cluster_endpoint
-  cluster_endpoint=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" config view --minify -o jsonpath='{.clusters[0].cluster.server}' 2>/dev/null)
+  cluster_endpoint=$(run_command "$KUBECTL_BIN --kubeconfig=\"${kubeconfig#--kubeconfig=}\" --context=\"$kubecontext\" config view --minify -o jsonpath='{.clusters[0].cluster.server}'")
 
   if [[ -n "$cluster_endpoint" ]]; then
-    echo "$cluster_endpoint"
+    echo -e "💻 Cluster Endpoint: $cluster_endpoint"
     log_summary "K8S Cluster Endpoint" "$cluster_endpoint"
   else
-    echo "❌ Failed to retrieve the cluster endpoint."
+    echo -e "❌ Failed to retrieve the cluster endpoint."
     log_summary "K8S Cluster Endpoint" "Failed to retrieve cluster endpoint"
   fi
 
+# Fetch node details
+echo -e "▶ Fetching node details..."
+local node_info
+node_info=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get nodes -o json 2>/dev/null)
+
+# Validate JSON output
+if [[ -n "$node_info" ]] && echo "$node_info" | jq empty >/dev/null 2>&1; then
+  local node_details=""
+  local node_names
+  node_names=$(echo "$node_info" | jq -r '.items[].metadata.name')
+
+  for node in $node_names; do
+    echo -e "\n• Node: $node"
+
+    # Fetch details with error handling
+    local labels
+    labels=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.metadata.labels}' 2>/dev/null || echo "{}")
+    echo "  💡 Labels: ${labels:-None}"
+
+    local taints
+    taints=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.spec.taints}' 2>/dev/null || echo "None")
+    echo "  🚫 Taints: ${taints:-None}"
+
+    local external_ips
+    external_ips=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null || echo "None")
+    echo "  📶 External IPs: ${external_ips:-None}"
+
+    local gpu_type
+    gpu_type=$(echo "$labels" | jq -r 'to_entries[] | select(.key | test("nvidia.com/gpu.product")) | .value' 2>/dev/null || echo "None")
+    echo "  ⚙ GPU Type: ${gpu_type:-None}"
+
+    local cpu_architecture
+    cpu_architecture=$(echo "$labels" | jq -r 'to_entries[] | select(.key == "kubernetes.io/arch") | .value' 2>/dev/null || echo "None")
+    echo "  🛠 CPU Architecture: ${cpu_architecture:-None}"
+
+    local instance_type
+    instance_type=$(echo "$labels" | jq -r 'to_entries[] | select(.key == "node.kubernetes.io/instance-type") | .value' 2>/dev/null || echo "None")
+    echo "  👷 Instance Type: ${instance_type:-None}"
+
+    local capacity_cpu
+    capacity_cpu=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.status.capacity.cpu}' 2>/dev/null || echo "None")
+    echo "  🏋 Capacity (CPU): ${capacity_cpu:-None} cores"
+
+    local capacity_memory
+    capacity_memory=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.status.capacity.memory}' 2>/dev/null || echo "None")
+    echo "  💾 Capacity (Memory): ${capacity_memory:-None}"
+
+    node_details+="Node: $node
+  Labels: $labels
+  Taints: ${taints:-None}
+  External IPs: ${external_ips:-None}
+  GPU Type: ${gpu_type:-None}
+  CPU Architecture: ${cpu_architecture:-None}
+  Instance Type: ${instance_type:-None}
+  Capacity (CPU): ${capacity_cpu:-None} cores
+  Capacity (Memory): ${capacity_memory:-None}
+
+"
+  done
+
+  # Add consolidated node details to the summary
+  summary["Node Details"]="$node_details"
+else
+  echo -e "❌ Failed to fetch or parse node details."
+  summary["Node Details"]="Failed to fetch node details"
+fi
+
+  # Wait for the specified time, if any
+  wait_after_command "$global_wait"
 }
 
 
@@ -1246,8 +1321,8 @@ echo "📋 Verifying input summary..."
 log_inputs_and_time "$function_debug_input" print_summary
 
 # Verify kubeconfig and kubecontext
-echo "🔍 Verifying kubeconfig and kubecontext access..."
-log_inputs_and_time "$function_debug_input" check_k8s_cluster_access "$kubeconfig" "$kubecontext"
+echo "🔍 Verifying K8s Cluster info..."
+log_inputs_and_time "$function_debug_input" k8s_cluster_info_preflight_check "$kubeconfig" "$kubecontext" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
 
 # Debugging the passed arguments
 echo "🐞 Debug: Arguments passed to the script: $@"
