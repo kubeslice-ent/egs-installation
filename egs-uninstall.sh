@@ -1966,8 +1966,20 @@ list_resources_in_group() {
 # Function to delete a namespace
 delete_namespace() {
     local namespace=$1
-    local kubeconfig_path=$2
-    local kubecontext=$3
+    local specific_use_global_kubeconfig=$2
+    local specific_kubeconfig_path=$3
+    local specific_kubecontext=$4
+
+
+ # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "deleteing namespace" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
+    
 
     # Attempt to delete the namespace
     echo "Attempting to delete namespace: $namespace"
@@ -2244,7 +2256,7 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         kubecontext=$(echo "$app" | yq e '.kubecontext' -)
 
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
-        continue_on_error delete_namespace $namespace" "$kubeconfig" "$kubecontext"
+        continue_on_error delete_namespace $namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
 
     done
     echo "✔️ Installation of additional applications complete."  >&2
@@ -2289,7 +2301,7 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
         continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
         continue_on_error delete_kubernetes_objects
-        continue_on_error delete_namespace $namespace" "$kubeconfig" "$kubecontext"
+        continue_on_error delete_namespace $namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
     done
 fi
 
@@ -2312,7 +2324,7 @@ if [ "$ENABLE_INSTALL_UI" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
     namespace="$KUBESLICE_UI_NAMESPACE"
     continue_on_error delete_kubernetes_objects
-    continue_on_error delete_namespace "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT"
+    continue_on_error delete_namespace "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT"
 fi
 
 
