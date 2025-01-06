@@ -32,12 +32,12 @@ fetch_resource_names="prometheus,gpu-operator"
 #fetch_webhook_names="aiops-mutating-webhook-configuration,kubeslice-mutating-webhook-configuration,prometheus-kube-prometheus-admission,aiops-validating-webhook-configuration,gpr-validating-webhook-configuration,kubeslice-controller-validating-webhook-configuration,kubeslice-validating-webhook-configuration,prometheus-kube-prometheus-admission"
 #fetch_webhook_names=""
 # Global default resource_action_pairs
-resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,pod:create,pod:delete,pod:list,service:create,watch,configmap:create,configmap:get,configmap:list,configmap:watch,secret:create,secret:list,secret:watch,serviceaccount:create,serviceaccount:list,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:get,clusterrolebinding:list,deployment:create,deployment:delete,deployment:get,deployment:list,deployment"
+resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,pod:create,pod:delete,pod:list,service:create,configmap:create,configmap:get,configmap:list,secret:create,secret:list,serviceaccount:create,serviceaccount:list,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:get,clusterrolebinding:list,deployment:create,deployment:delete,deployment:get,deployment:list,deployment"
 #resource_action_pairs="namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch,pod:create,pod:delete,pod:get,pod:list,pod:watch,service:create,service:delete,service:get,service:list,service:watch,configmap:create,configmap:delete,configmap:get,configmap:list,configmap:watch,secret:create,secret:delete,secret:get,secret:list,secret:watch,serviceaccount:create,serviceaccount:delete,serviceaccount:get,serviceaccount:list,serviceaccount:watch,clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list,clusterrolebinding:create,clusterrolebinding:delete,clusterrolebinding:get,clusterrolebinding:list,deployment:create,deployment:delete,deployment:get,deployment:list,deployment:watch,statefulset:create,statefulset:delete,statefulset:get,statefulset:list,statefulset:watch"
 webhooks="all"
 # Define all API resources as a single variable
 #api_resources="namespace,pod,daemonset,job,service,serviceaccount,ingress,configmap,secret,persistentvolume,persistentvolumeclaim,storageclass,clusterrole,clusterrolebinding,role,rolebinding,event"
-api_resources="namespace,pod,daemonset,service,persistentvolume,persistentvolumeclaim"
+api_resources="namespace,pod,daemonset,service,persistentvolumeclaim"
 
 
 
