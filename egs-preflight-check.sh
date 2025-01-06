@@ -1,5 +1,12 @@
 #!/bin/bash
 
+
+
+# Specify the output file
+output_file="egs-preflight-check-output.log"
+exec > >(tee -a "$output_file") 2>&1
+
+echo "=====================================EGS Preflight Check Script Script execution started at: $(date)===================================" >> "$output_file"
 # Global default values
 namespaces_to_check="kubeslice-controller,kubeslice-system,kubeslice-avesha"
 test_namespace="egs-test-namespace"
@@ -544,7 +551,7 @@ watch_resource() {
   done
 
   echo "🕒 Finished watching $resource_type '$resource_name'."
-  log_summary "Resource Watch - $resource_name" "Watched for $watch_duration seconds:Success"
+  #log_summary "Resource Watch - $resource_name" "Watched for $watch_duration seconds:Success"
 }
 
 
@@ -1400,3 +1407,5 @@ log_inputs_and_time "$function_debug_input" main "$@"
 # Invoke generate summary at the end
 echo "📊 Generating final summary..."
 log_inputs_and_time "$function_debug_input" generate_summary
+
+echo "=======================EGS Preflight Check Script execution completed at: $(date)============================" >> "$output_file"
