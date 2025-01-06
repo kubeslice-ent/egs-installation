@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 global:
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: &defaultRegistry docker.io/aveshasystems
   # Profile settings (e.g., for OpenShift)
   profile:
 # if you're installing in openshift cluster make this variable true
@@ -43,6 +43,7 @@ global:
 kubeslice:
   # Configuration for the RBAC proxy
   rbacproxy:
+    imageRegistry: *defaultRegistry
     # Image name for the RBAC proxy
     image: kubebuilder-kube-rbac-proxy
     # Image tag for the RBAC proxy
@@ -58,10 +59,11 @@ kubeslice:
     projectnsPrefix: kubeslice
     # Endpoint for the controller (should be specified if needed)
     endpoint: ""
+    imageRegistry: aveshadev #*defaultRegistry
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.10.0
+    tag: 0.9.0-RELEASE-99634723
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -86,6 +88,7 @@ kubeslice:
 
 egs:
   gprManager:
+    imageRegistry: *defaultRegistry
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
@@ -99,7 +102,7 @@ egs:
     refreshWaitTimeInterval: 300
   
   queueManager:
-    imageRegistry: aveshasystems # global registry will be choosen if removed 
+    imageRegistry: *defaultRegistry
     # Image name for the gpr-manager
     image: queue-manager
     # Image tag for the gpr-manager
@@ -112,6 +115,7 @@ egs:
     appEnv: "production"
       
   inventory:
+    imageRegistry: *defaultRegistry
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager

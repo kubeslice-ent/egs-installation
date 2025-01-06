@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: &defaultRegistry docker.io/aveshasystems
   profile:
     openshift: false
 
@@ -12,12 +12,14 @@ kubeslice:
   productName: egs
 
   ui:
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.10.0
+    tag: 1.10.1-RELEASE-37532705
     pullPolicy: IfNotPresent
   uiv2:
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.10.0
+    tag: 1.11.0-RELEASE-8f63e057
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false
@@ -38,8 +40,9 @@ kubeslice:
       image: docker.io/aveshasystems/kubeslice-dashboard-web
       tag: 7.5.1
   uiproxy:
-    image: kubeslice-ui-proxy-egs
-    tag: 1.10.0
+    imageRegistry: aveshadev #*defaultRegistry
+    image: kubeslice-ui-proxy
+    tag: 1.11.1-RELEASE-cc496a14
     pullPolicy: IfNotPresent
     service:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
@@ -49,29 +52,33 @@ kubeslice:
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
   apigw:
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 1.10.0
+    tag: 0.10.1-RELEASE-248bb302
     pullPolicy: IfNotPresent
 
   egsCoreApis:
     enabled: false
+    imageRegistry: aveshadev #*defaultRegistry
     image: egs-core-apis
-    tag: 1.10.0
+    tag: 1.11.0-RELEASE-137a857a
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
 
   workerinstaller:
+    imageRegistry: *defaultRegistry
     image: worker-installer
     tag: 1.5.0
     pullPolicy: IfNotPresent
 
   prometheus:
-    url: http://prometheus-service:9090  #Prometheus URL for monitoring(should be specified if needed)
+    url: http://prometheus-service:9090 #Prometheus URL for monitoring(should be specified if needed)
 
 egs:
   InventoryManagerAddress: egs-inventory-manager:80
   QueueManagerAddress: egs-queue-manager:80
+  CoreApisUrl: http://egs-core-apis:8080
 
 imagePullSecretsName: "kubeslice-ui-image-pull-secret"
 # leave the below fields empty if secrets are managed externally.

@@ -45,7 +45,7 @@ spec:
               drop:
                 - ALL
             readOnlyRootFilesystem: false
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.uiproxy.image }}:{{ .Values.kubeslice.uiproxy.tag }}'
+          image: '{{ .Values.kubeslice.uiproxy.imageRegistry }}/{{ .Values.kubeslice.uiproxy.image }}:{{ .Values.kubeslice.uiproxy.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.uiproxy.pullPolicy }}'
           env:
           - name: KUBESLICE-CONTROLLER-PROMETHEUS

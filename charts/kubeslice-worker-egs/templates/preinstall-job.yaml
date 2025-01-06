@@ -27,7 +27,7 @@ spec:
       serviceAccountName: kubeslice-preinstall
       containers:
         - name: pre-install-job
-          image: "{{ .Values.global.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}"
+          image: "{{ .Values.alpine.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh","/opt/scripts/pre-install.sh"]
           volumeMounts:

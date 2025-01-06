@@ -85,7 +85,7 @@ spec:
       serviceAccountName: kubeslice-cleanup
       containers:
         - name: kubectl
-          image: "{{ .Values.global.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}"
+          image: "{{ .Values.alpine.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}"
           command:
             - /bin/sh
             - -c
