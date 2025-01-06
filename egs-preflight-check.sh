@@ -116,9 +116,9 @@ generate_summary() {
   if [ "$generate_summary_flag" == "true" ]; then
 
     # Display Inputs Used
-    echo -e "\n📥 ====================== INPUTS USED ======================================================================="
+    echo -e "\n📥 ====================== INPUTS USED ==============================================="
     printf "| %-30s | %-50s |\n" "🔧 Input Parameter" "🔢 Value"
-    echo "------------------------------------------------------------------------------------------------------------------"
+    echo "------------------------------------------------------------------------------------------"
     printf "| %-30s | %-50s |\n" "Namespaces to Check" "${namespaces_to_check:-None}"
     printf "| %-30s | %-50s |\n" "Test Namespace" "${test_namespace:-egs-test-namespace}"
     printf "| %-30s | %-50s |\n" "PVC Test Namespace" "${pvc_test_namespace:-egs-test-namespace}"
@@ -138,12 +138,12 @@ generate_summary() {
     printf "| %-30s | %-50s |\n" "API Resources" "${api_resources:-false}"
     printf "| %-30s | %-50s |\n" "Webhooks" "${webhooks:-false}"
     printf "| %-30s | %-50s |\n" "Fetch Webhook Names" "${fetch_webhook_names:-false}"
-    echo "======================================================================================================================"
+    echo "============================================================================================"
 
     # Display Kubernetes Cluster Info
-    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS ============================================================="
+    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS ==============================================================================================="
     printf "| %-30s | %-50s |\n" "🔧 Parameter" "📦 Value"
-    echo "-----------------------------------------------------------------------------------------------------------------------"
+    echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
     printf "| %-30s | %-50s |\n" "Kubeconfig" "${kubeconfig:-None}"
     printf "| %-30s | %-50s |\n" "Kubecontext" "${kubecontext:-default-context}"
     printf "| %-30s | %-50s |\n" "Cluster Endpoint" "${summary[K8S Cluster Endpoint]:-❌ Missing}"
@@ -595,37 +595,46 @@ if [[ -n "$node_info" ]] && echo "$node_info" | jq empty >/dev/null 2>&1; then
     # Fetch details with error handling
     local labels
     labels=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.metadata.labels}' 2>/dev/null || echo "{}")
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "  💡 Labels: ${labels:-None}"
-
+    fi
     local taints
     taints=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.spec.taints}' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "  🚫 Taints: ${taints:-None}"
-
+    fi
     local external_ips
     external_ips=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "  📶 External IPs: ${external_ips:-None}"
-
+    fi
     local gpu_type
     gpu_type=$(echo "$labels" | jq -r 'to_entries[] | select(.key | test("nvidia.com/gpu.product")) | .value' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "  ⚙ GPU Type: ${gpu_type:-None}"
-
+    fi
     local cpu_architecture
     cpu_architecture=$(echo "$labels" | jq -r 'to_entries[] | select(.key == "kubernetes.io/arch") | .value' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "  🛠 CPU Architecture: ${cpu_architecture:-None}"
-
+    fi
     local instance_type
     instance_type=$(echo "$labels" | jq -r 'to_entries[] | select(.key == "node.kubernetes.io/instance-type") | .value' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "  👷 Instance Type: ${instance_type:-None}"
-
+    fi
     local capacity_cpu
     capacity_cpu=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.status.capacity.cpu}' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "  🏋 Capacity (CPU): ${capacity_cpu:-None} cores"
-
+    fi
     local capacity_memory
     capacity_memory=$($KUBECTL_BIN --kubeconfig="${kubeconfig#--kubeconfig=}" --context="$kubecontext" get node "$node" -o jsonpath='{.status.capacity.memory}' 2>/dev/null || echo "None")
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "  💾 Capacity (Memory): ${capacity_memory:-None}"
+    fi
 
-    node_details+="Node: $node
+  node_details+="Node: $node
   Labels: $labels
   Taints: ${taints:-None}
   External IPs: ${external_ips:-None}
@@ -1132,7 +1141,9 @@ print_summary() {
 # Main execution
 main() {
 
+    if [[ "$function_debug_input" == "true" ]]; then
     echo "Entering main with arguments: $@"
+    fi
 
     # Process command-line arguments
     while [[ $# -gt 0 ]]; do
@@ -1245,6 +1256,10 @@ main() {
         esac
     done
 
+
+
+if [[ "$function_debug_input" == "true" ]]; then
+  # Statements to execute only when function_debug_input is true
     # Print final values (debugging)
     echo "--- Final Parameter Values ---"
     echo "🔹 namespaces_to_check: ${namespaces_to_check:-Not provided}"
@@ -1272,6 +1287,9 @@ main() {
     echo "🔹 webhooks: ${webhooks:-Not provided}"
     echo "🔹 fetch_webhook_names: ${fetch_webhook_names:-Not provided}"
     echo "-------------------------------"
+fi
+
+
 
 
 # Handle wrappers_to_invoke
