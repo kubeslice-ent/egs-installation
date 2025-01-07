@@ -9,6 +9,12 @@ else
     echo "✅ Bash shell detected. Version: $BASH_VERSION"
 fi
 
+# Specify the output file
+output_file="egs-uninstaller-output.log"
+exec > >(tee -a "$output_file") 2>&1
+
+echo "=====================================EGS UnInstaller Script execution started at: $(date)===================================" >> "$output_file"
+
 # Function to handle operations that should continue on error
 continue_on_error() {
     "$@"
@@ -2334,3 +2340,5 @@ trap display_summary EXIT
 echo "========================================="
 echo "    EGS UnInstaller Script Complete        "
 echo "========================================="
+
+echo "=====================================EGS UnInstaller Script execution completed at: $(date)===================================" >> "$output_file"
