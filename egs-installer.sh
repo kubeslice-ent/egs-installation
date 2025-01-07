@@ -9,6 +9,12 @@ else
     echo "✅ Bash shell detected. Version: $BASH_VERSION"
 fi
 
+# Specify the output file
+output_file="egs-installer-output.log"
+exec > >(tee -a "$output_file") 2>&1
+
+echo "=====================================EGS Installer Script execution started at: $(date)===================================" >> "$output_file"
+
 # Exit immediately if a command exits with a non-zero status
 set -e
 
@@ -3185,3 +3191,5 @@ trap display_summary EXIT
 echo "========================================="
 echo "    EGS Installer Script Complete        "
 echo "========================================="
+
+echo "=====================================EGS Installer Script execution completed at: $(date)===================================" >> "$output_file"
