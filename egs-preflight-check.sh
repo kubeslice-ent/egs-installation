@@ -1,6 +1,13 @@
 #!/bin/bash
 
-
+# Check if the script is running in Bash
+if [ -z "$BASH_VERSION" ]; then
+    echo "❌ Error: This script must be run in a Bash shell."
+    echo "Please run the script using: bash script_name.sh"
+    exit 1
+else
+    echo "✅ Bash shell detected. Version: $BASH_VERSION"
+fi
 
 # Specify the output file
 output_file="egs-preflight-check-output.log"
@@ -108,6 +115,89 @@ Examples:
   $0 --api-resources pod,service --invoke-wrappers namespace_preflight_checks"
   exit 0
 }
+
+
+prerequisite_check() {
+    echo "🚀 Starting prerequisite check..."
+    echo "Checking prerequisites..."
+    local prerequisites_met=true
+
+    # Minimum required versions
+    local MIN_YQ_VERSION="4.44.2"
+    local MIN_HELM_VERSION="3.15.0"
+    local MIN_JQ_VERSION="1.6"
+    local MIN_KUBECTL_VERSION="1.23.6"
+
+    # Check yq
+    if ! command -v yq &>/dev/null; then
+        echo -e "\n❌ Error: yq is not installed or not available in PATH."
+        prerequisites_met=false
+    else
+        echo "✔️ yq is installed."
+        installed_version=$(yq --version | awk '{print $NF}')
+        if [[ $(echo -e "$MIN_YQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_YQ_VERSION" ]]; then
+            echo -e "\n❌ Error: yq version $installed_version is below the minimum required version $MIN_YQ_VERSION."
+            prerequisites_met=false
+        else
+            echo "✔️ yq version $installed_version meets or exceeds the requirement."
+        fi
+    fi
+
+    # Check helm
+    if ! command -v helm &>/dev/null; then
+        echo -e "\n❌ Error: helm is not installed or not available in PATH."
+        prerequisites_met=false
+    else
+        echo "✔️ helm is installed."
+        installed_version=$(helm version --short | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | tr -d 'v')
+        if [[ $(echo -e "$MIN_HELM_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_HELM_VERSION" ]]; then
+            echo -e "\n❌ Error: helm version $installed_version is below the minimum required version $MIN_HELM_VERSION."
+            prerequisites_met=false
+        else
+            echo "✔️ helm version $installed_version meets or exceeds the requirement."
+        fi
+    fi
+
+    # Check jq
+    if ! command -v jq &>/dev/null; then
+        echo -e "\n❌ Error: jq is not installed or not available in PATH."
+        prerequisites_met=false
+    else
+        echo "✔️ jq is installed."
+        installed_version=$(jq --version | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?')
+        if [[ $(echo -e "$MIN_JQ_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_JQ_VERSION" ]]; then
+            echo -e "\n❌ Error: jq version $installed_version is below the minimum required version $MIN_JQ_VERSION."
+            prerequisites_met=false
+        else
+            echo "✔️ jq version $installed_version meets or exceeds the requirement."
+        fi
+    fi
+
+    # Check kubectl
+    if ! command -v kubectl &>/dev/null; then
+        echo -e "\n❌ Error: kubectl is not installed or not available in PATH."
+        prerequisites_met=false
+    else
+        echo "✔️ kubectl is installed."
+        installed_version=$(kubectl version --client --output=json | jq -r .clientVersion.gitVersion | tr -d 'v')
+        if [[ $(echo -e "$MIN_KUBECTL_VERSION\n$installed_version" | sort -V | head -n1) != "$MIN_KUBECTL_VERSION" ]]; then
+            echo -e "\n❌ Error: kubectl version $installed_version is below the minimum required version $MIN_KUBECTL_VERSION."
+            prerequisites_met=false
+        else
+            echo "✔️ kubectl version $installed_version meets or exceeds the requirement."
+        fi
+    fi
+
+    if [ "$prerequisites_met" = false ]; then
+        echo "❌ Please install the missing prerequisites or update to the required versions and try again."
+        exit 1
+    fi
+
+    echo "✔️ All prerequisites are met."
+    echo "✔️ Prerequisite check complete."
+    echo ""
+}
+
 
 
 # Function to add summary details
@@ -1391,6 +1481,8 @@ fi
 
 }
 
+echo "📋 Verifying pre-requisites..."
+log_inputs_and_time "$function_debug_input" prerequisite_check
 
 # Verify input summary 
 echo "📋 Verifying input summary..."
