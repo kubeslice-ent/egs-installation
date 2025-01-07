@@ -34,7 +34,7 @@ watch_resources="true"
 watch_duration="15"
 function_debug_input="false"
 generate_summary_flag="true"
-fetch_resource_names="prometheus,gpu-operator"
+fetch_resource_names="prometheus,gpu-operator,grafana"
 #fetch_resource_names=""
 #fetch_webhook_names="aiops-mutating-webhook-configuration,kubeslice-mutating-webhook-configuration,prometheus-kube-prometheus-admission,aiops-validating-webhook-configuration,gpr-validating-webhook-configuration,kubeslice-controller-validating-webhook-configuration,kubeslice-validating-webhook-configuration,prometheus-kube-prometheus-admission"
 #fetch_webhook_names=""
@@ -64,7 +64,7 @@ display_help() {
   echo -e "  🗄️  --storage-class <class>                         Storage class for the PVC (default: none)."
   echo -e "  📦  --storage-size <size>                           Storage size for the PVC (default: 1Gi)."
   echo -e "  📌  --service-name <name>                           Name of the test service (default: test-service)."
-  echo -e "  ⚙️  --service-type <type>                            Type of service to create and validate (ClusterIP, NodePort, LoadBalancer, or all). Default: all."
+  echo -e "  ⚙️   --service-type <type>                           Type of service to create and validate (ClusterIP, NodePort, LoadBalancer, or all). Default: all."
   echo -e "  🗂️  --kubeconfig <path>                             Path to the kubeconfig file (mandatory)."
   echo -e "  🌐  --kubecontext <context>                         Context from the kubeconfig file (mandatory)."
   echo -e "  🧹  --cleanup <true|false>                          Whether to delete test resources (default: true)."
@@ -73,7 +73,7 @@ display_help() {
   echo -e "  ⏱️  --watch-duration <seconds>                      Duration to watch resources after creation (default: 30 seconds)."
   echo -e "  🛠️  --invoke-wrappers <wrapper1,wrapper2,...>       Comma-separated list of wrapper functions to invoke."
   echo -e "  👁️  --display-resources <true|false>                Whether to display resources created (default: true)."
-  echo -e "  ⚡  --kubectl-path <path>                            Override default kubectl binary path."
+  echo -e "  ⚡   --kubectl-path <path>                           Override default kubectl binary path."
   echo -e "  🐞  --function-debug-input <true|false>             Enable or disable function debugging (default: false)."
   echo -e "  📊  --generate-summary <true|false>                 Enable or disable summary generation (default: true)."
   echo -e "  🔐  --resource-action-pairs <pairs>                 Override default resource-action pairs (e.g., pod:create,service:get)."
@@ -96,7 +96,7 @@ Default Resource-Action Pairs:
 
 Wrapper Functions:
   🗂️  namespace_preflight_checks                     Validates namespace creation and existence.
-  🗂️  grep_k8s_resources_with_crds_and_webhooks      Validates existing resources available in cluster based on resource names. (prometheus,gpu-operator,postgresql)
+  🔍  grep_k8s_resources_with_crds_and_webhooks      Validates existing resources available in cluster based on resource names. (prometheus,gpu-operator,postgresql)
   📂  pvc_preflight_checks                           Validates PVC creation, deletion, and storage properties.
   ⚙️   service_preflight_checks                       Validates the creation and deletion of services (ClusterIP, NodePort, LoadBalancer).
   🔐  k8s_privilege_preflight_checks                 Validates privileges for Kubernetes actions on resources.
@@ -275,22 +275,6 @@ generate_summary() {
         fi
       done
 
-      # # Display Privilege Check results
-      # if [[ ${#privilege_checks[@]} -gt 0 ]]; then
-      #   echo -e "\n📊 ====================== VALIDATION SUMMARY FOR PRIVILEGE CHECKS ======================="
-      #   printf "| %-51s | %-15s | %-18s | %-5s |\n" "Resource Name" "Found/Notfound" "📈 Status" "✔/✖"
-      #   echo "-----------------------------------------------------------------------------------------------"
-      #   for resource_name in "${!privilege_checks[@]}"; do
-      #     IFS=';' read -ra entries <<< "${privilege_checks[$resource_name]}"
-      #     for entry in "${entries[@]}"; do
-      #       IFS='|' read -r parameter_function found_status status icon <<< "$entry"
-      #       printf "| %-51s | %-15s | %-18s | %-5s |\n" "$resource_name" "$found_status" "$status" "$icon"
-      #     done
-      #   done
-      #   echo "=================================================================================================="
-      # fi
-
-      # Display grouped results
       for resource_name in "${!grouped_results[@]}"; do
         echo -e "\n📊 ====================== VALIDATION SUMMARY FOR RESOURCE: $resource_name ==========================="
         printf "| %-51s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Found/Notfound" "📈 Status" "✔/✖"
@@ -302,19 +286,6 @@ generate_summary() {
         done
         echo "===================================================================================================="
       done
-
-      # # Display unspecified results
-      # if [[ ${#unspecified_results[@]} -gt 0 ]]; then
-      #   echo -e "\n📊 ====================== VALIDATION SUMMARY FOR UNSPECIFIED RESULTS ================================"
-      #   printf "| %-51s | %-15s | %-18s | %-5s |\n" "Parameter/Function" "Found/Notfound" "📈 Status" "✔/✖"
-      #   echo "------------------------------------------------------------------------------------------------------------"
-      #   for key in "${!unspecified_results[@]}"; do
-      #     IFS='|' read -r found_status status icon <<< "${unspecified_results[$key]}"
-      #     printf "| %-51s | %-15s | %-18s | %-5s |\n" "$key" "$found_status" "$status" "$icon"
-      #   done
-      #   echo "=============================================================================================================="
-      # fi
-
 
   else
     echo "📋 Summary generation is disabled."
