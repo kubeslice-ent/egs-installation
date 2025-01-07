@@ -2459,7 +2459,7 @@ get_prometheus_external_ip() {
         echo "${service_name}.${namespace}.svc.cluster.local:9090"
     elif [ "$service_type" = "LoadBalancer" ]; then
         ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-        echo "$ip"
+        echo "$ip:9090"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
         node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
@@ -2489,7 +2489,11 @@ get_grafana_external_ip() {
     echo "  🛠️  Service: $service_name" >&2
     echo "  🔧 Service Type: $service_type" >&2
 
-    if [ "$service_type" = "LoadBalancer" ]; then
+    service_type_existing=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.type}')
+
+    if [ "$service_type_existing" != "$service_type" ]; then
+        echo "defined_service_type_is_not_correct"
+    elif [ "$service_type" = "LoadBalancer" ]; then
         ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
         echo "$ip"
     elif [ "$service_type" = "NodePort" ]; then
@@ -2501,9 +2505,73 @@ get_grafana_external_ip() {
         service_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].port}')
         echo "$cluster_ip:$service_port"
     else
-        echo "Unknown service type: $service_type"
+        echo "Unsupported service type: $service_type" >&2
         return 1
     fi
+}
+
+upgrade_cluster_registration(){
+    echo "🚀 Starting cluster registration in controller cluster..."
+
+    # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "Kubeslice Controller Cluster Registration" \
+        "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$KUBESLICE_CONTROLLER_KUBECONFIG" \
+        "$KUBESLICE_CONTROLLER_KUBECONTEXT")
+
+    # Print output variables after calling kubeaccess_precheck
+    echo "🔧 kubeaccess_precheck - Output Variables: Kubeslice Controller Cluster Registration "
+    echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+    echo "  🌐 Kubecontext: $kubecontext"
+    echo "-----------------------------------------"
+
+    # Validate the kubecontext if both kubeconfig_path and kubecontext are set and not null
+    if [[ -n "$kubeconfig_path" && "$kubeconfig_path" != "null" && -n "$kubecontext" && "$kubecontext" != "null" ]]; then
+        echo "🔍 Validating Kubecontext:"
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+
+        validate_kubecontext "$kubeconfig_path" "$kubecontext"
+    else
+        echo "⚠️ Warning: Either kubeconfig_path or kubecontext is not set or is null."
+        echo "  🗂️     Kubeconfig Path: $kubeconfig_path"
+        echo "  🌐 Kubecontext: $kubecontext"
+        exit 1
+    fi
+
+    local context_arg=""
+    if [ -n "$kubecontext" ] && [ "$kubecontext" != "null" ]; then
+        context_arg="--context $kubecontext"
+    fi
+
+    local namespace="$KUBESLICE_CONTROLLER_NAMESPACE"
+
+    echo "🔧 Variables:"
+    echo "  kubeconfig_path=$kubeconfig_path"
+    echo "  context_arg=$context_arg"
+    echo "  namespace=$namespace"
+    echo "-----------------------------------------"
+
+    for registration in "${KUBESLICE_CLUSTER_REGISTRATIONS[@]}"; do
+        IFS="|" read -r cluster_name project_name telemetry_enabled telemetry_endpoint telemetry_provider geo_location_provider geo_location_region <<<"$registration"
+
+        echo "-----------------------------------------"
+        echo "🚀 Upgrading Registered cluster '$cluster_name' in project '$project_name' within namespace '$namespace'"
+        echo "-----------------------------------------"
+
+        
+        kubectl apply -f "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
+        echo "🔍 Verifying cluster registration for '$cluster_name'..."
+        kubectl get cluster.controller.kubeslice.io -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg | grep $cluster_name
+
+        echo "-----------------------------------------"
+        echo "✔️  Cluster '$cluster_name' Upgraded successfully in project '$project_name' with telemetry endpoint values."
+        echo "-----------------------------------------"
+    done
+    echo "✔️ Cluster registration upgradation in controller cluster complete."
 }
 
 # Function to fetch secrets from the worker clusters and create worker values file
@@ -2550,6 +2618,16 @@ prepare_worker_values_file() {
 
         echo "Worker data testing:"
         echo "$worker" | yq e '.' -
+
+        reg_cluster=$(yq e ".cluster_registration[$worker_index]" "$EGS_INPUT_YAML")
+        echo "cluster registration data ..."
+        echo "$reg_cluster" | yq e '.' -
+        echo "installation path.."
+        echo $INSTALLATION_FILES_PATH
+        cluster_name=$(yq e ".cluster_registration[$worker_index].cluster_name" "$EGS_INPUT_YAML")
+        project_name=$(yq e ".cluster_registration[$worker_index].project_name" "$EGS_INPUT_YAML")
+
+
 
         local_auto_fetch_endpoint=$(echo "$worker" | yq e '.local_auto_fetch_endpoint' -)
 
@@ -2652,6 +2730,9 @@ prepare_worker_values_file() {
                 yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egs.prometheusEndpoint = \"${prometheus_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
                 echo "Updated Prometheus endpoint for worker ${worker_name}: ${prometheus_url}"
 
+                yq eval ".cluster_registration[$worker_index].telemetry.endpoint = \"${prometheus_url}\"" --inplace "${EGS_INPUT_YAML}"
+                echo "Updated Prometheus endpoint for cluster  ${cluster_name}: ${prometheus_url}"
+                sed -i "s|endpoint: .*|endpoint: ${prometheus_url}|" "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml"
 
                 echo "Waiting for Grafana service to get an IP or port for worker..."
                 external_ip=""
@@ -3116,6 +3197,11 @@ fi
 if [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "true" ]; then
     echo "🚀 Preparing worker values file for: $worker_name"
     prepare_worker_values_file
+fi
+
+if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
+    echo "🚀 Upgrading registered clusters in the controller cluster with telemetry endpoint..."
+    upgrade_cluster_registration
 fi
 
 # Inside the loop where you process each worker
