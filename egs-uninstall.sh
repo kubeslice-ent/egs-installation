@@ -1542,10 +1542,10 @@ uninstall_helm_chart_and_cleanup() {
 
 delete_kubernetes_objects() {
     echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'" >&2
-    kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=5
-    kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=5
-    kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=5
-    kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=5
+    kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+    kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+    kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+    kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
 }
 
 
