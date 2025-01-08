@@ -134,6 +134,15 @@ kubeslice_worker_egs:
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
       metrics:
         insecure: true  # Allow insecure connections for metrics
+      kserve:
+        enabled: true
+        # KServe chart options
+        kserve:
+          controller:
+            gateway:
+              domain: kubeslice.com
+              ingressGateway:
+                className: "nginx"
     helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the worker installation
     verify_install: true  # Verify the installation of the worker
     verify_install_timeout: 60  # Timeout for the worker installation verification (in seconds)
