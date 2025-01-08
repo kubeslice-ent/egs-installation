@@ -2260,8 +2260,9 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         specific_use_local_charts=$(echo "$app" | yq e '.specific_use_local_charts' -)
         kubeconfig=$(echo "$app" | yq e '.kubeconfig' -)
         kubecontext=$(echo "$app" | yq e '.kubecontext' -)
-
+        
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+        continue_on_error delete_kubernetes_objects
         continue_on_error delete_namespace "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
 
     done
