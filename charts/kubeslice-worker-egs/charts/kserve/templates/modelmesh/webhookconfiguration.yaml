@@ -1,17 +1,26 @@
+{{- if .Values.kserve.modelmesh.enabled }}
 {{- $secretName := "modelmesh-webhook-server-cert" }}
 {{- $existingSecret := lookup "v1" "Secret" .Release.Namespace $secretName }}
 {{- $caCertEnc := "" -}} 
-
+{{- $tlsCertEnc := "" -}}
+{{- $tlsKeyEnc := "" -}}
 {{- if not $existingSecret }}
 # generate a new ca & certificate
-{{- if .Values.kserve.modelmesh.enabled }}
 {{- $ca := genCA "modelmesh-admission-controller-ca" 3650 -}}
 {{- $caCertEnc = $ca.Cert | b64enc -}}
 {{- $cn := printf "modelmesh-webhook-server-service" -}}
 {{- $altName1 := printf "%s.%s.svc" $cn .Release.Namespace }}
 {{- $altName2 := printf "%s.%s.svc.cluster.local" $cn .Release.Namespace }}
 {{- $cert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca -}}
-
+{{- $tlsCertEnc = $cert.Cert | b64enc -}}
+{{- $tlsKeyEnc = $cert.Key | b64enc -}}
+{{- else }}
+# Reuse existing certificates from the secret
+{{- $caCertEnc = index $existingSecret.data "ca.crt"  }}
+{{- $tlsCertEnc = index $existingSecret.data "tls.crt" -}}
+{{- $tlsKeyEnc = index $existingSecret.data "tls.key" -}}
+{{- end }}
+---
 apiVersion: v1
 kind: Secret
 metadata:
@@ -19,14 +28,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
 type: Opaque
 data:
-  ca.crt: {{ $ca.Cert | b64enc }}
-  tls.crt: {{ $cert.Cert | b64enc }}
-  tls.key: {{ $cert.Key | b64enc }}
-
-{{- else }}
-# Reuse existing certificates from the secret
-{{- $caCertEnc = index $existingSecret.data "ca.crt"  }}
-{{- end }}
+  ca.crt: {{ $caCertEnc }}
+  tls.crt: {{ $tlsCertEnc }}
+  tls.key: {{ $tlsKeyEnc }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
