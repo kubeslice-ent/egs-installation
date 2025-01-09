@@ -209,6 +209,9 @@ log_summary() {
 
 
 generate_summary() {
+
+local kubecontext="$1"
+
   if [ "$generate_summary_flag" == "true" ]; then
     # Display Inputs Used
     echo -e "\n📂 ====================== INPUTS USED FOR CLUSTER WITH KUBECONTEXT ${kubecontext:-N/A} ==============================================="
@@ -219,6 +222,7 @@ generate_summary() {
     printf "| %-30s | %-50s |\n" "PVC Test Namespace" "${pvc_test_namespace:-egs-test-namespace}"
     printf "| %-30s | %-50s |\n" "Kubeconfig" "${kubeconfig:-Not provided}"
     printf "| %-30s | %-50s |\n" "Kubecontext" "${kubecontext:-Not provided}"
+    printf "| %-30s | %-50s |\n" "Kubecontext_list" "${kubecontext_list:-Not provided}"
     printf "| %-30s | %-50s |\n" "PVC Name" "${pvc_name:-egs-test-pvc}"
     printf "| %-30s | %-50s |\n" "Storage Class" "${storage_class:-None}"
     printf "| %-30s | %-50s |\n" "Storage Size" "${storage_size:-1Gi}"
@@ -236,6 +240,21 @@ generate_summary() {
     printf "| %-30s | %-50s |\n" "Webhooks" "${webhooks:-false}"
     printf "| %-30s | %-50s |\n" "Fetch Webhook Names" "${fetch_webhook_names:-false}"
     echo "============================================================================================"
+
+    # Display Kubernetes Cluster Info
+    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS =========================================================================================================================================================================================="
+    printf "| %-30s | %-50s |\n" "🔧 Parameter" "📦 Value"
+    echo "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    printf "| %-30s | %-50s |\n" "🔧 Kubeconfig" "${kubeconfig:-None}"
+    printf "| %-30s | %-50s |\n" "🌐 Kubecontext" "${kubecontext:-default-context}"
+    printf "| %-30s | %-50s |\n" "📡 Cluster Endpoint" "$(echo "${summary[K8S Cluster Endpoint]:-❌ Missing}" | grep -oE 'https?://[^ ]+')"
+    printf "| %-30s | %-50s |\n" "🔒 Cluster Access" "${summary[Kubernetes Cluster Access]:-❌ Missing}"
+
+    echo -e "\n📊 ====================== KUBERNETES NODE DETAILS =========================================================================================================================================================================================="
+
+    printf "| %-30s | %-500s |\n" "📊 Node Details" "${summary[Node Details]:-❌ Missing}"
+
+    echo "================================ END OF KUBERNETES CLUSTER DETAILS================================================================================================================================================================================="
 
     # Define descriptions for wrapper function names
     declare -A function_descriptions=(
@@ -276,8 +295,8 @@ generate_summary() {
     # Print grouped results with meaningful descriptions
     for function_name in "${function_defaults[@]}"; do
       if [[ -n "${grouped_results[$function_name]}" ]]; then
-        echo -e "\n🔍 ====================== VALIDATION SUMMARY FOR: ${function_descriptions[$function_name]} ========================================================================="
-        printf "| %-30s | %-50s | %-20s | %-15s | %-15s | %-10s|\n" "Resource Check Type" "Resource Name" "Namespace" "Found/Notfound" "🔍 Status" "✅/⚠️"
+        echo -e "\n🔍 ====================== SUMMARY FOR: ${function_descriptions[$function_name]} ========================================================================="
+        printf "| %-30s | %-45s | %-20s | %-15s | %-15s |  %-10s|\n" "Resource Check Type" "Resource Name" "Namespace" "Found/Notfound" "📈 Status"  "✔/✖"
         echo "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
         IFS=';' read -ra entries <<< "${grouped_results[$function_name]}"
         for entry in "${entries[@]}"; do
@@ -285,7 +304,7 @@ generate_summary() {
           found_status=$([[ "$status" == *"Success"* ]] && echo "Found" || echo "Notfound")
           icon=$([[ "$status" == *"Success"* ]] && echo "✅" || echo "⚠️")
           trimmed_status=$([[ "$status" == *"Success"* ]] && echo "Success" || echo "Failure")
-        printf "| %-30s | %-50s | %-20s | %-15s | %-15s | %-10s|\n" "${resource_type:-Unknown}" "${resource_name:-Unknown}" "${namespace:-N/A}" "${found_status:-Notfound}" "$trimmed_status" "$icon"
+        printf "| %-30s | %-45s | %-20s | %-15s | %-15s | %-10s|\n" "${resource_type:-Unknown}" "${resource_name:-Unknown}" "${namespace:-N/A}" "${found_status:-Notfound}" "$trimmed_status" "$icon"
         done
         echo "============================================================================================================================================================================="
       fi
@@ -300,18 +319,6 @@ generate_summary() {
     echo "📂 Summary generation is disabled."
   fi
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 grep_k8s_resources_with_crds_and_webhooks() {
@@ -1639,13 +1646,13 @@ echo "🔍 Verifying kubeconfig and kubecontext access..."
 if [[ -n "$kubecontext" ]]; then
   # Invoke generate summary at the end
 echo "📊 Generating final summary..."
- log_inputs_and_time "$function_debug_input" generate_summary
+ log_inputs_and_time "$function_debug_input" generate_summary "$kubecontext"
 elif [[ -n "$kubecontext_list" ]]; then
   IFS=',' read -ra contexts <<< "$kubecontext_list"
   for ctx in "${contexts[@]}"; do
    # Invoke generate summary at the end
     echo "📊 Generating final summary for $ctx"
-    log_inputs_and_time "$function_debug_input" generate_summary
+    log_inputs_and_time "$function_debug_input" generate_summary "$ctx"
   done
 else
   echo "❌ Error: Neither kubecontext nor kubecontext_list is provided."
