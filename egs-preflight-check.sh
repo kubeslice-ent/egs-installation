@@ -64,7 +64,7 @@ display_help() {
   echo -e "  🗄️  --storage-class <class>                         Storage class for the PVC (default: none)."
   echo -e "  📦  --storage-size <size>                           Storage size for the PVC (default: 1Gi)."
   echo -e "  📌  --service-name <name>                           Name of the test service (default: test-service)."
-  echo -e "  ⚙️  --service-type <type>                            Type of service to create and validate (ClusterIP, NodePort, LoadBalancer, or all). Default: all."
+  echo -e "  ⚙️   --service-type <type>                           Type of service to create and validate (ClusterIP, NodePort, LoadBalancer, or all). Default: all."
   echo -e "  🗂️  --kubeconfig <path>                             Path to the kubeconfig file (mandatory)."
   echo -e "  🌐  --kubecontext <context>                         Context from the kubeconfig file (mandatory)."
   echo -e "  🌐  --kubecontext-list <context1,context2,...>      Comma-separated list of context names to operate on."
@@ -74,7 +74,7 @@ display_help() {
   echo -e "  ⏱️  --watch-duration <seconds>                      Duration to watch resources after creation (default: 30 seconds)."
   echo -e "  🛠️  --invoke-wrappers <wrapper1,wrapper2,...>       Comma-separated list of wrapper functions to invoke."
   echo -e "  👁️  --display-resources <true|false>                Whether to display resources created (default: true)."
-  echo -e "  ⚡   --kubectl-path <path>                            Override default kubectl binary path."
+  echo -e "  ⚡   --kubectl-path <path>                           Override default kubectl binary path."
   echo -e "  🐞  --function-debug-input <true|false>             Enable or disable function debugging (default: false)."
   echo -e "  📊  --generate-summary <true|false>                 Enable or disable summary generation (default: true)."
   echo -e "  🔐  --resource-action-pairs <pairs>                 Override default resource-action pairs (e.g., pod:create,service:get)."
@@ -276,39 +276,77 @@ local kubecontext="$1"
       "internet_access_preflight_checks"
     )
 
+    # # Group summary results by function
+    # declare -A grouped_results
+    # for key in "${!summary[@]}"; do
+    #   function_name=$(echo "$key" | awk -F' - ' '{print $1}')
+    #   resource_type=$(echo "$key" | awk -F' - ' '{print $2}')
+    #   status="${summary[$key]}"
+
+    #   # Extract namespace and resource name from the status
+    #   namespace=$(echo "$status" | awk '{print $1}')
+    #   resource_name=$(echo "$status" | awk '{print $2}')
+
+    #   if [[ " ${function_defaults[*]} " == *" $function_name "* ]]; then
+    #     grouped_results["$function_name"]+="$namespace:$resource_name:$resource_type:$status;"
+    #   fi
+    # done
+
+    # # Print grouped results with meaningful descriptions
+    # for function_name in "${function_defaults[@]}"; do
+    #   if [[ -n "${grouped_results[$function_name]}" ]]; then
+    #     echo -e "\n🔍 ====================== SUMMARY FOR: ${function_descriptions[$function_name]} ========================================================================="
+    #     printf "| %-30s | %-45s | %-20s | %-15s | %-15s |  %-10s|\n" "Resource Check Type" "Resource Name" "Namespace" "Found/Notfound" "📈 Status"  "✔/✖"
+    #     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    #     IFS=';' read -ra entries <<< "${grouped_results[$function_name]}"
+    #     for entry in "${entries[@]}"; do
+    #       IFS=':' read -r namespace resource_name resource_type status <<< "$entry"
+    #       found_status=$([[ "$status" == *"Success"* ]] && echo "Found" || echo "Notfound")
+    #       icon=$([[ "$status" == *"Success"* ]] && echo "✅" || echo "⚠️")
+    #       trimmed_status=$([[ "$status" == *"Success"* ]] && echo "Success" || echo "Failure")
+    #     printf "| %-30s | %-45s | %-20s | %-15s | %-15s | %-10s|\n" "${resource_type:-Unknown}" "${resource_name:-Unknown}" "${namespace:-N/A}" "${found_status:-Notfound}" "$trimmed_status" "$icon"
+    #     done
+    #     echo "============================================================================================================================================================================="
+    #   fi
+    # done
+
     # Group summary results by function
-    declare -A grouped_results
-    for key in "${!summary[@]}"; do
-      function_name=$(echo "$key" | awk -F' - ' '{print $1}')
-      resource_type=$(echo "$key" | awk -F' - ' '{print $2}')
-      status="${summary[$key]}"
+# Group summary results by function
+declare -A grouped_results
+for key in "${!summary[@]}"; do
+  function_name=$(echo "$key" | awk -F' - ' '{print $1}')
+  resource_type=$(echo "$key" | awk -F' - ' '{print $2}')
+  status="${summary[$key]}"
 
-      # Extract namespace and resource name from the status
-      namespace=$(echo "$status" | awk '{print $1}')
-      resource_name=$(echo "$status" | awk '{print $2}')
+  # Extract namespace, resource name, and detailed status
+  namespace=$(echo "$status" | awk '{print $1}')
+  resource_name=$(echo "$status" | awk '{print $2}')
+  detailed_status=$(echo "$status" | awk '{$1=""; $2=""; print $0}' | xargs) # Extract the rest as detailed info
 
-      if [[ " ${function_defaults[*]} " == *" $function_name "* ]]; then
-        grouped_results["$function_name"]+="$namespace:$resource_name:$resource_type:$status;"
-      fi
+  if [[ " ${function_defaults[*]} " == *" $function_name "* ]]; then
+    grouped_results["$function_name"]+="$namespace:$resource_name:$resource_type:$detailed_status;"
+  fi
+done
+
+# Print grouped results with meaningful descriptions
+for function_name in "${function_defaults[@]}"; do
+  if [[ -n "${grouped_results[$function_name]}" ]]; then
+    echo -e "\n🔍 ====================== SUMMARY FOR: ${function_descriptions[$function_name]} ====================================================================================================================================================="
+    printf "| %-30s | %-45s | %-20s | %-15s | %-65s | %-15s | %-10s |\n" "Resource Check Type" "Resource Name" "Namespace" "Found/Notfound" "📈 Detailed Summary" "Status" "✔/✖"
+    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    IFS=';' read -ra entries <<< "${grouped_results[$function_name]}"
+    for entry in "${entries[@]}"; do
+      IFS=':' read -r namespace resource_name resource_type detailed_status <<< "$entry"
+      found_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Found" || echo "Notfound")
+      icon=$([[ "$detailed_status" == *"Success"* ]] && echo "✅" || echo "⚠️")
+      trimmed_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Success" || echo "Failure")
+      printf "| %-30s | %-45s | %-20s | %-15s | %-65s | %-15s | %-10s |\n" \
+        "${resource_type:-Unknown}" "${resource_name:-Unknown}" "${namespace:-N/A}" "${found_status}" "$detailed_status" "$trimmed_status" "$icon"
     done
+    echo "==========================================================================================================================================================================================================================================="
+  fi
+done
 
-    # Print grouped results with meaningful descriptions
-    for function_name in "${function_defaults[@]}"; do
-      if [[ -n "${grouped_results[$function_name]}" ]]; then
-        echo -e "\n🔍 ====================== SUMMARY FOR: ${function_descriptions[$function_name]} ========================================================================="
-        printf "| %-30s | %-45s | %-20s | %-15s | %-15s |  %-10s|\n" "Resource Check Type" "Resource Name" "Namespace" "Found/Notfound" "📈 Status"  "✔/✖"
-        echo "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
-        IFS=';' read -ra entries <<< "${grouped_results[$function_name]}"
-        for entry in "${entries[@]}"; do
-          IFS=':' read -r namespace resource_name resource_type status <<< "$entry"
-          found_status=$([[ "$status" == *"Success"* ]] && echo "Found" || echo "Notfound")
-          icon=$([[ "$status" == *"Success"* ]] && echo "✅" || echo "⚠️")
-          trimmed_status=$([[ "$status" == *"Success"* ]] && echo "Success" || echo "Failure")
-        printf "| %-30s | %-45s | %-20s | %-15s | %-15s | %-10s|\n" "${resource_type:-Unknown}" "${resource_name:-Unknown}" "${namespace:-N/A}" "${found_status:-Notfound}" "$trimmed_status" "$icon"
-        done
-        echo "============================================================================================================================================================================="
-      fi
-    done
 
     if [[ ${#grouped_results[@]} -eq 0 ]]; then
       echo "📂 No grouped results to display."
@@ -991,7 +1029,7 @@ internet_access_preflight_checks() {
   local test_pod_image="${3:-docker.io/aveshasystems/alpine-k8s:1.0.1}"  # Default test pod image
   local test_namespace="${4:-egs-test-namespace}"                       # Namespace for test
   local test_pod_name="${5:-internet-test-pod}"                         # Name of the test pod
-  local target_urls="${6:-hub.docker.com,google.com}"                   # URLs or IPs to check
+  local target_urls="${6:-hub.docker.com,"https://smartscaler.nexus.aveshalabs.io"}"                   # URLs or IPs to check
   local global_wait="${7:-10}"                                          # Timeout for wget command
   local cleanup="${8:-false}"                                           # Flag to clean up resources
   local watch_resources="${9:-true}"                                    # Flag to watch the pod
