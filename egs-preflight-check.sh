@@ -276,41 +276,6 @@ local kubecontext="$1"
       "internet_access_preflight_checks"
     )
 
-    # # Group summary results by function
-    # declare -A grouped_results
-    # for key in "${!summary[@]}"; do
-    #   function_name=$(echo "$key" | awk -F' - ' '{print $1}')
-    #   resource_type=$(echo "$key" | awk -F' - ' '{print $2}')
-    #   status="${summary[$key]}"
-
-    #   # Extract namespace and resource name from the status
-    #   namespace=$(echo "$status" | awk '{print $1}')
-    #   resource_name=$(echo "$status" | awk '{print $2}')
-
-    #   if [[ " ${function_defaults[*]} " == *" $function_name "* ]]; then
-    #     grouped_results["$function_name"]+="$namespace:$resource_name:$resource_type:$status;"
-    #   fi
-    # done
-
-    # # Print grouped results with meaningful descriptions
-    # for function_name in "${function_defaults[@]}"; do
-    #   if [[ -n "${grouped_results[$function_name]}" ]]; then
-    #     echo -e "\n🔍 ====================== SUMMARY FOR: ${function_descriptions[$function_name]} ========================================================================="
-    #     printf "| %-30s | %-45s | %-20s | %-15s | %-15s |  %-10s|\n" "Resource Check Type" "Resource Name" "Namespace" "Found/Notfound" "📈 Status"  "✔/✖"
-    #     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
-    #     IFS=';' read -ra entries <<< "${grouped_results[$function_name]}"
-    #     for entry in "${entries[@]}"; do
-    #       IFS=':' read -r namespace resource_name resource_type status <<< "$entry"
-    #       found_status=$([[ "$status" == *"Success"* ]] && echo "Found" || echo "Notfound")
-    #       icon=$([[ "$status" == *"Success"* ]] && echo "✅" || echo "⚠️")
-    #       trimmed_status=$([[ "$status" == *"Success"* ]] && echo "Success" || echo "Failure")
-    #     printf "| %-30s | %-45s | %-20s | %-15s | %-15s | %-10s|\n" "${resource_type:-Unknown}" "${resource_name:-Unknown}" "${namespace:-N/A}" "${found_status:-Notfound}" "$trimmed_status" "$icon"
-    #     done
-    #     echo "============================================================================================================================================================================="
-    #   fi
-    # done
-
-    # Group summary results by function
 # Group summary results by function
 declare -A grouped_results
 for key in "${!summary[@]}"; do
