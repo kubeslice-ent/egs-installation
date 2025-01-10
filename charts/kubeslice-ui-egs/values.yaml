@@ -58,10 +58,10 @@ kubeslice:
     pullPolicy: IfNotPresent
 
   egsCoreApis:
-    enabled: false
+    enabled: true
     imageRegistry: aveshadev #*defaultRegistry
     image: egs-core-apis
-    tag: 1.11.0-RELEASE-d9a03b13
+    tag: 1.11.0-RELEASE-ae0f719f
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
