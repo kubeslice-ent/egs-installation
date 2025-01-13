@@ -47,7 +47,6 @@ webhooks="all"
 api_resources="namespace,pod,daemonset,service,persistentvolumeclaim"
 
 
-
 # Array to store summary information
 declare -A summary
 # Initialize arrays for tracking commands and their inputs
