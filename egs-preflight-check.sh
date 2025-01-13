@@ -9,6 +9,7 @@ else
     echo "✅ Bash shell detected. Version: $BASH_VERSION"
 fi
 
+
 # Specify the output file
 output_file="egs-preflight-check-output.log"
 exec > >(tee -a "$output_file") 2>&1
