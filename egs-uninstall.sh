@@ -2182,10 +2182,10 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     fi
 fi
 
-# Run Kubeslice pre-checks if enabled
-if [ "$KUBESLICE_PRECHECK" = "true" ]; then
-    continue_on_error kubeslice_uninstall_pre_check
-fi
+# # Run Kubeslice pre-checks if enabled
+# if [ "$KUBESLICE_PRECHECK" = "true" ]; then
+#     continue_on_error kubeslice_uninstall_pre_check
+# fi
 
 # Check if the enable_custom_apps flag is defined and set to true
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
