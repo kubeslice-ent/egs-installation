@@ -1646,7 +1646,7 @@ unregister_clusters_in_controller() {
         echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'" >&2
         echo "-----------------------------------------" >&2
 
-        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
+        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name --force --grace-period=0
         if [ $? -ne 0 ]; then
             echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'." >&2
             return 1
@@ -1724,7 +1724,7 @@ delete_projects_in_controller() {
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace --force --grace-period=0
             if [ $? -eq 0 ]; then
                 break
             elif [ $i -lt $max_retries ]; then
@@ -1817,7 +1817,7 @@ delete_slices_in_controller() {
                 fi
 
                 # Attempt to delete the SliceConfig after patching
-                kubectl delete sliceconfig.controller.kubeslice.io $name -n $namespace --kubeconfig $kubeconfig_path $context_arg
+                kubectl delete sliceconfig.controller.kubeslice.io $name -n $namespace --kubeconfig $kubeconfig_path $context_arg --force --grace-period=0
                 if [ $? -eq 0 ]; then
                     success=true
                     break
@@ -1905,7 +1905,7 @@ delete_projects_in_controller() {
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace --force --grace-period=0
             if [ $? -eq 0 ]; then
                 break
             elif kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
