@@ -9,7 +9,6 @@ else
     echo "✅ Bash shell detected. Version: $BASH_VERSION"
 fi
 
-
 # Specify the output file
 output_file="egs-preflight-check-output.log"
 exec > >(tee -a "$output_file") 2>&1
@@ -46,6 +45,7 @@ webhooks="all"
 # Define all API resources as a single variable
 #api_resources="namespace,pod,daemonset,job,service,serviceaccount,ingress,configmap,secret,persistentvolume,persistentvolumeclaim,storageclass,clusterrole,clusterrolebinding,role,rolebinding,event"
 api_resources="namespace,pod,daemonset,service,persistentvolumeclaim"
+
 
 
 # Array to store summary information
@@ -242,19 +242,18 @@ local kubecontext="$1"
     echo "============================================================================================"
 
     # Display Kubernetes Cluster Info
-    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS =========================================================================================================================================================================================="
+    echo -e "\n📊 ====================== KUBERNETES CLUSTER DETAILS ======================================================================================================================"
     printf "| %-30s | %-50s |\n" "🔧 Parameter" "📦 Value"
-    echo "---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo "-----------------------------------------------------------------------------------------------------------------------------------"
     printf "| %-30s | %-50s |\n" "🔧 Kubeconfig" "${kubeconfig:-None}"
     printf "| %-30s | %-50s |\n" "🌐 Kubecontext" "${kubecontext:-default-context}"
     printf "| %-30s | %-50s |\n" "📡 Cluster Endpoint" "$(echo "${summary[K8S Cluster Endpoint]:-❌ Missing}" | grep -oE 'https?://[^ ]+')"
-    printf "| %-30s | %-50s |\n" "🔒 Cluster Access" "${summary[Kubernetes Cluster Access]:-❌ Missing}"
+    printf "| %-30s | %-50s |\n" "🔐 Cluster Access" "${summary[Kubernetes Cluster Access]:-❌ Missing}"
 
-    echo -e "\n📊 ====================== KUBERNETES NODE DETAILS =========================================================================================================================================================================================="
-
+    echo -e "\n📊 ====================== KUBERNETES NODE DETAILS ========================================================================================================================="
     printf "| %-30s | %-500s |\n" "📊 Node Details" "${summary[Node Details]:-❌ Missing}"
 
-    echo "================================ END OF KUBERNETES CLUSTER DETAILS================================================================================================================================================================================="
+    echo "================================ END OF KUBERNETES CLUSTER DETAILS ========================================================================================================"
 
     # Define descriptions for wrapper function names
     declare -A function_descriptions=(
@@ -276,52 +275,72 @@ local kubecontext="$1"
       "internet_access_preflight_checks"
     )
 
-# Group summary results by function
 declare -A grouped_results
+
+# Process the summary array to organize results by function
 for key in "${!summary[@]}"; do
   function_name=$(echo "$key" | awk -F' - ' '{print $1}')
-  resource_type=$(echo "$key" | awk -F' - ' '{print $2}')
+  resource_action=$(echo "$key" | awk -F' - ' '{print $2}')
   status="${summary[$key]}"
 
-  # Extract namespace, resource name, and detailed status
-  namespace=$(echo "$status" | awk '{print $1}')
-  resource_name=$(echo "$status" | awk '{print $2}')
-  detailed_status=$(echo "$status" | awk '{$1=""; $2=""; print $0}' | xargs) # Extract the rest as detailed info
-
-  if [[ " ${function_defaults[*]} " == *" $function_name "* ]]; then
-    grouped_results["$function_name"]+="$namespace:$resource_name:$resource_type:$detailed_status;"
+  if [[ "$function_name" == "k8s_privilege_preflight_checks" ]]; then
+    resource=$(echo "$resource_action" | cut -d':' -f1)
+    action=$(echo "$resource_action" | cut -d':' -f2)
+    namespace=$(echo "$status" | awk '{print $1}')
+    detailed_status=$(echo "$status" | awk '{$1=""; $2=""; $3=""; print $0}' | xargs)
+    grouped_results["$function_name"]+="$namespace:$resource:$action:$detailed_status;"
+  else
+    grouped_results["$function_name"]+="$resource_action:$status;"
   fi
 done
 
-# Print grouped results with meaningful descriptions
+# Generate and print the summary for each function
 for function_name in "${function_defaults[@]}"; do
   if [[ -n "${grouped_results[$function_name]}" ]]; then
-    echo -e "\n🔍 ====================== SUMMARY FOR: ${function_descriptions[$function_name]} ====================================================================================================================================================="
-    printf "| %-30s | %-45s | %-20s | %-15s | %-65s | %-15s | %-10s |\n" "Resource Check Type" "Resource Name" "Namespace" "Found/Notfound" "📈 Detailed Summary" "Status" "✔/✖"
-    echo "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    echo -e "\n🔍 ====================== SUMMARY FOR: ${function_descriptions[$function_name]} ========================================================================================================================================================="
+    if [[ "$function_name" == "k8s_privilege_preflight_checks" ]]; then
+      printf "| %-40s | %-35s | %-20s | %-55s | %-15s | %-10s |\n" "Resource" "Action" "Found/Notfound" "Detailed Summary" "Status" "✅/❌"
+    else
+      printf "| %-40s | %-115s | %-15s | %-10s |\n" "Resource Check Type" "Detailed Summary" "Status" "✅/❌"
+    fi
+    echo "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+
     IFS=';' read -ra entries <<< "${grouped_results[$function_name]}"
     for entry in "${entries[@]}"; do
-      IFS=':' read -r namespace resource_name resource_type detailed_status <<< "$entry"
-      found_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Found" || echo "Notfound")
-      icon=$([[ "$detailed_status" == *"Success"* ]] && echo "✅" || echo "⚠️")
-      trimmed_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Success" || echo "Failure")
-      printf "| %-30s | %-45s | %-20s | %-15s | %-65s | %-15s | %-10s |\n" \
-        "${resource_type:-Unknown}" "${resource_name:-Unknown}" "${namespace:-N/A}" "${found_status}" "$detailed_status" "$trimmed_status" "$icon"
+      if [[ "$function_name" == "k8s_privilege_preflight_checks" ]]; then
+        IFS=':' read -r namespace resource action detailed_status <<< "$entry"
+        found_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Found" || echo "Notfound")
+        icon=$([[ "$detailed_status" == *"Success"* ]] && echo "✅" || echo "❌")
+        trimmed_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Success" || echo "Failure")
+        printf "| %-40s | %-35s | %-20s | %-55s | %-15s | %-10s |\n" \
+          "${resource:-Unknown}" "${action:-Unknown}" "$found_status" "$detailed_status" "$trimmed_status" "$icon"
+      else
+        IFS=':' read -r resource_action detailed_status <<< "$entry"
+        resource_name=$(echo "$resource_action" | awk -F':' '{print $1}')
+        resource_type=$(echo "$resource_action" | awk -F':' '{print $2}')
+        found_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Found" || echo "Notfound")
+        icon=$([[ "$detailed_status" == *"Success"* ]] && echo "✅" || echo "❌")
+        trimmed_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Success" || echo "Failure")
+        printf "| %-40s | %-115s | %-15s | %-10s |\n" \
+          "${resource_name:-Unknown}" "$detailed_status" "$trimmed_status" "$icon"
+      fi
     done
-    echo "==========================================================================================================================================================================================================================================="
+    echo "==================================================================================================================================================================================================================================================="
   fi
 done
 
-
-    if [[ ${#grouped_results[@]} -eq 0 ]]; then
-      echo "📂 No grouped results to display."
-    else
-      echo "📂 Summary generation is complete."
-    fi
+# Final check if there are no results
+if [[ ${#grouped_results[@]} -eq 0 ]]; then
+  echo "📂 No grouped results to display."
+else
+  echo "📂 Summary generation is complete."
+fi
   else
     echo "📂 Summary generation is disabled."
   fi
 }
+
+
 
 
 grep_k8s_resources_with_crds_and_webhooks() {
@@ -1319,8 +1338,8 @@ k8s_privilege_preflight_checks() {
   local cleanup="${5:-true}"
   local display_resources_flag="${6:-true}"
   local global_wait="${7:-0}"
-  local watch_resources="${8:-false}"       # Flag to enable or disable watching
-  local watch_duration="${9:-30}"          # Duration to watch the resource
+  local watch_resources="${8:-false}"
+  local watch_duration="${9:-30}"
   local function_name="k8s_privilege_preflight_checks"
 
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, resource_action_pairs=$resource_action_pairs, test_resource=$test_resource, cleanup=$cleanup, display_resources=$display_resources_flag, watch_resources=$watch_resources, watch_duration=$watch_duration"
@@ -1333,17 +1352,15 @@ k8s_privilege_preflight_checks() {
     local action=$(echo "$pair" | cut -d':' -f2)
     local namespace="N/A" # Default as no specific namespace is associated in this context
 
-    if [[ "$function_debug_input" == "true" ]]; then
-      echo "🔍 Testing privilege for action '$action' on resource '$resource'"
-    fi
+    echo "🔍 Testing privilege for action '$action' on resource '$resource'"
 
     # Perform the privilege check
     if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext auth can-i $action $resource >/dev/null 2>&1"; then
       echo -e "✅ Privilege exists for action '$action' on resource '$resource'."
-      log_summary "$function_name - Privilege Check - $resource:$action" "$namespace:$resource:Privilege Check:Success"
+      log_summary "$function_name - $resource:$action" "$namespace $resource $action Privilege Check:Success"
     else
       echo -e "❌ Privilege missing for action '$action' on resource '$resource'."
-      log_summary "$function_name - Privilege Check - $resource:$action" "$namespace:$resource:Privilege Check:Failure"
+      log_summary "$function_name - $resource:$action" "$namespace $resource $action Privilege Check:Failure"
     fi
 
     wait_after_command "$global_wait"
@@ -1359,13 +1376,19 @@ k8s_privilege_preflight_checks() {
   # Cleanup if enabled
   if [[ "$cleanup" == "true" ]]; then
     echo "🧹 Performing cleanup for test resource '$test_resource'..."
-    run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete $test_resource --all --ignore-not-found >/dev/null 2>&1"
-    log_summary "$function_name - Cleanup - $test_resource" "N/A:$test_resource:Cleanup:Success"
+    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete $test_resource --all --ignore-not-found >/dev/null 2>&1"; then
+      echo -e "✅ Cleanup completed for test resource '$test_resource'."
+      log_summary "$function_name - $test_resource:cleanup" "N/A:$test_resource:Cleanup:Success"
+    else
+      echo -e "❌ Cleanup failed for test resource '$test_resource'."
+      # log_summary "$function_name - $test_resource:cleanup" "N/A:$test_resource:Cleanup:Failure"
+    fi
   else
     echo "⚠️ Cleanup for test resource '$test_resource' skipped as cleanup flag is set to false."
-    log_summary "$function_name - Cleanup - $test_resource" "N/A:$test_resource:Cleanup:Skipped"
+    # log_summary "$function_name - $test_resource:cleanup" "N/A:$test_resource:Cleanup:Skipped"
   fi
 }
+
 
 
 
