@@ -40,6 +40,9 @@ daemonsets:
   - key: nvidia.com/gpu
     operator: Exists
     effect: NoSchedule
+  - key: kubeslice.io/egs
+    operator: Exists
+    effect: NoSchedule
   # configuration for controlling update strategy("OnDelete" or "RollingUpdate") of GPU Operands
   # note that driver Daemonset is always set with OnDelete to avoid unintended disruptions
   updateStrategy: "RollingUpdate"
@@ -94,6 +97,9 @@ operator:
     operator: "Equal"
     value: ""
     effect: "NoSchedule"
+  - key: kubeslice.io/egs
+    operator: Exists
+    effect: NoSchedule
   annotations:
     openshift.io/scc: restricted-readonly
   affinity:
@@ -558,6 +564,9 @@ node-feature-discovery:
       value: ""
       effect: "NoSchedule"
     - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: kubeslice.io/egs
       operator: Exists
       effect: NoSchedule
     config:
