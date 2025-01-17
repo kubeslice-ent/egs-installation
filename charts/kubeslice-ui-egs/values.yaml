@@ -12,14 +12,14 @@ kubeslice:
   productName: egs
 
   ui:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.10.1-RELEASE-37532705
+    tag: 1.10.1
     pullPolicy: IfNotPresent
   uiv2:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.11.0-RELEASE-7a49365b
+    tag: 1.10.1
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false
@@ -40,9 +40,9 @@ kubeslice:
       image: docker.io/aveshasystems/kubeslice-dashboard-web
       tag: 7.5.1
   uiproxy:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-ui-proxy
-    tag: 1.11.1-RELEASE-cc496a14
+    tag: 1.10.1
     pullPolicy: IfNotPresent
     service:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
@@ -52,16 +52,16 @@ kubeslice:
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
   apigw:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 0.10.1-RELEASE-248bb302
+    tag: 1.10.1
     pullPolicy: IfNotPresent
 
   egsCoreApis:
     enabled: true
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: egs-core-apis
-    tag: 1.11.0-RELEASE-0b453bf8
+    tag: 1.10.1
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer

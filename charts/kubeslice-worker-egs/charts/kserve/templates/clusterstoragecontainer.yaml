@@ -5,7 +5,7 @@ metadata:
 spec:
   container:
     name: storage-initializer
-    image: "{{ .Values.kserve.storage.image }}:{{ .Values.kserve.storage.tag }}"
+    image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.storage.image }}:{{ .Values.kserve.storage.tag }}"
     resources:
       requests:
         memory: 100Mi

@@ -16,7 +16,7 @@ spec:
     - v2
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.lgbserver.image }}:{{ .Values.kserve.servingruntime.lgbserver.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.lgbserver.image }}:{{ .Values.kserve.servingruntime.lgbserver.tag }}"
       args:
         - --model_name={{ .Values.kserve.servingruntime.modelNamePlaceholder }}
         - --model_dir=/mnt/models
@@ -85,10 +85,10 @@ spec:
     - v2
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.mlserver.image }}:{{ .Values.kserve.servingruntime.mlserver.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.mlserver.image }}:{{ .Values.kserve.servingruntime.mlserver.tag }}"
       env:
         - name: "MLSERVER_MODEL_IMPLEMENTATION"
-          value: "{{ .Values.kserve.servingruntime.mlserver.modelClassPlaceholder }}"
+          value: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.mlserver.modelClassPlaceholder }}"
         - name: "MLSERVER_HTTP_PORT"
           value: "8080"
         - name: "MLSERVER_GRPC_PORT"
@@ -130,7 +130,7 @@ spec:
     - v2
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.paddleserver.image }}:{{ .Values.kserve.servingruntime.paddleserver.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.paddleserver.image }}:{{ .Values.kserve.servingruntime.paddleserver.tag }}"
       args:
         - --model_name={{ .Values.kserve.servingruntime.modelNamePlaceholder }}
         - --model_dir=/mnt/models
@@ -174,7 +174,7 @@ spec:
     - v2
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.pmmlserver.image }}:{{ .Values.kserve.servingruntime.pmmlserver.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.pmmlserver.image }}:{{ .Values.kserve.servingruntime.pmmlserver.tag }}"
       args:
         - --model_name={{ .Values.kserve.servingruntime.modelNamePlaceholder }}
         - --model_dir=/mnt/models
@@ -214,7 +214,7 @@ spec:
     - v2
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.sklearnserver.image }}:{{ .Values.kserve.servingruntime.sklearnserver.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.sklearnserver.image }}:{{ .Values.kserve.servingruntime.sklearnserver.tag }}"
       args:
         - --model_name={{ .Values.kserve.servingruntime.modelNamePlaceholder }}
         - --model_dir=/mnt/models
@@ -258,7 +258,7 @@ spec:
     - grpc-v1
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.tensorflow.image }}:{{ .Values.kserve.servingruntime.tensorflow.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.tensorflow.image }}:{{ .Values.kserve.servingruntime.tensorflow.tag }}"
       command: [/usr/bin/tensorflow_model_server]
       args:
         - --model_name={{ .Values.kserve.servingruntime.modelNamePlaceholder }}
@@ -302,7 +302,7 @@ spec:
     - grpc-v2
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.torchserve.image }}:{{ .Values.kserve.servingruntime.torchserve.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.torchserve.image }}:{{ .Values.kserve.servingruntime.torchserve.tag }}"
       args:
         - torchserve
         - --start
@@ -364,7 +364,7 @@ spec:
     - grpc-v2
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.tritonserver.image }}:{{ .Values.kserve.servingruntime.tritonserver.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.tritonserver.image }}:{{ .Values.kserve.servingruntime.tritonserver.tag }}"
       args:
         - tritonserver
         - --model-store=/mnt/models
@@ -407,7 +407,7 @@ spec:
     - v2
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.xgbserver.image }}:{{ .Values.kserve.servingruntime.xgbserver.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.xgbserver.image }}:{{ .Values.kserve.servingruntime.xgbserver.tag }}"
       args:
         - --model_name={{ .Values.kserve.servingruntime.modelNamePlaceholder }}
         - --model_dir=/mnt/models
@@ -447,7 +447,7 @@ spec:
     - v2
   containers:
     - name: kserve-container
-      image: "{{ .Values.kserve.servingruntime.huggingfaceserver.image }}:{{ .Values.kserve.servingruntime.huggingfaceserver.tag }}"
+      image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.huggingfaceserver.image }}:{{ .Values.kserve.servingruntime.huggingfaceserver.tag }}"
       args:
         - --model_name={{ .Values.kserve.servingruntime.modelNamePlaceholder }}
       securityContext:

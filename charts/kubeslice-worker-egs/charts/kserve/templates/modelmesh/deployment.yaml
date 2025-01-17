@@ -53,7 +53,7 @@ spec:
               fieldPath: metadata.name
         - name: ETCD_SECRET_NAME
           value: model-serving-etcd
-        image: {{ .Values.kserve.modelmesh.controller.image }}:{{ .Values.kserve.modelmesh.controller.tag }}
+        image: '{{ .Values.global.imageRegistry }}/{{ .Values.kserve.modelmesh.controller.image }}:{{ .Values.kserve.modelmesh.controller.tag }}'
         livenessProbe:
           httpGet:
             path: /healthz

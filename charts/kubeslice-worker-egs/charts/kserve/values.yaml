@@ -1,15 +1,17 @@
+global:
+  imageRegistry: docker.io/aveshasystems
 kserve:
-  version: &defaultVersion v0.14.0
-  modelmeshVersion: &defaultModelMeshVersion v0.12.0
+  version: v0.14.0
+  modelmeshVersion: v0.12.0
   agent:
-    image: kserve/agent
-    tag: *defaultVersion
+    image: kserve-agent
+    tag: v0.14.0
   router:
-    image: kserve/router
-    tag: *defaultVersion
+    image: kserve-router
+    tag: v0.14.0
   storage:
-    image: kserve/storage-initializer
-    tag: *defaultVersion
+    image: kserve-storage-initializer
+    tag: v0.14.0
 
     # security context for the default storage container
     containerSecurityContext:
@@ -84,7 +86,7 @@ kserve:
     deploymentMode: "RawDeployment"
 
     # -- KServe controller manager rbac proxy contrainer image
-    rbacProxyImage: quay.io/brancz/kube-rbac-proxy:v0.18.0
+    rbacProxyImage: brancz-kube-rbac-proxy:v0.18.0
     rbacProxy:
       resources:
         limits:
@@ -208,10 +210,10 @@ kserve:
     affinity: {}
 
     # -- KServe controller container image name.
-    image: kserve/kserve-controller
+    image: kserve-controller
 
     # -- KServe controller contrainer image tag.
-    tag: *defaultVersion
+    tag: v0.14.0
 
     # -- Reference to one or more secrets to be used when pulling images.
     # For more information, see [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
@@ -258,21 +260,21 @@ kserve:
                         values:
                           - modelmesh-controller
                   topologyKey: topology.kubernetes.io/zone
-      image: kserve/modelmesh-controller
-      tag: *defaultModelMeshVersion
+      image: kserve-modelmesh-controller
+      tag: v0.12.0
     config:
-      modelmeshImage: kserve/modelmesh
-      modelmeshImageTag: *defaultModelMeshVersion
-      modelmeshRuntimeAdapterImage: kserve/modelmesh-runtime-adapter
-      modelmeshRuntimeAdapterImageTag: *defaultModelMeshVersion
-      restProxyImage: kserve/rest-proxy
-      restProxyImageTag: *defaultModelMeshVersion
+      modelmeshImage: kserve-modelmesh
+      modelmeshImageTag: v0.12.0
+      modelmeshRuntimeAdapterImage: kserve-modelmesh-runtime-adapter
+      modelmeshRuntimeAdapterImageTag: v0.12.0
+      restProxyImage: kserve-rest-proxy
+      restProxyImageTag: v0.12.0
       podsPerRuntime: 2
 
   servingruntime:
     modelNamePlaceholder: "{{.Name}}"
     tensorflow:
-      image: tensorflow/serving
+      image: tensorflow-serving
       tag: 2.6.2
       imagePullSecrets: []
       securityContext:
@@ -284,7 +286,7 @@ kserve:
           drop:
             - ALL
     mlserver:
-      image: docker.io/seldonio/mlserver
+      image: seldonio-mlserver
       tag: 1.5.0
       modelClassPlaceholder: "{{.Labels.modelClass}}"
       imagePullSecrets: []
@@ -296,8 +298,8 @@ kserve:
           drop:
             - ALL
     sklearnserver:
-      image: kserve/sklearnserver
-      tag: *defaultVersion
+      image: kserve-sklearnserver
+      tag: v0.14.0
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -307,8 +309,8 @@ kserve:
           drop:
             - ALL
     xgbserver:
-      image: kserve/xgbserver
-      tag: *defaultVersion
+      image: kserve-xgbserver
+      tag: v0.14.0
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -318,8 +320,8 @@ kserve:
           drop:
             - ALL
     huggingfaceserver:
-      image: kserve/huggingfaceserver
-      tag: *defaultVersion
+      image: kserve-huggingfaceserver
+      tag: v0.14.0
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -334,7 +336,7 @@ kserve:
       hostIPC:
         enabled: false
     tritonserver:
-      image: nvcr.io/nvidia/tritonserver
+      image: nvidia-tritonserver
       tag: 23.05-py3
       imagePullSecrets: []
       securityContext:
@@ -347,7 +349,7 @@ kserve:
             - ALL
     pmmlserver:
       image: kserve/pmmlserver
-      tag: *defaultVersion
+      tag: v0.14.1
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -357,8 +359,8 @@ kserve:
           drop:
             - ALL
     paddleserver:
-      image: kserve/paddleserver
-      tag: *defaultVersion
+      image: kserve-paddleserver
+      tag: v0.14.0
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -368,8 +370,8 @@ kserve:
           drop:
             - ALL
     lgbserver:
-      image: kserve/lgbserver
-      tag: *defaultVersion
+      image: kserve-lgbserver
+      tag: v0.14.0
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -379,7 +381,7 @@ kserve:
           drop:
             - ALL
     torchserve:
-      image: pytorch/torchserve-kfs
+      image: pytorch-torchserve-kfs
       tag: 0.9.0
       serviceEnvelopePlaceholder: "{{.Labels.serviceEnvelope}}"
       imagePullSecrets: []
@@ -392,14 +394,14 @@ kserve:
           drop:
             - ALL
     art:
-      image: kserve/art-explainer
-      defaultVersion: *defaultVersion
+      image: kserve-art-explainer
+      defaultVersion: v0.14.0
       imagePullSecrets: []
   localmodel:
       enabled: false
       controller:
-        image: kserve/kserve-localmodel-controller
-        tag: *defaultVersion
+        image: kserve-localmodel-controller
+        tag: v0.14.0
       jobNamespace: kserve-localmodel-jobs
       securityContext:
         FSGroup: 1000

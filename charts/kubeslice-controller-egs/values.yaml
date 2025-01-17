@@ -59,11 +59,11 @@ kubeslice:
     projectnsPrefix: kubeslice
     # Endpoint for the controller (should be specified if needed)
     endpoint: ""
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 0.9.0-RELEASE-99634723
+    tag: 1.10.1
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics

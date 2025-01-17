@@ -29,7 +29,7 @@ spec:
       containers:
       - command:
         - /manager
-        image: "{{ .Values.kserve.localmodel.controller.image }}:{{ .Values.kserve.localmodel.controller.tag }}"
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.localmodel.controller.image }}:{{ .Values.kserve.localmodel.controller.tag }}"
         imagePullPolicy: IfNotPresent
         name: manager
         securityContext:
