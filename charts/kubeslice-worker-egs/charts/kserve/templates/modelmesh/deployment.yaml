@@ -39,7 +39,7 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.kserve.modelmesh.securityContext}}
+      {{- with .Values.kserve.modelmesh.controller.securityContext}}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -83,7 +83,7 @@ spec:
             cpu: 50m
             memory: 96Mi
         securityContext:
-          {{- with .Values.kserve.modelmesh.securityContext}}
+          {{- with .Values.kserve.modelmesh.controller.securityContext}}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         volumeMounts:
