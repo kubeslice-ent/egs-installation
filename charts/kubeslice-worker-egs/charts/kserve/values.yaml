@@ -121,6 +121,8 @@ kserve:
     # -- Pod Security Context.
     # For more information, see [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
     securityContext:
+      runAsUser: 65536               # Non-root user
+      runAsGroup: 65536              # Non-root group      runAsGroup: 65536              # Non-root group
       runAsNonRoot: true
 
     # -- Container Security Context to be set on the controller component container.
@@ -249,6 +251,24 @@ kserve:
   modelmesh:
     enabled: true
     controller:
+          # For more information, see [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group      runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true
+  
+      # -- Container Security Context to be set on the controller component container.
+      # For more information, see [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+      containerSecurityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group      runAsGroup: 65536              # Non-root group
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsNonRoot: true
       nodeSelector: {}
       tolerations: []
       topologySpreadConstraints: []
