@@ -17,7 +17,7 @@ enable_install_controller: true               # Enable the installation of the K
 enable_install_ui: true                       # Enable the installation of the Kubeslice UI
 enable_install_worker: true                   # Enable the installation of Kubeslice workers
 
-# Enable or disable the installation of additional applications
+# Enable or disable the installation of additional applications(prometheus, gpu-operator, postgresql)
 enable_install_additional_apps: false         # Set to true to enable additional apps installation
 
 #########################################################################################################################
