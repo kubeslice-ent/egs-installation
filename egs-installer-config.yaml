@@ -1,205 +1,227 @@
-# Base path to the root directory of your cloned repository
-base_path: ""  # If left empty, the script will use the relative path to the script as the base path
-
-# Precheck options
-precheck: true  # Run general prechecks before starting the installation
-kubeslice_precheck: true  # Run specific prechecks for Kubeslice components
-
-# Global installation verification settings
-verify_install: false  # Enable verification of installations globally
-verify_install_timeout: 600  # Timeout for global installation verification (in seconds)
-skip_on_verify_fail: true  # If set to true, skip steps where verification fails, otherwise exit on failure
-
-# Helm repository settings
-use_local_charts: true  # Use local Helm charts instead of fetching them from a repository
-local_charts_path: "charts"  # Path to the directory containing local Helm charts
-global_helm_repo_url: ""  # URL for the global Helm repository (if not using local charts)
-global_helm_username: ""  # Username for accessing the global Helm repository
-global_helm_password: ""  # Password for accessing the global Helm repository
-readd_helm_repos: true  # Re-add Helm repositories even if they are already present
-
-# List of required binaries for the installation process
-required_binaries:
-  - yq  # YAML processor
-  - helm  # Helm package manager
-  - jq  # JSON processor
-  - kubectl  # Kubernetes command-line tool
+########################### MANDATORY PARAMETERS ####################################################################
 
 # Global image pull secret settings
 global_image_pull_secret:
-  repository: "https://index.docker.io/v1/"  # Docker registry URL
-  username: ""  # Global Docker registry username
-  password: ""  # Global Docker registry password
-
-# Node labeling settings
-add_node_label: false  # Enable node labeling during installation
+  repository: "https://index.docker.io/v1/"   # Docker registry URL
+  username: ""                                # Global Docker registry username
+  password: ""                                # Global Docker registry password
 
 # Kubeconfig settings
-global_kubeconfig: ""  # Relative Path to the global kubeconfig file must be in script directory (used if no specific kubeconfig is provided) - Mandatory
-global_kubecontext: ""  # Global kubecontext to use - Mandatory
-use_global_context: true  # If true, use the global kubecontext for all operations by default
+global_kubeconfig: ""                         # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
+global_kubecontext: ""                        # Global kubecontext to use - Mandatory
+use_global_context: true                      # If true, use the global kubecontext for all operations by default
 
 # Enable or disable specific stages of the installation
-enable_prepare_worker_values_file: true  # Prepare the worker values file for Helm charts
-enable_install_controller: true  # Enable the installation of the Kubeslice controller
-enable_install_ui: true  # Enable the installation of the Kubeslice UI
-enable_install_worker: true  # Enable the installation of Kubeslice workers
+enable_prepare_worker_values_file: true       # Prepare the worker values file for Helm charts
+enable_install_controller: true               # Enable the installation of the Kubeslice controller
+enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+enable_install_worker: true                   # Enable the installation of Kubeslice workers
+
+# Enable or disable the installation of additional applications
+enable_install_additional_apps: false         # Set to true to enable additional apps installation
+
+#########################################################################################################################
+########################### OPTIONAL CONFIGURATION PARAMETERS ###########################################################
 # Project and cluster registration settings
-enable_project_creation: true  # Enable project creation in Kubeslice
-enable_cluster_registration: true  # Enable cluster registration in Kubeslice
+enable_project_creation: true                   # Enable project creation in Kubeslice
+enable_cluster_registration: true               # Enable cluster registration in Kubeslice
 
 # Enable custom applications
-enable_custom_apps: true  # Set to true to enable custom apps
+enable_custom_apps: false                       # Set to true to enable custom apps
 
 # Command execution settings
-run_commands: false  # Enable the execution of commands defined in the YAML
+run_commands: false                             # Enable the execution of commands defined in the YAML
 
-global_auto_fetch_endpoint: false  # Enable automatic fetching of monitoring endpoints globally
-global_grafana_namespace: egs-monitoring  # Namespace where Grafana is globally deployed
-global_grafana_service_type: ClusterIP  # Service type for Grafana (accessible only within the cluster)
-global_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana globally
-global_prometheus_namespace: egs-monitoring  # Namespace where Prometheus is globally deployed
-global_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus globally
-global_prometheus_service_type: ClusterIP  # Service type for Prometheus (accessible only within the cluster)
+# Global monitoring endpoint settings
+global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
+global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
+global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
+global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
+global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
+global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
+global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
 
-  
+# Precheck options
+precheck: true                                  # Run general prechecks before starting the installation
+kubeslice_precheck: true                        # Run specific prechecks for Kubeslice components
 
-# Kubeslice controller installation settings
+# Global installation verification settings
+verify_install: false                           # Enable verification of installations globally
+verify_install_timeout: 600                     # Timeout for global installation verification (in seconds)
+skip_on_verify_fail: true                       # If set to true, skip steps where verification fails, otherwise exit on failure
+
+# Base path settings
+base_path: ""                                   # If left empty, the script will use the relative path to the script as the base path
+
+# Helm repository settings
+use_local_charts: true                          # Use local Helm charts instead of fetching them from a repository
+local_charts_path: "charts"                     # Path to the directory containing local Helm charts
+global_helm_repo_url: ""                        # URL for the global Helm repository (if not using local charts)
+global_helm_username: ""                        # Username for accessing the global Helm repository
+global_helm_password: ""                        # Password for accessing the global Helm repository
+readd_helm_repos: true                          # Re-add Helm repositories even if they are already present
+
+
+#### Kubeslice Controller Installation Settings ####
 kubeslice_controller_egs:
-  skip_installation: false  # Do not skip the installation of the controller
-  use_global_kubeconfig: true  # Use global kubeconfig for the controller installation
-  specific_use_local_charts: true  # Override to use local charts for the controller
-  kubeconfig: ""  # Path to the kubeconfig file specific to the controller
-  kubecontext: ""  # Kubecontext specific to the controller; if empty, uses the global context
-  namespace: "kubeslice-controller"  # Kubernetes namespace where the controller will be installed
-  release: "egs-controller"  # Helm release name for the controller
-  chart: "kubeslice-controller-egs"  # Helm chart name for the controller
-  inline_values:  # Inline Helm values for the controller chart
-    global:
-      imageRegistry: docker.io/aveshasystems
-      kubeTally:
-        enabled: true
-        postgresSecretName: kubetally-db-credentials   # Default value, secret name can be overridden
-        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"                     # Optional, can be specified here or retrieved from the secret
-        postgresPort: 5432                          # Optional, can be specified here or retrieved from the secret
-        postgresUser: "postgres"                      # Optional, can be specified here or retrieved from the secret
-        postgresPassword: "postgres"                   # Optional, can be specified here or retrieved from the secret
-        postgresDB: "postgres"                        # Optional, can be specified here or retrieved from the secret
-        postgresSslmode: disable
-        prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090
-    kubeslice:
-      controller: 
-        endpoint: ""  # Endpoint of the controller API server; auto-fetched if left empty
-  helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the installation
-  verify_install: false  # Verify the installation of the controller
-  verify_install_timeout: 30  # Timeout for the controller installation verification (in seconds)
-  skip_on_verify_fail: true  # If verification fails, do not skip the step
-  enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
+  skip_installation: false                     # Do not skip the installation of the controller
+  use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
+  specific_use_local_charts: true              # Override to use local charts for the controller
+  kubeconfig: ""                               # Path to the kubeconfig file specific to the controller
+  kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global context
+  namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
+  release: "egs-controller"                    # Helm release name for the controller
+  chart: "kubeslice-controller-egs"            # Helm chart name for the controller
 
-# Kubeslice UI installation settings
-kubeslice_ui_egs:
-  skip_installation: false  # Do not skip the installation of the UI
-  use_global_kubeconfig: true  # Use global kubeconfig for the UI installation
-  kubeconfig: ""  # Path to the kubeconfig file specific to the ui
-  kubecontext: ""  # Kubecontext specific to the ui; if empty, uses the global context
-  namespace: "kubeslice-controller"  # Kubernetes namespace where the UI will be installed
-  release: "egs-ui"  # Helm release name for the UI
-  chart: "kubeslice-ui-egs"  # Helm chart name for the UI
-  inline_values:  # Inline Helm values for the UI chart
+#### Inline Helm Values for the Controller Chart ####
+  inline_values:
     global:
-      imageRegistry: docker.io/aveshasystems
+      imageRegistry: docker.io/aveshasystems   # Docker registry for the images
+      kubeTally:
+        enabled: true                          # Enable KubeTally in the controller
+        postgresSecretName: kubetally-db-credentials   # Secret name for PostgreSQL credentials
+        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Address of the PostgreSQL service
+        postgresPort: 5432                     # Port for the PostgreSQL service
+        postgresUser: "postgres"               # PostgreSQL username
+        postgresPassword: "postgres"           # PostgreSQL password
+        postgresDB: "postgres"                 # PostgreSQL database name
+        postgresSslmode: disable               # SSL mode for PostgreSQL connection
+        prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
+    kubeslice:
+      controller:
+        endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
+
+#### Helm Flags and Verification Settings ####
+  helm_flags: "--wait --timeout 5m"            # Additional Helm flags for the installation
+  verify_install: false                        # Verify the installation of the controller
+  verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
+  skip_on_verify_fail: true                    # If verification fails, do not skip the step
+
+#### Troubleshooting Settings ####
+  enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
+#### Kubeslice Controller Installation Settings ####
+
+#### Kubeslice UI Installation Settings ####
+kubeslice_ui_egs:
+  skip_installation: false                     # Do not skip the installation of the UI
+  use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
+  kubeconfig: ""                               # Path to the kubeconfig file specific to the UI
+  kubecontext: ""                              # Kubecontext specific to the UI; if empty, uses the global context
+  namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
+  release: "egs-ui"                            # Helm release name for the UI
+  chart: "kubeslice-ui-egs"                    # Helm chart name for the UI
+
+#### Inline Helm Values for the UI Chart ####
+  inline_values:
+    global:
+      imageRegistry: docker.io/aveshasystems   # Docker registry for the UI images
     kubeslice:
       prometheus:
-        url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  
+        url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
       uiproxy:
         service:
-          type: LoadBalancer
+          type: LoadBalancer                  # Service type for the UI proxy
       egsCoreApis:
-        enabled: true
+        enabled: true                         # Enable EGS core APIs for the UI
         service:
-          type: LoadBalancer
-  helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the UI installation
-  verify_install: false  # Verify the installation of the UI
-  verify_install_timeout: 50  # Timeout for the UI installation verification (in seconds)
-  skip_on_verify_fail: true  # If UI verification fails, do not skip the step
-  specific_use_local_charts: true  # Override to use local charts for the UI
+          type: LoadBalancer                  # Service type for the EGS core APIs
 
-# Kubeslice worker installation settings
+#### Helm Flags and Verification Settings ####
+  helm_flags: "--wait --timeout 5m"            # Additional Helm flags for the UI installation
+  verify_install: false                        # Verify the installation of the UI
+  verify_install_timeout: 50                   # Timeout for the UI installation verification (in seconds)
+  skip_on_verify_fail: true                    # If UI verification fails, do not skip the step
+
+#### Chart Source Settings ####
+  specific_use_local_charts: true              # Override to use local charts for the UI
+
+#### Kubeslice Worker Installation Settings ####
 kubeslice_worker_egs:
-  - name: "worker-1"
-    use_global_kubeconfig: true  # Use global kubeconfig for this worker
-    kubeconfig: ""  # Path to the kubeconfig file specific to the worker
-    kubecontext: ""  # Kubecontext specific to the worker; if empty, uses the global context
-    skip_installation: false  # Do not skip the installation of the worker
-    specific_use_local_charts: true  # Override to use local charts for this worker
-    namespace: "kubeslice-system"  # Kubernetes namespace for this worker
-    release: "egs-worker"  # Helm release name for the worker
-    chart: "kubeslice-worker-egs"  # Helm chart name for the worker
-    inline_values:  # Inline Helm values for the worker chart
+  - name: "worker-1"                           # Worker name
+    use_global_kubeconfig: true                # Use global kubeconfig for this worker
+    kubeconfig: ""                             # Path to the kubeconfig file specific to the worker
+    kubecontext: ""                            # Kubecontext specific to the worker; if empty, uses the global context
+    skip_installation: false                   # Do not skip the installation of the worker
+    specific_use_local_charts: true            # Override to use local charts for this worker
+    namespace: "kubeslice-system"              # Kubernetes namespace for this worker
+    release: "egs-worker"                      # Helm release name for the worker
+    chart: "kubeslice-worker-egs"              # Helm chart name for the worker
+
+#### Inline Helm Values for the Worker Chart ####
+    inline_values:
       global:
-        imageRegistry: docker.io/aveshasystems
+        imageRegistry: docker.io/aveshasystems # Docker registry for worker images
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-        grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
+        grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
       metrics:
-        insecure: true  # Allow insecure connections for metrics
+        insecure: true                        # Allow insecure connections for metrics
       kserve:
-        enabled: true
-        # KServe chart options
-        kserve:
+        enabled: true                         # Enable KServe for the worker
+        kserve:                               # KServe chart options
           controller:
             gateway:
               domain: kubeslice.com
               ingressGateway:
-                className: "nginx"
-    helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the worker installation
-    verify_install: true  # Verify the installation of the worker
-    verify_install_timeout: 60  # Timeout for the worker installation verification (in seconds)
-    skip_on_verify_fail: false  # Do not skip if worker verification fails
-    enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
-    # local_auto_fetch_endpoint: true  # Enable automatic fetching of monitoring endpoints
+                className: "nginx"            # Ingress class name for the KServe gateway
+
+#### Helm Flags and Verification Settings ####
+    helm_flags: "--wait --timeout 5m"          # Additional Helm flags for the worker installation
+    verify_install: true                       # Verify the installation of the worker
+    verify_install_timeout: 60                 # Timeout for the worker installation verification (in seconds)
+    skip_on_verify_fail: false                 # Do not skip if worker verification fails
+
+#### Troubleshooting Settings ####
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+
+#### Local Monitoring Endpoint Settings (Optional) ####
+    # local_auto_fetch_endpoint: true          # Enable automatic fetching of monitoring endpoints
     # local_grafana_namespace: egs-monitoring  # Namespace where Grafana is deployed
     # local_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana
-    # local_grafana_service_type: ClusterIP  # Service type for Grafana (accessible only within the cluster)
+    # local_grafana_service_type: ClusterIP    # Service type for Grafana (accessible only within the cluster)
     # local_prometheus_namespace: egs-monitoring  # Namespace where Prometheus is deployed
     # local_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus
-    # local_prometheus_service_type: ClusterIP  # Service type for Prometheus (accessible only within the cluster)
+    # local_prometheus_service_type: ClusterIP # Service type for Prometheus (accessible only within the cluster)
 
 
-# Define projects
+
+#### Define Projects ####
 projects:
-  - name: "avesha"
-    username: "admin"  # Username for accessing the Kubeslice project
+  - name: "avesha"                              # Name of the Kubeslice project
+    username: "admin"                           # Username for accessing the Kubeslice project
 
-# Define cluster registration
+#### Define Cluster Registration ####
 cluster_registration:
-  - cluster_name: "worker-1"
-    project_name: "avesha"
+  - cluster_name: "worker-1"                    # Name of the cluster to be registered
+    project_name: "avesha"                      # Name of the project to associate with the cluster
+
+    #### Telemetry Settings ####
     telemetry:
-      enabled: true  # Enable telemetry for this cluster
-      endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Telemetry endpoint
-      telemetryProvider: "prometheus"  # Telemetry provider (Prometheus in this case)
+      enabled: true                             # Enable telemetry for this cluster
+      endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090" # Telemetry endpoint
+      telemetryProvider: "prometheus"           # Telemetry provider (Prometheus in this case)
+
+    #### Geo-Location Settings ####
     geoLocation:
-      cloudProvider: "GCP"  # Cloud provider for this cluster (e.g., GCP)
-      cloudRegion: "us-central1"  # Cloud region for this cluster (e.g., us-central1)
+      cloudProvider: "GCP"                      # Cloud provider for this cluster (e.g., GCP)
+      cloudRegion: "us-central1"                # Cloud region for this cluster (e.g., us-central1)
 
-# Enable or disable the installation of additional applications
-enable_install_additional_apps: true  # Set to true to enable additional apps installation
-
-# Define additional applications to install
+#### Define Additional Applications to Install ####
 additional_apps:
-  - name: "gpu-operator"
-    skip_installation: false  # Do not skip the installation of the GPU operator
-    use_global_kubeconfig: true  # Use global kubeconfig for this application
-    kubeconfig: ""  # Path to the kubeconfig file specific to this application
-    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
-    namespace: "egs-gpu-operator"  # Namespace where the GPU operator will be installed
-    release: "gpu-operator"  # Helm release name for the GPU operator
-    chart: "gpu-operator"  # Helm chart name for the GPU operator
-    repo_url: "https://helm.ngc.nvidia.com/nvidia"  # Helm repository URL for the GPU operator
-    version: "v24.6.0"  # Version of the GPU operator to install
-    specific_use_local_charts: true  # Use local charts for this application
-    inline_values:  # Inline Helm values for the GPU operator chart
+  - name: "gpu-operator"                       # Name of the application
+    skip_installation: false                   # Do not skip the installation of the GPU operator
+    use_global_kubeconfig: true                # Use global kubeconfig for this application
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "egs-gpu-operator"              # Namespace where the GPU operator will be installed
+    release: "gpu-operator"                    # Helm release name for the GPU operator
+    chart: "gpu-operator"                      # Helm chart name for the GPU operator
+    repo_url: "https://helm.ngc.nvidia.com/nvidia" # Helm repository URL for the GPU operator
+    version: "v24.6.0"                         # Version of the GPU operator to install
+    specific_use_local_charts: true            # Use local charts for this application
+
+    #### Inline Helm Values for GPU Operator ####
+    inline_values:
       hostPaths:
         driverInstallDir: "/home/kubernetes/bin/nvidia"
       toolkit:
@@ -209,36 +231,33 @@ additional_apps:
         default: true
       driver:
         enabled: false
-    helm_flags: ""  # Additional Helm flags for this application's installation
-    verify_install: false  # Verify the installation of the GPU operator
-    verify_install_timeout: 600  # Timeout for verification (in seconds)
-    skip_on_verify_fail: true  # Do not skip if verification fails
-    enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
 
-  - name: "prometheus"
-    skip_installation: false  # Do not skip the installation of Prometheus
-    use_global_kubeconfig: true  # Use global kubeconfig for Prometheus
-    kubeconfig: ""  # Path to the kubeconfig file specific to this application
-    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
-    namespace: "egs-monitoring"  # Namespace where Prometheus will be installed
-    release: "prometheus"  # Helm release name for Prometheus
-    chart: "kube-prometheus-stack"  # Helm chart name for Prometheus
-    repo_url: "https://prometheus-community.github.io/helm-charts"  # Helm repository URL for Prometheus
-    version: "v45.0.0"  # Version of the Prometheus stack to install
-    specific_use_local_charts: true  # Use local charts for this application
-    values_file: ""  # Path to an external values file, if any
-    inline_values:  # Inline Helm values for Prometheus
+    helm_flags: ""                              # Additional Helm flags for this application's installation
+    verify_install: false                       # Verify the installation of the GPU operator
+    verify_install_timeout: 600                 # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                   # Skip the step if verification fails
+    enable_troubleshoot: false                  # Enable troubleshooting mode for additional logs and checks
+
+  - name: "prometheus"                         # Name of the application
+    skip_installation: false                   # Do not skip the installation of Prometheus
+    use_global_kubeconfig: true                # Use global kubeconfig for Prometheus
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "egs-monitoring"                # Namespace where Prometheus will be installed
+    release: "prometheus"                      # Helm release name for Prometheus
+    chart: "kube-prometheus-stack"             # Helm chart name for Prometheus
+    repo_url: "https://prometheus-community.github.io/helm-charts" # Helm repository URL for Prometheus
+    version: "v45.0.0"                         # Version of the Prometheus stack to install
+    specific_use_local_charts: true            # Use local charts for this application
+    values_file: ""                             # Path to an external values file, if any
+
+    #### Inline Helm Values for Prometheus ####
+    inline_values:
       prometheus:
         service:
-          type: ClusterIP
+          type: ClusterIP                     # Service type for Prometheus
         prometheusSpec:
-          storageSpec: {}
-            # volumeClaimTemplate:
-            #   spec:
-            #     accessModes: ["ReadWriteOnce"]
-            #     resources:
-            #       requests:
-            #         storage: 50Gi
+          storageSpec: {}                     # Placeholder for storage configuration
           additionalScrapeConfigs:
           - job_name: tgi
             kubernetes_sd_configs:
@@ -265,7 +284,7 @@ additional_apps:
               action: replace
               target_label: kubernetes_node
       grafana:
-        enabled: true
+        enabled: true                         # Enable Grafana
         grafana.ini:
           auth:
             disable_login_form: true
@@ -274,105 +293,113 @@ additional_apps:
             enabled: true
             org_role: Viewer
         service:
-          type: LoadBalancer
+          type: LoadBalancer                  # Service type for Grafana
         persistence:
-          enabled: false
-          size: 1Gi
-    helm_flags: ""  # Additional Helm flags for this application's installation
-    verify_install: false  # Verify the installation of Prometheus
-    verify_install_timeout: 600  # Timeout for verification (in seconds)
-    skip_on_verify_fail: true  # Do not skip if verification fails
-    enable_troubleshoot: false  # Enable Troubleshooting mode for additional logs and checks
+          enabled: false                      # Disable persistence
+          size: 1Gi                           # Default persistence size
 
-  - name: "postgresql"
-    skip_installation: false  # Do not skip the installation of postgresql
-    use_global_kubeconfig: true  # Use global kubeconfig for postgresql
-    kubeconfig: ""  # Path to the kubeconfig file specific to this application
-    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
-    namespace: "kt-postgresql"  # Namespace where postgresql will be installed
-    release: "kt-postgresql"  # Helm release name for postgresql
-    chart: "postgresql"  # Helm chart name for postgresql
-    repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql"  # Helm repository URL for postgresql
-    version: "16.2.1"  # Version of the postgresql stack to install
-    specific_use_local_charts: true  # Use local charts for this application
-    values_file: ""  # Path to an external values file, if any
-    inline_values:  # Inline Helm values for postgresql
+    helm_flags: ""                             # Additional Helm flags for this application's installation
+    verify_install: false                      # Verify the installation of Prometheus
+    verify_install_timeout: 600                # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                  # Skip the step if verification fails
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+
+  - name: "postgresql"                         # Name of the application
+    skip_installation: false                   # Do not skip the installation of PostgreSQL
+    use_global_kubeconfig: true                # Use global kubeconfig for PostgreSQL
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "kt-postgresql"                # Namespace where PostgreSQL will be installed
+    release: "kt-postgresql"                  # Helm release name for PostgreSQL
+    chart: "postgresql"                       # Helm chart name for PostgreSQL
+    repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql" # Helm repository URL for PostgreSQL
+    version: "16.2.1"                         # Version of the PostgreSQL chart to install
+    specific_use_local_charts: true           # Use local charts for this application
+    values_file: ""                            # Path to an external values file, if any
+
+    #### Inline Helm Values for PostgreSQL ####
+    inline_values:
       auth:
-        postgresPassword: "postgres"  # Explicit password (use if not relying on `existingSecret`)
-        username: "postgres"  # Explicit username (fallback if `existingSecret` is not used)
-        password: "postgres"  # Password for PostgreSQL (optional)
-        database: "postgres"  # Default database to create
+        postgresPassword: "postgres"          # Explicit password (use if not relying on `existingSecret`)
+        username: "postgres"                  # Explicit username (fallback if `existingSecret` is not used)
+        password: "postgres"                  # Password for PostgreSQL (optional)
+        database: "postgres"                  # Default database to create
       primary:
         persistence:
-          enabled: false  # Enable persistent storage for PostgreSQL
-          size: 10Gi  # Size of the Persistent Volume Claim
-    helm_flags: "--wait"  # Additional Helm flags for this application's installation
-    verify_install: true  # Verify the installation of postgresql
-    verify_install_timeout: 600  # Timeout for verification (in seconds)
-    skip_on_verify_fail: false  # Do not skip if verification fails
+          enabled: false                      # Disable persistent storage for PostgreSQL
+          size: 10Gi                          # Size of the Persistent Volume Claim
+
+    helm_flags: "--wait"                       # Additional Helm flags for this application's installation
+    verify_install: true                       # Verify the installation of PostgreSQL
+    verify_install_timeout: 600                # Timeout for verification (in seconds)
+    skip_on_verify_fail: false                 # Do not skip if verification fails
 
 
-# Define custom applications and their associated manifests
+#### Define Custom Applications and Associated Manifests ####
 manifests:
-  - appname: gpu-operator-quota
-    manifest: ""  # URL or path to the manifest file; if empty, inline YAML is used
-    overrides_yaml: ""  # Path to an external YAML file with overrides, if any
-    inline_yaml: |  # Inline YAML content for this custom application
+  - appname: gpu-operator-quota               # Name of the custom application
+    manifest: ""                              # URL or path to the manifest file; if empty, inline YAML is used
+    overrides_yaml: ""                        # Path to an external YAML file with overrides, if any
+    inline_yaml: |                            # Inline YAML content for this custom application
       apiVersion: v1
       kind: ResourceQuota
       metadata:
         name: gpu-operator-quota
       spec:
         hard:
-          pods: 100
+          pods: 100                           # Maximum number of pods
         scopeSelector:
           matchExpressions:
           - operator: In
-            scopeName: PriorityClass
+            scopeName: PriorityClass          # Define scope for PriorityClass
             values:
               - system-node-critical
               - system-cluster-critical
-    use_global_kubeconfig: true  # Use global kubeconfig for this application
-    skip_installation: false  # Do not skip the installation of this application
-    verify_install: false  # Verify the installation of this application
-    verify_install_timeout: 30  # Timeout for verification (in seconds)
-    skip_on_verify_fail: true  # Do not skip if verification fails
-    namespace: egs-gpu-operator  # Namespace for this application
-    kubeconfig: ""  # Path to the kubeconfig file specific to this application
-    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
+    use_global_kubeconfig: true               # Use global kubeconfig for this application
+    skip_installation: false                  # Do not skip the installation of this application
+    verify_install: false                     # Verify the installation of this application
+    verify_install_timeout: 30                # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                 # Skip if verification fails
+    namespace: egs-gpu-operator               # Namespace for this application
+    kubeconfig: ""                            # Path to the kubeconfig file specific to this application
+    kubecontext: ""                           # Kubecontext specific to this application; uses global context if empty
 
-  - appname: nvidia-driver-installer
-    manifest: https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/master/nvidia-driver-installer/cos/daemonset-preloaded.yaml
-    overrides_yaml: ""  # Path to an external YAML file with overrides, if any
-    inline_yaml: null  # Inline YAML content for this application
-    use_global_kubeconfig: true  # Use global kubeconfig for this application
-    kubeconfig: ""  # Path to the kubeconfig file specific to this application
-    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
-    skip_installation: false  # Do not skip the installation of this application
-    verify_install: false  # Verify the installation of this application
-    verify_install_timeout: 200  # Timeout for verification (in seconds)
-    skip_on_verify_fail: true  # Skip if verification fails
-    namespace: kube-system  # Namespace for this application
+  - appname: nvidia-driver-installer          # Name of the custom application
+    manifest: "https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/master/nvidia-driver-installer/cos/daemonset-preloaded.yaml"
+                                               # URL to the manifest file
+    overrides_yaml: ""                        # Path to an external YAML file with overrides, if any
+    inline_yaml: null                         # Inline YAML content for this application
+    use_global_kubeconfig: true               # Use global kubeconfig for this application
+    kubeconfig: ""                            # Path to the kubeconfig file specific to this application
+    kubecontext: ""                           # Kubecontext specific to this application; uses global context if empty
+    skip_installation: false                  # Do not skip the installation of this application
+    verify_install: false                     # Verify the installation of this application
+    verify_install_timeout: 200               # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                 # Skip if verification fails
+    namespace: kube-system                    # Namespace for this application
+
     
 
-# Define commands to execute
+#### Define Commands to Execute ####
 commands:
-  - use_global_kubeconfig: true  # Use global kubeconfig for these commands
-    kubeconfig: ""  # Path to the kubeconfig file specific to this application
-    kubecontext: ""  # Kubecontext specific to this application; uses global context if empty
-    skip_installation: true  # Do not skip the execution of these commands
-    verify_install: false  # Verify the execution of these commands
-    verify_install_timeout: 200  # Timeout for verification (in seconds)
-    skip_on_verify_fail: true  # Skip if command verification fails
-    namespace: kube-system  # Namespace context for these commands
-    command_stream: |  # Commands to execute
-       kubectl create namespace egs-gpu-operator --dry-run=client -o yaml | kubectl apply -f -
-       get nodes
-       get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
+  - use_global_kubeconfig: true               # Use global kubeconfig for these commands
+    kubeconfig: ""                            # Path to the kubeconfig file specific to these commands
+    kubecontext: ""                           # Kubecontext specific to these commands; uses global context if empty
+    skip_installation: true                   # Do not skip the execution of these commands
+    verify_install: false                     # Verify the execution of these commands
+    verify_install_timeout: 200               # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                 # Skip if command verification fails
+    namespace: kube-system                    # Namespace context for these commands
+    command_stream: |                         # Commands to execute
+      kubectl create namespace egs-gpu-operator --dry-run=client -o yaml | kubectl apply -f -
+      kubectl get nodes
+      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
 
-# Troubleshooting mode settings
+#### Troubleshooting Mode Settings ####
 enable_troubleshoot:
-  enabled: false # Global Enable Troubleshooting mode for additional logs and checks
+  enabled: false                              # Global enable troubleshooting mode for additional logs and checks
+
+  #### Resource Types to Troubleshoot ####
   resource_types:
     - pods
     - deployments
@@ -387,6 +414,8 @@ enable_troubleshoot:
     - roles
     - rolebindings
     - crds
+
+  #### API Groups to Troubleshoot ####
   api_groups:
     - controller.kubeslice.io
     - worker.kubeslice.io
@@ -394,7 +423,18 @@ enable_troubleshoot:
     - aiops.kubeslice.io
     - networking.kubeslice.io
     - monitoring.coreos.com
-  upload_logs:  # Upload log settings
-    enabled: false  # Enable log upload functionality
-    command: |  # Command to execute
-      
+
+  #### Upload Log Settings ####
+  upload_logs:
+    enabled: false                           # Enable log upload functionality
+    command: |                               # Command to execute for log upload
+
+#### List of Required Binaries ####
+required_binaries:
+  - yq                                       # YAML processor
+  - helm                                     # Helm package manager
+  - jq                                       # JSON processor
+  - kubectl                                  # Kubernetes command-line tool
+
+#### Node Labeling Settings ####
+add_node_label: false                        # Enable node labeling during installation
