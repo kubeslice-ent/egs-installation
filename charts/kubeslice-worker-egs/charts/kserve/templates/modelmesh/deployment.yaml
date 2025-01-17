@@ -39,6 +39,10 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.kserve.modelmesh.securityContext}}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - args:
         - --enable-leader-election
@@ -79,9 +83,9 @@ spec:
             cpu: 50m
             memory: 96Mi
         securityContext:
-          capabilities:
-            drop:
-            - ALL
+          {{- with .Values.kserve.modelmesh.securityContext}}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
         volumeMounts:
         - mountPath: /etc/model-serving/config/default
           name: config-defaults
