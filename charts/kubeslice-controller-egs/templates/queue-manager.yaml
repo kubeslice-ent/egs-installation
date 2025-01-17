@@ -28,7 +28,7 @@ spec:
               drop:
                 - ALL
             readOnlyRootFilesystem: true
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.egs.queueManager.image }}:{{ .Values.egs.queueManager.tag }}'
+          image: '{{ .Values.egs.queueManager.imageRegistry }}/{{ .Values.egs.queueManager.image }}:{{ .Values.egs.queueManager.tag }}'
           ports:
             - containerPort: 50051
               protocol: TCP

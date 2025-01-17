@@ -32,7 +32,7 @@ spec:
         app: kubeslice-ui
     spec:
       containers:
-      - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.ui.image }}:{{ .Values.kubeslice.ui.tag }}'
+      - image: '{{ .Values.kubeslice.ui.imageRegistry }}/{{ .Values.kubeslice.ui.image }}:{{ .Values.kubeslice.ui.tag }}'
         imagePullPolicy: '{{ .Values.kubeslice.ui.pullPolicy }}'
         name: kubeslice-ui
         securityContext:

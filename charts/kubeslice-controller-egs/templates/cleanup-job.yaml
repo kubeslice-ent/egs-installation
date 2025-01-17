@@ -14,7 +14,7 @@ spec:
       serviceAccountName: kubeslice-controller-controller-manager
       containers:
         - name: cleanup
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
+          image: '{{ .Values.kubeslice.controller.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.controller.pullPolicy }}'
           command:
             - /cleanup

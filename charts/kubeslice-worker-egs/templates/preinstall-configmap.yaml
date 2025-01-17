@@ -251,6 +251,7 @@ data:
         namespace: kube-system
       version: v1beta1
       versionPriority: 100
+      
   pre-install.sh: |-
     #!/usr/bin/env bash
 

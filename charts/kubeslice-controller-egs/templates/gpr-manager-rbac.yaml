@@ -51,6 +51,7 @@ rules:
   - gpr.kubeslice.io
   resources:
   - gpuprovisioningrequests
+  - gprautoevictions
   verbs:
   - create
   - delete
@@ -63,12 +64,14 @@ rules:
   - gpr.kubeslice.io
   resources:
   - gpuprovisioningrequests/finalizers
+  - gprautoevictions/finalizers
   verbs:
   - update
 - apiGroups:
   - gpr.kubeslice.io
   resources:
   - gpuprovisioningrequests/status
+  - gprautoevictions/status
   verbs:
   - get
   - patch
@@ -109,6 +112,14 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

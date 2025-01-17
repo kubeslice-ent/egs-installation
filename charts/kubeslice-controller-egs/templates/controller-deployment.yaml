@@ -44,7 +44,7 @@ spec:
             - --upstream=http://127.0.0.1:8080/
             - --logtostderr=true
             - --v=0
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.rbacproxy.image }}:{{ .Values.kubeslice.rbacproxy.tag }}'
+          image: '{{ .Values.kubeslice.rbacproxy.imageRegistry }}/{{ .Values.kubeslice.rbacproxy.image }}:{{ .Values.kubeslice.rbacproxy.tag }}'
           name: kube-rbac-proxy
           securityContext:
             runAsUser: 65536
@@ -73,7 +73,7 @@ spec:
             - --license-mode={{ .Values.kubeslice.license.mode }}
             - --license-customer-name={{ .Values.kubeslice.license.customerName }}
             - --license-type={{.Values.kubeslice.license.type }}
-            - --license-image={{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}
+            - --license-image={{ .Values.kubeslice.controller.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}
             - --metrics-cleanup-interval={{ .Values.kubeslice.controller.kubeTally.metricsCleanupInterval }}
           command:
             - /manager
@@ -84,7 +84,7 @@ spec:
                   fieldPath: metadata.namespace
             - name: WEBHOOK_CA_BUNDLE
               value: {{ $ca.Cert | b64enc }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
+          image: '{{ .Values.kubeslice.controller.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.controller.pullPolicy }}'
           livenessProbe:
             httpGet:

@@ -94,11 +94,13 @@ spec:
                   fieldPath: metadata.namespace
             - name: EGS_CORE_APIS_PORT
               value: "8080"
+            - name: EGS_CORE_APIS_ENABLE_EXTERNAL_TOKEN
+              value: "true"
             - name: EGS_CORE_APIS_EGS_API_GATEWAY_ENDPOINT
               value: "http://kubeslice-api-gw:8080/"
           ports:
             - containerPort: 8080
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.egsCoreApis.image }}:{{ .Values.kubeslice.egsCoreApis.tag }}'
+          image: '{{ .Values.kubeslice.egsCoreApis.imageRegistry }}/{{ .Values.kubeslice.egsCoreApis.image }}:{{ .Values.kubeslice.egsCoreApis.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.egsCoreApis.pullPolicy }}'
       restartPolicy: Always
       {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
