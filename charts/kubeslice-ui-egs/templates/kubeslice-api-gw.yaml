@@ -32,13 +32,13 @@ spec:
         app: kubeslice-api-gw
     spec:
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
+        - image: '{{ .Values.kubeslice.apigw.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
           env:
             - name: KUBESLICE_CONTROLLER_PROMETHEUS
               value: {{ .Values.kubeslice.prometheus.url }}
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE
-              value: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.workerinstaller.image }}:{{ .Values.kubeslice.workerinstaller.tag }}'
+              value: '{{ .Values.kubeslice.workerinstaller.imageRegistry }}/{{ .Values.kubeslice.workerinstaller.image }}:{{ .Values.kubeslice.workerinstaller.tag }}'
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE_PULL_POLICY
               value: '{{ .Values.kubeslice.workerinstaller.pullPolicy}}'
             - name: COST_API_URI
@@ -48,7 +48,9 @@ spec:
             - name: INVENTORY_MANAGER_ADDRESS
               value: {{ .Values.egs.InventoryManagerAddress }}
             - name: QUEUE_MANAGER_ADDRESS
-              value: {{ .Values.egs.QueueManagerAddress }}  
+              value: {{ .Values.egs.QueueManagerAddress }}
+            - name: CORE_APIS_ENDPOINT
+              value: {{ .Values.egs.CoreApisUrl }}    
           name: kubeslice-api-gw
           securityContext:
             runAsUser: 65536

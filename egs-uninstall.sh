@@ -9,6 +9,12 @@ else
     echo "✅ Bash shell detected. Version: $BASH_VERSION"
 fi
 
+# Specify the output file
+output_file="egs-uninstaller-output.log"
+exec > >(tee -a "$output_file") 2>&1
+
+echo "=====================================EGS UnInstaller Script execution started at: $(date)===================================" >> "$output_file"
+
 # Function to handle operations that should continue on error
 continue_on_error() {
     "$@"
@@ -1534,13 +1540,14 @@ uninstall_helm_chart_and_cleanup() {
         helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg
     }
 
-    delete_kubernetes_objects() {
-        echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'" >&2
-        kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
-        kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
-        kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
-        kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
-    }
+delete_kubernetes_objects() {
+    echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'" >&2
+    kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+    kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+    kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+    kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+}
+
 
     if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
         echo "🔄 Helm release '$release_name' found. Preparing to uninstall..." >&2
@@ -1639,7 +1646,7 @@ unregister_clusters_in_controller() {
         echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'" >&2
         echo "-----------------------------------------" >&2
 
-        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
+        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name --force --grace-period=0
         if [ $? -ne 0 ]; then
             echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'." >&2
             return 1
@@ -1717,7 +1724,7 @@ delete_projects_in_controller() {
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace --force --grace-period=0
             if [ $? -eq 0 ]; then
                 break
             elif [ $i -lt $max_retries ]; then
@@ -1810,7 +1817,7 @@ delete_slices_in_controller() {
                 fi
 
                 # Attempt to delete the SliceConfig after patching
-                kubectl delete sliceconfig.controller.kubeslice.io $name -n $namespace --kubeconfig $kubeconfig_path $context_arg
+                kubectl delete sliceconfig.controller.kubeslice.io $name -n $namespace --kubeconfig $kubeconfig_path $context_arg --force --grace-period=0
                 if [ $? -eq 0 ]; then
                     success=true
                     break
@@ -1898,7 +1905,7 @@ delete_projects_in_controller() {
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace --force --grace-period=0
             if [ $? -eq 0 ]; then
                 break
             elif kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
@@ -1963,7 +1970,43 @@ list_resources_in_group() {
     # Final output: Only resource names
     printf "%s\n" "${resources[@]}"
 }
+# Function to delete a namespace
+delete_namespace() {
+    local namespace=$1
+    local specific_use_global_kubeconfig=$2
+    local specific_kubeconfig_path=$3
+    local specific_kubecontext=$4
 
+
+ # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "deleteing namespace" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
+    
+
+    # Attempt to delete the namespace
+    echo "Attempting to delete namespace: $namespace"
+    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext delete namespace "$namespace" --wait=false
+
+    # Wait for a few seconds and check if the namespace is in terminating state
+    sleep 5
+    if kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext get namespace "$namespace" -o jsonpath='{.status.phase}' 2>/dev/null | grep -q "Terminating"; then
+        echo "Namespace $namespace is in a terminating state. Proceeding with force deletion."
+
+        # Remove the finalizer
+        kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext get namespace "$namespace" -o json \
+            | jq '.spec.finalizers = []' \
+            | kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext replace --raw "/api/v1/namespaces/$namespace/finalize" -f -
+
+        echo "Namespace $namespace has been forcefully deleted."
+    else
+        echo "Namespace $namespace deleted successfully."
+    fi
+}
 # Function to remove finalizers from a resource
 remove_finalizers() {
     local namespace=$1
@@ -2139,10 +2182,10 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     fi
 fi
 
-# Run Kubeslice pre-checks if enabled
-if [ "$KUBESLICE_PRECHECK" = "true" ]; then
-    continue_on_error kubeslice_uninstall_pre_check
-fi
+# # Run Kubeslice pre-checks if enabled
+# if [ "$KUBESLICE_PRECHECK" = "true" ]; then
+#     continue_on_error kubeslice_uninstall_pre_check
+# fi
 
 # Check if the enable_custom_apps flag is defined and set to true
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
@@ -2218,8 +2261,10 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         specific_use_local_charts=$(echo "$app" | yq e '.specific_use_local_charts' -)
         kubeconfig=$(echo "$app" | yq e '.kubeconfig' -)
         kubecontext=$(echo "$app" | yq e '.kubecontext' -)
-
+        
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
+        continue_on_error delete_kubernetes_objects
+        continue_on_error delete_namespace "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
 
     done
     echo "✔️ Installation of additional applications complete."  >&2
@@ -2264,6 +2309,7 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
         webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
         continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
         continue_on_error delete_kubernetes_objects
+        continue_on_error delete_namespace "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
     done
 fi
 
@@ -2286,6 +2332,7 @@ if [ "$ENABLE_INSTALL_UI" = "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
     namespace="$KUBESLICE_UI_NAMESPACE"
     continue_on_error delete_kubernetes_objects
+    continue_on_error delete_namespace "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT"
 fi
 
 
@@ -2296,3 +2343,4 @@ echo "========================================="
 echo "    EGS UnInstaller Script Complete        "
 echo "========================================="
 
+echo "=====================================EGS UnInstaller Script execution completed at: $(date)===================================" >> "$output_file"

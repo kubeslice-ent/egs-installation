@@ -1,6 +1,12 @@
+global:
+  imageRegistry: &defaultRegistry docker.io/aveshasystems
+  profile:
+    openshift: false
+
 operator:
+  imageRegistry: *defaultRegistry
   image: worker-operator-ent-egs
-  tag: 1.10.0
+  tag: 1.10.1
   pullPolicy: IfNotPresent
   logLevel: INFO
 
@@ -18,8 +24,9 @@ cluster:
   endpoint:
 
 aiops:
+  imageRegistry: *defaultRegistry
   image: kube-aiops-operator
-  tag: 1.10.0
+  tag: 1.10.1
   pullPolicy: IfNotPresent
   logLevel: INFO
 
@@ -28,6 +35,7 @@ egs:
   grafanaDashboardBaseUrl: ""
 
 workerInstaller:
+  imageRegistry: *defaultRegistry
   image: worker-installer
   tag: 1.5.0
 
@@ -37,18 +45,30 @@ jaeger:
 events:
   disabled: false
 
+kserve:
+  enabled: true
+  # KServe chart options
+  kserve:
+    controller:
+      gateway:
+        domain: kubeslice.com
+        ingressGateway:
+          className: "nginx"
+
 metrics:
   insecure: false
   metricResolution: "15s"
   imagePullPolicy: IfNotPresent
 
 rbacproxy:
+  imageRegistry: *defaultRegistry
   # Image name for the RBAC proxy
   image: kubebuilder-kube-rbac-proxy
   # Image tag for the RBAC proxy
   tag: v0.18.0
 
 alpine:
+  imageRegistry: *defaultRegistry
   # Image name for the alpine
   image: alpine-k8s
   # Image tag for the alpine
@@ -64,9 +84,4 @@ imagePullSecrets:
   dockerconfigjson: ## Value to be used if using external secret managers
 
 controllerNamespace: kubeslice-controller
-
-global:
-  imageRegistry: docker.io/aveshasystems
-  profile:
-    openshift: false
 

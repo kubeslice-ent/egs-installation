@@ -60,3 +60,15 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+# {{/*
+# check kserve crds are present or not, extend to check deployment & version
+# */}}
+# {{- define "kubeslice-worker-egs.check_kserve_crds" }}
+# {{- $crds := lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" "" -}}
+# {{- range $crds.items -}}
+#   {{- if and (hasKey .metadata.labels "app.kubernetes.io/name") (regexMatch ".*serving.kserve.io.*" .spec.group) -}}
+#     true
+#   {{- end -}}
+# {{- end -}}
+# {{- end }}

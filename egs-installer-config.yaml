@@ -44,6 +44,15 @@ enable_prepare_worker_values_file: true  # Prepare the worker values file for He
 enable_install_controller: true  # Enable the installation of the Kubeslice controller
 enable_install_ui: true  # Enable the installation of the Kubeslice UI
 enable_install_worker: true  # Enable the installation of Kubeslice workers
+# Project and cluster registration settings
+enable_project_creation: true  # Enable project creation in Kubeslice
+enable_cluster_registration: true  # Enable cluster registration in Kubeslice
+
+# Enable custom applications
+enable_custom_apps: true  # Set to true to enable custom apps
+
+# Command execution settings
+run_commands: false  # Enable the execution of commands defined in the YAML
 
 global_auto_fetch_endpoint: false  # Enable automatic fetching of monitoring endpoints globally
 global_grafana_namespace: egs-monitoring  # Namespace where Grafana is globally deployed
@@ -134,6 +143,15 @@ kubeslice_worker_egs:
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Grafana dashboard base URL
       metrics:
         insecure: true  # Allow insecure connections for metrics
+      kserve:
+        enabled: true
+        # KServe chart options
+        kserve:
+          controller:
+            gateway:
+              domain: kubeslice.com
+              ingressGateway:
+                className: "nginx"
     helm_flags: "--wait --timeout 5m"  # Additional Helm flags for the worker installation
     verify_install: true  # Verify the installation of the worker
     verify_install_timeout: 60  # Timeout for the worker installation verification (in seconds)
@@ -147,9 +165,6 @@ kubeslice_worker_egs:
     # local_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus
     # local_prometheus_service_type: ClusterIP  # Service type for Prometheus (accessible only within the cluster)
 
-# Project and cluster registration settings
-enable_project_creation: true  # Enable project creation in Kubeslice
-enable_cluster_registration: true  # Enable cluster registration in Kubeslice
 
 # Define projects
 projects:
@@ -295,8 +310,7 @@ additional_apps:
     verify_install: true  # Verify the installation of postgresql
     verify_install_timeout: 600  # Timeout for verification (in seconds)
     skip_on_verify_fail: false  # Do not skip if verification fails
-# Enable custom applications
-enable_custom_apps: true  # Set to true to enable custom apps
+
 
 # Define custom applications and their associated manifests
 manifests:
@@ -340,8 +354,6 @@ manifests:
     skip_on_verify_fail: true  # Skip if verification fails
     namespace: kube-system  # Namespace for this application
     
-# Command execution settings
-run_commands: false  # Enable the execution of commands defined in the YAML
 
 # Define commands to execute
 commands:

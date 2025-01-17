@@ -1,0 +1,64 @@
+{{- if .Values.kserve.modelmesh.enabled }}
+{{- $secretName := "modelmesh-webhook-server-cert" }}
+{{- $existingSecret := lookup "v1" "Secret" .Release.Namespace $secretName }}
+{{- $caCertEnc := "" -}} 
+{{- $tlsCertEnc := "" -}}
+{{- $tlsKeyEnc := "" -}}
+{{- if not $existingSecret }}
+# generate a new ca & certificate
+{{- $ca := genCA "modelmesh-admission-controller-ca" 3650 -}}
+{{- $caCertEnc = $ca.Cert | b64enc -}}
+{{- $cn := printf "modelmesh-webhook-server-service" -}}
+{{- $altName1 := printf "%s.%s.svc" $cn .Release.Namespace }}
+{{- $altName2 := printf "%s.%s.svc.cluster.local" $cn .Release.Namespace }}
+{{- $cert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca -}}
+{{- $tlsCertEnc = $cert.Cert | b64enc -}}
+{{- $tlsKeyEnc = $cert.Key | b64enc -}}
+{{- else }}
+# Reuse existing certificates from the secret
+{{- $caCertEnc = index $existingSecret.data "ca.crt"  }}
+{{- $tlsCertEnc = index $existingSecret.data "tls.crt" -}}
+{{- $tlsKeyEnc = index $existingSecret.data "tls.key" -}}
+{{- end }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: modelmesh-webhook-server-cert
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+data:
+  ca.crt: {{ $caCertEnc }}
+  tls.crt: {{ $tlsCertEnc }}
+  tls.key: {{ $tlsKeyEnc }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: modelmesh-servingruntime.serving.kserve.io
+  # annotations:
+  #   cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/modelmesh-webhook-server-cert
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: {{ $caCertEnc }}
+      service:
+        name: modelmesh-webhook-server-service
+        namespace: {{ .Release.Namespace }}
+        path: /validate-serving-modelmesh-io-v1alpha1-servingruntime
+        port: 9443
+    failurePolicy: Fail
+    name: servingruntime.modelmesh-webhook-server.default
+    rules:
+      - apiGroups:
+          - serving.kserve.io
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - clusterservingruntimes
+    sideEffects: None
+{{- end }}
