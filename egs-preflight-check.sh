@@ -299,9 +299,9 @@ for function_name in "${function_defaults[@]}"; do
   if [[ -n "${grouped_results[$function_name]}" ]]; then
     echo -e "\n🔍 ====================== SUMMARY FOR: ${function_descriptions[$function_name]} ========================================================================================================================================================="
     if [[ "$function_name" == "k8s_privilege_preflight_checks" ]]; then
-      printf "| %-40s | %-35s | %-20s | %-55s | %-15s | %-10s |\n" "Resource" "Action" "Found/Notfound" "Detailed Summary" "Status" "✅/❌"
+      printf "| %-40s | %-35s | %-20s | %-55s | %-15s | %-10s |\n" "Resource" "Action" "Found/Notfound" "Detailed Summary" "Status" "✅/⚠️/❌"
     else
-      printf "| %-40s | %-115s | %-15s | %-10s |\n" "Resource Check Type" "Detailed Summary" "Status" "✅/❌"
+      printf "| %-40s | %-115s | %-15s | %-10s |\n" "Resource Check Type" "Detailed Summary" "Status" "✅/⚠️/❌"
     fi
     echo "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
 
@@ -310,17 +310,26 @@ for function_name in "${function_defaults[@]}"; do
       if [[ "$function_name" == "k8s_privilege_preflight_checks" ]]; then
         IFS=':' read -r namespace resource action detailed_status <<< "$entry"
         found_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Found" || echo "Notfound")
-        icon=$([[ "$detailed_status" == *"Success"* ]] && echo "✅" || echo "❌")
-        trimmed_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Success" || echo "Failure")
+        if [[ "$detailed_status" == *"Skipped"* ]]; then
+          icon="⚠️"
+          trimmed_status="Skipped"
+        else
+          icon=$([[ "$detailed_status" == *"Success"* ]] && echo "✅" || echo "❌")
+          trimmed_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Success" || echo "Failure")
+        fi
         printf "| %-40s | %-35s | %-20s | %-55s | %-15s | %-10s |\n" \
           "${resource:-Unknown}" "${action:-Unknown}" "$found_status" "$detailed_status" "$trimmed_status" "$icon"
       else
         IFS=':' read -r resource_action detailed_status <<< "$entry"
         resource_name=$(echo "$resource_action" | awk -F':' '{print $1}')
         resource_type=$(echo "$resource_action" | awk -F':' '{print $2}')
-        found_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Found" || echo "Notfound")
-        icon=$([[ "$detailed_status" == *"Success"* ]] && echo "✅" || echo "❌")
-        trimmed_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Success" || echo "Failure")
+        if [[ "$detailed_status" == *"Skipped"* ]]; then
+          icon="⚠️"
+          trimmed_status="Skipped"
+        else
+          icon=$([[ "$detailed_status" == *"Success"* ]] && echo "✅" || echo "❌")
+          trimmed_status=$([[ "$detailed_status" == *"Success"* ]] && echo "Success" || echo "Failure")
+        fi
         printf "| %-40s | %-115s | %-15s | %-10s |\n" \
           "${resource_name:-Unknown}" "$detailed_status" "$trimmed_status" "$icon"
       fi
@@ -892,7 +901,6 @@ create_namespace() {
     else
       echo -e "❌ Error: Unable to create namespace '$namespace'."
       log_summary "$function_name - Namespace Creation - $namespace" "$namespace:N/A:Namespace Creation Failed:Failure"
-      exit 1
     fi
   fi
 
@@ -915,31 +923,38 @@ delete_namespace() {
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespace=$namespace, cleanup=$cleanup"
   log_command "$function_name" "kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespace=$namespace, cleanup=$cleanup"
 
-  if [[ "$cleanup" == "true" ]]; then
-    # Attempt to delete the namespace
-    echo "🔍 Attempting to delete namespace: '$namespace'"
-    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $namespace --wait >/dev/null 2>&1"; then
-      echo -e "✅ Namespace '$namespace' deleted successfully."
-      log_summary "$function_name - Namespace Deletion - $namespace" "$namespace:N/A:Namespace Deletion:Success"
+if [[ "$cleanup" == "true" ]]; then
+  # Attempt to delete the namespace
+  echo "🔍 Attempting to delete namespace: '$namespace'"
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $namespace --wait >/dev/null 2>&1"; then
+    echo -e "✅ Namespace '$namespace' deleted successfully."
+    log_summary "$function_name - Namespace Deletion - $namespace" "$namespace:N/A:Namespace Deletion:Success"
 
-      # Watch the namespace deletion if enabled
-      if [[ "$watch_resources" == "true" ]]; then
-        echo "🔍 Watching namespace deletion: '$namespace'"
-        watch_resource "$kubeconfig" "$kubecontext" "namespace" "$namespace" "" "$watch_resources" "$watch_duration"
+    # Watch the namespace deletion if enabled
+    if [[ "$watch_resources" == "true" ]]; then
+      echo "🔍 Watching namespace deletion: '$namespace'"
+      if watch_resource "$kubeconfig" "$kubecontext" "namespace" "$namespace" "" "$watch_resources" "$watch_duration"; then
         log_summary "$function_name - Namespace Watch - $namespace" "$namespace:N/A:Namespace Deletion Watched:Success"
+        echo "✅ Namespace deletion for '$namespace' was successfully watched."
+      else
+        log_summary "$function_name - Namespace Watch - $namespace" "$namespace:N/A:Namespace Deletion Watched:Failure"
+        echo "❌ Error: Failed to watch namespace deletion for '$namespace'."
+        return 1  # Exit if watching deletion fails
       fi
-    else
-      echo -e "❌ Error: Unable to delete namespace '$namespace'."
-      log_summary "$function_name - Namespace Deletion - $namespace" "$namespace:N/A:Namespace Deletion Failed:Failure"
-      exit 1
     fi
   else
-    echo -e "⚠️ Deletion of namespace '$namespace' skipped due to cleanup flag."
-    log_summary "$function_name - Namespace Deletion - $namespace" "$namespace:N/A:Namespace Deletion Skipped:Skipped"
+    echo -e "❌ Error: Unable to delete namespace '$namespace'."
+    log_summary "$function_name - Namespace Deletion - $namespace" "$namespace:N/A:Namespace Deletion Failed:Failure"
+    return 1  # Exit if namespace deletion fails
   fi
+else
+  echo -e "⚠️ Deletion of namespace '$namespace' skipped due to cleanup flag."
+  log_summary "$function_name - Namespace Deletion - $namespace" "$namespace:N/A:Namespace Deletion Skipped:Skipped"
+fi
 
-  # Wait for the specified time, if any
-  wait_after_command "$global_wait"
+# Wait for the specified time, if any
+wait_after_command "$global_wait"
+
 }
 
 
@@ -960,51 +975,58 @@ namespace_preflight_checks() {
 
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespaces_to_check=$namespaces_to_check, test_namespace=$test_namespace, cleanup=$cleanup, display_resources=$display_resources_flag, watch_resources=$watch_resources, watch_duration=$watch_duration"
 
-  # Split the namespaces_to_check string into an array
-  IFS=',' read -r -a namespace_array <<< "$namespaces_to_check"
-  for namespace in "${namespace_array[@]}"; do
-    echo "🔍 Testing namespace existence: '$namespace'"
-    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $namespace >/dev/null 2>&1"; then
-      echo -e "✅ Namespace '$namespace' exists."
-      log_summary "$function_name - Namespace Check - $namespace" "$namespace:N/A:Namespace Check:Success"
-    else
-      echo -e "❌ Namespace '$namespace' does not exist."
-      log_summary "$function_name - Namespace Check - $namespace" "$namespace:N/A:Namespace Check:Failure"
-    fi
-    wait_after_command "$global_wait"
-  done
-
-  # Test namespace creation
-  echo "🔍 Testing namespace creation for: '$test_namespace'"
-  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
-    echo "✅ Namespace '$test_namespace' created successfully."
-    log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
+# Split the namespaces_to_check string into an array
+IFS=',' read -r -a namespace_array <<< "$namespaces_to_check"
+for namespace in "${namespace_array[@]}"; do
+  echo "🔍 Testing namespace existence: '$namespace'"
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $namespace >/dev/null 2>&1"; then
+    echo "✅ Namespace '$namespace' exists."
+    log_summary "$function_name - Namespace Check - $namespace" "$namespace:N/A:Namespace Check:Success"
   else
-    echo "❌ Failed to create namespace: '$test_namespace'"
-    log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Failure"
+    echo "❌ Namespace '$namespace' does not exist."
+    log_summary "$function_name - Namespace Check - $namespace" "$namespace:N/A:Namespace Check:Failure"
   fi
+  wait_after_command "$global_wait"
+done
 
-  # Watch the namespace if the watch flag is enabled
-  if [[ "$watch_resources" == "true" ]]; then
-    echo "🔍 Watching namespace: '$test_namespace'"
-    watch_resource "$kubeconfig" "$kubecontext" "namespace" "$test_namespace" "" "$watch_resources" "$watch_duration"
+# Test namespace creation
+echo "🔍 Testing namespace creation for: '$test_namespace'"
+if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
+  echo "✅ Namespace '$test_namespace' created successfully."
+  log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
+else
+  echo "❌ Failed to create namespace: '$test_namespace'"
+  log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Failure"
+  return 1  # Exit if namespace creation fails
+fi
+
+# Watch the namespace if the watch flag is enabled
+if [[ "$watch_resources" == "true" ]]; then
+  echo "🔍 Watching namespace: '$test_namespace'"
+  if watch_resource "$kubeconfig" "$kubecontext" "namespace" "$test_namespace" "" "$watch_resources" "$watch_duration"; then
+    echo "✅ Watching namespace '$test_namespace' was successful."
     log_summary "$function_name - Namespace Watch - $test_namespace" "$test_namespace:N/A:Namespace Watch:Success"
-  fi
-
-  # Test namespace deletion if cleanup is enabled
-  if [[ "$cleanup" == "true" ]]; then
-    echo "🔍 Testing namespace deletion for: '$test_namespace'"
-    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $test_namespace --ignore-not-found >/dev/null 2>&1"; then
-      echo "✅ Namespace '$test_namespace' deleted successfully."
-      log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion:Success"
-    else
-      echo "❌ Failed to delete namespace: '$test_namespace'"
-      log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion:Failure"
-    fi
   else
-    echo "⚠️ Skipping namespace deletion due to cleanup flag."
-    log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion Skipped:Cleanup Disabled"
+    echo "❌ Failed to watch namespace: '$test_namespace'"
+    log_summary "$function_name - Namespace Watch - $test_namespace" "$test_namespace:N/A:Namespace Watch:Failure"
   fi
+fi
+
+# Test namespace deletion if cleanup is enabled
+if [[ "$cleanup" == "true" ]]; then
+  echo "🔍 Testing namespace deletion for: '$test_namespace'"
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $test_namespace --ignore-not-found >/dev/null 2>&1"; then
+    echo "✅ Namespace '$test_namespace' deleted successfully."
+    log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion:Success"
+  else
+    echo "❌ Failed to delete namespace: '$test_namespace'"
+    log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion:Failure"
+  fi
+else
+  echo "⚠️ Skipping namespace deletion due to cleanup flag."
+  log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion Skipped:Cleanup Disabled"
+fi
+
 }
 
 internet_access_preflight_checks() {
@@ -1022,68 +1044,82 @@ internet_access_preflight_checks() {
 
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, test_pod_image=$test_pod_image, test_namespace=$test_namespace, test_pod_name=$test_pod_name, target_urls=$target_urls, global_wait=$global_wait, cleanup=$cleanup, watch_resources=$watch_resources, watch_duration=$watch_duration"
 
-  # Create the test namespace if it doesn't exist
-  echo "🔍 Checking or creating namespace: '$test_namespace'"
-  if ! run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $test_namespace >/dev/null 2>&1"; then
-    echo "⚠️ Namespace '$test_namespace' does not exist. Creating..."
-    run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace"
+# Check or create namespace
+echo "🔍 Checking or creating namespace: '$test_namespace'"
+if ! run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $test_namespace >/dev/null 2>&1"; then
+  echo "⚠️ Namespace '$test_namespace' does not exist. Creating..."
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace"; then
     log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
+    echo "✅ Namespace '$test_namespace' created successfully."
   else
-    echo "✅ Namespace '$test_namespace' exists."
-    log_summary "$function_name - Namespace Check - $test_namespace" "$test_namespace:N/A:Namespace Exists:Success"
-  fi
-
-  # Deploy a test pod
-  echo "🔍 Creating test pod: '$test_pod_name'"
-  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext run $test_pod_name --image=$test_pod_image --restart=Never -n $test_namespace -- sleep 3600"; then
-    log_summary "$function_name - Pod Creation - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Creation:Success"
-  else
-    echo "❌ Failed to create test pod: '$test_pod_name'"
-    log_summary "$function_name - Pod Creation - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Creation Failed:Failure"
+    log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Failure"
+    echo "❌ Failed to create namespace '$test_namespace'."
     return 1
   fi
+else
+  echo "✅ Namespace '$test_namespace' exists."
+  log_summary "$function_name - Namespace Check - $test_namespace" "$test_namespace:N/A:Namespace Exists:Success"
+fi
 
-  # Watch the pod if the watch flag is enabled
-  if [[ "$watch_resources" == "true" ]]; then
-    echo "🔍 Watching pod: '$test_pod_name' in namespace: '$test_namespace'"
-    watch_resource "$kubeconfig" "$kubecontext" "pod" "$test_pod_name" "$test_namespace" "$watch_resources" "$watch_duration"
+# Deploy a test pod
+echo "🔍 Creating test pod: '$test_pod_name'"
+if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext run $test_pod_name --image=$test_pod_image --restart=Never -n $test_namespace -- sleep 3600"; then
+  log_summary "$function_name - Pod Creation - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Creation:Success"
+else
+  echo "❌ Failed to create test pod: '$test_pod_name'"
+  log_summary "$function_name - Pod Creation - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Creation Failed:Failure"
+  return 1
+fi
+
+# Watch the pod if the watch flag is enabled
+if [[ "$watch_resources" == "true" ]]; then
+  echo "🔍 Watching pod: '$test_pod_name' in namespace: '$test_namespace'"
+  if watch_resource "$kubeconfig" "$kubecontext" "pod" "$test_pod_name" "$test_namespace" "$watch_resources" "$watch_duration"; then
     log_summary "$function_name - Pod Watch - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Watch:Success"
-  fi
-
-  # Check internet connectivity from the pod
-  echo "🔍 Checking internet connectivity from pod: '$test_pod_name'"
-  IFS=',' read -r -a url_array <<< "$target_urls"
-  for url in "${url_array[@]}"; do
-    echo "🔍 Testing connectivity to: '$url'"
-    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext exec -n $test_namespace $test_pod_name -- wget -q --spider --timeout=$global_wait $url"; then
-      echo "✅ Internet connectivity to '$url' is working."
-      log_summary "$function_name - Internet Connectivity - $url from Pod - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Internet Connectivity to $url:Success"
-    else
-      echo "❌ Failed to reach '$url' within $global_wait seconds."
-      log_summary "$function_name - Internet Connectivity - $url from Pod - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Internet Connectivity to $url:Failure"
-    fi
-  done
-
-  # Cleanup test pod and namespace if cleanup is enabled
-  if [[ "$cleanup" == "true" ]]; then
-    echo "🧹 Cleaning up resources..."
-    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete pod $test_pod_name -n $test_namespace --ignore-not-found"; then
-      log_summary "$function_name - Pod Deletion - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Deletion:Success"
-    else
-      echo "❌ Failed to delete test pod: '$test_pod_name'"
-      log_summary "$function_name - Pod Deletion - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Deletion Failed:Failure"
-    fi
-
-    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $test_namespace --ignore-not-found"; then
-      log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion:Success"
-    else
-      echo "❌ Failed to delete namespace: '$test_namespace'"
-      log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion Failed:Failure"
-    fi
+    echo "✅ Pod '$test_pod_name' watched successfully."
   else
-    echo "⚠️ Skipping cleanup due to cleanup flag."
-    log_summary "$function_name - Cleanup - $test_namespace and $test_pod_name" "$test_namespace:$test_pod_name:Cleanup Skipped:Cleanup Disabled"
+    log_summary "$function_name - Pod Watch - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Watch:Failure"
+    echo "❌ Failed to watch pod: '$test_pod_name'"
   fi
+fi
+
+# Internet connectivity check
+echo "🔍 Checking internet connectivity from pod: '$test_pod_name'"
+IFS=',' read -r -a url_array <<< "$target_urls"
+for url in "${url_array[@]}"; do
+  echo "🔍 Testing connectivity to: '$url'"
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext exec -n $test_namespace $test_pod_name -- wget -q --spider --timeout=$global_wait $url"; then
+    echo "✅ Internet connectivity to '$url' is working."
+    log_summary "$function_name - Internet Connectivity - $url from Pod - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Internet Connectivity to $url:Success"
+  else
+    echo "❌ Failed to reach '$url' within $global_wait seconds."
+    log_summary "$function_name - Internet Connectivity - $url from Pod - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Internet Connectivity to $url:Failure"
+  fi
+done
+
+# Cleanup resources
+if [[ "$cleanup" == "true" ]]; then
+  echo "🧹 Cleaning up resources..."
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete pod $test_pod_name -n $test_namespace --ignore-not-found"; then
+    log_summary "$function_name - Pod Deletion - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Deletion:Success"
+    echo "✅ Test pod '$test_pod_name' deleted successfully."
+  else
+    log_summary "$function_name - Pod Deletion - $test_pod_name in Namespace - $test_namespace" "$test_namespace:$test_pod_name:Pod Deletion Failed:Failure"
+    echo "❌ Failed to delete test pod: '$test_pod_name'"
+  fi
+
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $test_namespace --ignore-not-found"; then
+    log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion:Success"
+    echo "✅ Namespace '$test_namespace' deleted successfully."
+  else
+    log_summary "$function_name - Namespace Deletion - $test_namespace" "$test_namespace:N/A:Namespace Deletion Failed:Failure"
+    echo "❌ Failed to delete namespace: '$test_namespace'"
+  fi
+else
+  echo "⚠️ Skipping cleanup due to cleanup flag."
+  log_summary "$function_name - Cleanup Skipped - $test_namespace and $test_pod_name" "$test_namespace:$test_pod_name:Cleanup Skipped:Cleanup Disabled"
+fi
+
 }
 
 
@@ -1108,15 +1144,29 @@ pvc_preflight_checks() {
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, pvc_test_namespace=$pvc_test_namespace, pvc_name=$pvc_name, storage_class=$storage_class, storage_size=$storage_size, cleanup=$cleanup, display_resources=$display_resources_flag, watch_resources=$watch_resources, watch_duration=$watch_duration"
   log_command "$function_name" "kubeconfig=$kubeconfig, kubecontext=$kubecontext, pvc_test_namespace=$pvc_test_namespace, pvc_name=$pvc_name, storage_class=$storage_class, storage_size=$storage_size, cleanup=$cleanup"
 
-  # Create namespace for PVC testing
-  echo "🔍 Creating namespace '$pvc_test_namespace' for PVC testing..."
-  run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $pvc_test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"
-  log_summary "$function_name - Namespace for PVC Testing - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Creation:Success"
+# Create namespace for PVC testing
+echo "🔍 Creating namespace '$pvc_test_namespace' for PVC testing..."
+if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $pvc_test_namespace >/dev/null 2>&1"; then
+  # Namespace already exists
+  log_summary "$function_name - Namespace for PVC Testing - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Creation:Skipped"
+  echo "⚠️ Namespace '$pvc_test_namespace' already exists. Skipping creation."
+else
+  # Attempt to create the namespace
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $pvc_test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
+    log_summary "$function_name - Namespace for PVC Testing - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Creation:Success"
+    echo "✅ Namespace '$pvc_test_namespace' created successfully."
+  else
+    log_summary "$function_name - Namespace for PVC Testing - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Creation:Failure"
+    echo "❌ Error: Failed to create namespace '$pvc_test_namespace'."
+    SUCCESS=false
+  fi
+fi
 
-  # Create the PVC
-  echo "🔍 Creating PVC '$pvc_name' in namespace '$pvc_test_namespace'..."
-  if [[ -n "$storage_class" ]]; then
-    cat <<EOF | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"
+
+# Create the PVC
+echo "🔍 Creating PVC '$pvc_name' in namespace '$pvc_test_namespace'..."
+if [[ -n "$storage_class" ]]; then
+  if cat <<EOF | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -1130,9 +1180,16 @@ spec:
       storage: $storage_size
   storageClassName: $storage_class
 EOF
+  then
     log_summary "$function_name - PVC Creation - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Creation with StorageClass:Success"
+    echo "✅ PVC '$pvc_name' created successfully in namespace '$pvc_test_namespace' with StorageClass '$storage_class'."
   else
-    cat <<EOF | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"
+    log_summary "$function_name - PVC Creation - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Creation with StorageClass:Failure"
+    echo "❌ Error: Failed to create PVC '$pvc_name' in namespace '$pvc_test_namespace' with StorageClass '$storage_class'."
+    return 1
+  fi
+else
+  if cat <<EOF | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -1145,39 +1202,98 @@ spec:
     requests:
       storage: $storage_size
 EOF
+  then
     log_summary "$function_name - PVC Creation - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Creation without StorageClass:Success"
+    echo "✅ PVC '$pvc_name' created successfully in namespace '$pvc_test_namespace' without a StorageClass."
+  else
+    log_summary "$function_name - PVC Creation - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Creation without StorageClass:Failure"
+    echo "❌ Error: Failed to create PVC '$pvc_name' in namespace '$pvc_test_namespace' without a StorageClass."
+    return 1
   fi
+fi
+
+# Check PVC status
+echo "🔍 Verifying the status of PVC '$pvc_name' in namespace '$pvc_test_namespace'..."
+pvc_status=$($KUBECTL_BIN $kubeconfig --context=$kubecontext get pvc $pvc_name -n $pvc_test_namespace -o jsonpath='{.status.phase}')
+if [[ "$pvc_status" == "Bound" ]]; then
+  echo "✅ PVC '$pvc_name' is in 'Bound' state."
+  log_summary "$function_name - PVC Status Check - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Status:Bound:Success"
+else
+  echo "❌ PVC '$pvc_name' is in '$pvc_status' state instead of 'Bound'."
+  log_summary "$function_name - PVC Status Check - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Status:$pvc_status:Failure"
+  return 1
+fi
+
 
   # Display the PVC details
   echo "🔍 Displaying PVC details for '$pvc_name' in namespace '$pvc_test_namespace'..."
   display_resource_details "$kubeconfig" "$kubecontext" "pvc" "$pvc_test_namespace" "$pvc_name" "$display_resources_flag"
 
-  # Watch the PVC if the watch flag is enabled
-  if [[ "$watch_resources" == "true" ]]; then
+# Watch the PVC if the watch flag is enabled
+if [[ "$watch_resources" == "true" ]]; then
+  echo "🔍 Checking if PVC '$pvc_name' exists in namespace '$pvc_test_namespace'..."
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get pvc $pvc_name -n $pvc_test_namespace >/dev/null 2>&1"; then
     echo "🔍 Watching PVC '$pvc_name' in namespace '$pvc_test_namespace' for $watch_duration seconds..."
-    watch_resource "$kubeconfig" "$kubecontext" "pvc" "$pvc_name" "$pvc_test_namespace" "$watch_resources" "$watch_duration"
-    log_summary "$function_name - PVC Watch - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Watch:Success"
-  fi
-
-  # Delete the PVC if cleanup is enabled
-  if [[ "$cleanup" == "true" ]]; then
-    echo "🧹 Deleting PVC '$pvc_name' in namespace '$pvc_test_namespace'..."
-    run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete pvc $pvc_name -n $pvc_test_namespace --wait >/dev/null 2>&1"
-    log_summary "$function_name - PVC Deletion - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Deletion:Success"
+    if watch_resource "$kubeconfig" "$kubecontext" "pvc" "$pvc_name" "$pvc_test_namespace" "$watch_resources" "$watch_duration"; then
+      log_summary "$function_name - PVC Watch - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Watch:Success"
+      echo "✅ PVC '$pvc_name' watched successfully in namespace '$pvc_test_namespace'."
+    else
+      log_summary "$function_name - PVC Watch - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Watch:Failure"
+      echo "❌ Error: Failed to watch PVC '$pvc_name' in namespace '$pvc_test_namespace'."
+      SUCCESS=false
+    fi
   else
-    echo "⚠️ Skipping PVC deletion due to cleanup flag."
-    log_summary "$function_name - PVC Deletion - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Cleanup Skipped:Cleanup Disabled"
+    log_summary "$function_name - PVC Watch - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Watch Skipped:Resource Not Found"
+    echo "⚠️ PVC '$pvc_name' does not exist in namespace '$pvc_test_namespace'. Skipping watch."
   fi
+else
+  echo "⚠️ Skipping PVC watch due to watch flag being disabled."
+  log_summary "$function_name - PVC Watch - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Watch Skipped:Disabled"
+fi
 
-  # Delete the namespace used for PVC testing if cleanup is enabled
-  if [[ "$cleanup" == "true" ]]; then
-    echo "🧹 Deleting namespace '$pvc_test_namespace'..."
-    run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $pvc_test_namespace --wait >/dev/null 2>&1"
-    log_summary "$function_name - Namespace Cleanup - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Cleanup:Success"
+
+# Delete the PVC if cleanup is enabled
+if [[ "$cleanup" == "true" ]]; then
+  echo "🧹 Deleting PVC '$pvc_name' in namespace '$pvc_test_namespace'..."
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get pvc $pvc_name -n $pvc_test_namespace >/dev/null 2>&1"; then
+    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete pvc $pvc_name -n $pvc_test_namespace --wait >/dev/null 2>&1"; then
+      log_summary "$function_name - PVC Deletion - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Deletion:Success"
+      echo "✅ PVC '$pvc_name' deleted successfully in namespace '$pvc_test_namespace'."
+    else
+      log_summary "$function_name - PVC Deletion - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Deletion:Failure"
+      echo "❌ Error: Failed to delete PVC '$pvc_name' in namespace '$pvc_test_namespace'."
+      SUCCESS=false
+    fi
   else
-    echo "⚠️ Skipping namespace deletion due to cleanup flag."
-    log_summary "$function_name - Namespace Cleanup - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Cleanup Skipped:Cleanup Disabled"
+    log_summary "$function_name - PVC Deletion - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Deletion Skipped:Not Found"
+    echo "⚠️ PVC '$pvc_name' not found in namespace '$pvc_test_namespace'. Skipping deletion."
   fi
+else
+  echo "⚠️ Skipping PVC deletion due to cleanup flag."
+  log_summary "$function_name - PVC Deletion - $pvc_name in Namespace - $pvc_test_namespace" "$pvc_test_namespace:$pvc_name:PVC Cleanup Skipped:Cleanup Disabled"
+fi
+
+# Delete the namespace used for PVC testing if cleanup is enabled
+if [[ "$cleanup" == "true" ]]; then
+  echo "🧹 Deleting namespace '$pvc_test_namespace'..."
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $pvc_test_namespace >/dev/null 2>&1"; then
+    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $pvc_test_namespace --wait >/dev/null 2>&1"; then
+      log_summary "$function_name - Namespace Cleanup - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Cleanup:Success"
+      echo "✅ Namespace '$pvc_test_namespace' deleted successfully."
+    else
+      log_summary "$function_name - Namespace Cleanup - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Cleanup:Failure"
+      echo "❌ Error: Failed to delete namespace '$pvc_test_namespace'."
+      SUCCESS=false
+    fi
+  else
+    log_summary "$function_name - Namespace Cleanup - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Cleanup Skipped:Not Found"
+    echo "⚠️ Namespace '$pvc_test_namespace' not found. Skipping deletion."
+  fi
+else
+  echo "⚠️ Skipping namespace deletion due to cleanup flag."
+  log_summary "$function_name - Namespace Cleanup - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Cleanup Skipped:Cleanup Disabled"
+fi
+
 }
 
 
@@ -1200,10 +1316,23 @@ service_preflight_checks() {
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, test_namespace=$test_namespace, cleanup=$cleanup, display_resources=$display_resources_flag, service_name=$service_name, service_type=${service_type:-all}, watch_resources=$watch_resources, watch_duration=$watch_duration"
   log_command "$function_name" "kubeconfig=$kubeconfig, kubecontext=$kubecontext, test_namespace=$test_namespace, service_name=$service_name, service_type=$service_type, cleanup=$cleanup"
 
-  # Create a temporary namespace for service testing
-  echo "🔍 Creating namespace '$test_namespace' for service testing..."
-  run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"
-  log_summary "$function_name - Namespace for Service Testing - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
+echo "🔍 Creating namespace '$test_namespace' for service testing..."
+if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $test_namespace >/dev/null 2>&1"; then
+  # Namespace already exists
+  log_summary "$function_name - Namespace for Service Testing - $test_namespace" "$test_namespace:N/A:Namespace Creation:Skipped"
+  echo "⚠️ Namespace '$test_namespace' already exists. Skipping creation."
+else
+  # Attempt to create the namespace
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
+    log_summary "$function_name - Namespace for Service Testing - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
+    echo "✅ Namespace '$test_namespace' created successfully."
+  else
+    log_summary "$function_name - Namespace for Service Testing - $test_namespace" "$test_namespace:N/A:Namespace Creation:Failure"
+    echo "❌ Error: Failed to create namespace '$test_namespace'."
+    SUCCESS=false
+  fi
+fi
+
 
   local SUCCESS=true
 
@@ -1213,33 +1342,59 @@ service_preflight_checks() {
     local yaml="$2"
     local name="$3"   # Unique service name
 
-    echo "🔍 Testing $type service creation with name $name..."
-    if echo "$yaml" | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
-      echo "✅ $type service '$name' created successfully."
-      log_summary "$function_name - Service Creation - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Creation:Success"
-      display_resource_details "$kubeconfig" "$kubecontext" "service" "$test_namespace" "$name" "$display_resources_flag"
+echo "🔍 Testing $type service creation with name $name..."
+if echo "$yaml" | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
+  echo "✅ $type service '$name' created successfully."
+  log_summary "$function_name - Service Creation - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Creation:Success"
+  display_resource_details "$kubeconfig" "$kubecontext" "service" "$test_namespace" "$name" "$display_resources_flag"
 
-      # Watch the resource if the watch flag is enabled
-      if [[ "$watch_resources" == "true" ]]; then
-        echo "🔍 Watching $type service '$name' in namespace '$test_namespace' for $watch_duration seconds..."
-        watch_resource "$kubeconfig" "$kubecontext" "service" "$name" "$test_namespace" "$watch_resources" "$watch_duration"
-        log_summary "$function_name - Service Watch - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Watch:Success"
-      fi
-
-      # Clean up the resource if cleanup flag is true
-      if [[ "$cleanup" == "true" ]]; then
-        echo "🧹 Cleaning up $type service '$name' in namespace '$test_namespace'..."
-        run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete service $name -n $test_namespace --ignore-not-found"
-        log_summary "$function_name - Service Deletion - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Deletion:Success"
-      else
-        echo "⚠️ Cleanup for $type service '$name' skipped as cleanup flag is set to false."
-        log_summary "$function_name - Service Deletion - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Cleanup Skipped:Cleanup Disabled"
-      fi
+  # Watch the resource if the watch flag is enabled
+  if [[ "$watch_resources" == "true" ]]; then
+    echo "🔍 Watching $type service '$name' in namespace '$test_namespace' for $watch_duration seconds..."
+    if watch_resource "$kubeconfig" "$kubecontext" "service" "$name" "$test_namespace" "$watch_resources" "$watch_duration"; then
+      log_summary "$function_name - Service Watch - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Watch:Success"
+      echo "✅ $type service '$name' successfully watched in namespace '$test_namespace'."
     else
-      echo "❌ Error: Failed to create $type service '$name'."
-      log_summary "$function_name - Service Creation - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Creation Failed:Failure"
+      log_summary "$function_name - Service Watch - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Watch:Failure"
+      echo "❌ Error: Failed to watch $type service '$name' in namespace '$test_namespace'."
       SUCCESS=false
     fi
+  else
+    echo "⚠️ Skipping watch for $type service '$name' as the watch flag is disabled."
+    log_summary "$function_name - Service Watch - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Watch Skipped:Disabled"
+  fi
+else
+  echo "❌ Error: Failed to create $type service '$name'."
+  log_summary "$function_name - Service Creation - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Creation:Failure"
+  SUCCESS=false
+fi
+
+
+# Clean up the resource if cleanup flag is true
+if [[ "$cleanup" == "true" ]]; then
+  echo "🧹 Cleaning up $type service '$name' in namespace '$test_namespace'..."
+  
+  # Check if the service exists
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get service $name -n $test_namespace >/dev/null 2>&1"; then
+    # Attempt to delete the service
+    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete service $name -n $test_namespace --ignore-not-found"; then
+      log_summary "$function_name - Service Deletion - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Deletion:Success"
+      echo "✅ $type service '$name' deleted successfully."
+    else
+      log_summary "$function_name - Service Deletion - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Deletion:Failure"
+      echo "❌ Error: Failed to delete $type service '$name' in namespace '$test_namespace'."
+      SUCCESS=false
+    fi
+  else
+    # Service does not exist
+    log_summary "$function_name - Service Deletion - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Deletion Skipped:Service Not Found"
+    echo "⚠️ $type service '$name' not found in namespace '$test_namespace'. Skipping deletion."
+  fi
+else
+  echo "⚠️ Cleanup for $type service '$name' skipped as cleanup flag is set to false."
+  log_summary "$function_name - Service Deletion - $name in Namespace - $test_namespace" "$test_namespace:$name:$type Service Cleanup Skipped:Cleanup Disabled"
+fi
+
     wait_after_command "$global_wait"
   }
 
@@ -1305,27 +1460,42 @@ spec:
         ;;
       *)
         echo "❌ Error: Invalid service type '$service_type'. Valid types are ClusterIP, NodePort, LoadBalancer, or all."
-        exit 1
+        log_summary "$function_name - Namespace Cleanup - Error: Invalid service type '$service_type'. Valid types are ClusterIP, NodePort, LoadBalancer, or all."
         ;;
     esac
   fi
 
-  # Clean up namespace if cleanup flag is true
-  if [[ "$cleanup" == "true" ]]; then
-    echo "🧹 Cleaning up namespace '$test_namespace'..."
-    run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $test_namespace --wait >/dev/null 2>&1"
-    log_summary "$function_name - Namespace Cleanup - $test_namespace" "$test_namespace:N/A:Namespace Cleanup:Success"
+# Clean up namespace if cleanup flag is true
+if [[ "$cleanup" == "true" ]]; then
+  echo "🧹 Cleaning up namespace '$test_namespace'..."
+  
+  # Check if the namespace exists
+  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $test_namespace >/dev/null 2>&1"; then
+    # Attempt to delete the namespace
+    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $test_namespace --wait >/dev/null 2>&1"; then
+      log_summary "$function_name - Namespace Cleanup - $test_namespace" "$test_namespace:N/A:Namespace Cleanup:Success"
+      echo "✅ Namespace '$test_namespace' deleted successfully."
+    else
+      log_summary "$function_name - Namespace Cleanup - $test_namespace" "$test_namespace:N/A:Namespace Cleanup:Failure"
+      echo "❌ Error: Failed to delete namespace '$test_namespace'."
+      SUCCESS=false
+    fi
   else
-    echo "⚠️ Namespace cleanup skipped as cleanup flag is set to false."
-    log_summary "$function_name - Namespace Cleanup - $test_namespace" "$test_namespace:N/A:Namespace Cleanup Skipped:Cleanup Disabled"
+    # Namespace does not exist
+    log_summary "$function_name - Namespace Cleanup - $test_namespace" "$test_namespace:N/A:Namespace Cleanup Skipped:Namespace Not Found"
+    echo "⚠️ Namespace '$test_namespace' not found. Skipping deletion."
   fi
+else
+  echo "⚠️ Namespace cleanup skipped as cleanup flag is set to false."
+  log_summary "$function_name - Namespace Cleanup - $test_namespace" "$test_namespace:N/A:Namespace Cleanup Skipped:Cleanup Disabled"
+fi
+
 
   # Final status
   if [ "$SUCCESS" = true ]; then
     echo "✅ Service preflight checks completed successfully."
   else
     echo "❌ Service preflight checks encountered errors."
-    exit 1
   fi
 }
 
@@ -1365,28 +1535,6 @@ k8s_privilege_preflight_checks() {
 
     wait_after_command "$global_wait"
   done
-
-  # Display resources if flag is set
-  if [[ "$display_resources_flag" == "true" ]]; then
-    echo "🔍 Displaying resource details for '$test_resource'..."
-    display_resource_details "$kubeconfig" "$kubecontext" "$test_resource" "N/A" "N/A" "$display_resources_flag"
-    log_summary "$function_name - Resource Details Display - $test_resource" "N/A:$test_resource:Resource Details Display:Success"
-  fi
-
-  # Cleanup if enabled
-  if [[ "$cleanup" == "true" ]]; then
-    echo "🧹 Performing cleanup for test resource '$test_resource'..."
-    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete $test_resource --all --ignore-not-found >/dev/null 2>&1"; then
-      echo -e "✅ Cleanup completed for test resource '$test_resource'."
-      log_summary "$function_name - $test_resource:cleanup" "N/A:$test_resource:Cleanup:Success"
-    else
-      echo -e "❌ Cleanup failed for test resource '$test_resource'."
-      # log_summary "$function_name - $test_resource:cleanup" "N/A:$test_resource:Cleanup:Failure"
-    fi
-  else
-    echo "⚠️ Cleanup for test resource '$test_resource' skipped as cleanup flag is set to false."
-    # log_summary "$function_name - $test_resource:cleanup" "N/A:$test_resource:Cleanup:Skipped"
-  fi
 }
 
 
