@@ -83,7 +83,7 @@ spec:
             cpu: 50m
             memory: 96Mi
         securityContext:
-          {{- with .Values.kserve.modelmesh.controller.securityContext}}
+          {{- with .Values.kserve.modelmesh.controller.containerSecurityContext}}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         volumeMounts:
