@@ -27,12 +27,32 @@ spec:
       serviceAccountName: kubeslice-preinstall
       containers:
         - name: pre-install-job
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           image: "{{ .Values.alpine.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh","/opt/scripts/pre-install.sh"]
           volumeMounts:
             - name: config-volume
               mountPath: /opt/scripts
+      {{- if .Values.imagePullSecretsName }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecretsName }}
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       volumes:
         - name: config-volume
           configMap:
