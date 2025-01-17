@@ -407,3 +407,11 @@ kserve:
         FSGroup: 1000
   security:
     autoMountServiceAccountToken: true
+imagePullSecretsName: "kubeslice-image-pull-secret"
+# leave the below fields empty if secrets are managed externally.
+imagePullSecrets:
+  repository: https://index.docker.io/v1/ ## Value to be used incase using the docker hub images-  https://index.docker.io/v1/
+  username:
+  password:
+  email:
+  dockerconfigjson: ## Value to be used if using external secret managers
