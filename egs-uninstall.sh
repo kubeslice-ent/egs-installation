@@ -2038,38 +2038,42 @@ delete_namespace() {
         echo "Namespace $namespace deleted successfully."
     fi
 }
-# Function to remove finalizers from a resource
+
 remove_finalizers() {
     local namespace=$1
     local resource=$2
-    local kubeconfig_path=$3
+    local kubeconfig_path=${3}  # Default to ~/.kube/config if not provided
     local kubecontext=$4
 
     echo "🗑 Processing resource: $resource in namespace: $namespace" >&2
 
-    # Fetch the resource YAML and remove unwanted fields
-    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" get "$resource" -o json > ./resource.json
-    if [[ $? -ne 0 ]]; then
-        echo "❌ Failed to fetch resource: $resource" >&2
-        return
+    # Check if the resource exists
+    if ! kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" &> /dev/null; then
+        echo "❌ Resource $resource not found in namespace $namespace" >&2
+        return 1
     fi
 
-    # Remove the finalizers and clean up unnecessary metadata
-    jq 'del(.metadata.finalizers[]? | select(. == "inventory.kubeslice.io/hubspoke-gpunodeinventory-finalizer")) |
-        del(.metadata.ownerReferences) |
-        del(.metadata.managedFields)' ./resource.json > ./patched-resource.json
+    # Fetch the current finalizers
+    FINALIZERS=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" -o json | jq -r '.metadata.finalizers | @csv')
+    
+    if [[ -z "$FINALIZERS" || "$FINALIZERS" == "null" ]]; then
+        echo "✅ No finalizers found for $resource" >&2
+        return 0
+    fi
 
-    # Apply the patched resource
-    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" replace -f ./patched-resource.json
+    echo "🔍 Found finalizers: $FINALIZERS for $resource" >&2
+
+    # Patch the resource to remove finalizers
+    kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" patch "$resource" -p '{"metadata":{"finalizers":[]}}' --type=merge
     if [[ $? -eq 0 ]]; then
-        echo "✅ Finalizers removed from $resource" >&2
+        echo "✅ Successfully removed all finalizers from $resource" >&2
     else
         echo "❌ Failed to remove finalizers from $resource" >&2
+        return 1
     fi
-
-    # Clean up temporary files
-    rm -f ./resource.json ./patched-resource.json
 }
+
+
 
 # Function to delete validating webhook configurations
 delete_validating_webhooks() {
