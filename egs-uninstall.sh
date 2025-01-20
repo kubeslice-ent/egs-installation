@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Define the script version
+SCRIPT_VERSION="1.0.0"
+
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
     echo "❌ Error: This script must be run in a Bash shell."
@@ -617,6 +620,34 @@ parse_yaml() {
 
     echo "🚀 Parsing input YAML file '$yaml_file'..."
     wait_with_dots 5 " "
+
+
+    INPUT_VERSION=$(yq '.version' "$yaml_file" 2>/dev/null)
+
+    if [[ -z "$INPUT_VERSION" ]]; then
+        echo -e "❌ \033[31mError:\033[0m Could not find 'version' field in the input YAML file."
+        exit 1
+    fi
+
+    # Print script and input versions
+    echo -e "ℹ️  \033[34mScript Version:\033[0m $SCRIPT_VERSION"
+    echo -e "ℹ️  \033[34mInput File Version:\033[0m $INPUT_VERSION"
+
+    # Validate if versions match
+    if [[ "$SCRIPT_VERSION" != "$INPUT_VERSION" ]]; then
+        echo -e "❌ \033[31mError:\033[0m Script version ($SCRIPT_VERSION) does not match the input file version ($INPUT_VERSION)."
+        echo -e "Please use a compatible input file version."
+        exit 1
+    fi
+
+    # Print input file content if versions match
+    echo "Versions match! Displaying input file content:"
+    echo "------------------------------------------------------------"
+
+    # Print YAML file content without duplicates
+    cat "$yaml_file"
+
+    echo "------------------------------------------------------------"
 
     # Extract BASE_PATH
     BASE_PATH=$(yq e '.base_path' "$yaml_file")
@@ -2007,38 +2038,42 @@ delete_namespace() {
         echo "Namespace $namespace deleted successfully."
     fi
 }
-# Function to remove finalizers from a resource
+
+# Function to remove all finalizers from a Kubernetes resource
 remove_finalizers() {
     local namespace=$1
     local resource=$2
-    local kubeconfig_path=$3
+    local kubeconfig_path=$3 
     local kubecontext=$4
 
     echo "🗑 Processing resource: $resource in namespace: $namespace" >&2
 
-    # Fetch the resource YAML and remove unwanted fields
-    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" get "$resource" -o json > ./resource.json
-    if [[ $? -ne 0 ]]; then
-        echo "❌ Failed to fetch resource: $resource" >&2
-        return
+    # Check if the resource exists
+    if ! kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" &> /dev/null; then
+        echo "❌ Resource $resource not found in namespace $namespace" >&2
+        return 1
     fi
 
-    # Remove the finalizers and clean up unnecessary metadata
-    jq 'del(.metadata.finalizers[]? | select(. == "inventory.kubeslice.io/hubspoke-gpunodeinventory-finalizer")) |
-        del(.metadata.ownerReferences) |
-        del(.metadata.managedFields)' ./resource.json > ./patched-resource.json
+    # Fetch the current finalizers
+    FINALIZERS=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" -o json | jq -r '.metadata.finalizers | @csv')
+    
+    if [[ -z "$FINALIZERS" || "$FINALIZERS" == "null" ]]; then
+        echo "✅ No finalizers found for $resource" >&2
+        return 0
+    fi
 
-    # Apply the patched resource
-    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" replace -f ./patched-resource.json
+    echo "🔍 Found finalizers: $FINALIZERS for $resource" >&2
+
+    # Patch the resource to remove finalizers
+    kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" patch "$resource" -p '{"metadata":{"finalizers":[]}}' --type=merge
     if [[ $? -eq 0 ]]; then
-        echo "✅ Finalizers removed from $resource" >&2
+        echo "✅ Successfully removed all finalizers from $resource" >&2
     else
         echo "❌ Failed to remove finalizers from $resource" >&2
+        return 1
     fi
-
-    # Clean up temporary files
-    rm -f ./resource.json ./patched-resource.json
 }
+
 
 # Function to delete validating webhook configurations
 delete_validating_webhooks() {

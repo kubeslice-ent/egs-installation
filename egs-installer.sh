@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Define the script version
+SCRIPT_VERSION="1.0.0"
+
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
     echo "❌ Error: This script must be run in a Bash shell."
@@ -23,6 +26,7 @@ echo "========================================="
 echo "           EGS Installer Script          "
 echo "========================================="
 echo ""
+
 
 # Function to show a waiting indicator with a timeout
 wait_with_dots() {
@@ -666,6 +670,35 @@ parse_yaml() {
 
     echo "🚀 Parsing input YAML file '$yaml_file'..."
     wait_with_dots 5 " "
+
+
+
+    INPUT_VERSION=$(yq '.version' "$yaml_file" 2>/dev/null)
+
+    if [[ -z "$INPUT_VERSION" ]]; then
+        echo -e "❌ \033[31mError:\033[0m Could not find 'version' field in the input YAML file."
+        exit 1
+    fi
+
+    # Print script and input versions
+    echo -e "ℹ️  \033[34mScript Version:\033[0m $SCRIPT_VERSION"
+    echo -e "ℹ️  \033[34mInput File Version:\033[0m $INPUT_VERSION"
+
+    # Validate if versions match
+    if [[ "$SCRIPT_VERSION" != "$INPUT_VERSION" ]]; then
+        echo -e "❌ \033[31mError:\033[0m Script version ($SCRIPT_VERSION) does not match the input file version ($INPUT_VERSION)."
+        echo -e "Please use a compatible input file version."
+        exit 1
+    fi
+
+    # Print input file content if versions match
+    echo "Versions match! Displaying input file content:"
+    echo "------------------------------------------------------------"
+
+    # Print YAML file content without duplicates
+    cat "$yaml_file"
+
+    echo "------------------------------------------------------------"
 
     # Extract BASE_PATH
     BASE_PATH=$(yq e '.base_path' "$yaml_file")

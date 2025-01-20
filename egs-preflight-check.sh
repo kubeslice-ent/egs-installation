@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Define the script version
+SCRIPT_VERSION="1.0.0"
+
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
     echo "❌ Error: This script must be run in a Bash shell."
