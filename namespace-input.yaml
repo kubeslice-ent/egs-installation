@@ -1,0 +1,50 @@
+auto_create_namespace: true
+namespaces:
+  - name: egs-gpu-operator
+    annotations:
+      - key: application
+        value: egs
+    labels:
+      - key: application
+        value: egs
+
+  - name: egs-monitoring
+    annotations:
+      - key: application
+        value: egs
+    labels:
+      - key: application
+        value: egs
+
+  - name: kt-postgresql
+    annotations:
+      - key: application
+        value: egs
+    labels:
+      - key: application
+        value: egs
+
+  - name: kubeslice-avesha
+    annotations:
+      - key: application
+        value: egs
+    labels:
+      - key: application
+        value: egs
+
+  - name: kubeslice-controller
+    annotations:
+      - key: application
+        value: egs
+    labels:
+      - key: application
+        value: egs
+
+  - name: kubeslice-system
+    annotations:
+      - key: application
+        value: egs
+    labels:
+      - key: application
+        value: egs
+
