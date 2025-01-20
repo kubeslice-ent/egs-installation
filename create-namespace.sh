@@ -9,6 +9,17 @@ create_namespaces() {
   local success_details=()
   local failure_details=()
 
+  # Display help message
+  if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    echo "Usage: $0 [options]"
+    echo "Options:"
+    echo "  --input-yaml <path>         Path to the input YAML file containing namespace definitions."
+    echo "  --kubeconfig <path>         Path to the kubeconfig file for accessing the Kubernetes cluster."
+    echo "  --kubecontext-list <list>   Comma-separated list of Kubernetes contexts to process."
+    echo "  -h, --help                  Display this help message."
+    exit 0
+  fi
+
   # Parse named parameters
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -26,6 +37,7 @@ create_namespaces() {
         ;;
       *)
         echo "❌ Unknown parameter: $1" >&2
+        echo "Use --help or -h for usage information." >&2
         exit 1
         ;;
     esac
@@ -34,7 +46,7 @@ create_namespaces() {
   # Validate inputs
   if [[ -z "$input_yaml" || -z "$kubeconfig" || ${#kubecontext_list[@]} -eq 0 ]]; then
     echo "❌ Error: Missing required parameters." >&2
-    echo "Usage: $0 --input-yaml <path> --kubeconfig <path> --kubecontext-list <comma-separated-contexts>" >&2
+    echo "Use --help or -h for usage information." >&2
     exit 1
   fi
 
