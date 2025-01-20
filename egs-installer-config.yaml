@@ -12,7 +12,6 @@ global_kubecontext: ""                        # Global kubecontext to use - Mand
 use_global_context: true                      # If true, use the global kubecontext for all operations by default
 
 # Enable or disable specific stages of the installation
-enable_prepare_worker_values_file: true       # Prepare the worker values file for Helm charts
 enable_install_controller: true               # Enable the installation of the Kubeslice controller
 enable_install_ui: true                       # Enable the installation of the Kubeslice UI
 enable_install_worker: true                   # Enable the installation of Kubeslice workers
@@ -25,6 +24,7 @@ enable_install_additional_apps: false         # Set to true to enable additional
 # Project and cluster registration settings
 enable_project_creation: true                   # Enable project creation in Kubeslice
 enable_cluster_registration: true               # Enable cluster registration in Kubeslice
+enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
 
 # Enable custom applications
 enable_custom_apps: false                       # Set to true to enable custom apps
