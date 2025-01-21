@@ -1,5 +1,3 @@
-global:
-  imageRegistry: docker.io/aveshasystems
 kserve:
   version: v0.14.0
   modelmeshVersion: v0.12.0
@@ -372,7 +370,7 @@ kserve:
           drop:
             - ALL
     pmmlserver:
-      image: kserve/pmmlserver
+      image: kserve-pmmlserver
       tag: v0.14.1
       imagePullSecrets: []
       securityContext:

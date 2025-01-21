@@ -4,9 +4,9 @@ global:
     openshift: false
 
 operator:
-  imageRegistry: *defaultRegistry
+  imageRegistry: aveshadev #*defaultRegistry
   image: worker-operator-ent-egs
-  tag: 1.10.1
+  tag: 1.1.0-RELEASE-f43d17c7
   pullPolicy: IfNotPresent
   logLevel: INFO
 

@@ -456,7 +456,7 @@ data:
 
   agent: |-
     {
-        "image" : "{{ .Values.kserve.agent.image }}:{{ .Values.kserve.agent.tag }}",
+        "image" : "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.agent.image }}:{{ .Values.kserve.agent.tag }}",
         "memoryRequest": "100Mi",
         "memoryLimit": "1Gi",
         "cpuRequest": "100m",
@@ -464,7 +464,7 @@ data:
     }
   batcher: |-
     {
-        "image" : "{{ .Values.kserve.agent.image }}:{{ .Values.kserve.agent.tag }}",
+        "image" : "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.agent.image }}:{{ .Values.kserve.agent.tag }}",
         "memoryRequest": "1Gi",
         "memoryLimit": "1Gi",
         "cpuRequest": "1",
@@ -474,7 +474,7 @@ data:
     }
   router: |-
     {
-        "image" : "{{ .Values.kserve.router.image }}:{{ .Values.kserve.router.tag }}",
+        "image" : "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.router.image }}:{{ .Values.kserve.router.tag }}",
         "memoryRequest": "100Mi",
         "memoryLimit": "1Gi",
         "cpuRequest": "100m",
@@ -506,7 +506,7 @@ data:
   explainers: |-
     {
         "art": {
-            "image" : "{{ .Values.kserve.servingruntime.art.image }}",
+            "image" : "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.servingruntime.art.image }}",
             "defaultImageVersion": "{{ .Values.kserve.servingruntime.art.defaultVersion }}"
         }
     }
@@ -530,7 +530,7 @@ data:
     }
   logger: |-
     {
-        "image" : "{{ .Values.kserve.agent.image }}:{{ .Values.kserve.agent.tag }}",
+        "image" : "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.agent.image }}:{{ .Values.kserve.agent.tag }}",
         "memoryRequest": "100Mi",
         "memoryLimit": "1Gi",
         "cpuRequest": "100m",
@@ -539,7 +539,7 @@ data:
     }
   storageInitializer: |-
     {
-        "image" : "{{ .Values.kserve.storage.image }}:{{ .Values.kserve.storage.tag }}",
+        "image" : "{{ .Values.global.imageRegistry }}/{{ .Values.kserve.storage.image }}:{{ .Values.kserve.storage.tag }}",
         "memoryRequest": "100Mi",
         "memoryLimit": "1Gi",
         "cpuRequest": "100m",
