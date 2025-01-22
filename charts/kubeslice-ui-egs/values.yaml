@@ -14,12 +14,12 @@ kubeslice:
   ui:
     imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.10.2-RELEASE-b662e483
+    tag: 1.10.2-RELEASE-9f6abc1c
     pullPolicy: IfNotPresent
   uiv2:
     imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.10.2-RELEASE-7b2a6d34
+    tag: 1.10.2-RELEASE-cb0865d3
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false
@@ -62,7 +62,7 @@ kubeslice:
     enabled: true
     imageRegistry: aveshadev #*defaultRegistry
     image: egs-core-apis
-    tag: 1.10.2-RELEASE-18153145
+    tag: 1.10.2-RELEASE-1c1aa617
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
