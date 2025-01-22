@@ -232,7 +232,7 @@ additional_apps:
       driver:
         enabled: false
 
-    helm_flags: ""                              # Additional Helm flags for this application's installation
+    helm_flags: "--debug"                              # Additional Helm flags for this application's installation
     verify_install: false                       # Verify the installation of the GPU operator
     verify_install_timeout: 600                 # Timeout for verification (in seconds)
     skip_on_verify_fail: true                   # Skip the step if verification fails
@@ -298,7 +298,7 @@ additional_apps:
           enabled: false                      # Disable persistence
           size: 1Gi                           # Default persistence size
 
-    helm_flags: ""                             # Additional Helm flags for this application's installation
+    helm_flags: "--debug"                             # Additional Helm flags for this application's installation
     verify_install: false                      # Verify the installation of Prometheus
     verify_install_timeout: 600                # Timeout for verification (in seconds)
     skip_on_verify_fail: true                  # Skip the step if verification fails
@@ -329,7 +329,7 @@ additional_apps:
           enabled: false                      # Disable persistent storage for PostgreSQL
           size: 10Gi                          # Size of the Persistent Volume Claim
 
-    helm_flags: "--wait"                       # Additional Helm flags for this application's installation
+    helm_flags: "--wait --debug"                       # Additional Helm flags for this application's installation
     verify_install: true                       # Verify the installation of PostgreSQL
     verify_install_timeout: 600                # Timeout for verification (in seconds)
     skip_on_verify_fail: false                 # Do not skip if verification fails
