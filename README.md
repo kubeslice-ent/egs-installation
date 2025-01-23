@@ -97,10 +97,10 @@ Before you begin, ensure the following steps are completed:
      ```
 ---
 
-### Uninstallation Steps
+### 🗑️ Uninstallation Steps
 
 **⚠️ Important Note:**  
-The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources**. Use this script with caution, as it performs a complete cleanup of the environment.
+The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources provisioned by egs**. Use this script with caution, as it performs a complete cleanup of the egs setup.
 
 **Run the Cleanup Script**  
 - Execute the uninstallation script using the following command:  
