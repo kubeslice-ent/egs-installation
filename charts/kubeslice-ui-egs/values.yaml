@@ -12,14 +12,14 @@ kubeslice:
   productName: egs
 
   ui:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.10.2-RELEASE-9f6abc1c
+    tag: 1.10.2
     pullPolicy: IfNotPresent
   uiv2:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.10.2-RELEASE-cb0865d3
+    tag: 1.10.2
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false
@@ -53,16 +53,16 @@ kubeslice:
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
   apigw:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 1.10.2-RELEASE-fcd5b7a3
+    tag: 1.10.2
     pullPolicy: IfNotPresent
 
   egsCoreApis:
     enabled: true
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: egs-core-apis
-    tag: 1.10.2-RELEASE-1c1aa617
+    tag: 1.10.2
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
