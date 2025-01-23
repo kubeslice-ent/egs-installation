@@ -31,7 +31,7 @@ spec:
           value: 127.0.0.1
         - name: MLSERVER_GRPC_MAX_MESSAGE_LENGTH
           value: "-1"
-      image: seldonio/mlserver:1.3.2
+      image: '{{ .Values.global.imageRegistry }}/seldonio-mlserver:1.3.2'
       name: mlserver
       resources:
         requests:
@@ -80,7 +80,7 @@ spec:
         - --file_system_poll_wait_seconds=0
         - --grpc_bind_address=127.0.0.1
         - --rest_bind_address=127.0.0.1
-      image: openvino/model_server:2022.2
+      image: '{{ .Values.global.imageRegistry }}/openvino-model_server:2022.2'
       name: ovms
       resources:
         limits:
@@ -134,7 +134,7 @@ spec:
           --strict-readiness=false
           --allow-http=true
           --allow-sagemaker=false
-      image: nvcr.io/nvidia/tritonserver:23.04-py3
+      image: '{{ .Values.global.imageRegistry }}/nvidia-tritonserver:23.04-py3'
       livenessProbe:
         exec:
           command:
@@ -203,7 +203,7 @@ spec:
   grpcDataEndpoint: "port:7070"
   containers:
     - name: torchserve
-      image: pytorch/torchserve:0.7.1-cpu
+      image: '{{ .Values.global.imageRegistry }}/pytorch-torchserve:0.7.1-cpu'
       args:
         # Adapter creates the config file; wait for it to exist before starting
         - while [ ! -e "$TS_CONFIG_FILE" ]; do echo "waiting for config file..."; sleep 1; done;

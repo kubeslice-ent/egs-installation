@@ -14,12 +14,12 @@ kubeslice:
   ui:
     imageRegistry: *defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.10.1
+    tag: 1.10.2
     pullPolicy: IfNotPresent
   uiv2:
     imageRegistry: *defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.10.1
+    tag: 1.10.2
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false
@@ -55,14 +55,14 @@ kubeslice:
   apigw:
     imageRegistry: *defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 1.10.1
+    tag: 1.10.2
     pullPolicy: IfNotPresent
 
   egsCoreApis:
     enabled: true
     imageRegistry: *defaultRegistry
     image: egs-core-apis
-    tag: 1.10.1
+    tag: 1.10.2
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
