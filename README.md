@@ -9,11 +9,17 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 ## 📄 EGS Documents
 
-- 📖 For EGS platform overview, please see the [Platform Overview Documentation](https://docs.avesha.io/) 🌐
-- 🔧 For the Admin guide, please see the [Admin Guide Documentation](https://docs.avesha.io/) 🛠️
-- 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/) 📚
-- 🛠️ For the Installation guide, please see the documentation on [GitHub Repo](https://github.com/kubeslice-ent/egs-installation) 💻
+- 📖 For the EGS platform overview, please see the [Platform Overview Documentation](https://docs.avesha.io/) 🌐  
+- 🔧 For the Admin guide, please see the [Admin Guide Documentation](https://docs.avesha.io/) 🛠️  
+- 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/) 📚  
+- 🛠️ For the Installation guide, please see the documentation on [Installation Guide Documentation](https://github.com/kubeslice-ent/egs-installation) 💻  
+- 📝 For Avesha registration, please complete the [Avesha Registration](https://avesha.io/kubeslice-registration) process 🔑  
+- ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation?tab=readme-ov-file#egs-preflight-check-script) 🔍  
+- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](https://github.com/kubeslice-ent/egs-installation#token-retrieval) 🔒  
+- 🔍 For preflight check details, please see the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation#preflight-check) ✅  
+- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](https://github.com/kubeslice-ent/egs-installation#namespace-creation) 🗂️  
 
+---  
 
 ## Getting Started
 
@@ -34,9 +40,29 @@ Before you begin, ensure the following steps are completed:
 3. **🌐 Kubernetes Access:**
    - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
 
-4. **✅ EGS Preflight Check Script:**
-   - Run the **EGS Preflight Check Script** to ensure that your environment meets the installation requirements.  
-     - Refer to the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation?tab=readme-ov-file#egs-preflight-check-script) for detailed instructions.
+4. **✅ Run EGS Preflight Check Script (Optional):**
+   - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
+     - Refer to the [EGS Preflight Check Guide](https://github.com/kubeslice-ent/egs-installation#egs-preflight-check) for detailed instructions.
+     - Example command:
+       ```bash
+       ./egs-preflight-check.sh \
+         --kubeconfig ~/.kube/config \
+         --kubecontext-list context1,context2
+       ```
+     - This step validates namespaces, permissions, PVCs, and services, helping to identify and resolve potential issues before installation.
+
+5. **🗂️ Pre-create Required Namespaces (Optional):**
+   - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
+     - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
+       - Refer to the [Namespace Creation Script](https://github.com/kubeslice-ent/egs-installation#namespace-creation) for details.
+     - Example command:
+       ```bash
+       ./create-namespaces.sh \
+         --input-yaml namespace-input.yaml \
+         --kubeconfig ~/.kube/config \
+         --kubecontext-list context1,context2
+       ```
+     - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
 
 ---
 
