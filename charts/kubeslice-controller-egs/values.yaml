@@ -91,7 +91,7 @@ egs:
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: latest-master 
+    tag: latest-feature-v1.11.0-rc
     imagePullPolicy: Always
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60

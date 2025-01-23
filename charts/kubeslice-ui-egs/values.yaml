@@ -12,9 +12,9 @@ kubeslice:
   productName: egs
 
   ui:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.10.1
+    tag: 1.10.3-RELEASE-2eccb76d
     pullPolicy: IfNotPresent
   uiv2:
     imageRegistry: aveshadev #*defaultRegistry
@@ -55,7 +55,7 @@ kubeslice:
   apigw:
     imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: latest-feature-eviction
+    tag: 1.11.0-RELEASE-b2781f5a
     pullPolicy: Always
 
   egsCoreApis:
