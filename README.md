@@ -34,6 +34,10 @@ Before you begin, ensure the following steps are completed:
 3. **🌐 Kubernetes Access:**
    - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
 
+4. **✅ EGS Preflight Check Script:**
+   - Run the **EGS Preflight Check Script** to ensure that your environment meets the installation requirements.  
+     - Refer to the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation?tab=readme-ov-file#egs-preflight-check-script) for detailed instructions.
+
 ---
 
 ### 🛠️ Installation Steps
