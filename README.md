@@ -95,18 +95,20 @@ Before you begin, ensure the following steps are completed:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
-
 ---
 
 ### Uninstallation Steps
 
-  **Run the Cleanup Script**
-   - Execute the uninstallation script using the following command:
-     ```bash
-     ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
-     ```
----
+**⚠️ Important Note:**  
+The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources**. Use this script with caution, as it performs a complete cleanup of the environment.
 
+**Run the Cleanup Script**  
+- Execute the uninstallation script using the following command:  
+  ```bash
+  ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
+  ```
+
+--- 
 ## 🛠️ Configuration details
 
 The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installer-config.yaml`) with descriptions for each section.
