@@ -62,7 +62,7 @@ kubeslice:
     enabled: true
     imageRegistry: *defaultRegistry
     image: egs-core-apis
-    tag: 1.11.0-RELEASE-6529d4cd
+    tag: 1.11.0-RELEASE-0b453bf8
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
