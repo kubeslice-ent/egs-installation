@@ -1557,6 +1557,11 @@ merge_inline_values() {
     echo "$combined_values_file"
 }
 
+# Initialize skip flags with default values
+SKIP_RUN_COMMANDS="false"
+SKIP_CUSTOM_APPS="false"
+SKIP_ADDITIONAL_APPS="false"
+
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -1564,8 +1569,23 @@ while [[ "$#" -gt 0 ]]; do
         EGS_INPUT_YAML="$2"
         shift
         ;;
+    --skip-run-commands)
+        SKIP_RUN_COMMANDS="true"
+        ;;
+    --skip-custom-apps)
+        SKIP_CUSTOM_APPS="true"
+        ;;
+    --skip-additional-apps)
+        SKIP_ADDITIONAL_APPS="true"
+        ;;
     --help)
-        echo "Usage: $0 --input-yaml <yaml_file>"
+        echo "Usage: $0 --input-yaml <yaml_file> [options]"
+        echo "Options:"
+        echo "  --input-yaml <yaml_file>            Path to the input configuration YAML file."
+        echo "  --skip-run-commands                Skip running Kubernetes commands from YAML."
+        echo "  --skip-custom-apps                 Skip applying custom app manifests."
+        echo "  --skip-additional-apps             Skip installation of additional applications."
+        echo "  --help                              Display this help message."
         exit 0
         ;;
     *)
@@ -1602,7 +1622,7 @@ fi
 # Validate the run_commands flag before invoking the function
 run_commands=$(yq e '.run_commands // "false"' "$EGS_INPUT_YAML")
 
-if [ "$run_commands" != "true" ]; then
+if [ "$run_commands" != "true" ] || [ "$SKIP_RUN_COMMANDS" = "true" ]; then
     echo "⏩ Command execution is disabled (run_commands is not true). Skipping."
 else
     echo "🚀 Running Kubernetes commands from YAML..."
@@ -1613,7 +1633,7 @@ fi
 # Check if the enable_custom_apps flag is defined and set to true
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
 
-if [ "$enable_custom_apps" = "true" ]; then
+if [ "$enable_custom_apps" = "true" ] && [ "$SKIP_CUSTOM_APPS" != "true" ]; then
     echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."
 
     # Check if the manifests section is defined
@@ -1661,7 +1681,7 @@ else
 fi
 
 # Process additional applications if any are defined and installation is enabled
-if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" -gt 0 ]; then
+if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "$SKIP_ADDITIONAL_APPS" != "true" ] && [ "${#ADDITIONAL_APPS[@]}" -gt 0 ]; then
     echo "🚀 Starting installation of additional applications..."
     for app_index in $(seq 0 $((${#ADDITIONAL_APPS[@]} - 1))); do
         # Extracting application configuration from YAML using yq
