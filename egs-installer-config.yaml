@@ -110,7 +110,6 @@ kubeslice_ui_egs:
   namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
   release: "egs-ui"                            # Helm release name for the UI
   chart: "kubeslice-ui-egs"                    # Helm chart name for the UI
-
 #### Inline Helm Values for the UI Chart ####
   inline_values:
     global:
@@ -125,13 +124,11 @@ kubeslice_ui_egs:
         enabled: true                         # Enable EGS core APIs for the UI
         service:
           type: LoadBalancer                  # Service type for the EGS core APIs
-
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
   verify_install: false                        # Verify the installation of the UI
   verify_install_timeout: 50                   # Timeout for the UI installation verification (in seconds)
   skip_on_verify_fail: true                    # If UI verification fails, do not skip the step
-
 #### Chart Source Settings ####
   specific_use_local_charts: true              # Override to use local charts for the UI
 
@@ -146,7 +143,6 @@ kubeslice_worker_egs:
     namespace: "kubeslice-system"              # Kubernetes namespace for this worker
     release: "egs-worker"                      # Helm release name for the worker
     chart: "kubeslice-worker-egs"              # Helm chart name for the worker
-
 #### Inline Helm Values for the Worker Chart ####
     inline_values:
       global:
@@ -164,16 +160,13 @@ kubeslice_worker_egs:
               domain: kubeslice.com
               ingressGateway:
                 className: "nginx"            # Ingress class name for the KServe gateway
-
 #### Helm Flags and Verification Settings ####
     helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
     verify_install: true                       # Verify the installation of the worker
     verify_install_timeout: 60                 # Timeout for the worker installation verification (in seconds)
     skip_on_verify_fail: false                 # Do not skip if worker verification fails
-
 #### Troubleshooting Settings ####
     enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
-
 #### Local Monitoring Endpoint Settings (Optional) ####
     # local_auto_fetch_endpoint: true          # Enable automatic fetching of monitoring endpoints
     # local_grafana_namespace: egs-monitoring  # Namespace where Grafana is deployed
