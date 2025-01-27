@@ -63,7 +63,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: latest-feature-gpu-build
+    tag: 1.11.1-RELEASE-b3c0704e
     # Image pull policy for the KubeSlice controller
     pullPolicy: Always
     # Configuration for kubeTally, which handles chargeback and metrics
