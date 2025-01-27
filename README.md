@@ -64,6 +64,14 @@ Before you begin, ensure the following steps are completed:
        ```
      - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
 
+6. **🚀 Install Prerequisites for EGS (Optional):**
+   - To install prerequisites like GPU Operator, Prometheus for EGS inventory, and PostgreSQL for cost information visibility, you can run the **Prerequisites Installer Script**:
+     - Example command:
+       ```bash
+       ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+       ```
+     - **Note:** This step is optional but recommended if an existing instance of these services is not already running and configured. If skipped, some features might be broken or unavailable.
+
 ---
 
 ### 🛠️ Installation Steps
