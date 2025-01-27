@@ -105,24 +105,72 @@ Before you begin, ensure the following steps are completed:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
+Here’s a polished and well-structured version for your README:
 
-4. **🔄 Update the Inline Values:**
-   - Update the inline-values of `kubeslice-worker-egs` in `egs-installer-config.yaml` with the Grafana LB External IP:
-     - Fetch the external IP using the following command:
-       ```bash
-       kubectl get svc prometheus-grafana -n monitoring
-       ```
-     - Update the `kubeslice-worker-egs` configuration with the Grafana LB external IP in `egs-installer-config.yaml`:
-       ```yaml
-       inline_values:  # Inline Helm values for the worker chart
-         kubesliceNetworking:
-           enabled: false  # Disable Kubeslice networking for this worker
-         egs:
-           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
-         metrics:
-           insecure: true  # Allow insecure connections for metrics
-       ```
+---
+
+4. **🔄 Mandatory: Update the Inline Values**
+
+This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
+
+---
+
+#### **⚠️ Set the `global_auto_fetch_endpoint` Flag Appropriately**
+
+1. **🌐 Single-Cluster Setups**  
+   - If the **controller** and **worker** are in the same cluster, all the below setting can be ignored, and no change is required
+
+2. **Default Setting**  
+   - By default, `global_auto_fetch_endpoint` is set to `false`. If you enable it (`true`), ensure the following configurations:  
+     - **💡 Worker Cluster Service Details:** Provide the service details for each worker cluster to fetch the correct monitoring endpoints.  
+     - **📊 Multiple Worker Clusters:** Ensure the service endpoints (e.g., Grafana and Prometheus) are accessible from the **controller cluster**.  
+
+---
+
+   #### **🖥 Global Monitoring Endpoint Settings**
+
+   These configurations are **mandatory** if `global_auto_fetch_endpoint` is set to `true`. Update the following in your `egs-installer-config.yaml`:
+   
+   ```yaml
+   # Global monitoring endpoint settings
+   global_auto_fetch_endpoint: true               # Enable automatic fetching of monitoring endpoints globally
+   global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
+   global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
+   global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
+   global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
+   global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
+   global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
+   ```
+
+---
+
+#### **📢 Update `inline-values` for Multi-Cluster Setups**
+
+If `global_auto_fetch_endpoint` is `false` and the **controller** and **worker** are in different clusters, follow these steps:
+
+1. **🗒 Fetch the Grafana External IP**  
+   Use the following command to get the **Grafana LoadBalancer External IP**:  
+
+   ```bash
+   kubectl get svc prometheus-grafana -n monitoring
+   ```
+
+2. **✏ Update the `egs-installer-config.yaml`**  
+   Replace `<grafana-lb>` with the Grafana **LoadBalancer External IP** in the `inline_values` section:  
+
+   ```yaml
+   inline_values:  # Inline Helm values for the worker chart
+     kubesliceNetworking:
+       enabled: false  # Disable Kubeslice networking for this worker
+     egs:
+       prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+       grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Replace <grafana-lb> with the actual External IP
+     metrics:
+       insecure: true  # Allow insecure connections for metrics
+   ```
+
+---
+
 
 5. **🔄 Run the Installation Script Again:**
    - Apply the updated configuration by running the installation script again:
