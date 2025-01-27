@@ -2411,6 +2411,15 @@ merge_inline_values() {
     echo "$combined_values_file"
 }
 
+# Initialize skip flags with default values
+SKIP_PRECHECKS="false"
+SKIP_CONTROLLER_INSTALL="false"
+SKIP_UI_INSTALL="false"
+SKIP_PROJECT_CREATION="false"
+SKIP_CLUSTER_REGISTRATION="false"
+SKIP_PREPARE_WORKER_VALUES="false"
+SKIP_WORKER_INSTALL="false"
+
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -2418,8 +2427,39 @@ while [[ "$#" -gt 0 ]]; do
         EGS_INPUT_YAML="$2"
         shift
         ;;
+    --skip-prechecks)
+        SKIP_PRECHECKS="true"
+        ;;
+    --skip-controller-install)
+        SKIP_CONTROLLER_INSTALL="true"
+        ;;
+    --skip-ui-install)
+        SKIP_UI_INSTALL="true"
+        ;;
+    --skip-project-creation)
+        SKIP_PROJECT_CREATION="true"
+        ;;
+    --skip-cluster-registration)
+        SKIP_CLUSTER_REGISTRATION="true"
+        ;;
+    --skip-prepare-worker-values)
+        SKIP_PREPARE_WORKER_VALUES="true"
+        ;;
+    --skip-worker-install)
+        SKIP_WORKER_INSTALL="true"
+        ;;
     --help)
-        echo "Usage: $0 --input-yaml <yaml_file>"
+        echo "Usage: $0 --input-yaml <yaml_file> [options]"
+        echo "Options:"
+        echo "  --input-yaml <yaml_file>            Path to the input configuration YAML file."
+        echo "  --skip-prechecks                    Skip Kubeslice pre-checks."
+        echo "  --skip-controller-install           Skip Kubeslice Controller installation."
+        echo "  --skip-ui-install                   Skip Kubeslice UI installation."
+        echo "  --skip-project-creation             Skip project creation in the controller cluster."
+        echo "  --skip-cluster-registration         Skip cluster registration in the controller cluster."
+        echo "  --skip-prepare-worker-values        Skip preparation of worker values files."
+        echo "  --skip-worker-install               Skip worker installation."
+        echo "  --help                              Display this help message."
         exit 0
         ;;
     *)
@@ -2454,48 +2494,48 @@ if [ -n "$EGS_INPUT_YAML" ]; then
 fi
 
 # Run Kubeslice pre-checks if enabled
-if [ "$KUBESLICE_PRECHECK" = "true" ]; then
+if [ "$KUBESLICE_PRECHECK" = "true" ]  && [ "$SKIP_PRECHECKS" != "true" ]; then
     echo "🚀 Running Kubeslice pre-checks..."
     kubeslice_pre_check
 fi
 
 
 # Process kubeslice-controller installation if enabled
-if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
+if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ] && [ "$SKIP_CONTROLLER_INSTALL" != "true" ]; then
     echo "🚀 Installing or upgrading Kubeslice Controller..."
     install_or_upgrade_helm_chart "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_CHART_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_REPO_URL" "$KUBESLICE_CONTROLLER_USERNAME" "$KUBESLICE_CONTROLLER_PASSWORD" "$KUBESLICE_CONTROLLER_VALUES_FILE" "$KUBESLICE_CONTROLLER_INLINE_VALUES" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_CONTROLLER_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_CONTROLLER_VERSION" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
 fi
 
 # Process kubeslice-ui installation if enabled
-if [ "$ENABLE_INSTALL_UI" = "true" ]; then
+if [ "$ENABLE_INSTALL_UI" = "true" ] && [ "$SKIP_UI_INSTALL" != "true" ]; then
     echo "🚀 Installing or upgrading Kubeslice UI..."
     install_or_upgrade_helm_chart "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_CHART_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_REPO_URL" "$KUBESLICE_UI_USERNAME" "$KUBESLICE_UI_PASSWORD" "$KUBESLICE_UI_VALUES_FILE" "$KUBESLICE_UI_INLINE_VALUES" "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" "$KUBESLICE_UI_IMAGE_PULL_SECRET_USERNAME" "$KUBESLICE_UI_IMAGE_PULL_SECRET_PASSWORD" "$KUBESLICE_UI_IMAGE_PULL_SECRET_EMAIL" "$KUBESLICE_UI_HELM_FLAGS" "$USE_LOCAL_CHARTS" "$LOCAL_CHARTS_PATH" "$KUBESLICE_UI_VERSION" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
 fi
 
 # Create projects in the controller cluster before deploying workers
-if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+if [ "$ENABLE_PROJECT_CREATION" = "true" ] && [ "$SKIP_PROJECT_CREATION" != "true" ];  then
     echo "🚀 Creating projects in the controller cluster..."
     create_projects_in_controller
 fi
 
 # Register clusters in the controller cluster after projects have been created
-if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
+if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ] && [ "$SKIP_CLUSTER_REGISTRATION" != "true" ];  then
     echo "🚀 Registering clusters in the controller cluster..."
     register_clusters_in_controller
 fi
 
-if [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "true" ]; then
+if [ "$ENABLE_PREPARE_WORKER_VALUES_FILE" = "true" ]  && [ "$SKIP_PREPARE_WORKER_VALUES" != "true" ]; then
     echo "🚀 Preparing worker values file for: $worker_name"
     prepare_worker_values_file
 fi
 
-if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
+if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ] && [ "$SKIP_CLUSTER_REGISTRATION" != "true" ];  then
     echo "🚀 Upgrading registered clusters in the controller cluster with telemetry endpoint..."
     upgrade_cluster_registration
 fi
 
 # Inside the loop where you process each worker
-if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
+if [ "$ENABLE_INSTALL_WORKER" = "true" ] && [ "$SKIP_WORKER_INSTALL" != "true" ]; then
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
         IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"${KUBESLICE_WORKERS[$worker_index]}"
 
