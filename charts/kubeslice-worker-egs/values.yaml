@@ -6,7 +6,7 @@ global:
 operator:
   imageRegistry: aveshadev #*defaultRegistry
   image: worker-operator-ent-egs
-  tag: latest-feature-gpu-resourceusage
+  tag: 1.1.0-RELEASE-1f20c9d7 
   pullPolicy: Always
   logLevel: INFO
 

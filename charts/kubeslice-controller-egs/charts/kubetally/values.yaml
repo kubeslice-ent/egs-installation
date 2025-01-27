@@ -3,7 +3,7 @@ global:
 kubetally:
   pricingService:
     image: pricing-service
-    tag: latest-feature-gpu-cost
+    tag: 1.8.0-RELEASE-2aa8a633
     imagePullPolicy: Always
   chargeUpdater:
     image: price-updater
