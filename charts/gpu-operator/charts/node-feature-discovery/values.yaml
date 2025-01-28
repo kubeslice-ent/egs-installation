@@ -126,7 +126,9 @@ master:
     operator: "Equal"
     value: ""
     effect: "NoSchedule"
-
+  - key: kubeslice.io/egs
+    operator: Exists
+    effect: NoSchedule
   annotations: {}
 
   affinity:
@@ -462,7 +464,10 @@ worker:
 
   nodeSelector: {}
 
-  tolerations: []
+  tolerations:
+  - key: kubeslice.io/egs
+    operator: Exists
+    effect: NoSchedule
 
   annotations: {}
 
@@ -534,7 +539,10 @@ topologyUpdater:
       memory: 40Mi
 
   nodeSelector: {}
-  tolerations: []
+  tolerations:
+  - key: kubeslice.io/egs
+    operator: Exists
+    effect: NoSchedule
   annotations: {}
   daemonsetAnnotations: {}
   affinity: {}
@@ -567,7 +575,10 @@ gc:
   metricsPort: 8081
 
   nodeSelector: {}
-  tolerations: []
+  tolerations:
+  - key: kubeslice.io/egs
+    operator: Exists
+    effect: NoSchedule
   annotations: {}
   deploymentAnnotations: {}
   affinity: {}
