@@ -112,18 +112,18 @@ Before you begin, ensure the following steps are completed:
          enable_install_worker: true                   # Enable the installation of Kubeslice workers
 
          # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
-         enable_install_additional_apps: true          # Set to true to enable additional apps installation
+         enable_install_additional_apps: false          # Set to true to enable additional apps installation
 
          # Enable custom applications
          # Set this to true if you want to allow custom applications to be deployed.
          # This is specifically useful for enabling NVIDIA driver installation on your nodes.
-         enable_custom_apps: true
+         enable_custom_apps: false
 
          # Command execution settings
          # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
          # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
          # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
-         run_commands: true
+         run_commands: false
          ```
          
 ### 3. **🚀 Run the Installation Script:**
