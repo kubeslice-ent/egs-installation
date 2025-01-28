@@ -1,2 +1,121 @@
 .idea
 /installation-files/
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+node_modules/
+bower_components/
+vendor/
+
+# Build files
+dist/
+build/
+out/
+*.min.js
+*.min.css
+
+# Temporary files and directories
+*.tmp
+*.swp
+*.swo
+*.bak
+*.orig
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+
+# Java files
+*.class
+target/
+
+# JavaScript/TypeScript files
+*.tsbuildinfo
+
+# Java build output
+*.war
+*.ear
+*.jar
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Framework specific
+# Django
+db.sqlite3
+/media/
+
+# Laravel
+/public/storage
+/storage/*.key
+.env.backup
+
+# Ruby
+*.gem
+/log/
+/tmp/
+/public/uploads
+
+# Go
+*.exe
+*.out
+*.a
+
+# PHP Composer
+/vendor/
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Kubernetes
+*.kubeconfig
+*.kube/context
+
+# Machine learning
+*.h5
+*.ckpt
+*.joblib
+*.pth
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# Ignore backups
+*~
+*.bak
+
+# Ignore sensitive files
+secrets.json
+config/secrets.yml
+
+# Logs and debugging
+debug/
+logs/
+installation-files/
+*.stacktrace
+
