@@ -17,7 +17,18 @@ enable_install_ui: true                       # Enable the installation of the K
 enable_install_worker: true                   # Enable the installation of Kubeslice workers
 
 # Enable or disable the installation of additional applications(prometheus, gpu-operator, postgresql)
-enable_install_additional_apps: false         # Set to true to enable additional apps installation
+enable_install_additional_apps: true         # Set to true to enable additional apps installation
+# Enable custom applications
+# Set this to true if you want to allow custom applications to be deployed.
+# This is specifically useful for enabling NVIDIA driver installation on your nodes.
+enable_custom_apps: true
+
+# Command execution settings
+# Set this to true to allow the execution of commands for configuring NVIDIA MIG.
+# This includes modifications to the NVIDIA ClusterPolicy and applying node labels
+# based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
+run_commands: true
+
 
 #########################################################################################################################
 ########################### OPTIONAL CONFIGURATION PARAMETERS ###########################################################
@@ -25,12 +36,6 @@ enable_install_additional_apps: false         # Set to true to enable additional
 enable_project_creation: true                   # Enable project creation in Kubeslice
 enable_cluster_registration: true               # Enable cluster registration in Kubeslice
 enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
-
-# Enable custom applications
-enable_custom_apps: false                       # Set to true to enable custom apps
-
-# Command execution settings
-run_commands: false                             # Enable the execution of commands defined in the YAML
 
 # Global monitoring endpoint settings
 global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
@@ -384,7 +389,7 @@ commands:
   - use_global_kubeconfig: true               # Use global kubeconfig for these commands
     kubeconfig: ""                            # Path to the kubeconfig file specific to these commands
     kubecontext: ""                           # Kubecontext specific to these commands; uses global context if empty
-    skip_installation: true                   # Do not skip the execution of these commands
+    skip_installation: false                   # Do not skip the execution of these commands
     verify_install: false                     # Verify the execution of these commands
     verify_install_timeout: 200               # Timeout for verification (in seconds)
     skip_on_verify_fail: true                 # Skip if command verification fails
