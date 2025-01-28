@@ -391,11 +391,13 @@ commands:
     namespace: kube-system                    # Namespace context for these commands
     command_stream: |                         # Commands to execute
       kubectl create namespace egs-gpu-operator --dry-run=client -o yaml | kubectl apply -f -
-      kubectl get nodes
-      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
-      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} nvidia.com/mig.config=all-balanced --overwrite
-      kubectl get clusterpolicies.nvidia.com/cluster-policy &>/dev/null && kubectl patch clusterpolicies.nvidia.com/cluster-policy --type='json' -p='[{"op":"replace", "path":"/spec/mig/strategy", "value":"mixed"}]'
-      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} sh -c "echo {}; kubectl get node {} -o=jsonpath='{.metadata.labels}' | jq ."
+      get nodes
+      get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
+      get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} nvidia.com/mig.config=all-balanced --overwrite
+      get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} sh -c "echo {}; kubectl get node {} -o=jsonpath='{.metadata.labels}' | jq ."
+      get clusterpolicies.nvidia.com/cluster-policy --no-headers
+      patch clusterpolicies.nvidia.com/cluster-policy --type='json' -p='[{"op":"replace", "path":"/spec/mig/strategy", "value":"mixed"}]'
+
 
 
 
