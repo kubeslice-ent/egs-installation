@@ -247,7 +247,7 @@ kserve:
     knativeAddressableResolver:
       enabled: false
   modelmesh:
-    enabled: false
+    enabled: true
     controller:
           # For more information, see [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
       securityContext:
