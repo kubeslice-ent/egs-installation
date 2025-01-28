@@ -82,10 +82,21 @@ Before you begin, ensure the following steps are completed:
      git clone https://github.com/kubeslice-ent/egs-installation
      ```
 
-2. **📝 Modify the Configuration File:**
+
+## **Installation Steps**
+
+### 1. **📦 Clone the Repository:**
+   - Clone the EGS installer repository to your local machine:
+     ```bash
+     git clone https://github.com/<your-repository>/egs-installer.git
+     cd egs-installer
+     ```
+
+### 2. **📝 Modify the Configuration File (Mandatory):**
    - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`.
    - Update the following mandatory parameters:
-     - **🔑 Image Pull Secrets:**
+
+     - **🔑 Image Pull Secrets (Mandatory):**
        - Insert the image pull secrets received via email as part of the registration process:
          ```yaml
          global_image_pull_secret:
@@ -93,11 +104,36 @@ Before you begin, ensure the following steps are completed:
            username: ""  # Global Docker registry username (MANDATORY)
            password: ""  # Global Docker registry password (MANDATORY)
          ```
-     - **⚙️ Kubernetes Configuration:**
+
+     - **⚙️ Kubernetes Configuration (Mandatory) :**
        - Set the global `kubeconfig` and `kubecontext` parameters:
          ```yaml
          global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
          global_kubecontext: ""  # Global kubecontext (MANDATORY)
+         use_global_context: true  # If true, use the global kubecontext for all operations by default
+         ```
+
+     - **⚙️ Additional Configuration (Optional):**
+       - Configure installation stages and additional applications:
+         ```yaml
+         # Enable or disable specific stages of the installation
+         enable_install_controller: true               # Enable the installation of the Kubeslice controller
+         enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+         enable_install_worker: true                   # Enable the installation of Kubeslice workers
+
+         # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
+         enable_install_additional_apps: true          # Set to true to enable additional apps installation
+
+         # Enable custom applications
+         # Set this to true if you want to allow custom applications to be deployed.
+         # This is specifically useful for enabling NVIDIA driver installation on your nodes.
+         enable_custom_apps: true
+
+         # Command execution settings
+         # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
+         # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
+         # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
+         run_commands: true
          ```
 
 3. **🚀 Run the Installation Script:**
@@ -106,7 +142,7 @@ Before you begin, ensure the following steps are completed:
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
 
-4. **🔄 Mandatory: Update the Inline Values**
+4. **🔄 Mandatory for Multiple Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
