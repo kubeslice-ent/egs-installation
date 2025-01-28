@@ -20,20 +20,13 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
       containers:
-        - image:  '{{ .Values.global.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
+        - image:  '{{ .Values.kubetally.pricingService.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
           imagePullPolicy: {{.Values.kubetally.pricingService.imagePullPolicy}}
           name: pricing-service
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+            {{- with .Values.kubetally.pricingService.containersecurityContext}}
+            {{- toYaml . | nindent 10 }}
+            {{- end }}
           ports:
             - containerPort: 5000
           env:
@@ -71,7 +64,7 @@ spec:
                   key: postgresSslmode
             - name: PORT
               value: "8088"
-            - name: PROM_HOST
+            - name: PROMETHEUS_ENDPOINT
               value: {{ .Values.global.kubeTally.prometheusUrl }}
             - name: CONTROLLER_NAMESPACE
               valueFrom:
@@ -86,11 +79,9 @@ spec:
               memory: "512Mi"
               cpu: "500m"
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+        {{- with .Values.kubetally.pricingService.podsecurityContext }}
+        {{- toYaml . | nindent 4 }}
+        {{- end }} 
       imagePullSecrets:
         - name: {{ .Values.kubetally.imagePullSecretName }}
       tolerations:
@@ -117,18 +108,11 @@ spec:
           containers:
             - name: pricing-updater
               securityContext:
-                runAsUser: 65536
-                runAsGroup: 65536
-                runAsNonRoot: true
-                seccompProfile:
-                  type: RuntimeDefault
-                allowPrivilegeEscalation: false
-                capabilities:
-                  drop:
-                    - ALL
-                readOnlyRootFilesystem: true
+                {{- with .Values.kubetally.chargeUpdater.containersecurityContext}}
+                {{- toYaml . | nindent 10 }}
+                {{- end }}
               imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
-              image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+              image: '{{ .Values.kubetally.chargeUpdater.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
               env:
                 - name: APP_ENV
                   value: Production
@@ -176,11 +160,9 @@ spec:
                       apiVersion: v1
                       fieldPath: metadata.namespace
           securityContext:
-            runAsUser: 65536               # Non-root user
-            runAsGroup: 65536              # Non-root group
-            runAsNonRoot: true             # Ensure the container does not run as root
-            seccompProfile:
-              type: RuntimeDefault
+            {{- with .Values.kubetally.chargeUpdater.podsecurityContext }}
+            {{- toYaml . | nindent 4 }}
+            {{- end }} 
           imagePullSecrets:
             - name: {{ .Values.kubetally.imagePullSecretName }}
           restartPolicy: Never
@@ -210,18 +192,11 @@ spec:
       containers:
         - name: report-service
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+            {{- with .Values.kubetally.kubeTallyReport.containersecurityContext}}
+            {{- toYaml . | nindent 10 }}
+            {{- end }}
           imagePullPolicy: {{ .Values.kubetally.kubeTallyReport.imagePullPolicy }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
+          image: '{{ .Values.kubetally.kubeTallyReport.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
           env:
             - name: APP_ENV
               value: production
@@ -261,6 +236,8 @@ spec:
               value: {{ .Values.global.kubeTally.prometheusUrl }}
             - name: NUM_AWS_PULL_WORKERS
               value: "{{.Values.global.kubeTally.priceUpdaterWorkers}}"
+            - name: METRIC_COLLECTOR_PORT
+              value: "18080"
           resources:
             requests:
               memory: "256Mi"
@@ -269,17 +246,29 @@ spec:
               memory: "512Mi"
               cpu: "500m"
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+        {{- with .Values.kubetally.kubeTallyReport.podsecurityContext }}
+        {{- toYaml . | nindent 4 }}
+        {{- end }} 
       imagePullSecrets:
         - name: {{ .Values.kubetally.imagePullSecretName }}
       tolerations:
         - operator: "Exists"
 
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: report-service
+  name: kubetally-report-metrics
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - port: 18080
+    protocol: TCP
+    targetPort: 18080
+  selector:
+    app: report-service
 ---
 apiVersion: batch/v1
 kind: Job
@@ -298,18 +287,11 @@ spec:
       containers:
         - name: pricing-updater
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+            {{- with .Values.kubetally.chargeUpdater.containersecurityContext}}
+            {{- toYaml . | nindent 10 }}
+            {{- end }}
           imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+          image: '{{ .Values.kubetally.chargeUpdater.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
           env:
             - name: APP_ENV
               value: Production
@@ -355,11 +337,9 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+        {{- with .Values.kubetally.chargeUpdater.podsecurityContext }}
+        {{- toYaml . | nindent 4 }}
+        {{- end }} 
       imagePullSecrets:
         - name: {{ .Values.kubetally.imagePullSecretName }}
       restartPolicy: Never

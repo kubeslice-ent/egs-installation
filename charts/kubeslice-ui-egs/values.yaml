@@ -12,15 +12,49 @@ kubeslice:
   productName: egs
 
   ui:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.10.2
+    tag: 1.10.3-RELEASE-2eccb76d
     pullPolicy: IfNotPresent
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podsecurityContext:
+      runAsUser: 65536             
+      runAsGroup: 65536             
+      runAsNonRoot: true           
+      seccompProfile:
+        type: RuntimeDefault
   uiv2:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.10.2
+    tag: 1.12.0-RELEASE-53bd0934
     pullPolicy: IfNotPresent
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podsecurityContext:
+      runAsUser: 65536             
+      runAsGroup: 65536             
+      runAsNonRoot: true           
+      seccompProfile:
+        type: RuntimeDefault
   dashboard:
     enabled: false
     pullPolicy: IfNotPresent
@@ -45,6 +79,23 @@ kubeslice:
     image: kubeslice-ui-proxy
     tag: 1.10.1
     pullPolicy: IfNotPresent
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podsecurityContext:
+      runAsUser: 65536             
+      runAsGroup: 65536             
+      runAsNonRoot: true           
+      seccompProfile:
+        type: RuntimeDefault
     service:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
       ## Ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
@@ -53,19 +104,53 @@ kubeslice:
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
   apigw:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 1.10.2
+    tag: 1.11.0-RELEASE-5b52138d
     pullPolicy: IfNotPresent
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podsecurityContext:
+      runAsUser: 65536             
+      runAsGroup: 65536             
+      runAsNonRoot: true           
+      seccompProfile:
+        type: RuntimeDefault
 
   egsCoreApis:
     enabled: true
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: egs-core-apis
-    tag: 1.10.2
+    tag: 1.11.0-RELEASE-98955db2
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podsecurityContext:
+      runAsUser: 65536             
+      runAsGroup: 65536             
+      runAsNonRoot: true           
+      seccompProfile:
+        type: RuntimeDefault
 
   workerinstaller:
     imageRegistry: *defaultRegistry

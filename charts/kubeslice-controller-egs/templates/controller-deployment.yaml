@@ -47,16 +47,9 @@ spec:
           image: '{{ .Values.kubeslice.rbacproxy.imageRegistry }}/{{ .Values.kubeslice.rbacproxy.image }}:{{ .Values.kubeslice.rbacproxy.tag }}'
           name: kube-rbac-proxy
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+            {{- with .Values.kubeslice.rbacproxy.containersecurityContext}}
+            {{- toYaml . | nindent 10 }}
+            {{- end }}
           ports:
             - containerPort: 8443
               name: https
@@ -94,16 +87,9 @@ spec:
             periodSeconds: 20
           name: manager
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+            {{- with .Values.kubeslice.controller.containersecurityContext}}
+            {{- toYaml . | nindent 10 }}
+            {{- end }}
           ports:
             - containerPort: 9443
               name: webhook-server
@@ -130,11 +116,9 @@ spec:
             - name: kubeslice-controller-license-conf
               mountPath: /etc/license/config
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+        {{- with .Values.kubeslice.controller.podsecurityContext }}
+        {{- toYaml . | nindent 4 }}
+        {{- end }}  
       serviceAccountName: kubeslice-controller-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:

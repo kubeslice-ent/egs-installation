@@ -1,0 +1,138 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: gprautoevictions.gpr.kubeslice.io
+spec:
+  group: gpr.kubeslice.io
+  names:
+    kind: GPRAutoEviction
+    listKind: GPRAutoEvictionList
+    plural: gprautoevictions
+    singular: gprautoeviction
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: GPRAutoEviction is the Schema for the gprautoevictions API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              gprToService:
+                items:
+                  description: GPRAutoEvictionSpec defines the desired state of GPRAutoEviction
+                  properties:
+                    clusterName:
+                      type: string
+                    gprName:
+                      type: string
+                    priority:
+                      format: int32
+                      type: integer
+                    requestedResources:
+                      items:
+                        properties:
+                          gpuInstanceType:
+                            type: string
+                          gpuMemory:
+                            format: int32
+                            type: integer
+                          gpuShape:
+                            type: string
+                          numberOfGpuNodes:
+                            format: int32
+                            type: integer
+                          numberOfGpuPerNode:
+                            format: int32
+                            type: integer
+                        type: object
+                      type: array
+                    sliceName:
+                      type: string
+                    state:
+                      enum:
+                      - Queued
+                      - Running
+                      type: string
+                  type: object
+                type: array
+              gprsSelectedForEviction:
+                items:
+                  properties:
+                    gprName:
+                      type: string
+                    priority:
+                      format: int32
+                      type: integer
+                    sliceName:
+                      type: string
+                  type: object
+                type: array
+            type: object
+          status:
+            description: GPRAutoEvictionStatus defines the observed state of GPRAutoEviction
+            properties:
+              evictionStatus:
+                enum:
+                - Successful
+                - Failed
+                - Inprogress
+                type: string
+              failedEvictionGprs:
+                items:
+                  properties:
+                    failureReason:
+                      type: string
+                    gprName:
+                      type: string
+                    sliceName:
+                      type: string
+                  type: object
+                type: array
+              gprsSelectedForEviction:
+                items:
+                  properties:
+                    gprName:
+                      type: string
+                    priority:
+                      format: int32
+                      type: integer
+                    sliceName:
+                      type: string
+                  type: object
+                type: array
+              successfullyEvictedGprs:
+                items:
+                  properties:
+                    gprName:
+                      type: string
+                    sliceName:
+                      type: string
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

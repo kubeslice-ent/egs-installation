@@ -35,6 +35,8 @@ spec:
         - image: '{{ .Values.kubeslice.apigw.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
           env:
+            - name: DCGM_METRIC_JOB_FILTER
+              value: tgi
             - name: KUBESLICE_CONTROLLER_PROMETHEUS
               value: {{ .Values.kubeslice.prometheus.url }}
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE
@@ -53,16 +55,9 @@ spec:
               value: {{ .Values.egs.CoreApisUrl }}    
           name: kubeslice-api-gw
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: false
+            {{- with .Values.kubeslice.apigw.containersecurityContext}}
+            {{- toYaml . | nindent 10 }}
+            {{- end }}
           ports:
             - containerPort: 3000
               protocol: TCP
@@ -78,11 +73,9 @@ spec:
       {{- end }}
       restartPolicy: Always
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+        {{- with .Values.kubeslice.apigw.podsecurityContext }}
+        {{- toYaml . | nindent 4 }}
+        {{- end }}   
       serviceAccount: kubeslice-api-gw
       serviceAccountName: kubeslice-api-gw
       volumes:

@@ -6,21 +6,21 @@ global:
   imageRegistry: &defaultRegistry docker.io/aveshasystems
   # Profile settings (e.g., for OpenShift)
   profile:
-# if you're installing in openshift cluster make this variable true
+    # if you're installing in openshift cluster make this variable true
     openshift: false
   kubeTally:
     # Enable or disable KubeTally
     enabled: false
 
-    postgresSecretName: kubetally-db-credentials   # Default value, secret name can be overridden
+    postgresSecretName: kubetally-db-credentials # Default value, secret name can be overridden
 
     # Ensure to configure the mandatory PostgreSQL database settings when 'kubetally enable' is true.
-    postgresAddr:                         # Optional, can be specified here or retrieved from the secret
-    postgresPort:                          # Optional, can be specified here or retrieved from the secret
-    postgresUser:                        # Optional, can be specified here or retrieved from the secret
-    postgresPassword:                     # Optional, can be specified here or retrieved from the secret
-    postgresDB:                          # Optional, can be specified here or retrieved from the secret
-    postgresSslmode: require            # optional, default: require other values: disable
+    postgresAddr: # Optional, can be specified here or retrieved from the secret
+    postgresPort: # Optional, can be specified here or retrieved from the secret
+    postgresUser: # Optional, can be specified here or retrieved from the secret
+    postgresPassword: # Optional, can be specified here or retrieved from the secret
+    postgresDB: # Optional, can be specified here or retrieved from the secret
+    postgresSslmode: require # optional, default: require other values: disable
 
     # Service type for price Service Type
     priceServiceType: ClusterIP
@@ -36,7 +36,7 @@ global:
 
     # Schedule for the pricing updater (cron expression)
     pricingUpdaterSchedule: 0 0 1 * *
-    
+
     # updates price for listed cloud providers
     pricingUpdaterCloudProviders: "aws,linode"
 
@@ -48,7 +48,17 @@ kubeslice:
     image: kubebuilder-kube-rbac-proxy
     # Image tag for the RBAC proxy
     tag: v0.18.0
-
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
   # Configuration for the KubeSlice controller
   controller:
     # Log level for the controller
@@ -59,18 +69,34 @@ kubeslice:
     projectnsPrefix: kubeslice
     # Endpoint for the controller (should be specified if needed)
     endpoint: ""
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.10.2
+    tag: 1.11.1-RELEASE-e8ddab21
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
     kubeTally:
       # Interval for cleaning up metrics when a worker cluster stops communicating
       metricsCleanupInterval: 15m
-
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podsecurityContext:
+      runAsUser: 65536             
+      runAsGroup: 65536             
+      runAsNonRoot: true           
+      seccompProfile:
+        type: RuntimeDefault
 
   # Configuration for events
   events:
@@ -88,11 +114,11 @@ kubeslice:
 
 egs:
   gprManager:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: 1.10.0
+    tag: 0.9.1-RELEASE-74f0dced
     imagePullPolicy: IfNotPresent
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60
@@ -100,33 +126,80 @@ egs:
     maxDelayedCount: 10
     # Period for refreshing the GPRs
     refreshWaitTimeInterval: 300
-  
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podsecurityContext:
+      runAsUser: 65536             
+      runAsGroup: 65536             
+      runAsNonRoot: true           
+      seccompProfile:
+        type: RuntimeDefault
   queueManager:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     # Image name for the gpr-manager
     image: queue-manager
     # Image tag for the gpr-manager
-    tag: 0.8.0
+    tag: 0.8.3-RELEASE-9e4ea85a
     imagePullPolicy: IfNotPresent
     service:
       name: egs-queue-manager
       port: 80
     # turn off reflection
     appEnv: "production"
-      
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podsecurityContext:
+      runAsUser: 65536             
+      runAsGroup: 65536             
+      runAsNonRoot: true           
+      seccompProfile:
+        type: RuntimeDefault
   inventory:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.10.0
+    tag: 0.10.1-RELEASE-f2ee0c4d
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
       name: egs-inventory-manager
       port: 80
-
-
+    containersecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podsecurityContext:
+      runAsUser: 65536             
+      runAsGroup: 65536             
+      runAsNonRoot: true           
+      seccompProfile:
+        type: RuntimeDefault
 imagePullSecretsName: "kubeslice-image-pull-secret"
 # leave the below fields empty if secrets are managed externally.
 imagePullSecrets:
