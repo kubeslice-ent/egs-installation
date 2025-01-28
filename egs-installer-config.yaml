@@ -128,7 +128,7 @@ kubeslice_ui_egs:
       egsCoreApis:
         enabled: true                         # Enable EGS core APIs for the UI
         service:
-          type: LoadBalancer                  # Service type for the EGS core APIs
+          type: ClusterIP                  # Service type for the EGS core APIs
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
   verify_install: false                        # Verify the installation of the UI
@@ -297,7 +297,7 @@ additional_apps:
             enabled: true
             org_role: Viewer
         service:
-          type: LoadBalancer                  # Service type for Grafana
+          type: ClusterIP                  # Service type for Grafana
         persistence:
           enabled: false                      # Disable persistence
           size: 1Gi                           # Default persistence size
