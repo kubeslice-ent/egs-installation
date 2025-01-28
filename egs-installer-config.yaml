@@ -27,7 +27,7 @@ enable_custom_apps: true
 # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
 # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
 # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
-run_commands: true
+run_commands: false
 
 
 #########################################################################################################################
