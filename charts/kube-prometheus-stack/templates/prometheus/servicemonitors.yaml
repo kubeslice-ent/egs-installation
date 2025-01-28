@@ -35,5 +35,8 @@ items:
       podTargetLabels:
 {{ toYaml .podTargetLabels | indent 8 }}
     {{- end }}
+    {{- if .fallbackScrapeProtocol }}
+      fallbackScrapeProtocol: {{ .fallbackScrapeProtocol }}
+    {{- end }}
 {{- end }}
 {{- end }}
