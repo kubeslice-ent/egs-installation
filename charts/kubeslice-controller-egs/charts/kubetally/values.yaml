@@ -23,8 +23,6 @@ kubetally:
       runAsNonRoot: true           
       seccompProfile:
         type: RuntimeDefault
-
-    imagePullPolicy: Always
   chargeUpdater:
     imageRegistry: *defaultRegistry
     image: price-updater
@@ -69,5 +67,4 @@ kubetally:
       runAsNonRoot: true           
       seccompProfile:
         type: RuntimeDefault
-    imagePullPolicy: Always
   imagePullSecretName: kubeslice-image-pull-secret
