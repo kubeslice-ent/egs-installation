@@ -55,9 +55,16 @@ spec:
               value: {{ .Values.egs.CoreApisUrl }}    
           name: kubeslice-api-gw
           securityContext:
-            {{- with .Values.kubeslice.apigw.containersecurityContext}}
-            {{- toYaml . | nindent 10 }}
-            {{- end }}
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
           ports:
             - containerPort: 3000
               protocol: TCP
@@ -73,9 +80,11 @@ spec:
       {{- end }}
       restartPolicy: Always
       securityContext:
-        {{- with .Values.kubeslice.apigw.podsecurityContext }}
-        {{- toYaml . | nindent 4 }}
-        {{- end }}   
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccount: kubeslice-api-gw
       serviceAccountName: kubeslice-api-gw
       volumes:

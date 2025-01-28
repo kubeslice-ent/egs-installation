@@ -36,9 +36,16 @@ spec:
           imagePullPolicy: '{{ .Values.kubeslice.uiv2.pullPolicy }}'
           name: kubeslice-ui-v2
           securityContext:
-            {{- with .Values.kubeslice.uiv2.containersecurityContext}}
-            {{- toYaml . | nindent 10 }}
-            {{- end }}
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
           ports:
             - containerPort: 8080
       {{- if .Values.imagePullSecretsName }}
@@ -48,6 +55,8 @@ spec:
       tolerations:
         - operator: "Exists"
       securityContext:
-        {{- with .Values.kubeslice.uiv2.podsecurityContext }}
-        {{- toYaml . | nindent 4 }}
-        {{- end }} 
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault

@@ -40,9 +40,16 @@ spec:
               cpu: 5m
               memory: 64Mi
           securityContext:
-            {{- with .Values.rbacproxy.containersecurityContext}}
-            {{- toYaml . | nindent 10 }}
-            {{- end }}
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
         - args:
             - --health-probe-bind-address=:8081
             - --metrics-bind-address=:8080
@@ -107,9 +114,16 @@ spec:
               cpu: 10m
               memory: 64Mi
           securityContext:
-            {{- with .Values.aiops.containersecurityContext}}
-            {{- toYaml . | nindent 10 }}
-            {{- end }}
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           volumeMounts:
             - mountPath: /var/run/secrets/kubernetes.io/hub-serviceaccount
               name: hub-secret
@@ -122,9 +136,11 @@ spec:
               readOnly: true
       serviceAccountName: aiops-operator-access
       securityContext:
-        {{- with .Values.aiops.podsecurityContext }}
-        {{- toYaml . | nindent 4 }}
-        {{- end }}
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 10
       volumes:
         - name: aiops-config-volume

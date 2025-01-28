@@ -5,66 +5,15 @@ kubetally:
     imageRegistry: aveshadev #*defaultRegistry
     image: pricing-service
     tag: 1.8.0-RELEASE-2aa8a633
-    imagePullPolicy: IfNotPresent
-    containersecurityContext:
-      runAsUser: 65536
-      runAsGroup: 65536
-      runAsNonRoot: true
-      seccompProfile:
-        type: RuntimeDefault
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      readOnlyRootFilesystem: true
-    podsecurityContext:
-      runAsUser: 65536             
-      runAsGroup: 65536             
-      runAsNonRoot: true           
-      seccompProfile:
-        type: RuntimeDefault
+    imagePullPolicy: Always
   chargeUpdater:
     imageRegistry: *defaultRegistry
     image: price-updater
     tag: 1.4.0
     imagePullPolicy: IfNotPresent
-    containersecurityContext:
-      runAsUser: 65536
-      runAsGroup: 65536
-      runAsNonRoot: true
-      seccompProfile:
-        type: RuntimeDefault
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      readOnlyRootFilesystem: true
-    podsecurityContext:
-      runAsUser: 65536             
-      runAsGroup: 65536             
-      runAsNonRoot: true           
-      seccompProfile:
-        type: RuntimeDefault
   kubeTallyReport:
     imageRegistry: aveshadev #*defaultRegistry
     image: kubetally-report
     tag: 1.4.0-RELEASE-206f91b2
-    imagePullPolicy: IfNotPresent
-    containersecurityContext:
-      runAsUser: 65536
-      runAsGroup: 65536
-      runAsNonRoot: true
-      seccompProfile:
-        type: RuntimeDefault
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-          - ALL
-      readOnlyRootFilesystem: true
-    podsecurityContext:
-      runAsUser: 65536             
-      runAsGroup: 65536             
-      runAsNonRoot: true           
-      seccompProfile:
-        type: RuntimeDefault
+    imagePullPolicy: Always
   imagePullSecretName: kubeslice-image-pull-secret

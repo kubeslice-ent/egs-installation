@@ -35,9 +35,16 @@ spec:
       containers:
         - name: kubeslice-ui-proxy
           securityContext:
-            {{- with .Values.kubeslice.uiproxy.containersecurityContext}}
-            {{- toYaml . | nindent 10 }}
-            {{- end }}
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
           image: '{{ .Values.kubeslice.uiproxy.imageRegistry }}/{{ .Values.kubeslice.uiproxy.image }}:{{ .Values.kubeslice.uiproxy.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.uiproxy.pullPolicy }}'
           env:
@@ -54,6 +61,8 @@ spec:
       tolerations:
         - operator: "Exists"
       securityContext:
-        {{- with .Values.kubeslice.uiproxy.podsecurityContext }}
-        {{- toYaml . | nindent 4 }}
-        {{- end }} 
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault

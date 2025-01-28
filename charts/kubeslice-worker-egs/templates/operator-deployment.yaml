@@ -31,9 +31,16 @@ spec:
         image: '{{ .Values.rbacproxy.imageRegistry }}/{{ .Values.rbacproxy.image }}:{{ .Values.rbacproxy.tag }}'
         name: kube-rbac-proxy
         securityContext:
-          {{- with .Values.rbacproxy.containersecurityContext}}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
+          runAsUser: 65536
+          runAsGroup: 65536
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
         ports:
         - containerPort: 8443
           name: https
@@ -84,9 +91,16 @@ spec:
           periodSeconds: 20
         name: manager
         securityContext:
-          {{- with .Values.operator.containersecurityContext}}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
+          runAsUser: 65536
+          runAsGroup: 65536
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
         ports:
         - containerPort: 9443
           name: webhook-server
@@ -115,9 +129,11 @@ spec:
             readOnly: true
       serviceAccountName: kubeslice-controller-manager
       securityContext:
-        {{- with .Values.operator.podsecurityContext }}
-        {{- toYaml . | nindent 4 }}
-        {{- end }}
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 10
       volumes:
         - name: kubeslice-worker-event-schema-conf

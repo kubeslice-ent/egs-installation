@@ -18,9 +18,16 @@ spec:
       containers:
         - name: "queue-manager"
           securityContext:
-          {{- with .Values.egs.queueManager.containersecurityContext}}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           image: '{{ .Values.egs.queueManager.imageRegistry }}/{{ .Values.egs.queueManager.image }}:{{ .Values.egs.queueManager.tag }}'
           ports:
             - containerPort: 50051
@@ -42,9 +49,11 @@ spec:
       serviceAccountName: gpr-manager-access
       serviceAccount: gpr-manager-access
       securityContext:
-        {{- with .Values.egs.queueManager.podsecurityContext }}
-        {{- toYaml . | nindent 4 }}
-        {{- end }} 
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}

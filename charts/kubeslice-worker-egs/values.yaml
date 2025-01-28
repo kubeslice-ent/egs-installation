@@ -9,23 +9,7 @@ operator:
   tag: 1.1.1-RELEASE-cc6e6d88
   pullPolicy: IfNotPresent
   logLevel: INFO
-  containersecurityContext:
-    runAsUser: 65536
-    runAsGroup: 65536
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-    readOnlyRootFilesystem: true
-  podsecurityContext:
-    runAsUser: 65536             
-    runAsGroup: 65536             
-    runAsNonRoot: true           
-    seccompProfile:
-      type: RuntimeDefault
+
 controllerSecretName: kubeslice-hub #default name used if not specify any name
 ## Base64 encoded secret values from controller cluster
 controllerSecret:
@@ -45,23 +29,6 @@ aiops:
   tag: 1.11.0-RELEASE-0f9f4171
   pullPolicy: IfNotPresent
   logLevel: INFO
-  containersecurityContext:
-    runAsUser: 65536
-    runAsGroup: 65536
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-    readOnlyRootFilesystem: true
-  podsecurityContext:
-    runAsUser: 65536             
-    runAsGroup: 65536             
-    runAsNonRoot: true           
-    seccompProfile:
-      type: RuntimeDefault
 
 egs:
   prometheusEndpoint: ""
@@ -99,18 +66,6 @@ rbacproxy:
   image: kubebuilder-kube-rbac-proxy
   # Image tag for the RBAC proxy
   tag: v0.18.0
-  containersecurityContext:
-    runAsUser: 65536
-    runAsGroup: 65536
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-    readOnlyRootFilesystem: true
-
 
 alpine:
   imageRegistry: *defaultRegistry
