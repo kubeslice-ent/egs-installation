@@ -1619,16 +1619,6 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     fi
 fi
 
-# Validate the run_commands flag before invoking the function
-run_commands=$(yq e '.run_commands // "false"' "$EGS_INPUT_YAML")
-
-if [ "$run_commands" != "true" ] || [ "$SKIP_RUN_COMMANDS" = "true" ]; then
-    echo "⏩ Command execution is disabled (run_commands is not true). Skipping."
-else
-    echo "🚀 Running Kubernetes commands from YAML..."
-    # Call the function if validation passes
-    run_k8s_commands_from_yaml "$EGS_INPUT_YAML"
-fi
 
 # Check if the enable_custom_apps flag is defined and set to true
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
@@ -1732,6 +1722,17 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "$SKIP_ADDITIONAL_APPS" !
     echo "✔️ Installation of additional applications complete."
 else
     echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."
+fi
+
+# Validate the run_commands flag before invoking the function
+run_commands=$(yq e '.run_commands // "false"' "$EGS_INPUT_YAML")
+
+if [ "$run_commands" != "true" ] || [ "$SKIP_RUN_COMMANDS" = "true" ]; then
+    echo "⏩ Command execution is disabled (run_commands is not true). Skipping."
+else
+    echo "🚀 Running Kubernetes commands from YAML..."
+    # Call the function if validation passes
+    run_k8s_commands_from_yaml "$EGS_INPUT_YAML"
 fi
 
 trap display_summary EXIT
