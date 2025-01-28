@@ -210,7 +210,7 @@ additional_apps:
     release: "gpu-operator"                    # Helm release name for the GPU operator
     chart: "gpu-operator"                      # Helm chart name for the GPU operator
     repo_url: "https://helm.ngc.nvidia.com/nvidia" # Helm repository URL for the GPU operator
-    version: "v24.6.0"                         # Version of the GPU operator to install
+    version: "v24.9.1"                         # Version of the GPU operator to install
     specific_use_local_charts: true            # Use local charts for this application
 
     #### Inline Helm Values for GPU Operator ####
@@ -222,6 +222,12 @@ additional_apps:
       cdi:
         enabled: true
         default: true
+      mig:
+        strategy: "mixed"
+      migManager:                             # Enable to ensure that the node reboots and can apply the MIG configuration.
+        env:
+          - name: WITH_REBOOT
+            value: "true"
       driver:
         enabled: false
 
@@ -387,6 +393,12 @@ commands:
       kubectl create namespace egs-gpu-operator --dry-run=client -o yaml | kubectl apply -f -
       kubectl get nodes
       kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true --overwrite
+      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} nvidia.com/mig.config=all-balanced --overwrite
+      kubectl get clusterpolicies.nvidia.com/cluster-policy &>/dev/null && kubectl patch clusterpolicies.nvidia.com/cluster-policy --type='json' -p='[{"op":"replace", "path":"/spec/mig/strategy", "value":"mixed"}]'
+      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} sh -c "echo {}; kubectl get node {} -o=jsonpath='{.metadata.labels}' | jq ."
+
+
+
 
 #### Troubleshooting Mode Settings ####
 enable_troubleshoot:
