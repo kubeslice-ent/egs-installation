@@ -74,22 +74,12 @@ Before you begin, ensure the following steps are completed:
 
 ---
 
-### 🛠️ Installation Steps
+## 🛠️ Installation Steps
 
-1. **📂 Clone the Repository:**
+### 1. **📂 Clone the Repository:**
    - Start by cloning the EGS installation Git repository:
      ```bash
      git clone https://github.com/kubeslice-ent/egs-installation
-     ```
-
-
-## **Installation Steps**
-
-### 1. **📦 Clone the Repository:**
-   - Clone the EGS installer repository to your local machine:
-     ```bash
-     git clone https://github.com/<your-repository>/egs-installer.git
-     cd egs-installer
      ```
 
 ### 2. **📝 Modify the Configuration File (Mandatory):**
@@ -135,14 +125,14 @@ Before you begin, ensure the following steps are completed:
          # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
          run_commands: true
          ```
-
-3. **🚀 Run the Installation Script:**
+         
+### 3. **🚀 Run the Installation Script:**
    - Execute the installation script using the following command:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
 
-4. **🔄 Mandatory for Multiple Worker Clusters: Update the Inline Values**
+### 4. **🔄 Mandatory for Multiple Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
@@ -197,7 +187,7 @@ Before you begin, ensure the following steps are completed:
           insecure: true  # Allow insecure connections for metrics
       ```
 
-5. **🔄 Run the Installation Script Again:**
+### 5. **🔄 Run the Installation Script Again:**
    - Apply the updated configuration by running the installation script again:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
