@@ -401,7 +401,7 @@ commands:
       kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} sh -c "echo {}; kubectl get node {} -o=jsonpath='{.metadata.labels}' | jq ." || true
       kubectl get clusterpolicies.nvidia.com/cluster-policy --no-headers || true
       kubectl patch clusterpolicies.nvidia.com/cluster-policy --type='json' -p='[{"op":"replace", "path":"/spec/mig/strategy", "value":"mixed"}]' || true
-      kubectl get nodes -o json | jq -r '.items[] | select(.metadata.labels and (.metadata.labels | has("nvidia.com/mig.capable") and has("nvidia.com/mig.config.state"))) | .metadata.name' | xargs -I {} kubectl label nodes {} nvidia.com/mig.config=all-balanced --overwrite || true
+      kubectl get nodes -o json | jq -r '.items[] | select((.metadata.labels | type == "object") and (.metadata.labels["nvidia.com/mig.capable"] == "true") and (.metadata.labels["nvidia.com/gpu.present"] == "true") and (.metadata.labels | has("nvidia.com/mig.config.state"))) | .metadata.name' | xargs -I {} kubectl label nodes {} nvidia.com/mig.config=all-balanced --overwrite || true
 
 
 
