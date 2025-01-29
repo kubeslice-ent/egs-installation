@@ -6,7 +6,7 @@ global:
 operator:
   imageRegistry: aveshadev #*defaultRegistry
   image: worker-operator-ent-egs
-  tag: 1.1.1-RELEASE-cc6e6d88
+  tag: 1.1.1-RELEASE-dc5ac7f3
   pullPolicy: IfNotPresent
   logLevel: INFO
 
