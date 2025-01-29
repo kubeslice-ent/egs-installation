@@ -398,10 +398,11 @@ commands:
       kubectl create namespace egs-gpu-operator --dry-run=client -o yaml | kubectl apply -f - || true
       kubectl get nodes || true
       kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true cloud.google.com/gke-accelerator=true --overwrite || true
-      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} nvidia.com/mig.config=all-balanced --overwrite || true
       kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} sh -c "echo {}; kubectl get node {} -o=jsonpath='{.metadata.labels}' | jq ." || true
       kubectl get clusterpolicies.nvidia.com/cluster-policy --no-headers || true
       kubectl patch clusterpolicies.nvidia.com/cluster-policy --type='json' -p='[{"op":"replace", "path":"/spec/mig/strategy", "value":"mixed"}]' || true
+      kubectl get nodes -o json | jq -r '.items[] | select(.metadata.labels["nvidia.com/mig.capable"]=="true" or .metadata.labels["nvidia.com/mig.config.state"]=="success") | .metadata.name' | xargs -I {} kubectl label nodes {} nvidia.com/mig.config=all-balanced --overwrite || true
+
 
 
 
