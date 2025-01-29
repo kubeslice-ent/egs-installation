@@ -76,6 +76,8 @@ spec:
                 type: integer
               priority:
                 type: integer
+              requeueOnFailure:
+                type: boolean
               sliceName:
                 type: string
             required:
@@ -120,12 +122,17 @@ spec:
                   unUtilizedDuration:
                     type: string
                 type: object
+              lastTransitionTime:
+                format: date-time
+                type: string
               numGPUsAllocated:
                 type: integer
               provisioningStatus:
                 description: |-
                   INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
                   Important: Run "make" to regenerate code after modifying this file
+                type: string
+              remainingDuration:
                 type: string
               startTimestamp:
                 format: date-time

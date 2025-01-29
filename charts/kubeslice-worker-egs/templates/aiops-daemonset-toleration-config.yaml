@@ -8,6 +8,7 @@ metadata:
 data:
   daemonsets: |
     egs-gpu-operator/gpu-feature-discovery
+    egs-gpu-operator/gpu-operator-node-feature-discovery-worker
     egs-gpu-operator/gpu-operator-release-node-feature-discovery-worker
     egs-gpu-operator/nvidia-container-toolkit-daemonset
     egs-gpu-operator/nvidia-dcgm-exporter

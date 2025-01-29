@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Define the script version
+SCRIPT_VERSION="1.0.0"
+
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
     echo "❌ Error: This script must be run in a Bash shell."
@@ -8,6 +11,12 @@ if [ -z "$BASH_VERSION" ]; then
 else
     echo "✅ Bash shell detected. Version: $BASH_VERSION"
 fi
+
+# Specify the output file
+output_file="egs-uninstaller-output.log"
+exec > >(tee -a "$output_file") 2>&1
+
+echo "=====================================EGS UnInstaller Script execution started at: $(date)===================================" >> "$output_file"
 
 # Function to handle operations that should continue on error
 continue_on_error() {
@@ -611,6 +620,34 @@ parse_yaml() {
 
     echo "🚀 Parsing input YAML file '$yaml_file'..."
     wait_with_dots 5 " "
+
+
+    INPUT_VERSION=$(yq '.version' "$yaml_file" 2>/dev/null)
+
+    if [[ -z "$INPUT_VERSION" ]]; then
+        echo -e "❌ \033[31mError:\033[0m Could not find 'version' field in the input YAML file."
+        exit 1
+    fi
+
+    # Print script and input versions
+    echo -e "ℹ️  \033[34mScript Version:\033[0m $SCRIPT_VERSION"
+    echo -e "ℹ️  \033[34mInput File Version:\033[0m $INPUT_VERSION"
+
+    # Validate if versions match
+    if [[ "$SCRIPT_VERSION" != "$INPUT_VERSION" ]]; then
+        echo -e "❌ \033[31mError:\033[0m Script version ($SCRIPT_VERSION) does not match the input file version ($INPUT_VERSION)."
+        echo -e "Please use a compatible input file version."
+        exit 1
+    fi
+
+    # Print input file content if versions match
+    echo "Versions match! Displaying input file content:"
+    echo "------------------------------------------------------------"
+
+    # Print YAML file content without duplicates
+    cat "$yaml_file"
+
+    echo "------------------------------------------------------------"
 
     # Extract BASE_PATH
     BASE_PATH=$(yq e '.base_path' "$yaml_file")
@@ -1534,13 +1571,14 @@ uninstall_helm_chart_and_cleanup() {
         helm uninstall $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg
     }
 
-    delete_kubernetes_objects() {
-        echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'" >&2
-        kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
-        kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
-        kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
-        kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext
-    }
+delete_kubernetes_objects() {
+    echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'" >&2
+    kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+    kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+    kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+    kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+}
+
 
     if helm status $release_name --namespace $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
         echo "🔄 Helm release '$release_name' found. Preparing to uninstall..." >&2
@@ -1639,7 +1677,7 @@ unregister_clusters_in_controller() {
         echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'" >&2
         echo "-----------------------------------------" >&2
 
-        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name
+        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name --force --grace-period=0
         if [ $? -ne 0 ]; then
             echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'." >&2
             return 1
@@ -1717,7 +1755,7 @@ delete_projects_in_controller() {
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace --force --grace-period=0
             if [ $? -eq 0 ]; then
                 break
             elif [ $i -lt $max_retries ]; then
@@ -1810,7 +1848,7 @@ delete_slices_in_controller() {
                 fi
 
                 # Attempt to delete the SliceConfig after patching
-                kubectl delete sliceconfig.controller.kubeslice.io $name -n $namespace --kubeconfig $kubeconfig_path $context_arg
+                kubectl delete sliceconfig.controller.kubeslice.io $name -n $namespace --kubeconfig $kubeconfig_path $context_arg --force --grace-period=0
                 if [ $? -eq 0 ]; then
                     success=true
                     break
@@ -1898,7 +1936,7 @@ delete_projects_in_controller() {
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace --force --grace-period=0
             if [ $? -eq 0 ]; then
                 break
             elif kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
@@ -1963,39 +2001,79 @@ list_resources_in_group() {
     # Final output: Only resource names
     printf "%s\n" "${resources[@]}"
 }
+# Function to delete a namespace
+delete_namespace() {
+    local namespace=$1
+    local specific_use_global_kubeconfig=$2
+    local specific_kubeconfig_path=$3
+    local specific_kubecontext=$4
 
-# Function to remove finalizers from a resource
+
+ # Use kubeaccess_precheck to determine kubeconfig path and context
+    read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+        "deleteing namespace" \
+        "$specific_use_global_kubeconfig" \
+        "$GLOBAL_KUBECONFIG" \
+        "$GLOBAL_KUBECONTEXT" \
+        "$specific_kubeconfig_path" \
+        "$specific_kubecontext")
+    
+
+    # Attempt to delete the namespace
+    echo "Attempting to delete namespace: $namespace"
+    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext delete namespace "$namespace" --wait=false
+
+    # Wait for a few seconds and check if the namespace is in terminating state
+    sleep 5
+    if kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext get namespace "$namespace" -o jsonpath='{.status.phase}' 2>/dev/null | grep -q "Terminating"; then
+        echo "Namespace $namespace is in a terminating state. Proceeding with force deletion."
+
+        # Remove the finalizer
+        kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext get namespace "$namespace" -o json \
+            | jq '.spec.finalizers = []' \
+            | kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext replace --raw "/api/v1/namespaces/$namespace/finalize" -f -
+
+        echo "Namespace $namespace has been forcefully deleted."
+    else
+        echo "Namespace $namespace deleted successfully."
+    fi
+}
+
+# Function to remove all finalizers from a Kubernetes resource
 remove_finalizers() {
     local namespace=$1
     local resource=$2
-    local kubeconfig_path=$3
+    local kubeconfig_path=$3 
     local kubecontext=$4
 
     echo "🗑 Processing resource: $resource in namespace: $namespace" >&2
 
-    # Fetch the resource YAML and remove unwanted fields
-    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" get "$resource" -o json > ./resource.json
-    if [[ $? -ne 0 ]]; then
-        echo "❌ Failed to fetch resource: $resource" >&2
-        return
+    # Check if the resource exists
+    if ! kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" &> /dev/null; then
+        echo "❌ Resource $resource not found in namespace $namespace" >&2
+        return 1
     fi
 
-    # Remove the finalizers and clean up unnecessary metadata
-    jq 'del(.metadata.finalizers[]? | select(. == "inventory.kubeslice.io/hubspoke-gpunodeinventory-finalizer")) |
-        del(.metadata.ownerReferences) |
-        del(.metadata.managedFields)' ./resource.json > ./patched-resource.json
+    # Fetch the current finalizers
+    FINALIZERS=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" get "$resource" -o json | jq -r '.metadata.finalizers | @csv')
+    
+    if [[ -z "$FINALIZERS" || "$FINALIZERS" == "null" ]]; then
+        echo "✅ No finalizers found for $resource" >&2
+        return 0
+    fi
 
-    # Apply the patched resource
-    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext -n "$namespace" replace -f ./patched-resource.json
+    echo "🔍 Found finalizers: $FINALIZERS for $resource" >&2
+
+    # Patch the resource to remove finalizers
+    kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" -n "$namespace" patch "$resource" -p '{"metadata":{"finalizers":[]}}' --type=merge
     if [[ $? -eq 0 ]]; then
-        echo "✅ Finalizers removed from $resource" >&2
+        echo "✅ Successfully removed all finalizers from $resource" >&2
     else
         echo "❌ Failed to remove finalizers from $resource" >&2
+        return 1
     fi
-
-    # Clean up temporary files
-    rm -f ./resource.json ./patched-resource.json
 }
+
 
 # Function to delete validating webhook configurations
 delete_validating_webhooks() {
@@ -2098,6 +2176,21 @@ cleanup_resources_and_webhooks() {
 
 
 
+# Initialize skip flags with default values
+SKIP_PRECHECKS="false"
+SKIP_CONTROLLER_UNINSTALL="false"
+SKIP_UI_UNINSTALL="false"
+SKIP_PROJECT_DELETION="false"
+SKIP_CLUSTER_UNREGISTRATION="false"
+SKIP_WORKER_UNINSTALL="false"
+SKIP_RUN_COMMANDS="false"
+SKIP_CUSTOM_APPS="false"
+SKIP_ADDITIONAL_APPS="false"
+SKIP_DELETE_NAMESPACE="false"
+SKIP_DELETE_K8S_OBJECTS="false"
+SKIP_DELETE_SLICES="false"
+SKIP_CLEANUP_CUSTOM_RESOURCE_WEBHOOKS="false"
+
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -2105,13 +2198,67 @@ while [[ "$#" -gt 0 ]]; do
         EGS_INPUT_YAML="$2"
         shift
         ;;
+    --skip-prechecks)
+        SKIP_PRECHECKS="true"
+        ;;
+    --skip-controller-uninstall)
+        SKIP_CONTROLLER_UNINSTALL="true"
+        ;;
+    --skip-ui-uninstall)
+        SKIP_UI_UNINSTALL="true"
+        ;;
+    --skip-project-deletion)
+        SKIP_PROJECT_DELETION="true"
+        ;;
+    --skip-cluster-unregistration)
+        SKIP_CLUSTER_UNREGISTRATION="true"
+        ;;
+    --skip-worker-uninstall)
+        SKIP_WORKER_UNINSTALL="true"
+        ;;
+    --skip-run-commands)
+        SKIP_RUN_COMMANDS="true"
+        ;;
+    --skip-custom-apps)
+        SKIP_CUSTOM_APPS="true"
+        ;;
+    --skip-additional-apps)
+        SKIP_ADDITIONAL_APPS="true"
+        ;;
+    --skip-delete-namespace)
+        SKIP_DELETE_NAMESPACE="true"
+        ;;
+    --skip-delete-k8s-objects)
+        SKIP_DELETE_K8S_OBJECTS="true"
+        ;;
+    --skip-delete-slices)
+        SKIP_DELETE_SLICES="true"
+        ;;
+    --skip-cleanup-custom-resource-webhooks)
+        SKIP_CLEANUP_CUSTOM_RESOURCE_WEBHOOKS="true"
+        ;;
     --help)
-        echo "Usage: $0 --input-yaml <yaml_file>"  >&2
+        echo "Usage: $0 --input-yaml <yaml_file> [options]"  >&2
+        echo "Options:"
+        echo "  --skip-prechecks                            Skip Kubeslice pre-checks."
+        echo "  --skip-controller-uninstall                 Skip Kubeslice Controller uninstallation."
+        echo "  --skip-ui-uninstall                         Skip Kubeslice UI uninstallation."
+        echo "  --skip-project-deletion                     Skip project deletion in the controller cluster."
+        echo "  --skip-cluster-unregistration               Skip cluster unregistration in the controller cluster."
+        echo "  --skip-worker-uninstall                     Skip worker uninstallation."
+        echo "  --skip-run-commands                         Skip running Kubernetes commands from YAML."
+        echo "  --skip-custom-apps                          Skip removing custom app manifests."
+        echo "  --skip-additional-apps                      Skip uninstallation of additional applications."
+        echo "  --skip-delete-namespace                     Skip deleting namespace after uninstallation."
+        echo "  --skip-delete-k8s-objects                   Skip deleting Kubernetes objects after uninstallation."
+        echo "  --skip-delete-slices                        Skip deleting slices in the controller cluster."
+        echo "  --skip-cleanup-custom-resource-webhooks     Skip cleanup of API resources and webhooks."
+        echo "  --help                                      Display this help message."
         exit 0
         ;;
     *)
         echo "Unknown parameter passed: $1"  >&2
-        echo "Use --help for usage information."  >&2 
+        echo "Use --help for usage information."  >&2
         exit 1
         ;;
     esac
@@ -2139,15 +2286,12 @@ if [ -n "$EGS_INPUT_YAML" ]; then
     fi
 fi
 
-# Run Kubeslice pre-checks if enabled
-if [ "$KUBESLICE_PRECHECK" = "true" ]; then
-    continue_on_error kubeslice_uninstall_pre_check
-fi
+
 
 # Check if the enable_custom_apps flag is defined and set to true
 enable_custom_apps=$(yq e '.enable_custom_apps // "false"' "$EGS_INPUT_YAML")
 
-if [ "$enable_custom_apps" = "true" ]; then
+if [ "$enable_custom_apps" = "true" ] && [ "$SKIP_CUSTOM_APPS" != "true" ]; then
     echo "🚀 Custom apps are enabled. Iterating over manifests and applying them..."  >&2
 
     # Check if the manifests section is defined
@@ -2194,7 +2338,7 @@ else
 fi
 
 # Process additional applications if any are defined and installation is enabled
-if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" -gt 0 ]; then
+if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ]  && [ "$SKIP_ADDITIONAL_APPS" != "true" ] && [ "${#ADDITIONAL_APPS[@]}" -gt 0 ]; then
     echo "🚀 Starting installation of additional applications..."
     for app_index in $(seq 0 $((${#ADDITIONAL_APPS[@]} - 1))); do
         # Extracting application configuration from YAML using yq
@@ -2218,25 +2362,35 @@ if [ "$ENABLE_INSTALL_ADDITIONAL_APPS" = "true" ] && [ "${#ADDITIONAL_APPS[@]}" 
         specific_use_local_charts=$(echo "$app" | yq e '.specific_use_local_charts' -)
         kubeconfig=$(echo "$app" | yq e '.kubeconfig' -)
         kubecontext=$(echo "$app" | yq e '.kubecontext' -)
-
+        
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
-
+         if [ "$SKIP_DELETE_K8S_OBJECTS" != "true" ]; then
+            continue_on_error delete_kubernetes_objects
+         fi
+         if [ "$SKIP_DELETE_NAMESPACE" != "true" ]; then
+        continue_on_error delete_namespace "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
+         fi
     done
     echo "✔️ Installation of additional applications complete."  >&2
 else
     echo "⏩ Skipping installation of additional applications as ENABLE_INSTALL_ADDITIONAL_APPS is set to false."  >&2
 fi
 
-#Delete Slice
-continue_on_error delete_slices_in_controller
+# Delete Slices in the Controller Cluster
+if [ "$SKIP_DELETE_SLICES" != "true" ]; then
+    echo "🚀 Deleting slices in the controller cluster..."
+    continue_on_error delete_slices_in_controller
+else
+    echo "⏩ Skipping deletion of slices in the controller cluster."
+fi
 
 # UnRegister clusters in the controller cluster after projects have been created
-if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ]; then
+if [ "$ENABLE_CLUSTER_REGISTRATION" = "true" ] && [ "$SKIP_CLUSTER_UNREGISTRATION" != "true" ]; then
     continue_on_error unregister_clusters_in_controller
 fi
 
 # Inside the loop where you process each worker
-if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
+if [ "$ENABLE_INSTALL_WORKER" = "true" ] && [ "$SKIP_WORKER_UNINSTALL" != "true" ]; then
     for worker_index in "${!KUBESLICE_WORKERS[@]}"; do
         IFS="|" read -r worker_name skip_installation use_global_kubeconfig kubeconfig kubecontext namespace release_name chart_name repo_url username password values_file inline_values image_pull_secret_repo image_pull_secret_username image_pull_secret_password image_pull_secret_email helm_flags verify_install verify_install_timeout skip_on_verify_fail <<<"${KUBESLICE_WORKERS[$worker_index]}"
 
@@ -2260,32 +2414,51 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ]; then
 
         # Now call the install_or_upgrade_helm_chart function in a similar fashion to the controller
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
-        api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
-        webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
-        continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
-        continue_on_error delete_kubernetes_objects
+        if [ "$SKIP_CLEANUP_CUSTOM_RESOURCE_WEBHOOKS" != "true" ]; then
+            echo "🚀 Cleaning up API resources and webhooks..."
+            api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
+            webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
+            continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
+        else
+            echo "⏩ Skipping cleanup of API resources and webhooks."
+        fi
+         if [ "$SKIP_DELETE_K8S_OBJECTS" != "true" ]; then
+            continue_on_error delete_kubernetes_objects
+         fi
+         if [ "$SKIP_DELETE_NAMESPACE" != "true" ]; then
+        continue_on_error delete_namespace "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
+         fi
     done
 fi
 
 # Delete projects in the controller cluster before deploying workers
-if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+if [ "$ENABLE_PROJECT_CREATION" = "true" ] && [ "$SKIP_PROJECT_DELETION" != "true" ]; then
     continue_on_error delete_projects_in_controller
 fi
 
 
 # Process kubeslice-controller uninstallation if enabled
-if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ]; then
+if [ "$ENABLE_INSTALL_CONTROLLER" = "true" ] && [ "$SKIP_CONTROLLER_UNINSTALL" != "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_CONTROLLER_SKIP_INSTALLATION" "$KUBESLICE_CONTROLLER_RELEASE_NAME" "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL" "$KUBESLICE_CONTROLLER_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_CONTROLLER_SKIP_ON_VERIFY_FAIL"
+   if [ "$SKIP_CLEANUP_CUSTOM_RESOURCE_WEBHOOKS" != "true" ]; then
     api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
     webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
     continue_on_error cleanup_resources_and_webhooks "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONFIG" "$KUBESLICE_CONTROLLER_KUBECONTEXT" "${api_groups[@]}" --webhooks "${webhooks[@]}"
+    else
+        echo "⏩ Skipping cleanup of API resources and webhooks."
+    fi
 fi
 
 # Process kubeslice-ui uninstallation if enabled
-if [ "$ENABLE_INSTALL_UI" = "true" ]; then
+if [ "$ENABLE_INSTALL_UI" = "true" ] && [ "$SKIP_UI_UNINSTALL" != "true" ]; then
     continue_on_error uninstall_helm_chart_and_cleanup "$KUBESLICE_UI_SKIP_INSTALLATION" "$KUBESLICE_UI_RELEASE_NAME" "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT" "$KUBESLICE_UI_VERIFY_INSTALL" "$KUBESLICE_UI_VERIFY_INSTALL_TIMEOUT" "$KUBESLICE_UI_SKIP_ON_VERIFY_FAIL"
     namespace="$KUBESLICE_UI_NAMESPACE"
+     if [ "$SKIP_DELETE_K8S_OBJECTS" != "true" ]; then
     continue_on_error delete_kubernetes_objects
+     fi
+     if [ "$SKIP_DELETE_NAMESPACE" != "true" ]; then
+    continue_on_error delete_namespace "$KUBESLICE_UI_NAMESPACE" "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" "$KUBESLICE_UI_KUBECONFIG" "$KUBESLICE_UI_KUBECONTEXT"
+     fi
 fi
 
 
@@ -2296,3 +2469,4 @@ echo "========================================="
 echo "    EGS UnInstaller Script Complete        "
 echo "========================================="
 
+echo "=====================================EGS UnInstaller Script execution completed at: $(date)===================================" >> "$output_file"

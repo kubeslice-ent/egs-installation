@@ -1,0 +1,63 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-kserve-preinstall-job"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-16"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 1
+  template:
+    metadata:
+      name: "{{ .Release.Name }}"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: kserve-preinstall-sa
+      containers:
+        - name: pre-install-job
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          image: "{{ .Values.global.imageRegistry }}/alpine-k8s:1.22.9"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh","/opt/scripts/pre-install.sh"]
+          volumeMounts:
+            - name: config-volume
+              mountPath: /opt/scripts
+      {{- if .Values.imagePullSecretsName }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecretsName }}
+      {{- end }}
+      securityContext:
+        runAsUser: 65536               # Non-root user
+        runAsGroup: 65536              # Non-root group
+        runAsNonRoot: true             # Ensure the container does not run as root
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ .Release.Name }}-kserve-preinstall-configmap
+            defaultMode: 0777

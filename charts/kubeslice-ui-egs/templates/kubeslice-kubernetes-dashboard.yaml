@@ -437,7 +437,7 @@ spec:
       {{- end }}
       initContainers:
         - name: clear-stale-pid
-          image: "{{ $.Values.kubeslice.dashboard.proxy.image }}:{{ $.Values.kubeslice.dashboard.proxy.tag }}"
+          image: "{{ .Values.kubeslice.dashboard.imageRegistry }}/{{ $.Values.kubeslice.dashboard.proxy.image }}:{{ $.Values.kubeslice.dashboard.proxy.tag }}"
           imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
           securityContext:
             runAsUser: 65536
@@ -518,7 +518,7 @@ spec:
       containers:
         - name: "proxy"
 
-          image: "{{ $.Values.kubeslice.dashboard.proxy.image }}:{{ $.Values.kubeslice.dashboard.proxy.tag }}"
+          image: "{{ .Values.kubeslice.dashboard.imageRegistry }}/{{ $.Values.kubeslice.dashboard.proxy.image }}:{{ $.Values.kubeslice.dashboard.proxy.tag }}"
           imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
           securityContext:
             runAsUser: 65536
@@ -700,7 +700,7 @@ spec:
       {{- end }}
       containers:
         - name: kubernetes-dashboard-api
-          image: "{{ $.Values.kubeslice.dashboard.api.image }}:{{ $.Values.kubeslice.dashboard.api.tag }}"
+          image: "{{ .Values.kubeslice.dashboard.imageRegistry }}/{{ $.Values.kubeslice.dashboard.api.image }}:{{ $.Values.kubeslice.dashboard.api.tag }}"
           imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
           args:
             - --namespace=kubernetes-dashboard
@@ -801,7 +801,7 @@ spec:
       {{- end }}
       containers:
         - name: kubernetes-dashboard-auth
-          image: "{{ $.Values.kubeslice.dashboard.auth.image }}:{{ $.Values.kubeslice.dashboard.auth.tag }}"
+          image: "{{ .Values.kubeslice.dashboard.imageRegistry }}/{{ $.Values.kubeslice.dashboard.auth.image }}:{{ $.Values.kubeslice.dashboard.auth.tag }}"
           imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
           env:
             - name: CSRF_KEY
@@ -896,7 +896,7 @@ spec:
       {{- end }}
       containers:
         - name: kubernetes-dashboard-metrics-scraper
-          image: "{{ $.Values.kubeslice.dashboard.scrapper.image }}:{{ $.Values.kubeslice.dashboard.scrapper.tag }}"
+          image: "{{ .Values.kubeslice.dashboard.imageRegistry }}/{{ $.Values.kubeslice.dashboard.scrapper.image }}:{{ $.Values.kubeslice.dashboard.scrapper.tag }}"
           imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
           env:
             - name: GOMAXPROCS
@@ -984,7 +984,7 @@ spec:
       {{- end }}
       containers:
         - name: kubernetes-dashboard-web
-          image: "{{ $.Values.kubeslice.dashboard.web.image }}:{{ $.Values.kubeslice.dashboard.web.tag }}"
+          image: "{{ .Values.kubeslice.dashboard.imageRegistry }}/{{ $.Values.kubeslice.dashboard.web.image }}:{{ $.Values.kubeslice.dashboard.web.tag }}"
           imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
           args:
             - --namespace=kubernetes-dashboard

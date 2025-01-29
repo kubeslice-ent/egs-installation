@@ -9,11 +9,17 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 ## 📄 EGS Documents
 
-- 📖 For EGS platform overview, please see the [Platform Overview Documentation](https://docs.avesha.io/) 🌐
-- 🔧 For the Admin guide, please see the [Admin Guide Documentation](https://docs.avesha.io/) 🛠️
-- 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/) 📚
-- 🛠️ For the Installation guide, please see the documentation on [GitHub Repo](https://github.com/kubeslice-ent/egs-installation) 💻
+- 📖 For the EGS platform overview, please see the [Platform Overview Documentation](https://docs.avesha.io/) 🌐  
+- 🔧 For the Admin guide, please see the [Admin Guide Documentation](https://docs.avesha.io/) 🛠️  
+- 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/) 📚  
+- 🛠️ For the Installation guide, please see the documentation on [Installation Guide Documentation](https://github.com/kubeslice-ent/egs-installation) 💻  
+- 📝 For Avesha registration, please complete the [Avesha Registration](https://avesha.io/kubeslice-registration) process 🔑  
+- ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation?tab=readme-ov-file#egs-preflight-check-script) 🔍  
+- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](https://github.com/kubeslice-ent/egs-installation#token-retrieval) 🔒  
+- 🔍 For preflight check details, please see the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation#preflight-check) ✅  
+- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](https://github.com/kubeslice-ent/egs-installation#namespace-creation) 🗂️  
 
+---  
 
 ## Getting Started
 
@@ -34,20 +40,53 @@ Before you begin, ensure the following steps are completed:
 3. **🌐 Kubernetes Access:**
    - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
 
+4. **✅ Run EGS Preflight Check Script (Optional):**
+   - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
+     - Refer to the [EGS Preflight Check Guide](https://github.com/kubeslice-ent/egs-installation#egs-preflight-check) for detailed instructions.
+     - Example command:
+       ```bash
+       ./egs-preflight-check.sh \
+         --kubeconfig ~/.kube/config \
+         --kubecontext-list context1,context2
+       ```
+     - This step validates namespaces, permissions, PVCs, and services, helping to identify and resolve potential issues before installation.
+
+5. **🗂️ Pre-create Required Namespaces (Optional):**
+   - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
+     - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
+       - Refer to the [Namespace Creation Script](https://github.com/kubeslice-ent/egs-installation#namespace-creation) for details.
+     - Example command:
+       ```bash
+       ./create-namespaces.sh \
+         --input-yaml namespace-input.yaml \
+         --kubeconfig ~/.kube/config \
+         --kubecontext-list context1,context2
+       ```
+     - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
+
+6. **🚀 Install Prerequisites for EGS (Optional):**
+   - To install prerequisites like GPU Operator, Prometheus for EGS inventory, and PostgreSQL for cost information visibility, you can run the **Prerequisites Installer Script**:
+     - Example command:
+       ```bash
+       ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+       ```
+     - **Note:** This step is optional but recommended if an existing instance of these services is not already running and configured. If skipped, some features might be broken or unavailable.
+
 ---
 
-### 🛠️ Installation Steps
+## 🛠️ Installation Steps
 
-1. **📂 Clone the Repository:**
+### 1. **📂 Clone the Repository:**
    - Start by cloning the EGS installation Git repository:
      ```bash
      git clone https://github.com/kubeslice-ent/egs-installation
      ```
 
-2. **📝 Modify the Configuration File:**
+### 2. **📝 Modify the Configuration File (Mandatory):**
    - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`.
    - Update the following mandatory parameters:
-     - **🔑 Image Pull Secrets:**
+
+     - **🔑 Image Pull Secrets (Mandatory):**
        - Insert the image pull secrets received via email as part of the registration process:
          ```yaml
          global_image_pull_secret:
@@ -55,54 +94,118 @@ Before you begin, ensure the following steps are completed:
            username: ""  # Global Docker registry username (MANDATORY)
            password: ""  # Global Docker registry password (MANDATORY)
          ```
-     - **⚙️ Kubernetes Configuration:**
+
+     - **⚙️ Kubernetes Configuration (Mandatory) :**
        - Set the global `kubeconfig` and `kubecontext` parameters:
          ```yaml
          global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
          global_kubecontext: ""  # Global kubecontext (MANDATORY)
+         use_global_context: true  # If true, use the global kubecontext for all operations by default
          ```
 
-3. **🚀 Run the Installation Script:**
+     - **⚙️ Additional Configuration (Optional):**
+       - Configure installation stages and additional applications:
+         ```yaml
+         # Enable or disable specific stages of the installation
+         enable_install_controller: true               # Enable the installation of the Kubeslice controller
+         enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+         enable_install_worker: true                   # Enable the installation of Kubeslice workers
+
+         # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
+         enable_install_additional_apps: false          # Set to true to enable additional apps installation
+
+         # Enable custom applications
+         # Set this to true if you want to allow custom applications to be deployed.
+         # This is specifically useful for enabling NVIDIA driver installation on your nodes.
+         enable_custom_apps: false
+
+         # Command execution settings
+         # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
+         # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
+         # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
+         run_commands: false
+         ```
+         
+### 3. **🚀 Run the Installation Script:**
    - Execute the installation script using the following command:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
 
-4. **🔄 Update the Inline Values:**
-   - Update the inline-values of `kubeslice-worker-egs` in `egs-installer-config.yaml` with the Grafana LB External IP:
-     - Fetch the external IP using the following command:
-       ```bash
-       kubectl get svc prometheus-grafana -n monitoring
-       ```
-     - Update the `kubeslice-worker-egs` configuration with the Grafana LB external IP in `egs-installer-config.yaml`:
-       ```yaml
-       inline_values:  # Inline Helm values for the worker chart
-         kubesliceNetworking:
-           enabled: false  # Disable Kubeslice networking for this worker
-         egs:
-           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
-         metrics:
-           insecure: true  # Allow insecure connections for metrics
-       ```
+### 4. **🔄 Mandatory for Multiple Worker Clusters: Update the Inline Values**
 
-5. **🔄 Run the Installation Script Again:**
+   This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
+   
+   #### **⚠️ Set the `global_auto_fetch_endpoint` Flag Appropriately**
+   
+   1. **🌐 Single-Cluster Setups**  
+      - If the **controller** and **worker** are in the same cluster, all the below setting can be ignored, and no change is required
+   
+   2. **Default Setting**  
+      - By default, `global_auto_fetch_endpoint` is set to `false`. If you enable it (`true`), ensure the following configurations:  
+        - **💡 Worker Cluster Service Details:** Provide the service details for each worker cluster to fetch the correct monitoring endpoints.  
+        - **📊 Multiple Worker Clusters:** Ensure the service endpoints (e.g., Grafana and Prometheus) are accessible from the **controller cluster**.  
+   
+      #### **🖥 Global Monitoring Endpoint Settings**
+   
+      These configurations are **mandatory** if `global_auto_fetch_endpoint` is set to `true`. Update the following in your `egs-installer-config.yaml`:
+      
+      ```yaml
+      # Global monitoring endpoint settings
+      global_auto_fetch_endpoint: true               # Enable automatic fetching of monitoring endpoints globally
+      global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
+      global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
+      global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
+      global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
+      global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
+      global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
+      ```
+   
+   3. **📢 Update `inline-values` for Multi-Cluster Setups**
+   
+   If `global_auto_fetch_endpoint` is `false` and the **controller** and **worker** are in different clusters, follow these steps:
+   
+   1. **🗒 Fetch the Grafana & Prometheus External IP**  
+      Use the following command to get the **Grafana LoadBalancer External IP**:  
+   
+      ```bash
+      kubectl get svc prometheus-grafana -n monitoring
+      kubectl get svc prometheus -n monitoring
+      ```
+   
+   2. **✏ Update the `egs-installer-config.yaml`**  
+      Replace `<grafana-lb>` and <prometheus-lb> with the Grafana and prometheus **LoadBalancer External IP or NodePort** in the `inline_values` section:  
+   
+      ```yaml
+      inline_values:  # Inline Helm values for the worker chart
+        kubesliceNetworking:
+          enabled: false  # Disable Kubeslice networking for this worker
+        egs:
+          prometheusEndpoint: "http://<prometheus-lb>"  # Prometheus endpoint
+          grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Replace <grafana-lb> with the actual External IP
+        metrics:
+          insecure: true  # Allow insecure connections for metrics
+      ```
+
+### 5. **🔄 Run the Installation Script Again:**
    - Apply the updated configuration by running the installation script again:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
-
 ---
 
-### Uninstallation Steps
+### 🗑️ Uninstallation Steps
 
-  **Run the Cleanup Script**
-   - Execute the uninstallation script using the following command:
-     ```bash
-     ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
-     ```
----
+**⚠️ Important Note:**  
+The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources provisioned by egs**. Use this script with caution, as it performs a complete cleanup of the egs setup.
 
+**Run the Cleanup Script**  
+- Execute the uninstallation script using the following command:  
+  ```bash
+  ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
+  ```
+
+--- 
 ## 🛠️ Configuration details
 
 The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installer-config.yaml`) with descriptions for each section.
@@ -592,6 +695,222 @@ For more details on usage or troubleshooting, you can refer to the help option:
 ```bash
 ./fetch_egs_slice_token.sh --help
 ```
+## EGS Preflight Check Script
+
+![Kubernetes](https://img.shields.io/badge/Kubernetes-✔️-blue?logo=kubernetes) ![Bash](https://img.shields.io/badge/Shell_Script-Bash-121011?logo=gnu-bash) ![License](https://img.shields.io/badge/License-@Avesha-orange)
+
+A robust preflight check script designed for EGS setup on Kubernetes. This script verifies Kubernetes resource configurations, permissions, and connectivity to ensure the environment is ready for deployment.
+
+## Features
+
+- 🛠️ **Resource Validation**: Checks namespaces, services, PVCs, and privileges.
+- 🔍 **Comprehensive Preflight Checks**: Validates Kubernetes configurations and access.
+- 🌐 **Internet Connectivity Checks**: Ensures cluster access to external resources.
+- 🧹 **Resource Cleanup**: Optionally deletes created resources after validation.
+- ⚡ **Multi-context Support**: Operates on multiple Kubernetes contexts.
+- 🐛 **Debugging**: Provides detailed logs for troubleshooting.
+
+## Usage
+
+```bash
+./egs-preflight-check.sh [OPTIONS]
+```
+
+### Key Options:
+
+| Option                     | Description                                                                                  |
+|----------------------------|----------------------------------------------------------------------------------------------|
+| `--namespace-to-check`     | 🗂️ Comma-separated list of namespaces to check existence.                                    |
+| `--test-namespace`         | 🏷️ Namespace for test creation and deletion (default: `egs-test-namespace`).                |
+| `--pvc-test-namespace`     | 📂 Namespace for PVC test creation and deletion (default: `egs-test-namespace`).            |
+| `--pvc-name`               | 🛠️ Name of the test PVC (default: `egs-test-pvc`).                                          |
+| `--storage-class`          | 🗄️ Storage class for the PVC (default: none).                                               |
+| `--storage-size`           | 📦 Storage size for the PVC (default: `1Gi`).                                               |
+| `--service-name`           | 📌 Name of the test service (default: `test-service`).                                       |
+| `--service-type`           | ⚙️ Type of service to create and validate (`ClusterIP`, `NodePort`, `LoadBalancer`, or `all`). Default: `all`. |
+| `--kubeconfig`             | 🗂️ Path to the kubeconfig file (mandatory).                                                 |
+| `--kubecontext`            | 🌐 Context from the kubeconfig file (mandatory).                                             |
+| `--kubecontext-list`       | 🌐 Comma-separated list of context names to operate on.                                      |
+| `--cleanup`                | 🧹 Whether to delete test resources (`true` or `false`). Default: `true`.                   |
+| `--global-wait`            | ⏳ Time to wait after each command execution (default: `0`).                                 |
+| `--watch-resources`        | 👀 Enable or disable watching resources after creation (default: `false`).                  |
+| `--watch-duration`         | ⏱️ Duration to watch resources after creation (default: `30` seconds).                     |
+| `--invoke-wrappers`        | 🛠️ Comma-separated list of wrapper functions to invoke.                                      |
+| `--display-resources`      | 👁️ Whether to display resources created (default: `true`).                                  |
+| `--kubectl-path`           | ⚡ Override default kubectl binary path.                                                     |
+| `--function-debug-input`   | 🐞 Enable or disable function debugging (default: `false`).                                  |
+| `--generate-summary`       | 📊 Enable or disable summary generation (default: `true`).                                  |
+| `--resource-action-pairs`  | 🔐 Override default resource-action pairs (e.g., `pod:create,service:get`).                |
+| `--fetch-resource-names`   | 🔍 Fetch all resource names from the cluster (default: `false`).                             |
+| `--fetch-webhook-names`    | 🔍 Fetch all webhook names from the cluster (default: `false`).                              |
+| `--api-resources`          | 🌍 Comma-separated list of API resources to include or operate on.                          |
+| `--webhooks`               | 🌍 Comma-separated list of webhooks to include or operate on.                                |
+| `--help`                   | ❓ Display this help message.                                                               |
+
+### Default Resource-Action Pairs:
+
+📌 The default resource-action pairs used for privilege checks are:
+
+- `namespace:create,namespace:delete,namespace:get,namespace:list,namespace:watch`
+- `pod:create,pod:delete,pod:get,pod:list,pod:watch`
+- `service:create,service:delete,service:get,service:list,service:watch`
+- `configmap:create,configmap:delete,configmap:get,configmap:list,configmap:watch`
+- `secret:create,secret:delete,secret:get,secret:list,secret:watch`
+- `serviceaccount:create,serviceaccount:delete,serviceaccount:get,serviceaccount:list,serviceaccount:watch`
+- `clusterrole:create,clusterrole:delete,clusterrole:get,clusterrole:list`
+- `clusterrolebinding:create,clusterrolebinding:delete,clusterrolebinding:get,clusterrolebinding:list`
+
+### Wrapper Functions:
+
+| Wrapper Function                  | Description                                                                 |
+|-----------------------------------|-----------------------------------------------------------------------------|
+| 🗂️ `namespace_preflight_checks`   | Validates namespace creation and existence.                                |
+| 🔍 `grep_k8s_resources_with_crds_and_webhooks` | Validates existing resources available in the cluster based on resource names. (e.g., prometheus, gpu-operator, postgresql) |
+| 📂 `pvc_preflight_checks`         | Validates PVC creation, deletion, and storage properties.                   |
+| ⚙️ `service_preflight_checks`     | Validates the creation and deletion of services (`ClusterIP`, `NodePort`, `LoadBalancer`). |
+| 🔐 `k8s_privilege_preflight_checks` | Validates privileges for Kubernetes actions on resources.                  |
+| 🌐 `internet_access_preflight_checks` | Validates internet connectivity from within the Kubernetes cluster.         |
+
+### Examples
+
+```bash
+./egs-preflight-check.sh --namespace-to-check my-namespace --test-namespace test-ns --invoke-wrappers namespace_preflight_checks
+./egs-preflight-check.sh --pvc-test-namespace pvc-ns --pvc-name test-pvc --storage-class standard --storage-size 1Gi --invoke-wrappers pvc_preflight_checks
+./egs-preflight-check.sh --test-namespace service-ns --service-name test-service --service-type NodePort --watch-resources true --watch-duration 60 --invoke-wrappers service_preflight_checks
+./egs-preflight-check.sh --invoke-wrappers namespace_preflight_checks,pvc_preflight_checks,service_preflight_checks
+./egs-preflight-check.sh --resource-action-pairs pod:create,namespace:delete --invoke-wrappers k8s_privilege_preflight_checks
+./egs-preflight-check.sh --function-debug-input true --invoke-wrappers namespace_preflight_checks
+./egs-preflight-check.sh --generate-summary false --invoke-wrappers namespace_preflight_checks
+./egs-preflight-check.sh --fetch-resource-names true --invoke-wrappers service_preflight_checks
+./egs-preflight-check.sh --api-resources pod,service --invoke-wrappers namespace_preflight_checks
+```
+
+> **Note**: If no wrapper function is specified, all preflight check functions will be executed by default.
+
+## Output
+
+- 📝 **Logs**: Detailed logs are generated for each step, including successes and failures.
+- 📊 **Summary**: A final summary is displayed, highlighting the status of all checks.
+
+---
+## Namespace Creation Script
+
+This script automates the creation of Kubernetes namespaces with specified annotations and labels based on a YAML configuration file. It dynamically supports multiple Kubernetes contexts and provides detailed success/failure logs with a final summary.
+
+---
+
+## Features
+
+- Dynamically processes namespaces and contexts from an input YAML file.
+- Supports multiple Kubernetes contexts in a single execution.
+- Logs detailed success/failure information for each namespace creation.
+- Provides a summary of operations at the end.
+- Handles annotations and labels for each namespace.
+- Deletes temporary YAML files after applying the configuration.
+
+---
+
+## Prerequisites
+
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed and configured.
+- [yq](https://github.com/mikefarah/yq) installed for parsing YAML files.
+
+---
+
+## Script Parameters
+
+| Parameter               | Description                                                |
+|-------------------------|------------------------------------------------------------|
+| `--input-yaml`          | Path to the input YAML file containing namespace definitions. |
+| `--kubeconfig`          | Path to the Kubernetes kubeconfig file.                    |
+| `--kubecontext-list`    | Comma-separated list of Kubernetes contexts to process.    |
+| `--help` or `-h`        | Display the help message and usage information.            |
+
+---
+
+## Input YAML Format
+
+The input YAML file should follow this format:
+
+```yaml
+auto_create_namespace: true
+namespaces:
+  - name: egs-gpu-operator
+    annotations:
+      - key: application
+        value: egs
+    labels:
+      - key: avesha-tower-name
+        value: development
+      - key: application
+        value: egs
+
+  - name: egs-monitoring
+    annotations:
+      - key: application
+        value: egs
+    labels:
+      - key: avesha-tower-name
+        value: development
+      - key: application
+        value: egs
+```
+
+---
+
+## Usage
+
+### Running the Script
+
+Save the script as `create-namespaces.sh` and make it executable:
+
+```bash
+chmod +x create-namespaces.sh
+```
+
+Run the script with the desired parameters:
+
+```bash
+./create-namespaces.sh \
+  --input-yaml namespace-input.yaml \
+  --kubeconfig ~/.kube/config \
+  --kubecontext-list context1,context2,context3
+```
+
+### Help Option
+
+To see usage information, run:
+
+```bash
+./create-namespaces.sh --help
+```
+
+---
+
+## Output Example
+
+### Console Logs
+```bash
+🔄 Processing context: context1
+🔧 Creating namespace: egs-gpu-operator in context: context1
+✅ Successfully created namespace: egs-gpu-operator in context: context1
+🔧 Creating namespace: egs-monitoring in context: context1
+❌ Failed to create namespace: egs-monitoring in context: context1
+   Reason: Namespace already exists
+
+📋 Summary:
+✅ Successful operations: 1
+   - egs-gpu-operator (context: context1)
+❌ Failed operations: 1
+   - egs-monitoring (context: context1): Namespace already exists
+```
+
+---
+
+## Summary
+
+This script simplifies the namespace creation process in Kubernetes, making it ideal for environments with multiple clusters and namespaces. Customize the input YAML to suit your needs and track results through the detailed logs and summary provided.
+
 ---
 
 
