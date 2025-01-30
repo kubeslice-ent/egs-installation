@@ -201,8 +201,8 @@ cluster_registration:
 
     #### Geo-Location Settings ####
     geoLocation:
-      cloudProvider: "GCP"                      # Cloud provider for this cluster (e.g., GCP)
-      cloudRegion: "us-central1"                # Cloud region for this cluster (e.g., us-central1)
+      cloudProvider: ""              # Cloud provider for this cluster (e.g., GCP)
+      cloudRegion: ""                # Cloud region for this cluster (e.g., us-central1)
 
 #### Define Additional Applications to Install ####
 additional_apps:
