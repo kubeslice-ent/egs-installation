@@ -77,7 +77,6 @@ kubeslice_controller_egs:
   namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
   release: "egs-controller"                    # Helm release name for the controller
   chart: "kubeslice-controller-egs"            # Helm chart name for the controller
-
 #### Inline Helm Values for the Controller Chart ####
   inline_values:
     global:
@@ -95,13 +94,11 @@ kubeslice_controller_egs:
     kubeslice:
       controller:
         endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
-
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
   verify_install: false                        # Verify the installation of the controller
   verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
   skip_on_verify_fail: true                    # If verification fails, do not skip the step
-
 #### Troubleshooting Settings ####
   enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
 #### Kubeslice Controller Installation Settings ####
@@ -192,13 +189,11 @@ projects:
 cluster_registration:
   - cluster_name: "worker-1"                    # Name of the cluster to be registered
     project_name: "avesha"                      # Name of the project to associate with the cluster
-
     #### Telemetry Settings ####
     telemetry:
       enabled: true                             # Enable telemetry for this cluster
       endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090" # Telemetry endpoint
       telemetryProvider: "prometheus"           # Telemetry provider (Prometheus in this case)
-
     #### Geo-Location Settings ####
     geoLocation:
       cloudProvider: ""              # Cloud provider for this cluster (e.g., GCP)
@@ -217,7 +212,6 @@ additional_apps:
     repo_url: "https://helm.ngc.nvidia.com/nvidia" # Helm repository URL for the GPU operator
     version: "v24.9.1"                         # Version of the GPU operator to install
     specific_use_local_charts: true            # Use local charts for this application
-
     #### Inline Helm Values for GPU Operator ####
     inline_values:
       hostPaths:
@@ -235,7 +229,6 @@ additional_apps:
             value: "true"
       driver:
         enabled: false
-
     helm_flags: "--debug"                              # Additional Helm flags for this application's installation
     verify_install: false                       # Verify the installation of the GPU operator
     verify_install_timeout: 600                 # Timeout for verification (in seconds)
@@ -254,7 +247,6 @@ additional_apps:
     version: "v45.0.0"                         # Version of the Prometheus stack to install
     specific_use_local_charts: true            # Use local charts for this application
     values_file: ""                             # Path to an external values file, if any
-
     #### Inline Helm Values for Prometheus ####
     inline_values:
       prometheus:
@@ -301,7 +293,6 @@ additional_apps:
         persistence:
           enabled: false                      # Disable persistence
           size: 1Gi                           # Default persistence size
-
     helm_flags: "--debug"                             # Additional Helm flags for this application's installation
     verify_install: false                      # Verify the installation of Prometheus
     verify_install_timeout: 600                # Timeout for verification (in seconds)
@@ -320,7 +311,6 @@ additional_apps:
     version: "16.2.1"                         # Version of the PostgreSQL chart to install
     specific_use_local_charts: true           # Use local charts for this application
     values_file: ""                            # Path to an external values file, if any
-
     #### Inline Helm Values for PostgreSQL ####
     inline_values:
       auth:
@@ -332,7 +322,6 @@ additional_apps:
         persistence:
           enabled: false                      # Disable persistent storage for PostgreSQL
           size: 10Gi                          # Size of the Persistent Volume Claim
-
     helm_flags: "--wait --debug"                       # Additional Helm flags for this application's installation
     verify_install: true                       # Verify the installation of PostgreSQL
     verify_install_timeout: 600                # Timeout for verification (in seconds)
