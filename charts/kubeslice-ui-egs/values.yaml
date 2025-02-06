@@ -19,7 +19,7 @@ kubeslice:
   uiv2:
     imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.12.0-RELEASE-acad69a1
+    tag: 1.12.0-RELEASE-64c52868
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false
@@ -55,7 +55,7 @@ kubeslice:
   apigw:
     imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 1.11.0-RELEASE-a07a9202
+    tag: 1.11.0-RELEASE-f2a181dd
     pullPolicy: IfNotPresent
 
   egsCoreApis:
