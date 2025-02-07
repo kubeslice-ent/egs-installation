@@ -4,7 +4,7 @@ kubetally:
   pricingService:
     imageRegistry: aveshadev #*defaultRegistry
     image: pricing-service
-    tag: 1.8.0-RELEASE-2aa8a633
+    tag: 1.8.0-RELEASE-aadba1a3
     imagePullPolicy: Always
   chargeUpdater:
     imageRegistry: *defaultRegistry
