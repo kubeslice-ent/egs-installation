@@ -12,6 +12,20 @@ else
     echo "✅ Bash shell detected. Version: $BASH_VERSION"
 fi
 
+# Extract major and minor version numbers
+BASH_MAJOR_VERSION=$(echo "$BASH_VERSION" | cut -d'.' -f1)
+BASH_MINOR_VERSION=$(echo "$BASH_VERSION" | cut -d'.' -f2)
+
+# Check if Bash version is at least 5.0.0
+if [ "$BASH_MAJOR_VERSION" -lt 5 ] || { [ "$BASH_MAJOR_VERSION" -eq 5 ] && [ "$BASH_MINOR_VERSION" -lt 0 ]; }; then
+    echo "❌ Error: Bash version 5.0.0 or higher is required."
+    echo "You are using Bash $BASH_VERSION"
+    echo "Please install a newer version of Bash."
+    exit 1
+else
+    echo "✅ Bash version is sufficient: $BASH_VERSION"
+fi
+
 # Specify the output file
 output_file="egs-preflight-check-output.log"
 exec > >(tee -a "$output_file") 2>&1
