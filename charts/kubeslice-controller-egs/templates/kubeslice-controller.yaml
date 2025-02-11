@@ -62,6 +62,10 @@ spec:
                   monitoring:
                     description: Monitoring contains the Kubernetes Monitoring Dashboard
                     properties:
+                      grafanaDashboardBaseURL:
+                        description: GrafanaDashboardBaseURL is the base URL for the
+                          grafana dashboard
+                        type: string
                       kubernetesDashboard:
                         description: KubernetesDashboard contains the information
                           regarding Kubernetes Monitoring Dashboard
