@@ -11,39 +11,6 @@ global_kubeconfig: ""                         # Relative path to the global kube
 global_kubecontext: ""                        # Global kubecontext to use - Mandatory
 use_global_context: true                      # If true, use the global kubecontext for all operations by default
 
-# Enable or disable specific stages of the installation
-enable_install_controller: true               # Enable the installation of the Kubeslice controller
-enable_install_ui: true                       # Enable the installation of the Kubeslice UI
-enable_install_worker: true                   # Enable the installation of Kubeslice workers
-
-#########################################################################################################################
-########################### OPTIONAL CONFIGURATION PARAMETERS ###########################################################
-# Project and cluster registration settings
-enable_project_creation: true                   # Enable project creation in Kubeslice
-enable_cluster_registration: true               # Enable cluster registration in Kubeslice
-enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
-
-# Precheck options
-precheck: true                                  # Run general prechecks before starting the installation
-kubeslice_precheck: true                        # Run specific prechecks for Kubeslice components
-
-# Global installation verification settings
-verify_install: false                           # Enable verification of installations globally
-verify_install_timeout: 600                     # Timeout for global installation verification (in seconds)
-skip_on_verify_fail: true                       # If set to true, skip steps where verification fails, otherwise exit on failure
-
-# Base path settings
-base_path: ""                                   # If left empty, the script will use the relative path to the script as the base path
-
-# Helm repository settings
-use_local_charts: true                          # Use local Helm charts instead of fetching them from a repository
-local_charts_path: "charts"                     # Path to the directory containing local Helm charts
-global_helm_repo_url: ""                        # URL for the global Helm repository (if not using local charts)
-global_helm_username: ""                        # Username for accessing the global Helm repository
-global_helm_password: ""                        # Password for accessing the global Helm repository
-readd_helm_repos: true                          # Re-add Helm repositories even if they are already present
-
-
 #### Kubeslice Controller Installation Settings ####
 kubeslice_controller_egs:
   skip_installation: false                     # Do not skip the installation of the controller
@@ -146,15 +113,6 @@ kubeslice_worker_egs:
     skip_on_verify_fail: false                 # Do not skip if worker verification fails
 #### Troubleshooting Settings ####
     enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
-#### Local Monitoring Endpoint Settings (Optional) ####
-    # local_auto_fetch_endpoint: true          # Enable automatic fetching of monitoring endpoints
-    # local_grafana_namespace: egs-monitoring  # Namespace where Grafana is deployed
-    # local_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana
-    # local_grafana_service_type: ClusterIP    # Service type for Grafana (accessible only within the cluster)
-    # local_prometheus_namespace: egs-monitoring  # Namespace where Prometheus is deployed
-    # local_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus
-    # local_prometheus_service_type: ClusterIP # Service type for Prometheus (accessible only within the cluster)
-
 
 
 #### Define Projects ####
@@ -175,6 +133,9 @@ cluster_registration:
     geoLocation:
       cloudProvider: ""              # Cloud provider for this cluster (e.g., GCP)
       cloudRegion: ""                # Cloud region for this cluster (e.g., us-central1)
+########################### MANDATORY PARAMETERS ####################################################################
+#########################################################################################################################
+########################### OPTIONAL CONFIGURATION PARAMETERS ###########################################################
 
 #### List of Required Binaries ####
 required_binaries:
@@ -187,3 +148,34 @@ required_binaries:
 add_node_label: false                        # Enable node labeling during installation
 # Version of the input configuration file
 version: "1.0.0"
+
+# Enable or disable specific stages of the installation
+enable_install_controller: true               # Enable the installation of the Kubeslice controller
+enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+enable_install_worker: true                   # Enable the installation of Kubeslice workers
+
+# Project and cluster registration settings
+enable_project_creation: true                   # Enable project creation in Kubeslice
+enable_cluster_registration: true               # Enable cluster registration in Kubeslice
+enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
+
+# Precheck options
+precheck: true                                  # Run general prechecks before starting the installation
+kubeslice_precheck: true                        # Run specific prechecks for Kubeslice components
+
+# Global installation verification settings
+verify_install: false                           # Enable verification of installations globally
+verify_install_timeout: 600                     # Timeout for global installation verification (in seconds)
+skip_on_verify_fail: true                       # If set to true, skip steps where verification fails, otherwise exit on failure
+
+# Base path settings
+base_path: ""                                   # If left empty, the script will use the relative path to the script as the base path
+
+# Helm repository settings
+use_local_charts: true                          # Use local Helm charts instead of fetching them from a repository
+local_charts_path: "charts"                     # Path to the directory containing local Helm charts
+global_helm_repo_url: ""                        # URL for the global Helm repository (if not using local charts)
+global_helm_username: ""                        # Username for accessing the global Helm repository
+global_helm_password: ""                        # Password for accessing the global Helm repository
+readd_helm_repos: true                          # Re-add Helm repositories even if they are already present
+
