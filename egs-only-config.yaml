@@ -26,7 +26,7 @@ kubeslice_controller_egs:
     global:
       imageRegistry: docker.io/aveshasystems   # Docker registry for the images
       kubeTally:
-        enabled: true                          # Enable KubeTally in the controller
+        enabled: false                          # Enable KubeTally in the controller
         postgresSecretName: kubetally-db-credentials   # Secret name for PostgreSQL credentials
         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Address of the PostgreSQL service
         postgresPort: 5432                     # Port for the PostgreSQL service
