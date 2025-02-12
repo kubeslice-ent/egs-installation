@@ -1165,33 +1165,42 @@ manage_helm_repo() {
         done
     }
 
-    # Check if repo already exists
-    if helm repo list | grep -q "$repo_name"; then
-        echo "🔍 Helm repository '$repo_name' already exists."
-        if [ "$READD_HELM_REPOS" = "true" ]; then
-            echo "♻️  Removing and re-adding Helm repository '$repo_name'..."
-            retry helm repo remove $repo_name || {
-                echo "❌ Failed to remove existing Helm repo '$repo_name'. Exiting."
+# Check if repo already exists
+if helm repo list | grep -q "$repo_name"; then
+    echo "🔍 Helm repository '$repo_name' already exists."
+    if [ "$READD_HELM_REPOS" = "true" ]; then
+        echo "♻️  Removing and re-adding Helm repository '$repo_name'..."
+        retry helm repo remove "$repo_name" || {
+            echo "❌ Failed to remove existing Helm repo '$repo_name'. Exiting."
+            exit 1
+        }
+
+        if [ -n "$username" ] && [ -n "$password" ]; then
+            retry helm repo add "$repo_name" "$repo_url" --username "$username" --password "$password" || {
+                echo "❌ Failed to re-add Helm repo '$repo_name' with authentication. Exiting."
                 exit 1
             }
-            retry helm repo add $repo_name $repo_url --username $username --password $password || {
-                echo "❌ Failed to re-add Helm repo '$repo_name'. Exiting."
+        else
+            retry helm repo add "$repo_name" "$repo_url" || {
+                echo "❌ Failed to re-add Helm repo '$repo_name' without authentication. Exiting."
                 exit 1
             }
         fi
+    fi
+else
+    echo "➕ Adding Helm repository '$repo_name'..."
+    if [ -n "$username" ] && [ -n "$password" ]; then
+        retry helm repo add "$repo_name" "$repo_url" --username "$username" --password "$password" || {
+            echo "❌ Failed to add Helm repo '$repo_name' with authentication. Exiting."
+            exit 1
+        }
     else
-        echo "➕ Adding Helm repository '$repo_name'..."
-        retry helm repo add $repo_name $repo_url --username $username --password $password || {
-            echo "❌ Failed to add Helm repo '$repo_name'. Exiting."
+        retry helm repo add "$repo_name" "$repo_url" || {
+            echo "❌ Failed to add Helm repo '$repo_name' without authentication. Exiting."
             exit 1
         }
     fi
-
-    echo "🔄 Updating Helm repositories..."
-    retry helm repo update $repo_name || {
-        echo "❌ Failed to update Helm repo '$repo_name'. Exiting."
-        exit 1
-    }
+fi
 
     echo "✔️ Helm repository management complete."
 }
