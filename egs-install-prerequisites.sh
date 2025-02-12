@@ -12,6 +12,21 @@ else
     echo "✅ Bash shell detected. Version: $BASH_VERSION"
 fi
 
+# Extract major and minor version numbers
+BASH_MAJOR_VERSION=$(echo "$BASH_VERSION" | cut -d'.' -f1)
+BASH_MINOR_VERSION=$(echo "$BASH_VERSION" | cut -d'.' -f2)
+
+# Check if Bash version is at least 5.0.0
+if [ "$BASH_MAJOR_VERSION" -lt 5 ] || { [ "$BASH_MAJOR_VERSION" -eq 5 ] && [ "$BASH_MINOR_VERSION" -lt 0 ]; }; then
+    echo "❌ Error: Bash version 5.0.0 or higher is required."
+    echo "You are using Bash $BASH_VERSION"
+    echo "Please install a newer version of Bash."
+    exit 1
+else
+    echo "✅ Bash version is sufficient: $BASH_VERSION"
+fi
+
+
 # Specify the output file
 output_file="egs-install-prerequisites-output.log"
 exec > >(tee -a "$output_file") 2>&1
@@ -634,27 +649,42 @@ manage_helm_repo() {
         done
     }
 
-    # Check if repo already exists
-    if helm repo list | grep -q "$repo_name"; then
-        echo "🔍 Helm repository '$repo_name' already exists."
-        if [ "$READD_HELM_REPOS" = "true" ]; then
-            echo "♻️  Removing and re-adding Helm repository '$repo_name'..."
-            retry helm repo remove $repo_name || {
-                echo "❌ Failed to remove existing Helm repo '$repo_name'. Exiting."
+# Check if repo already exists
+if helm repo list | grep -q "$repo_name"; then
+    echo "🔍 Helm repository '$repo_name' already exists."
+    if [ "$READD_HELM_REPOS" = "true" ]; then
+        echo "♻️  Removing and re-adding Helm repository '$repo_name'..."
+        retry helm repo remove "$repo_name" || {
+            echo "❌ Failed to remove existing Helm repo '$repo_name'. Exiting."
+            exit 1
+        }
+
+        if [ -n "$username" ] && [ -n "$password" ]; then
+            retry helm repo add "$repo_name" "$repo_url" --username "$username" --password "$password" || {
+                echo "❌ Failed to re-add Helm repo '$repo_name' with authentication. Exiting."
                 exit 1
             }
-            retry helm repo add $repo_name $repo_url --username $username --password $password || {
-                echo "❌ Failed to re-add Helm repo '$repo_name'. Exiting."
+        else
+            retry helm repo add "$repo_name" "$repo_url" || {
+                echo "❌ Failed to re-add Helm repo '$repo_name' without authentication. Exiting."
                 exit 1
             }
         fi
+    fi
+else
+    echo "➕ Adding Helm repository '$repo_name'..."
+    if [ -n "$username" ] && [ -n "$password" ]; then
+        retry helm repo add "$repo_name" "$repo_url" --username "$username" --password "$password" || {
+            echo "❌ Failed to add Helm repo '$repo_name' with authentication. Exiting."
+            exit 1
+        }
     else
-        echo "➕ Adding Helm repository '$repo_name'..."
-        retry helm repo add $repo_name $repo_url --username $username --password $password || {
-            echo "❌ Failed to add Helm repo '$repo_name'. Exiting."
+        retry helm repo add "$repo_name" "$repo_url" || {
+            echo "❌ Failed to add Helm repo '$repo_name' without authentication. Exiting."
             exit 1
         }
     fi
+fi
 
     echo "🔄 Updating Helm repositories..."
     retry helm repo update $repo_name || {
