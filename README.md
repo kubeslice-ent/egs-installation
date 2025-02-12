@@ -64,20 +64,29 @@ Before you begin, ensure the following steps are completed:
        ```
      - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
 
+6. **🚀 Install Prerequisites for EGS (Optional):**
+   - To install prerequisites like GPU Operator, Prometheus for EGS inventory, and PostgreSQL for cost information visibility, you can run the **Prerequisites Installer Script**:
+     - Example command:
+       ```bash
+       ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+       ```
+     - **Note:** This step is optional but recommended if an existing instance of these services is not already running and configured. If skipped, some features might be broken or unavailable.
+
 ---
 
-### 🛠️ Installation Steps
+## 🛠️ Installation Steps
 
-1. **📂 Clone the Repository:**
+### 1. **📂 Clone the Repository:**
    - Start by cloning the EGS installation Git repository:
      ```bash
      git clone https://github.com/kubeslice-ent/egs-installation
      ```
 
-2. **📝 Modify the Configuration File:**
+### 2. **📝 Modify the Configuration File (Mandatory):**
    - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`.
    - Update the following mandatory parameters:
-     - **🔑 Image Pull Secrets:**
+
+     - **🔑 Image Pull Secrets (Mandatory):**
        - Insert the image pull secrets received via email as part of the registration process:
          ```yaml
          global_image_pull_secret:
@@ -85,38 +94,100 @@ Before you begin, ensure the following steps are completed:
            username: ""  # Global Docker registry username (MANDATORY)
            password: ""  # Global Docker registry password (MANDATORY)
          ```
-     - **⚙️ Kubernetes Configuration:**
+
+     - **⚙️ Kubernetes Configuration (Mandatory) :**
        - Set the global `kubeconfig` and `kubecontext` parameters:
          ```yaml
          global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
          global_kubecontext: ""  # Global kubecontext (MANDATORY)
+         use_global_context: true  # If true, use the global kubecontext for all operations by default
          ```
 
-3. **🚀 Run the Installation Script:**
+     - **⚙️ Additional Configuration (Optional):**
+       - Configure installation stages and additional applications:
+         ```yaml
+         # Enable or disable specific stages of the installation
+         enable_install_controller: true               # Enable the installation of the Kubeslice controller
+         enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+         enable_install_worker: true                   # Enable the installation of Kubeslice workers
+
+         # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
+         enable_install_additional_apps: false          # Set to true to enable additional apps installation
+
+         # Enable custom applications
+         # Set this to true if you want to allow custom applications to be deployed.
+         # This is specifically useful for enabling NVIDIA driver installation on your nodes.
+         enable_custom_apps: false
+
+         # Command execution settings
+         # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
+         # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
+         # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
+         run_commands: false
+         ```
+         
+### 3. **🚀 Run the Installation Script:**
    - Execute the installation script using the following command:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
 
-4. **🔄 Update the Inline Values:**
-   - Update the inline-values of `kubeslice-worker-egs` in `egs-installer-config.yaml` with the Grafana LB External IP:
-     - Fetch the external IP using the following command:
-       ```bash
-       kubectl get svc prometheus-grafana -n monitoring
-       ```
-     - Update the `kubeslice-worker-egs` configuration with the Grafana LB external IP in `egs-installer-config.yaml`:
-       ```yaml
-       inline_values:  # Inline Helm values for the worker chart
-         kubesliceNetworking:
-           enabled: false  # Disable Kubeslice networking for this worker
-         egs:
-           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
-         metrics:
-           insecure: true  # Allow insecure connections for metrics
-       ```
+### 4. **🔄 Mandatory for Multiple Worker Clusters: Update the Inline Values**
 
-5. **🔄 Run the Installation Script Again:**
+   This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
+   
+   #### **⚠️ Set the `global_auto_fetch_endpoint` Flag Appropriately**
+   
+   1. **🌐 Single-Cluster Setups**  
+      - If the **controller** and **worker** are in the same cluster, all the below setting can be ignored, and no change is required
+   
+   2. **Default Setting**  
+      - By default, `global_auto_fetch_endpoint` is set to `false`. If you enable it (`true`), ensure the following configurations:  
+        - **💡 Worker Cluster Service Details:** Provide the service details for each worker cluster to fetch the correct monitoring endpoints.  
+        - **📊 Multiple Worker Clusters:** Ensure the service endpoints (e.g., Grafana and Prometheus) are accessible from the **controller cluster**.  
+   
+      #### **🖥 Global Monitoring Endpoint Settings**
+   
+      These configurations are **mandatory** if `global_auto_fetch_endpoint` is set to `true`. Update the following in your `egs-installer-config.yaml`:
+      
+      ```yaml
+      # Global monitoring endpoint settings
+      global_auto_fetch_endpoint: true               # Enable automatic fetching of monitoring endpoints globally
+      global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
+      global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
+      global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
+      global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
+      global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
+      global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
+      ```
+   
+   3. **📢 Update `inline-values` for Multi-Cluster Setups**
+   
+   If `global_auto_fetch_endpoint` is `false` and the **controller** and **worker** are in different clusters, follow these steps:
+   
+   1. **🗒 Fetch the Grafana & Prometheus External IP**  
+      Use the following command to get the **Grafana LoadBalancer External IP**:  
+   
+      ```bash
+      kubectl get svc prometheus-grafana -n monitoring
+      kubectl get svc prometheus -n monitoring
+      ```
+   
+   2. **✏ Update the `egs-installer-config.yaml`**  
+      Replace `<grafana-lb>` and <prometheus-lb> with the Grafana and prometheus **LoadBalancer External IP or NodePort** in the `inline_values` section:  
+   
+      ```yaml
+      inline_values:  # Inline Helm values for the worker chart
+        kubesliceNetworking:
+          enabled: false  # Disable Kubeslice networking for this worker
+        egs:
+          prometheusEndpoint: "http://<prometheus-lb>"  # Prometheus endpoint
+          grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Replace <grafana-lb> with the actual External IP
+        metrics:
+          insecure: true  # Allow insecure connections for metrics
+      ```
+
+### 5. **🔄 Run the Installation Script Again:**
    - Apply the updated configuration by running the installation script again:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
