@@ -1691,7 +1691,7 @@ unregister_clusters_in_controller() {
         echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'" >&2
         echo "-----------------------------------------" >&2
 
-        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name --force --grace-period=0
+        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name --force --grace-period=0 --wait=false
         if [ $? -ne 0 ]; then
             echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'." >&2
             return 1
