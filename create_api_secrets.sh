@@ -133,6 +133,7 @@ if [[ ! -f "$INPUT_YAML" ]]; then
 fi
 
 # Read global values from YAML
+global_controller_namespace=$(yq e '.global_controller_namespace // "kubeslice-controller"' "$INPUT_YAML")
 global_project_namespace=$(yq e '.global_project_namespace // "kubeslice-avesha"' "$INPUT_YAML")
 global_role=$(yq e '.global_role // "Viewer"' "$INPUT_YAML")
 global_saName=$(yq e '.global_saName // "kubeslice-rbac-ro-slice-andromeda"' "$INPUT_YAML")
@@ -155,13 +156,26 @@ fi
 for i in $(seq 0 $((num_secrets - 1))); do
     secret_name=$(yq e ".secrets[$i].name" "$INPUT_YAML")
     apiKey=$(yq e ".secrets[$i].apiKey" "$INPUT_YAML")
+    namespace=$(yq e ".secrets[$i].namespace // \"$global_controller_namespace\"" "$INPUT_YAML")
     project_namespace=$(yq e ".secrets[$i].project_namespace // \"$global_project_namespace\"" "$INPUT_YAML")
+    role=$(yq e ".secrets[$i].role // \"$global_role\"" "$INPUT_YAML")
+    saName=$(yq e ".secrets[$i].saName // \"$global_saName\"" "$INPUT_YAML")
     sliceName=$(yq e ".secrets[$i].sliceName // \"$global_sliceName\"" "$INPUT_YAML")
+    tokenTtlSeconds=$(yq e ".secrets[$i].tokenTtlSeconds // \"$global_tokenTtlSeconds\"" "$INPUT_YAML")
+    userName=$(yq e ".secrets[$i].userName // \"$global_userName\"" "$INPUT_YAML")
+    validUntil=$(yq e ".secrets[$i].validUntil // \"$global_validUntil\"" "$INPUT_YAML")
+
 
     # Create Kubernetes secret with labels
     $KUBECTL_CMD create secret generic "$secret_name" \
         --from-literal=apiKey="$apiKey" \
-        -n "$NAMESPACE" --dry-run=client -o yaml | $KUBECTL_CMD label --local -f - \
+        --from-literal=role="$role" \
+        --from-literal=saName="$saName" \
+        --from-literal=sliceName="$sliceName" \
+        --from-literal=tokenTtlSeconds="$tokenTtlSeconds" \
+        --from-literal=userName="$userName" \
+        --from-literal=validUntil="$validUntil" \
+        -n "$namespace" --dry-run=client -o yaml | $KUBECTL_CMD label --local -f - \
         "kubeslice.io/project-namespace=$project_namespace" \
         "kubeslice.io/sliceName=$sliceName" \
         "kubeslice.io/type=api-key" | $KUBECTL_CMD apply -f -
