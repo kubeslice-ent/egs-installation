@@ -33,7 +33,7 @@ exec > >(tee -a "$output_file") 2>&1
 
 echo "=====================================EGS Preflight Check Script execution started at: $(date)===================================" >> "$output_file"
 # Global default values
-namespaces_to_check="kubeslice-controller,kubeslice-system,kubeslice-avesha"
+namespaces_to_check=""
 test_namespace="egs-test-namespace"
 pvc_test_namespace="egs-test-namespace"
 wrappers_to_invoke=""
@@ -44,12 +44,12 @@ storage_class=""
 storage_size="1Gi"
 cleanup="true"
 display_resources="false"
-global_wait="4"
+global_wait="3"
 KUBECTL_BIN=$(which kubectl)
 service_type="all"
 service_name="egs-test-service"
 watch_resources="true"
-watch_duration="15"
+watch_duration="7"
 function_debug_input="false"
 generate_summary_flag="true"
 fetch_resource_names="prometheus,gpu-operator,grafana,nginx"
