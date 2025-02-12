@@ -1,0 +1,180 @@
+########################### MANDATORY PARAMETERS ####################################################################
+
+# Global image pull secret settings
+global_image_pull_secret:
+  repository: "https://index.docker.io/v1/"   # Docker registry URL
+  username: ""                                # Global Docker registry username
+  password: ""                                # Global Docker registry password
+
+# Kubeconfig settings
+global_kubeconfig: ""                         # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
+global_kubecontext: ""                        # Global kubecontext to use - Mandatory
+use_global_context: true                      # If true, use the global kubecontext for all operations by default
+
+#### Kubeslice Controller Installation Settings ####
+kubeslice_controller_egs:
+  skip_installation: false                     # Do not skip the installation of the controller
+  use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
+  specific_use_local_charts: true              # Override to use local charts for the controller
+  kubeconfig: ""                               # Path to the kubeconfig file specific to the controller
+  kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global context
+  namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
+  release: "egs-controller"                    # Helm release name for the controller
+  chart: "kubeslice-controller-egs"            # Helm chart name for the controller
+#### Inline Helm Values for the Controller Chart ####
+  inline_values:
+    global:
+      imageRegistry: docker.io/aveshasystems   # Docker registry for the images
+      kubeTally:
+        enabled: false                          # Enable KubeTally in the controller
+        postgresSecretName: kubetally-db-credentials   # Secret name for PostgreSQL credentials
+        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Address of the PostgreSQL service
+        postgresPort: 5432                     # Port for the PostgreSQL service
+        postgresUser: "postgres"               # PostgreSQL username
+        postgresPassword: "postgres"           # PostgreSQL password
+        postgresDB: "postgres"                 # PostgreSQL database name
+        postgresSslmode: disable               # SSL mode for PostgreSQL connection
+        prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
+    kubeslice:
+      controller:
+        endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
+#### Helm Flags and Verification Settings ####
+  helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
+  verify_install: false                        # Verify the installation of the controller
+  verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
+  skip_on_verify_fail: true                    # If verification fails, do not skip the step
+#### Troubleshooting Settings ####
+  enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
+#### Kubeslice Controller Installation Settings ####
+
+#### Kubeslice UI Installation Settings ####
+kubeslice_ui_egs:
+  skip_installation: false                     # Do not skip the installation of the UI
+  use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
+  kubeconfig: ""                               # Path to the kubeconfig file specific to the UI
+  kubecontext: ""                              # Kubecontext specific to the UI; if empty, uses the global context
+  namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
+  release: "egs-ui"                            # Helm release name for the UI
+  chart: "kubeslice-ui-egs"                    # Helm chart name for the UI
+#### Inline Helm Values for the UI Chart ####
+  inline_values:
+    global:
+      imageRegistry: docker.io/aveshasystems   # Docker registry for the UI images
+    kubeslice:
+      prometheus:
+        url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
+      uiproxy:
+        service:
+          type: LoadBalancer                  # Service type for the UI proxy
+      egsCoreApis:
+        enabled: true                         # Enable EGS core APIs for the UI
+        service:
+          type: ClusterIP                  # Service type for the EGS core APIs
+#### Helm Flags and Verification Settings ####
+  helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
+  verify_install: false                        # Verify the installation of the UI
+  verify_install_timeout: 50                   # Timeout for the UI installation verification (in seconds)
+  skip_on_verify_fail: true                    # If UI verification fails, do not skip the step
+#### Chart Source Settings ####
+  specific_use_local_charts: true              # Override to use local charts for the UI
+
+#### Kubeslice Worker Installation Settings ####
+kubeslice_worker_egs:
+  - name: "worker-1"                           # Worker name
+    use_global_kubeconfig: true                # Use global kubeconfig for this worker
+    kubeconfig: ""                             # Path to the kubeconfig file specific to the worker
+    kubecontext: ""                            # Kubecontext specific to the worker; if empty, uses the global context
+    skip_installation: false                   # Do not skip the installation of the worker
+    specific_use_local_charts: true            # Override to use local charts for this worker
+    namespace: "kubeslice-system"              # Kubernetes namespace for this worker
+    release: "egs-worker"                      # Helm release name for the worker
+    chart: "kubeslice-worker-egs"              # Helm chart name for the worker
+#### Inline Helm Values for the Worker Chart ####
+    inline_values:
+      global:
+        imageRegistry: docker.io/aveshasystems # Docker registry for worker images
+      egs:
+        prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+        grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
+      metrics:
+        insecure: true                        # Allow insecure connections for metrics
+      kserve:
+        enabled: true                         # Enable KServe for the worker
+        kserve:                               # KServe chart options
+          controller:
+            gateway:
+              domain: kubeslice.com
+              ingressGateway:
+                className: "nginx"            # Ingress class name for the KServe gateway
+#### Helm Flags and Verification Settings ####
+    helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
+    verify_install: true                       # Verify the installation of the worker
+    verify_install_timeout: 60                 # Timeout for the worker installation verification (in seconds)
+    skip_on_verify_fail: false                 # Do not skip if worker verification fails
+#### Troubleshooting Settings ####
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+
+
+#### Define Projects ####
+projects:
+  - name: "avesha"                              # Name of the Kubeslice project
+    username: "admin"                           # Username for accessing the Kubeslice project
+
+#### Define Cluster Registration ####
+cluster_registration:
+  - cluster_name: "worker-1"                    # Name of the cluster to be registered
+    project_name: "avesha"                      # Name of the project to associate with the cluster
+    #### Telemetry Settings ####
+    telemetry:
+      enabled: true                             # Enable telemetry for this cluster
+      endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090" # Telemetry endpoint
+      telemetryProvider: "prometheus"           # Telemetry provider (Prometheus in this case)
+    #### Geo-Location Settings ####
+    geoLocation:
+      cloudProvider: ""              # Cloud provider for this cluster (e.g., GCP)
+      cloudRegion: ""                # Cloud region for this cluster (e.g., us-central1)
+########################### MANDATORY PARAMETERS ####################################################################
+#########################################################################################################################
+########################### OPTIONAL CONFIGURATION PARAMETERS ###########################################################
+
+#### List of Required Binaries ####
+required_binaries:
+  - yq                                       # YAML processor
+  - helm                                     # Helm package manager
+  - jq                                       # JSON processor
+  - kubectl                                  # Kubernetes command-line tool
+
+#### Node Labeling Settings ####
+add_node_label: false                        # Enable node labeling during installation
+# Version of the input configuration file
+version: "1.0.0"
+
+# Enable or disable specific stages of the installation
+enable_install_controller: true               # Enable the installation of the Kubeslice controller
+enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+enable_install_worker: true                   # Enable the installation of Kubeslice workers
+
+# Project and cluster registration settings
+enable_project_creation: true                   # Enable project creation in Kubeslice
+enable_cluster_registration: true               # Enable cluster registration in Kubeslice
+enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
+
+# Precheck options
+precheck: true                                  # Run general prechecks before starting the installation
+kubeslice_precheck: true                        # Run specific prechecks for Kubeslice components
+
+# Global installation verification settings
+verify_install: false                           # Enable verification of installations globally
+verify_install_timeout: 600                     # Timeout for global installation verification (in seconds)
+skip_on_verify_fail: true                       # If set to true, skip steps where verification fails, otherwise exit on failure
+
+# Base path settings
+base_path: ""                                   # If left empty, the script will use the relative path to the script as the base path
+
+# Helm repository settings
+use_local_charts: true                          # Use local Helm charts instead of fetching them from a repository
+local_charts_path: "charts"                     # Path to the directory containing local Helm charts
+global_helm_repo_url: ""                        # URL for the global Helm repository (if not using local charts)
+global_helm_username: ""                        # Username for accessing the global Helm repository
+global_helm_password: ""                        # Password for accessing the global Helm repository
+readd_helm_repos: true                          # Re-add Helm repositories even if they are already present
