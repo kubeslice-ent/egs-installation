@@ -74,7 +74,7 @@ kubeslice:
   # Configuration for events
   events:
     # Whether events are disabled
-    disabled: false
+    disabled: true
 
   # license details by default mode set to auto and license set to trial - please give company-name or user-name as customerName
   license:
