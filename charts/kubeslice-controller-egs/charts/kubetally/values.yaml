@@ -4,7 +4,7 @@ kubetally:
   pricingService:
     imageRegistry: *defaultRegistry
     image: pricing-service
-    tag: 1.11.0-beta.2
+    tag: 1.11.0-beta.3
     imagePullPolicy: Always
   chargeUpdater:
     imageRegistry: *defaultRegistry
@@ -14,6 +14,6 @@ kubetally:
   kubeTallyReport:
     imageRegistry: *defaultRegistry
     image: kubetally-report
-    tag: 1.11.0-beta.2
+    tag: 1.11.0-beta.3
     imagePullPolicy: Always
   imagePullSecretName: kubeslice-image-pull-secret
