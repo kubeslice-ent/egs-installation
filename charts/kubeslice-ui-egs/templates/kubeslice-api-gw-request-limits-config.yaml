@@ -2,35 +2,37 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kubeslice-api-gw-request-limits
+{{- if .Values.global.gpr.enableLimits }}
 data:
   request-limits.json: |
     {
       "gpr": {
         "limits": {
           "gpusPerNode": {
-            "max": 5
+            "max": {{ .Values.global.gpr.limits.gpusPerNode.max }}
           },
           "gpuNodes": {
-            "max": 1
+            "max": {{ .Values.global.gpr.limits.gpuNodes.max }}
           },
           "pendingGprs": {
-            "max": 3
+            "max": {{ .Values.global.gpr.limits.pendingGprs.max }}
           },
           "idleTimeout": {
-            "max": 30,
-            "fallback": "0d0h30m",
-            "forceEnforcement": true
+            "max": {{ .Values.global.gpr.limits.idleTimeout.max }},
+            "fallback": "{{ .Values.global.gpr.limits.idleTimeout.fallback }}",
+            "forceEnforcement": {{ .Values.global.gpr.limits.idleTimeout.forceEnforcement }}
           },
           "exitDuration": {
-            "max": 240
+            "max": {{ .Values.global.gpr.limits.exitDuration.max }}
           },
           "priority": {
-            "max": 101,
-            "bypass": 261
+            "max": {{ .Values.global.gpr.limits.priority.max }},
+            "bypass": {{ .Values.global.gpr.limits.priority.bypass }}
           },
           "workspaceGprQueue": {
-            "max": 3
+            "max": {{ .Values.global.gpr.limits.workspaceGprQueue.max }}
           }
         }
       }
     }
+{{- end }}

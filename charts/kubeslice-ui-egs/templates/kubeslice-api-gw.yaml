@@ -53,8 +53,10 @@ spec:
               value: {{ .Values.egs.QueueManagerAddress }}
             - name: CORE_APIS_ENDPOINT
               value: {{ .Values.egs.CoreApisUrl }}
+          {{- if .Values.global.gpr.enableLimits }}
             - name: API_GATEWAY_REQUEST_LIMITS_CONFIG_PATH
               value: /app/config/request-limits/request-limits.json
+          {{- end }}
           name: kubeslice-api-gw
           securityContext:
             runAsUser: 65536
@@ -83,8 +85,10 @@ spec:
             - mountPath: /app/config/product.json
               subPath: product.json
               name: product-config
+          {{- if .Values.global.gpr.enableLimits }}
             - mountPath: /app/config/request-limits
               name: kubeslice-api-gw-request-limits
+          {{- end }}
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}

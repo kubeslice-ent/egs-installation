@@ -5,6 +5,26 @@ global:
   imageRegistry: &defaultRegistry docker.io/aveshasystems
   profile:
     openshift: false
+  gpr:
+    enableLimits: false
+    limits:
+      gpusPerNode:
+        max: 5
+      gpuNodes:
+        max: 1
+      pendingGprs:
+        max: 3
+      idleTimeout:
+        max: 30
+        fallback: "0d0h30m"
+        forceEnforcement: true
+      exitDuration:
+        max: 240 # in minutes (4 hours)
+      priority:
+        max: 101
+        bypass: 261
+      workspaceGprQueue:
+        max: 3
 
 kubeTally:
   costApiUrl: http://kubetally-pricing-service:30001
