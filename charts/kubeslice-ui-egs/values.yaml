@@ -6,25 +6,25 @@ global:
   profile:
     openshift: false
   gpr:
-    enableLimits: false
+    enableLimits: true
     limits:
       gpusPerNode:
-        max: 5
+        max: 100
       gpuNodes:
-        max: 1
+        max: 100
       pendingGprs:
-        max: 3
+        max: 100
       idleTimeout:
         max: 30
         fallback: "0d0h30m"
         forceEnforcement: true
       exitDuration:
-        max: 240 # in minutes (4 hours)
+        max: 525600 # in minutes (1 Year)
       priority:
-        max: 101
+        max: 299
         bypass: 261
       workspaceGprQueue:
-        max: 3
+        max: 100
 
 kubeTally:
   costApiUrl: http://kubetally-pricing-service:30001
