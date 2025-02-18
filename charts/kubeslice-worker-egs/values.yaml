@@ -4,9 +4,9 @@ global:
     openshift: false
 
 operator:
-  imageRegistry: *defaultRegistry
+  imageRegistry: aveshadev #*defaultRegistry
   image: worker-operator-ent-egs
-  tag: 1.11.0-beta.3
+  tag: 1.1.1-RELEASE-91c2a26b
   pullPolicy: IfNotPresent
   logLevel: INFO
 
@@ -24,9 +24,9 @@ cluster:
   endpoint:
 
 aiops:
-  imageRegistry: *defaultRegistry
+  imageRegistry: aveshadev #*defaultRegistry
   image: kube-aiops-operator
-  tag: 1.11.0-beta.3
+  tag: 1.11.0-RELEASE-6ab1c510
   pullPolicy: IfNotPresent
   logLevel: INFO
 
