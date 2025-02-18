@@ -75,7 +75,7 @@ kubeslice:
   apigw:
     imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 1.11.0-RELEASE-2caa4b6f
+    tag: 1.11.0-RELEASE-c4cd4e29
     pullPolicy: IfNotPresent
 
   egsCoreApis:
