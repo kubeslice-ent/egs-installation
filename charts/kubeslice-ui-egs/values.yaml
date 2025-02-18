@@ -34,7 +34,7 @@ kubeslice:
   ui:
     imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.10.3-RELEASE-daecd88e
+    tag: 1.10.3-RELEASE-eb91761d
     pullPolicy: IfNotPresent
   uiv2:
     imageRegistry: aveshadev #*defaultRegistry
