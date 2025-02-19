@@ -40,7 +40,7 @@ generate_sa_name() {
             echo "kubeslice-rbac-rw-external-apis"
             ;;
         *)
-            echo "❌ Error: Invalid role '$role'. Expected 'Editor', 'Viewer', or 'Owner'."
+            echo "❌ Error: Invalid role '$role'. Expected "
             exit 1
             ;;
     esac
@@ -185,8 +185,38 @@ for i in $(seq 0 $((num_secrets - 1))); do
     apiKey=$(uuidgen)
     secret_name=$(generate_md5 "$apiKey")
     namespace=$(yq e ".secrets[$i].namespace // \"$global_controller_namespace\"" "$INPUT_YAML")
+
+    # If namespace is empty, set it to "kubeslice-controller"
+    if [[ -z "$namespace" || "$namespace" == "null" ]]; then
+        namespace="kubeslice-controller"
+    fi
+
+    # Extract project namespace from YAML, defaulting to global_project_namespace if missing
     project_namespace=$(yq e ".secrets[$i].project_namespace // \"$global_project_namespace\"" "$INPUT_YAML")
+    
+    # Ensure project_namespace is not empty
+    if [[ -z "$project_namespace" || "$project_namespace" == "null" ]]; then
+        echo "❌ Error: project_namespace is missing or empty."
+        exit 1
+    fi
+    
+    # Check if the project_namespace exists in the cluster
+    if ! $KUBECTL_CMD get namespace "$project_namespace" &>/dev/null; then
+        echo "❌ Error: Project Namespace '$project_namespace' does not exist in the cluster."
+        exit 1
+    fi
+    
+    echo "✔️ Project Namespace '$project_namespace' exists in the cluster."
+
     role=$(yq e ".secrets[$i].role // \"$global_role\"" "$INPUT_YAML")
+
+    # Ensure role is valid
+    valid_roles=("Editor" "Viewer" "Owner")
+    if [[ ! " ${valid_roles[@]} " =~ " ${role} " ]]; then
+        echo "❌ Error: Invalid role '$role'. Expected 'Editor', 'Viewer', or 'Owner'."
+        exit 1
+    fi
+
     saName=$(generate_sa_name "$role" "$global_sliceName")
     sliceName=$(yq e ".secrets[$i].sliceName // \"$global_sliceName\"" "$INPUT_YAML")
     tokenTtlSeconds=$(yq e ".secrets[$i].tokenTtlSeconds // \"$global_tokenTtlSeconds\"" "$INPUT_YAML")
