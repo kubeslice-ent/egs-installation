@@ -23,6 +23,30 @@ else
     echo "✅ Bash version is sufficient: $BASH_VERSION"
 fi
 
+
+# Function to determine saName based on role
+generate_sa_name() {
+    local role="$1"
+    local slice_name="$2"
+
+    case "$role" in
+        Editor)
+            echo "kubeslice-rbac-rw-slice-${slice_name}"
+            ;;
+        Viewer)
+            echo "kubeslice-rbac-ro-slice-${slice_name}"
+            ;;
+        Owner)
+            echo "kubeslice-rbac-rw-external-apis"
+            ;;
+        *)
+            echo "❌ Error: Invalid role '$role'. Expected 'Editor', 'Viewer', or 'Owner'."
+            exit 1
+            ;;
+    esac
+}
+
+
 # Function: Check prerequisites
 prerequisite_check() {
     echo "🚀 Starting prerequisite check..."
@@ -136,7 +160,6 @@ fi
 global_controller_namespace=$(yq e '.global_controller_namespace // "kubeslice-controller"' "$INPUT_YAML")
 global_project_namespace=$(yq e '.global_project_namespace // "kubeslice-avesha"' "$INPUT_YAML")
 global_role=$(yq e '.global_role // "Viewer"' "$INPUT_YAML")
-global_saName=$(yq e '.global_saName // "kubeslice-rbac-ro-slice-andromeda"' "$INPUT_YAML")
 global_sliceName=$(yq e '.global_sliceName // "devops"' "$INPUT_YAML")
 global_tokenTtlSeconds=$(yq e '.global_tokenTtlSeconds // "900"' "$INPUT_YAML")
 global_userName=$(yq e '.global_userName // "Admin"' "$INPUT_YAML")
@@ -159,7 +182,7 @@ for i in $(seq 0 $((num_secrets - 1))); do
     namespace=$(yq e ".secrets[$i].namespace // \"$global_controller_namespace\"" "$INPUT_YAML")
     project_namespace=$(yq e ".secrets[$i].project_namespace // \"$global_project_namespace\"" "$INPUT_YAML")
     role=$(yq e ".secrets[$i].role // \"$global_role\"" "$INPUT_YAML")
-    saName=$(yq e ".secrets[$i].saName // \"$global_saName\"" "$INPUT_YAML")
+    saName=$(generate_sa_name "$role" "$global_sliceName")
     sliceName=$(yq e ".secrets[$i].sliceName // \"$global_sliceName\"" "$INPUT_YAML")
     tokenTtlSeconds=$(yq e ".secrets[$i].tokenTtlSeconds // \"$global_tokenTtlSeconds\"" "$INPUT_YAML")
     userName=$(yq e ".secrets[$i].userName // \"$global_userName\"" "$INPUT_YAML")
