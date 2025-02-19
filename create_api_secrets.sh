@@ -198,10 +198,15 @@ for i in $(seq 0 $((num_secrets - 1))); do
         --from-literal=tokenTtlSeconds="$tokenTtlSeconds" \
         --from-literal=userName="$userName" \
         --from-literal=validUntil="$validUntil" \
-        -n "$namespace" --dry-run=client -o yaml | $KUBECTL_CMD label --local -f - \
-        "kubeslice.io/project-namespace=$project_namespace" \
-        "kubeslice.io/sliceName=$sliceName" \
-        "kubeslice.io/type=api-key" | $KUBECTL_CMD apply -f -
+        -n "$NAMESPACE" --dry-run=client -o yaml | $KUBECTL_CMD apply -f -
+
+    # Apply label separately to avoid validation errors
+    $KUBECTL_CMD label secret "$secret_name" \
+        "kubeslice.io/project-namespace=$PROJECT_NAMESPACE" \
+        "kubeslice.io/sliceName=$SLICE_NAME" \
+        "kubeslice.io/type=api-key" \
+        --overwrite -n "$NAMESPACE"
+
 
     echo "✅ Secret '$secret_name' created successfully in namespace '$NAMESPACE'."
 done
