@@ -182,7 +182,7 @@ fi
 # Iterate over each secret
 for i in $(seq 0 $((num_secrets - 1))); do
     name=$(yq e ".secrets[$i].name" "$INPUT_YAML")
-    apiKey=$(yq e ".secrets[$i].apiKey" "$INPUT_YAML")
+    apiKey=$(uuidgen)
     secret_name=$(generate_md5 "$apiKey")
     namespace=$(yq e ".secrets[$i].namespace // \"$global_controller_namespace\"" "$INPUT_YAML")
     project_namespace=$(yq e ".secrets[$i].project_namespace // \"$global_project_namespace\"" "$INPUT_YAML")
