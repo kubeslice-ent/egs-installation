@@ -46,6 +46,10 @@ generate_sa_name() {
     esac
 }
 
+# Function to generate MD5 hash of a string
+generate_md5() {
+    echo -n "$1" | md5sum | awk '{print $1}'
+}
 
 # Function: Check prerequisites
 prerequisite_check() {
@@ -177,8 +181,9 @@ fi
 
 # Iterate over each secret
 for i in $(seq 0 $((num_secrets - 1))); do
-    secret_name=$(yq e ".secrets[$i].name" "$INPUT_YAML")
+    name=$(yq e ".secrets[$i].name" "$INPUT_YAML")
     apiKey=$(yq e ".secrets[$i].apiKey" "$INPUT_YAML")
+    secret_name=$(generate_md5 "$apiKey")
     namespace=$(yq e ".secrets[$i].namespace // \"$global_controller_namespace\"" "$INPUT_YAML")
     project_namespace=$(yq e ".secrets[$i].project_namespace // \"$global_project_namespace\"" "$INPUT_YAML")
     role=$(yq e ".secrets[$i].role // \"$global_role\"" "$INPUT_YAML")
@@ -192,6 +197,7 @@ for i in $(seq 0 $((num_secrets - 1))); do
     # Create Kubernetes secret with labels
     $KUBECTL_CMD create secret generic "$secret_name" \
         --from-literal=apiKey="$apiKey" \
+        --from-literal=name="$name" \
         --from-literal=role="$role" \
         --from-literal=saName="$saName" \
         --from-literal=sliceName="$sliceName" \
@@ -202,8 +208,8 @@ for i in $(seq 0 $((num_secrets - 1))); do
 
     # Apply label separately to avoid validation errors
     $KUBECTL_CMD label secret "$secret_name" \
-        "kubeslice.io/project-namespace=$PROJECT_NAMESPACE" \
-        "kubeslice.io/sliceName=$SLICE_NAME" \
+        "kubeslice.io/project-namespace=$project_namespace" \
+        "kubeslice.io/sliceName=$sliceName" \
         "kubeslice.io/type=api-key" \
         --overwrite -n "$NAMESPACE"
 
