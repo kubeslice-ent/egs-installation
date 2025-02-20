@@ -125,6 +125,39 @@ Before you begin, ensure the following steps are completed:
          # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
          run_commands: false
          ```
+
+         **⚙️ PostgreSQL Connection Configuration Mandatory only if Kubetally enabled is true (Optional):**
+
+         📌 **Note:** The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and provide the secret name directly.
+         - **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
+         - The secret must contain the following key-value pairs:
+           
+           | Key               | Description                                  |
+           |-------------------|----------------------------------------------|
+           | `postgresAddr`    | The PostgreSQL service endpoint              |
+           | `postgresPort`    | The PostgreSQL service port (default: 5432)  |
+           | `postgresUser`    | The PostgreSQL username                      |
+           | `postgresPassword`| The PostgreSQL password                      |
+           | `postgresDB`      | The PostgreSQL database name                 |
+           | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
+         
+         📌 Alternatively, you can leave all values empty and provide a pre-created secret name `postgresSecretName` with the above key-value format.
+         
+         ### Example Configuration
+         Below is an example of how to configure the PostgreSQL connection in the Kubetally installation values:
+         
+         ```yaml
+         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials.
+                                                        # Created by install, all the below values must be specified.
+                                                        # Alternatively, leave all values empty and provide a pre-created secret.
+         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"  # Change to your PostgreSQL endpoint
+         postgresPort: 5432   # Change this to match your PostgreSQL service port
+         postgresUser: "postgres"  # Set your PostgreSQL username
+         postgresPassword: "postgres"  # Set your PostgreSQL password
+         postgresDB: "postgres"  # Set your PostgreSQL database name
+         postgresSslmode: disable  # Change this based on your SSL configuration
+         prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
+         ```
          
 ### 3. **🚀 Run the Installation Script:**
    - Execute the installation script using the following command:
