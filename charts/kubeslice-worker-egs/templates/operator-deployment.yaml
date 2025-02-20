@@ -56,6 +56,8 @@ spec:
         image: '{{ .Values.operator.imageRegistry }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
         imagePullPolicy: '{{ .Values.operator.pullPolicy }}'
         env:
+          - name: PROMETHEUS_SERVICE_ENDPOINT
+            value: {{ .Values.egs.prometheusEndpoint }}
           - name: LOG_LEVEL
             value: {{ .Values.operator.logLevel }}
           - name: HUB_HOST_ENDPOINT

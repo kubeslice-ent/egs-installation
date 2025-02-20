@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: clusters.controller.kubeslice.io
 spec:
   group: controller.kubeslice.io
@@ -21,14 +20,19 @@ spec:
         description: Cluster is the Schema for the clusters API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -58,6 +62,10 @@ spec:
                   monitoring:
                     description: Monitoring contains the Kubernetes Monitoring Dashboard
                     properties:
+                      grafanaDashboardBaseURL:
+                        description: GrafanaDashboardBaseURL is the base URL for the
+                          grafana dashboard
+                        type: string
                       kubernetesDashboard:
                         description: KubernetesDashboard contains the information
                           regarding Kubernetes Monitoring Dashboard
@@ -93,6 +101,8 @@ spec:
                         type: string
                     type: object
                 type: object
+              enableAutoEviction:
+                type: boolean
               networkInterface:
                 description: NetworkInterface is the network interface attached with
                   the cluster.
@@ -105,6 +115,8 @@ spec:
                 items:
                   type: string
                 type: array
+              requeueOnFailure:
+                type: boolean
             type: object
           status:
             description: ClusterStatus defines the observed state of Cluster
@@ -172,46 +184,6 @@ spec:
                 description: NodeIPs of the gateway node of worker cluster
                 items:
                   type: string
-                type: array
-              nodeInventory:
-                description: NodeInventory is the inventory of the nodes in the cluster
-                items:
-                  properties:
-                    gpuProperties:
-                      properties:
-                        gpuNodeType:
-                          type: string
-                        gpuSharingType:
-                          type: string
-                        gpuUtilization:
-                          properties:
-                            allocated:
-                              type: string
-                            free:
-                              type: string
-                            memory:
-                              type: string
-                            reserved:
-                              items:
-                                properties:
-                                  numReservedGPUs:
-                                    type: string
-                                  sliceName:
-                                    type: string
-                                type: object
-                              type: array
-                            totalGPUs:
-                              type: string
-                          type: object
-                      type: object
-                    name:
-                      type: string
-                    type:
-                      enum:
-                      - cpu
-                      - gpu
-                      type: string
-                  type: object
                 type: array
               registrationStatus:
                 description: RegistrationStatus shows the status of cluster registration
@@ -2977,8 +2949,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: workersliceappserviceresourceusages.worker.kubeslice.io
 spec:
   group: worker.kubeslice.io
@@ -2996,14 +2967,19 @@ spec:
           API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -3157,6 +3133,149 @@ spec:
                   - serviceName
                   type: object
                 type: array
+              gpuNodeResources:
+                description: List of EGS managed GPU node details
+                items:
+                  description: GPUNode is the EGS managed GPU Node
+                  properties:
+                    allocatedGPUs:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      description: AllocatedGPUs is the number of allocated GPUs from
+                        the node
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    gpuShape:
+                      description: GpuShape is the shape of the GPU attached to the
+                        node
+                      type: string
+                    gpuSlicingProfile:
+                      description: List of available MIG devices on the node
+                      items:
+                        description: GPUSlicingProfile contains the details of the
+                          MIG device
+                        properties:
+                          profileName:
+                            description: ProfileName is the name of the MIG device
+                              profile
+                            type: string
+                          totalGPUs:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: TotalGPUs is the total number of GPUs present
+                              for this device
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                        type: object
+                      type: array
+                    instanceType:
+                      description: InstanceType is the type of the GPU Node
+                      type: string
+                    nodeName:
+                      description: NodeName is the name of the GPU Node
+                      type: string
+                    sharingMode:
+                      description: SharingMode indicates the Mode of GPU sharing
+                      type: string
+                    sharingStrategy:
+                      description: SharingStrategy indicates how GPUs are shared
+                      type: string
+                    totalGPUs:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      description: TotalGPUs is the Total number of GPUs present in
+                        the node
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  type: object
+                type: array
+              gpuResources:
+                description: List of GPU workload resources
+                items:
+                  description: GPUResources represents the GPU allocation details
+                    for a specific namespace.
+                  properties:
+                    gpuAllocations:
+                      description: GPUAllocations contains the detailed GPU allocation
+                        information for the namespace.
+                      items:
+                        description: GPUAllocations represents GPU allocations on
+                          a specific node.
+                        properties:
+                          nodeName:
+                            description: NodeName is the name of the GPU node.
+                            type: string
+                          totalAllocatedGPUs:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: AllocatedGPUs represents the total number
+                              of GPUs allocated to workloads.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          workloadDetails:
+                            description: WorkloadDetails provides detailed information
+                              about each workload's GPU usage.
+                            items:
+                              description: GPUWorkloadDetails represents GPU usage
+                                details for a specific workload.
+                              properties:
+                                requests:
+                                  description: Requests specifies the resource requests
+                                    made by the workload in terms of GPU and memory.
+                                  properties:
+                                    gpu:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      description: GPU indicates the number of GPUs
+                                        requested by the workload.
+                                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                      x-kubernetes-int-or-string: true
+                                  type: object
+                                resourceUtilization:
+                                  description: ResourceUtilization contains the GPU
+                                    and memory utilization metrics for the workload.
+                                  properties:
+                                    gpuDetails:
+                                      description: GPUDetails contains detailed information
+                                        about GPU usage.
+                                      items:
+                                        description: GPUDetail represents individual
+                                          GPU utilization metrics.
+                                        properties:
+                                          gpu:
+                                            description: GPU indicates the GPU compute
+                                              utilization as a percentage (e.g., 60).
+                                            type: string
+                                          id:
+                                            description: ID is the unique identifier
+                                              of the GPU being used by the workload.
+                                            type: string
+                                          memory:
+                                            description: Memory represents the amount
+                                              of GPU memory utilized by the workload
+                                              (in MiB).
+                                            type: string
+                                        type: object
+                                      type: array
+                                  type: object
+                                workloadName:
+                                  description: WorkloadName is the name of the workload
+                                    using this GPU.
+                                  type: string
+                              type: object
+                            type: array
+                        type: object
+                      type: array
+                    namespace:
+                      description: Namespace is the name of the application namespace.
+                      type: string
+                  type: object
+                type: array
               ingressResources:
                 description: List of ingress resources
                 items:
@@ -3205,7 +3324,6 @@ spec:
                   type: object
                 type: array
             required:
-            - applicationServices
             - lastUpdatedTimestamp
             type: object
         type: object
@@ -5923,6 +6041,31 @@ metadata:
   creationTimestamp: null
   name: kubeslice-controller-controller-role
 rules:
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingress
+      - ingress/status
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - serving.kserve.io
+    resources:
+      - "*"
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   - apiGroups:
       - ""
     resources:

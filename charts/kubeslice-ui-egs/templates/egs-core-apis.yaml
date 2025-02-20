@@ -87,6 +87,13 @@ spec:
               drop:
                 - ALL
             readOnlyRootFilesystem: false
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
           env:
             - name: EGS_CORE_APIS_API_KEY_SECRET_NAMESPACE
               valueFrom:
@@ -108,6 +115,7 @@ spec:
         - name: kubeslice-ui-image-pull-secret
       {{- end }}
       serviceAccountName: egs-core-apis
+      
       securityContext:
         runAsUser: 65536               # Non-root user
         runAsGroup: 65536              # Non-root group

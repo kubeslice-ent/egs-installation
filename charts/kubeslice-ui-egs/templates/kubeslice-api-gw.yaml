@@ -35,6 +35,8 @@ spec:
         - image: '{{ .Values.kubeslice.apigw.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
           env:
+            - name: DCGM_METRIC_JOB_FILTER
+              value: tgi
             - name: KUBESLICE_CONTROLLER_PROMETHEUS
               value: {{ .Values.kubeslice.prometheus.url }}
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE
@@ -50,7 +52,11 @@ spec:
             - name: QUEUE_MANAGER_ADDRESS
               value: {{ .Values.egs.QueueManagerAddress }}
             - name: CORE_APIS_ENDPOINT
-              value: {{ .Values.egs.CoreApisUrl }}    
+              value: {{ .Values.egs.CoreApisUrl }}
+          {{- if .Values.global.gpr.enableLimits }}
+            - name: API_GATEWAY_REQUEST_LIMITS_CONFIG_PATH
+              value: /app/config/request-limits/request-limits.json
+          {{- end }}
           name: kubeslice-api-gw
           securityContext:
             runAsUser: 65536
@@ -63,6 +69,13 @@ spec:
               drop:
                 - ALL
             readOnlyRootFilesystem: false
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
           ports:
             - containerPort: 3000
               protocol: TCP
@@ -72,6 +85,10 @@ spec:
             - mountPath: /app/config/product.json
               subPath: product.json
               name: product-config
+          {{- if .Values.global.gpr.enableLimits }}
+            - mountPath: /app/config/request-limits
+              name: kubeslice-api-gw-request-limits
+          {{- end }}
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
@@ -96,6 +113,10 @@ spec:
             sources:
               - configMap:
                   name: kubeslice-ui-json-config
+        - name: kubeslice-api-gw-request-limits
+          configMap:
+            name: kubeslice-api-gw-request-limits
+            optional: true
                   
       tolerations:
         - operator: "Exists"
