@@ -140,9 +140,9 @@ Before you begin, ensure the following steps are completed:
            | `postgresPassword`| The PostgreSQL password                      |
            | `postgresDB`      | The PostgreSQL database name                 |
            | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
+           
     
-         ### Example Configuration to use precreated secret
-         Below is an example of how to configure the PostgreSQL connection in the Kubetally installation values:
+         **Example Configuration to use pre-created secret**
          
             ```yaml
             postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials.
@@ -155,11 +155,11 @@ Before you begin, ensure the following steps are completed:
             postgresDB: ""  # Set your PostgreSQL database name
             postgresSslmode: ""  # Change this based on your SSL configuration
             ```
+            
          
            📌 **Alternatively**, if you provide all values with a secret name as specified for `postgresSecretName` in the values file, using the key-value format below, it will automatically create the specified secret in the `kubeslice-controller` namespace with the provided values.
    
-            ### Example Configuration to autocreate secret with provided values
-            Below is an example of how to configure the PostgreSQL connection in the Kubetally installation values:
+            **Example Configuration to auto-create secret with provided values**
             
           ```yaml
               postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
