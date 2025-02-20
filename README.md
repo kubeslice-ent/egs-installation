@@ -126,7 +126,7 @@ Before you begin, ensure the following steps are completed:
          run_commands: false
          ```
 
-         **⚙️ PostgreSQL Connection Configuration Mandatory only if Kubetally enabled is true (Optional):**
+         ⚙️ **PostgreSQL Connection Configuration (*Mandatory only if `kubetallyEnabled` is set to `true` (Optional otherwise)*)** 
 
          📌 **Note:** The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
          - **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
