@@ -27,13 +27,15 @@ kubeslice_controller_egs:
       imageRegistry: docker.io/aveshasystems   # Docker registry for the images
       kubeTally:
         enabled: false                          # Enable KubeTally in the controller
-        postgresSecretName: kubetally-db-credentials   # Secret name for PostgreSQL credentials
-        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Address of the PostgreSQL service
-        postgresPort: 5432                     # Port for the PostgreSQL service
-        postgresUser: "postgres"               # PostgreSQL username
-        postgresPassword: "postgres"           # PostgreSQL password
-        postgresDB: "postgres"                 # PostgreSQL database name
-        postgresSslmode: disable               # SSL mode for PostgreSQL connection
+#### Postgresql Connection Configuration for Kubetally  ####
+        postgresSecretName: kubetally-db-credentials   # Default Secret name for PostgreSQL credentials, if all below values are specified 
+                                                       # then secret will be created with the specified name, else provide a pre-created secret name with below connection details
+        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
+        postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
+        postgresUser: "postgres"               # Change this PostgreSQL username to your values
+        postgresPassword: "postgres"           # Change this PostgreSQL password to your value
+        postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
+        postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
         prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
     kubeslice:
       controller:
