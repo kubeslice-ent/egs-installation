@@ -74,7 +74,7 @@ kubeslice_controller_egs:
   skip_installation: false                     # Do not skip the installation of the controller
   use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
   specific_use_local_charts: true              # Override to use local charts for the controller
-  kubeconfig: ""                               # Path to the kubeconfig file specific to the controller
+  kubeconfig: ""                               # Path to the kubeconfig file specific to the controller, if empty, uses the global kubeconfig
   kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global context
   namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
   release: "egs-controller"                    # Helm release name for the controller
@@ -109,7 +109,7 @@ kubeslice_controller_egs:
 kubeslice_ui_egs:
   skip_installation: false                     # Do not skip the installation of the UI
   use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
-  kubeconfig: ""                               # Path to the kubeconfig file specific to the UI
+  kubeconfig: ""                               # Path to the kubeconfig file specific to the UI, if empty, uses the global kubeconfig
   kubecontext: ""                              # Kubecontext specific to the UI; if empty, uses the global context
   namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
   release: "egs-ui"                            # Helm release name for the UI
@@ -140,7 +140,7 @@ kubeslice_ui_egs:
 kubeslice_worker_egs:
   - name: "worker-1"                           # Worker name
     use_global_kubeconfig: true                # Use global kubeconfig for this worker
-    kubeconfig: ""                             # Path to the kubeconfig file specific to the worker
+    kubeconfig: ""                             # Path to the kubeconfig file specific to the worker, if empty, uses the global kubeconfig
     kubecontext: ""                            # Kubecontext specific to the worker; if empty, uses the global context
     skip_installation: false                   # Do not skip the installation of the worker
     specific_use_local_charts: true            # Override to use local charts for this worker
