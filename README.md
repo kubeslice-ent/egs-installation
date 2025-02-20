@@ -140,23 +140,38 @@ Before you begin, ensure the following steps are completed:
            | `postgresPassword`| The PostgreSQL password                      |
            | `postgresDB`      | The PostgreSQL database name                 |
            | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
-         
-         📌 Alternatively, you can leave all values empty and provide a pre-created secret name `postgresSecretName` with the below key-value format.
-         
-         ### Example Configuration
+    
+         ### Example Configuration to use precreated secret
          Below is an example of how to configure the PostgreSQL connection in the Kubetally installation values:
          
-         ```yaml
-         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials.
-                                                        # Created by install, all the below values must be specified.
-                                                        # Alternatively, leave all values empty and provide a pre-created secret.
-         postgresAddr: ""  # Change to your PostgreSQL endpoint
-         postgresPort: ""   # Change this to match your PostgreSQL service port
-         postgresUser: ""  # Set your PostgreSQL username
-         postgresPassword: ""  # Set your PostgreSQL password
-         postgresDB: ""  # Set your PostgreSQL database name
-         postgresSslmode: ""  # Change this based on your SSL configuration
-         ```
+            ```yaml
+            postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials.
+                                                           # Created by install, all the below values must be specified.
+                                                           # Alternatively, leave all values empty and provide a pre-created secret.
+            postgresAddr: ""  # Change to your PostgreSQL endpoint
+            postgresPort: ""   # Change this to match your PostgreSQL service port
+            postgresUser: ""  # Set your PostgreSQL username
+            postgresPassword: ""  # Set your PostgreSQL password
+            postgresDB: ""  # Set your PostgreSQL database name
+            postgresSslmode: ""  # Change this based on your SSL configuration
+            ```
+         
+           📌 **Alternatively**, if you provide all values with a secret name as specified for `postgresSecretName` in the values file, using the key-value format below, it will automatically create the specified secret in the `kubeslice-controller` namespace with the provided values.
+   
+            ### Example Configuration to autocreate secret with provided values
+            Below is an example of how to configure the PostgreSQL connection in the Kubetally installation values:
+            
+          ```yaml
+              postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
+                                                             # then a secret will be created with specified name. 
+                                                             # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
+              postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
+              postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
+              postgresUser: "postgres"               # Change this PostgreSQL username to your values
+              postgresPassword: "postgres"           # Change this PostgreSQL password to your value
+              postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
+              postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
+          ```
          
 ### 3. **🚀 Run the Installation Script:**
    - Execute the installation script using the following command:
