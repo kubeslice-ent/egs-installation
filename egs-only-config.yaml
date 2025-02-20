@@ -16,8 +16,8 @@ kubeslice_controller_egs:
   skip_installation: false                     # Do not skip the installation of the controller
   use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
   specific_use_local_charts: true              # Override to use local charts for the controller
-  kubeconfig: ""                               # Path to the kubeconfig file specific to the controller
-  kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global context
+  kubeconfig: ""                               # Path to the kubeconfig file specific to the controller; if empty, uses the global kubeconfig
+  kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global Kubecontext
   namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
   release: "egs-controller"                    # Helm release name for the controller
   chart: "kubeslice-controller-egs"            # Helm chart name for the controller
@@ -27,13 +27,16 @@ kubeslice_controller_egs:
       imageRegistry: docker.io/aveshasystems   # Docker registry for the images
       kubeTally:
         enabled: false                          # Enable KubeTally in the controller
-        postgresSecretName: kubetally-db-credentials   # Secret name for PostgreSQL credentials
-        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Address of the PostgreSQL service
-        postgresPort: 5432                     # Port for the PostgreSQL service
-        postgresUser: "postgres"               # PostgreSQL username
-        postgresPassword: "postgres"           # PostgreSQL password
-        postgresDB: "postgres"                 # PostgreSQL database name
-        postgresSslmode: disable               # SSL mode for PostgreSQL connection
+#### Postgresql Connection Configuration for Kubetally  ####
+        postgresSecretName: kubetally-db-credentials   # Secret name for PostgreSQL credentials created by install, all the below values must be specified 
+                                                       # then a secret will be created with specified name. 
+                                                       # alternatively you can provide a pre-created secret name with below connection details format
+        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
+        postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
+        postgresUser: "postgres"               # Change this PostgreSQL username to your values
+        postgresPassword: "postgres"           # Change this PostgreSQL password to your value
+        postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
+        postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
         prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
     kubeslice:
       controller:
@@ -51,7 +54,7 @@ kubeslice_controller_egs:
 kubeslice_ui_egs:
   skip_installation: false                     # Do not skip the installation of the UI
   use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
-  kubeconfig: ""                               # Path to the kubeconfig file specific to the UI
+  kubeconfig: ""                               # Path to the kubeconfig file specific to the UI, if empty, uses the global kubeconfig
   kubecontext: ""                              # Kubecontext specific to the UI; if empty, uses the global context
   namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
   release: "egs-ui"                            # Helm release name for the UI
@@ -82,7 +85,7 @@ kubeslice_ui_egs:
 kubeslice_worker_egs:
   - name: "worker-1"                           # Worker name
     use_global_kubeconfig: true                # Use global kubeconfig for this worker
-    kubeconfig: ""                             # Path to the kubeconfig file specific to the worker
+    kubeconfig: ""                             # Path to the kubeconfig file specific to the worker, if empty, uses the global kubeconfig
     kubecontext: ""                            # Kubecontext specific to the worker; if empty, uses the global context
     skip_installation: false                   # Do not skip the installation of the worker
     specific_use_local_charts: true            # Override to use local charts for this worker
