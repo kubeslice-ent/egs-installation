@@ -12,8 +12,6 @@ global:
         max: 100
       gpuNodes:
         max: 100
-      pendingGprs:
-        max: 100
       idleTimeout:
         max: 30
         fallback: "0d0h30m"
