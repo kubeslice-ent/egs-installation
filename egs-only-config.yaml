@@ -28,8 +28,9 @@ kubeslice_controller_egs:
       kubeTally:
         enabled: false                          # Enable KubeTally in the controller
 #### Postgresql Connection Configuration for Kubetally  ####
-        postgresSecretName: kubetally-db-credentials   # Default Secret name for PostgreSQL credentials, if all below values are specified 
-                                                       # then secret will be created with the specified name, else provide a pre-created secret name with below connection details
+        postgresSecretName: kubetally-db-credentials   # Secret name for PostgreSQL credentials created by install, all the below values must be specified 
+                                                       # then a secret will be created with specified name. 
+                                                       # alternatively you can provide a pre-created secret name with below connection details format
         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
         postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
         postgresUser: "postgres"               # Change this PostgreSQL username to your values
