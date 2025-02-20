@@ -14,9 +14,6 @@ data:
           "gpuNodes": {
             "max": {{ .Values.global.gpr.limits.gpuNodes.max }}
           },
-          "pendingGprs": {
-            "max": {{ .Values.global.gpr.limits.pendingGprs.max }}
-          },
           "idleTimeout": {
             "max": {{ .Values.global.gpr.limits.idleTimeout.max }},
             "fallback": "{{ .Values.global.gpr.limits.idleTimeout.fallback }}",
