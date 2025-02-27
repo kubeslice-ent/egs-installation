@@ -94,13 +94,7 @@ spec:
               port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
-          resources:
-            limits:
-              cpu: 500m
-              memory: 512Mi
-            requests:
-              cpu: 250m
-              memory: 256Mi
+          resources: '{{ .Values.kubeslice.controller.resources }}'
           volumeMounts:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
