@@ -94,7 +94,7 @@ spec:
               port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
-          resources: '{{ .Values.kubeslice.controller.resources }}'
+          resources: '{{ toYaml .Values.kubeslice.controller.resources | nindent 12 }}'
           volumeMounts:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
