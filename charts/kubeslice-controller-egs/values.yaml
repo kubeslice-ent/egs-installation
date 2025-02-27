@@ -153,11 +153,32 @@ imagePullSecrets:
   email:
   dockerconfigjson: ## Value to be used if using external secret managers
 
-securityContext:
-  runAsUser: 65536
-  runAsGroup: 65536
-  runAsNonRoot: true
-  seccompProfile:
-    type: RuntimeDefault
-  allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
+
+
+ingress:
+  # -- Enable ingress
+  enabled: false
+  # -- Ingress annotations
+  annotations: {}
+  # -- Ingress class name
+  className: ""
+  # -- Ingress hosts configuration
+  hosts: []
+  # -- Ingress TLS configuration
+  tls: []
+
+serviceAccount:
+  # -- Create a service account
+  create: false
+  # -- Annotations for the service account
+  annotations: {}
+  # -- Name of the service account
+  name: ""
+
+rbac:
+  # -- Whether to create RBAC resources 
+  create: false
+  # -- Extra custer roles to be created 
+  extraClusterRoleRules: []
+  # - apiGroups: []
+  #   resources: []
