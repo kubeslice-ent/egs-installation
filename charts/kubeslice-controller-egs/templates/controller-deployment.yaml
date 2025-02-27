@@ -46,7 +46,7 @@ spec:
             - --v=0
           image: '{{ .Values.kubeslice.rbacproxy.imageRegistry }}/{{ .Values.kubeslice.rbacproxy.image }}:{{ .Values.kubeslice.rbacproxy.tag }}'
           name: kube-rbac-proxy
-          securityContext: '{{ .Values.kubeslice.controller.securityContext }}'
+          securityContext: '{{ toYaml .Values.kubeslice.controller.securityContext | nindent 12 }}'
           ports:
             - containerPort: 8443
               name: https
@@ -83,7 +83,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           name: manager
-          securityContext: '{{ .Values.kubeslice.controller.securityContext }}'
+          securityContext: '{{ toYaml .Values.kubeslice.controller.securityContext | nindent 12 }}'
           ports:
             - containerPort: 9443
               name: webhook-server
@@ -103,7 +103,7 @@ spec:
               mountPath: /events/event-schema/
             - name: kubeslice-controller-license-conf
               mountPath: /etc/license/config
-      securityContext: '{{ .Values.kubeslice.controller.securityContext }}'
+      securityContext: '{{ toYaml .Values.kubeslice.controller.securityContext | nindent 8 }}'
       serviceAccountName: kubeslice-controller-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
