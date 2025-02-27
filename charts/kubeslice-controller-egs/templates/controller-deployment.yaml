@@ -109,12 +109,7 @@ spec:
               mountPath: /events/event-schema/
             - name: kubeslice-controller-license-conf
               mountPath: /etc/license/config
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      securityContext: '{{ .Values.kubeslice.controller.securityContext }}'
       serviceAccountName: kubeslice-controller-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
