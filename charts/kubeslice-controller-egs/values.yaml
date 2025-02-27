@@ -70,6 +70,17 @@ kubeslice:
     kubeTally:
       # Interval for cleaning up metrics when a worker cluster stops communicating
       metricsCleanupInterval: 15m
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
 
   # Configuration for events
   events:
@@ -133,3 +144,12 @@ imagePullSecrets:
   password:
   email:
   dockerconfigjson: ## Value to be used if using external secret managers
+
+securityContext:
+  runAsUser: 65536
+  runAsGroup: 65536
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true

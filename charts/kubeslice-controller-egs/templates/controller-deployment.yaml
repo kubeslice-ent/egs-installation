@@ -46,17 +46,7 @@ spec:
             - --v=0
           image: '{{ .Values.kubeslice.rbacproxy.imageRegistry }}/{{ .Values.kubeslice.rbacproxy.image }}:{{ .Values.kubeslice.rbacproxy.tag }}'
           name: kube-rbac-proxy
-          securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+          securityContext: '{{ .Values.kubeslice.controller.securityContext }}'
           ports:
             - containerPort: 8443
               name: https
@@ -93,17 +83,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           name: manager
-          securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+          securityContext: '{{ .Values.kubeslice.controller.securityContext }}'
           ports:
             - containerPort: 9443
               name: webhook-server
