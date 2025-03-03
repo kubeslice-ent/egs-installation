@@ -58,7 +58,7 @@ kubeslice:
     # Prefix for project namespaces created by KubeSlice
     projectnsPrefix: kubeslice
     # Endpoint for the controller (should be specified if needed)
-    endpoint: "http://192.168.0.0:6443"
+    endpoint: ""
     imageRegistry: *defaultRegistry
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
