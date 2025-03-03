@@ -58,7 +58,7 @@ kubeslice:
     # Prefix for project namespaces created by KubeSlice
     projectnsPrefix: kubeslice
     # Endpoint for the controller (should be specified if needed)
-    endpoint: ""
+    endpoint: "http://192.168.0.0:6443"
     imageRegistry: *defaultRegistry
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
@@ -88,6 +88,8 @@ kubeslice:
       requests:
         cpu: 250m
         memory: 256Mi
+    tolerations:
+    - operator: "Exists"
     
 
   # Configuration for events
@@ -118,6 +120,24 @@ egs:
     maxDelayedCount: 10
     # Period for refreshing the GPRs
     refreshWaitTimeInterval: 300
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
 
   queueManager:
     imageRegistry: *defaultRegistry
@@ -166,14 +186,6 @@ ingress:
   hosts: []
   # -- Ingress TLS configuration
   tls: []
-
-serviceAccount:
-  # -- Create a service account
-  create: false
-  # -- Annotations for the service account
-  annotations: {}
-  # -- Name of the service account
-  name: ""
 
 rbac:
   # -- Whether to create RBAC resources 
