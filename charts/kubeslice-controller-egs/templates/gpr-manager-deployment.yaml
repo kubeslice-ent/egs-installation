@@ -110,13 +110,19 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
+        {{- if .Values.egs.gprManager.resources }}
         resources: {{ toYaml .Values.egs.gprManager.resources | nindent 10 }}
+        {{- end }}
+        {{- if .Values.egs.gprManager.securityContext }}
         securityContext: {{ toYaml .Values.egs.gprManager.securityContext | nindent 10 }}
+        {{- end }}
         volumeMounts:
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: webhook-certs
             readOnly: true
+      {{- if .Values.egs.gprManager.securityContext }}
       securityContext: {{ toYaml .Values.egs.gprManager.securityContext | nindent 8 }}
+      {{- end }}
       serviceAccountName: gpr-manager-access
       terminationGracePeriodSeconds: 10
       volumes:
@@ -128,5 +134,6 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.egs.gprManager.tolerations }}
+      tolerations: {{ toYaml .Values.egs.gprManager.tolerations | nindent 8 }}
+      {{- end }}

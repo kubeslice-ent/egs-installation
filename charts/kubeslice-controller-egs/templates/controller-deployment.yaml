@@ -46,7 +46,7 @@ spec:
             - --v=0
           image: '{{ .Values.kubeslice.rbacproxy.imageRegistry }}/{{ .Values.kubeslice.rbacproxy.image }}:{{ .Values.kubeslice.rbacproxy.tag }}'
           name: kube-rbac-proxy
-          {{- if Values.kubeslice.controller.securityContext }}
+          {{- if .Values.kubeslice.controller.securityContext }}
           securityContext: {{ toYaml .Values.kubeslice.controller.securityContext | nindent 12 }}
           {{- end }}
           ports:
@@ -85,7 +85,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           name: manager
-          {{- if Values.kubeslice.controller.securityContext }}
+          {{- if .Values.kubeslice.controller.securityContext }}
           securityContext: {{ toYaml .Values.kubeslice.controller.securityContext | nindent 12 }}
           {{- end }}
           ports:
@@ -109,7 +109,7 @@ spec:
               mountPath: /events/event-schema/
             - name: kubeslice-controller-license-conf
               mountPath: /etc/license/config
-      {{- if Values.kubeslice.controller.securityContext }}
+      {{- if .Values.kubeslice.controller.securityContext }}
       securityContext: {{ toYaml .Values.kubeslice.controller.securityContext | nindent 8 }}
       {{- end }}
       serviceAccountName: kubeslice-controller-controller-manager

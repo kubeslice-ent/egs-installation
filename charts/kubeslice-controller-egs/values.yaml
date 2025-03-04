@@ -138,6 +138,8 @@ egs:
       requests:
         cpu: 10m
         memory: 64Mi
+    tolerations:
+    - operator: "Exists"
 
   queueManager:
     imageRegistry: *defaultRegistry
@@ -151,6 +153,20 @@ egs:
       port: 80
     # turn off reflection
     appEnv: "production"
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    resources: {}
+    tolerations:
+    - operator: "Exists"
 
   inventory:
     imageRegistry: *defaultRegistry
