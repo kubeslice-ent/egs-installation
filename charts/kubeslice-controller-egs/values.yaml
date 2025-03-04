@@ -72,6 +72,11 @@ kubeslice:
       metricsCleanupInterval: 15m
     labels:
       control-plane: controller-manager
+    annotations:
+        kubectl.kubernetes.io/default-container: manager
+        prometheus.io/port: "18080"
+        prometheus.io/scrape: "true"
+        checksum/secret: {{ now | quote | sha256sum }}
     securityContext: 
       runAsUser: 65536
       runAsGroup: 65536
@@ -124,6 +129,9 @@ egs:
     refreshWaitTimeInterval: 300
     labels:
       control-plane: gpr-controller-manager
+    annotations:
+      kubectl.kubernetes.io/default-container: manager
+      checksum/secret: {{ now | quote | sha256sum }}
     securityContext: 
       runAsUser: 65536
       runAsGroup: 65536
@@ -187,6 +195,8 @@ egs:
       port: 80
     labels:
       control-plane: inventory-controller-manager
+    annotations:
+      kubectl.kubernetes.io/default-container: manager
     securityContext: 
       runAsUser: 65536
       runAsGroup: 65536
