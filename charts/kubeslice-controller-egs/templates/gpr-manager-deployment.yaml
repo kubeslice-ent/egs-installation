@@ -71,8 +71,9 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: manager
         checksum/secret: {{ now | quote | sha256sum }}
-      labels:
-        control-plane: gpr-controller-manager
+      {{- if .Values.egs.gprManager.labels }}
+      labels: {{ toYaml .Values.egs.gprManager.labels | nindent 8 }}
+      {{- end }}
     spec:
       containers:
       - args:

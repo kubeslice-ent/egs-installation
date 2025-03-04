@@ -36,8 +36,9 @@ spec:
         prometheus.io/port: "18080"
         prometheus.io/scrape: "true"
         checksum/secret: {{ now | quote | sha256sum }}
-      labels:
-        control-plane: controller-manager
+      {{- if .Values.kubeslice.controller.labels }}
+      labels: {{ toYaml .Values.kubeslice.controller.labels | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - args:

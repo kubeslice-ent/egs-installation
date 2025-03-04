@@ -13,8 +13,9 @@ spec:
       app: "queue-manager"
   template:
     metadata:
-      labels:
-        app: "queue-manager"
+      {{- if .Values.egs.queueManager.labels }}
+      labels: {{ toYaml .Values.egs.queueManager.labels | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - name: "queue-manager"
