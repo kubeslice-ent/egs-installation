@@ -19,8 +19,9 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    control-plane: controller-manager
+  {{- if .Values.kubeslice.controller.labels }}
+  labels: {{ toYaml .Values.kubeslice.controller.labels | nindent 4 }}
+  {{- end }}
   name: kubeslice-controller-manager
   namespace: kubeslice-controller
 spec:

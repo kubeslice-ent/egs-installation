@@ -58,7 +58,7 @@ kubeslice:
     # Prefix for project namespaces created by KubeSlice
     projectnsPrefix: kubeslice
     # Endpoint for the controller (should be specified if needed)
-    endpoint: ""
+    endpoint: "test"
     imageRegistry: *defaultRegistry
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
@@ -70,6 +70,8 @@ kubeslice:
     kubeTally:
       # Interval for cleaning up metrics when a worker cluster stops communicating
       metricsCleanupInterval: 15m
+    labels:
+      control-plane: controller-manager
     securityContext: 
       runAsUser: 65536
       runAsGroup: 65536
@@ -120,6 +122,8 @@ egs:
     maxDelayedCount: 10
     # Period for refreshing the GPRs
     refreshWaitTimeInterval: 300
+    labels:
+      control-plane: gpr-controller-manager
     securityContext: 
       runAsUser: 65536
       runAsGroup: 65536
@@ -153,6 +157,8 @@ egs:
       port: 80
     # turn off reflection
     appEnv: "production"
+    labels:
+      app: "queue-manager"
     securityContext: 
       runAsUser: 65536
       runAsGroup: 65536
@@ -179,6 +185,8 @@ egs:
     service:
       name: egs-inventory-manager
       port: 80
+    labels:
+      control-plane: inventory-controller-manager
     securityContext: 
       runAsUser: 65536
       runAsGroup: 65536

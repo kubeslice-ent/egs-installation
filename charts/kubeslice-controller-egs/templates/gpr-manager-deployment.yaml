@@ -56,8 +56,9 @@ webhooks:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    control-plane: gpr-controller-manager
+  {{- if .Values.egs.gprManager.labels }}
+  labels: {{ toYaml .Values.egs.gprManager.labels | nindent 4 }}
+  {{- end }}
   name: egs-gpr-manager
   namespace: {{ .Release.Namespace }}
 spec:

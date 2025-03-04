@@ -3,8 +3,9 @@ kind: Deployment
 metadata:
   name: egs-queue-manager
   namespace: {{ .Release.Namespace }}
-  labels:
-    app: "queue-manager"
+  {{- if .Values.egs.queueManager.labels }}
+  labels: {{ toYaml .Values.egs.queueManager.labels | nindent 4 }}
+  {{- end }}
 spec:
   replicas: 1
   selector:

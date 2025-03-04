@@ -1,8 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    control-plane: inventory-controller-manager
+  {{- if .Values.egs.inventory.labels }}
+  labels: {{ toYaml .Values.egs.inventory.labels | nindent 4 }}
+  {{- end }}
   name: egs-inventory-controller-manager
   namespace: {{ .Release.Namespace }}
 spec:
@@ -44,8 +45,8 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        {{- if Values.egs.inventory.resources }}
-        resources: {{ toYaml Values.egs.inventory.resources | nindent 10 }}
+        {{- if .Values.egs.inventory.resources }}
+        resources: {{ toYaml .Values.egs.inventory.resources | nindent 10 }}
         {{- end }}
         {{- if .Values.egs.inventory.securityContext }}
         securityContext: {{ toYaml .Values.egs.inventory.securityContext | nindent 10 }}
