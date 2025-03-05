@@ -3,8 +3,9 @@ kind: Deployment
 metadata:
   name: egs-queue-manager
   namespace: {{ .Release.Namespace }}
-  labels:
-    app: "queue-manager"
+  {{- if .Values.egs.queueManager.labels }}
+  labels: {{ toYaml .Values.egs.queueManager.labels | nindent 4 }}
+  {{- end }}
 spec:
   replicas: 1
   selector:
@@ -12,27 +13,22 @@ spec:
       app: "queue-manager"
   template:
     metadata:
-      labels:
-        app: "queue-manager"
+      {{- if .Values.egs.queueManager.labels }}
+      labels: {{ toYaml .Values.egs.queueManager.labels | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - name: "queue-manager"
-          securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+          {{- if .Values.egs.queueManager.securityContext }}
+          securityContext: {{ toYaml .Values.egs.queueManager.securityContext | nindent 12 }}
+          {{- end }}
           image: '{{ .Values.egs.queueManager.imageRegistry }}/{{ .Values.egs.queueManager.image }}:{{ .Values.egs.queueManager.tag }}'
           ports:
             - containerPort: 50051
               protocol: TCP
-          resources: {}
+          {{- if .Values.egs.queueManager.resources }}
+          resources: {{ toYaml .Values.egs.queueManager.resources | nindent 12 }}
+          {{- end }}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           imagePullPolicy: {{ .Values.egs.queueManager.imagePullPolicy }}
@@ -48,19 +44,17 @@ spec:
       dnsPolicy: ClusterFirst
       serviceAccountName: gpr-manager-access
       serviceAccount: gpr-manager-access
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.egs.queueManager.securityContext }}
+      securityContext: {{ toYaml .Values.egs.queueManager.securityContext | nindent 8 }}
+      {{- end }}
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
       schedulerName: default-scheduler
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.egs.queueManager.tolerations }}
+      tolerations: {{ toYaml .Values.egs.queueManager.tolerations | nindent 8 }}
+      {{- end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
