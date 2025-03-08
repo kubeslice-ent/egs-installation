@@ -34,11 +34,41 @@ kubeslice:
     image: kubeslice-ui-ent-egs
     tag: 1.11.0
     pullPolicy: IfNotPresent
+    labels:
+      app: kubeslice-ui
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    tolerations:
+    - operator: "Exists"
   uiv2:
     imageRegistry: *defaultRegistry
     image: kubeslice-ui-v2-ent-egs
     tag: 1.11.0
     pullPolicy: IfNotPresent
+    labels:
+      app: kubeslice-ui-v2
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    tolerations:
+    - operator: "Exists"
   dashboard:
     enabled: false
     pullPolicy: IfNotPresent
@@ -70,11 +100,48 @@ kubeslice:
       type: LoadBalancer
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
+    labels:
+      app: kubeslice-ui-proxy
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    tolerations:
+    - operator: "Exists"
   apigw:
     imageRegistry: *defaultRegistry
     image: kubeslice-api-gw-ent-egs
     tag: 1.11.0
     pullPolicy: IfNotPresent
+    labels:
+      app: kubeslice-api-gw
+    securityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    tolerations:
+      - operator: "Exists"
 
   egsCoreApis:
     enabled: true
@@ -84,6 +151,27 @@ kubeslice:
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
+    labels:
+      app: egs-core-apis
+      version: v1
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    securityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
 
   workerinstaller:
     imageRegistry: *defaultRegistry
@@ -107,3 +195,23 @@ imagePullSecrets:
   password:
   email:
   dockerconfigjson: ## Value to be used if using external secret managers
+
+ingress:
+  # -- Enable ingress
+  enabled: false
+  # -- Ingress annotations
+  annotations: {}
+  # -- Ingress class name
+  className: ""
+  # -- Ingress hosts configuration
+  hosts: []
+  # -- Ingress TLS configuration
+  tls: []
+
+rbac:
+  # -- Whether to create RBAC resources 
+  create: false
+  # -- Extra custer roles to be created 
+  extraClusterRoleRules: []
+  # - apiGroups: []
+  #   resources: []

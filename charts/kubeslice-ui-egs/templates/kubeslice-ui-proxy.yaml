@@ -14,8 +14,10 @@ spec:
       {{- if eq .Values.kubeslice.uiproxy.service.type "NodePort" }}
       nodePort: {{ .Values.kubeslice.uiproxy.service.nodePort }}
       {{ end }}
+  {{- if .Values.kubeslice.uiproxy.labels }}
   selector:
-    app: kubeslice-ui-proxy
+    {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 6 }}
+  {{- end }}
   type: {{ .Values.kubeslice.uiproxy.service.type }}
 ---
 apiVersion: apps/v1
@@ -25,26 +27,21 @@ metadata:
 spec:
   replicas: 1
   selector:
+    {{- if .Values.kubeslice.uiproxy.labels }}
     matchLabels:
-      app: kubeslice-ui-proxy
+      {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 8 }}
+    {{- end }}
   template:
     metadata:
-      labels:
-        app: kubeslice-ui-proxy
+      {{- if .Values.kubeslice.uiproxy.labels }}
+      labels: {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - name: kubeslice-ui-proxy
-          securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: false
+          {{- if .Values.kubeslice.uiproxy.securityContext }}
+          securityContext: {{ toYaml .Values.kubeslice.uiproxy.securityContext | nindent 12 }}
+          {{- end }}
           image: '{{ .Values.kubeslice.uiproxy.imageRegistry }}/{{ .Values.kubeslice.uiproxy.image }}:{{ .Values.kubeslice.uiproxy.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.uiproxy.pullPolicy }}'
           env:
@@ -58,11 +55,9 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
         {{- end }}
-      tolerations:
-        - operator: "Exists"
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.kubeslice.uiproxy.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.uiproxy.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.kubeslice.uiproxy.securityContext }}
+      securityContext: {{ toYaml .Values.kubeslice.uiproxy.securityContext | nindent 8 }}
+      {{- end }}

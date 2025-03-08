@@ -12,8 +12,10 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 8080
+  {{- if .Values.kubeslice.uiv2.labels }}
   selector:
-    app: kubeslice-ui-v2
+    {{ toYaml .Values.kubeslice.uiv2.labels | nindent 8 }}
+  {{- end }}
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -24,39 +26,32 @@ metadata:
 spec:
   replicas: 1
   selector:
+    {{- if .Values.kubeslice.uiv2.labels }}
     matchLabels:
-      app: kubeslice-ui-v2
+      {{ toYaml .Values.kubeslice.uiv2.labels | nindent 8 }}
+    {{- end }}
   template:
     metadata:
-      labels:
-        app: kubeslice-ui-v2
+      {{- if .Values.kubeslice.uiv2.labels }}
+      labels: {{ toYaml .Values.kubeslice.uiv2.labels | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - image: '{{ .Values.kubeslice.uiv2.imageRegistry }}/{{ .Values.kubeslice.uiv2.image }}:{{ .Values.kubeslice.uiv2.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.uiv2.pullPolicy }}'
           name: kubeslice-ui-v2
-          securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: false
+          {{- if .Values.kubeslice.uiv2.securityContext }}
+          securityContext: {{ toYaml .Values.kubeslice.uiv2.securityContext | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: 8080
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
-      tolerations:
-        - operator: "Exists"
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.kubeslice.uiv2.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.uiv2.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.kubeslice.uiv2.securityContext }}
+      securityContext: {{ toYaml .Values.kubeslice.uiv2.securityContext | nindent 8 }}
+      {{- end }}

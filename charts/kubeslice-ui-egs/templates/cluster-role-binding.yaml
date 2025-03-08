@@ -1,0 +1,21 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kubeslice-ui.fullname" . }}
+  labels:
+    {{- include "kubeslice-ui.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rbac
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kubeslice-ui.serviceAccountName" . }}
+    namespace: {{ include "kubeslice-ui.namespace" .}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kubeslice-ui.fullname" . }}
+{{- end }}

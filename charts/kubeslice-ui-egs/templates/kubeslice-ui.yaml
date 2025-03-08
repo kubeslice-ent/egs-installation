@@ -12,8 +12,10 @@ spec:
     port: 80
     protocol: TCP
     targetPort: 8080
+  {{- if .Values.kubeslice.ui.labels }}
   selector:
-    app: kubeslice-ui
+    {{ toYaml .Values.kubeslice.ui.labels | nindent 8 }}
+  {{- end }}
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -24,28 +26,23 @@ metadata:
 spec:
   replicas: 1
   selector:
+    {{- if .Values.kubeslice.ui.labels }}
     matchLabels:
-      app: kubeslice-ui
+      {{ toYaml .Values.kubeslice.ui.labels | nindent 8 }}
+    {{- end }}
   template:
     metadata:
-      labels:
-        app: kubeslice-ui
+      {{- if .Values.kubeslice.ui.labels }}
+      labels: {{ toYaml .Values.kubeslice.ui.labels | nindent 8 }}
+      {{- end }}
     spec:
       containers:
       - image: '{{ .Values.kubeslice.ui.imageRegistry }}/{{ .Values.kubeslice.ui.image }}:{{ .Values.kubeslice.ui.tag }}'
         imagePullPolicy: '{{ .Values.kubeslice.ui.pullPolicy }}'
         name: kubeslice-ui
-        securityContext:
-          runAsUser: 65536
-          runAsGroup: 65536
-          runAsNonRoot: true
-          seccompProfile:
-            type: RuntimeDefault
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-          readOnlyRootFilesystem: false
+        {{- if .Values.kubeslice.ui.securityContext }}
+        securityContext: {{ toYaml .Values.kubeslice.ui.securityContext | nindent 12 }}
+        {{- end }}
         env:
         - name: KUBESLICE_CONTROLLER_PROMETHEUS
           value: {{ .Values.kubeslice.prometheus.url }}
@@ -59,11 +56,9 @@ spec:
       {{- end }}
       serviceAccountName: kubeslice-api-gw
       serviceAccount: kubeslice-api-gw
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.kubeslice.ui.securityContext }}
+      securityContext: {{ toYaml .Values.kubeslice.ui.securityContext | nindent 8 }}
+      {{- end }}
+      {{- if .Values.kubeslice.ui.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.ui.tolerations | nindent 8 }}
+      {{- end }}

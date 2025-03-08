@@ -60,40 +60,29 @@ kind: Deployment
 metadata:
   name: egs-core-apis
   namespace: {{ .Release.Namespace }}
-  labels:
-    app: egs-core-apis
-    version: v1
+  {{- if .Values.kubeslice.egsCoreApis.labels }}
+  labels: {{ toYaml .Values.kubeslice.egsCoreApis.labels | nindent 4 }}
+  {{- end }}
 spec:
   selector:
+    {{- if .Values.kubeslice.egsCoreApis.labels }}
     matchLabels:
-      app: egs-core-apis
-      version: v1
+      {{ toYaml .Values.kubeslice.egsCoreApis.labels | nindent 8 }}
+    {{- end }}
   template:
     metadata:
-      labels:
-        version: v1
-        app: egs-core-apis
+      {{- if .Values.kubeslice.egsCoreApis.labels }}
+      labels: {{ toYaml .Values.kubeslice.egsCoreApis.labels | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - name: egs-core-apis
-          securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: false
-          resources:
-            limits:
-              cpu: 500m
-              memory: 512Mi
-            requests:
-              cpu: 250m
-              memory: 256Mi
+          {{- if .Values.kubeslice.egsCoreApis.securityContext }}
+          securityContext: {{ toYaml .Values.kubeslice.egsCoreApis.securityContext | nindent 12 }}
+          {{- end }}
+          {{- if .Values.kubeslice.egsCoreApis.resources }}
+          resources: {{ toYaml .Values.kubeslice.egsCoreApis.resources | nindent 12 }}
+          {{- end }}
           env:
             - name: EGS_CORE_APIS_API_KEY_SECRET_NAMESPACE
               valueFrom:
@@ -114,14 +103,10 @@ spec:
       imagePullSecrets:
         - name: kubeslice-ui-image-pull-secret
       {{- end }}
-      serviceAccountName: egs-core-apis
-      
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      serviceAccountName: egs-core-apis      
+      {{- if .Values.kubeslice.egsCoreApis.securityContext }}
+      securityContext: {{ toYaml .Values.kubeslice.egsCoreApis.securityContext | nindent 8 }}
+      {{- end }}
   replicas: 1
 ---
 apiVersion: v1
@@ -135,8 +120,9 @@ spec:
       name: http
       protocol: TCP
       targetPort: 8080
+  {{- if .Values.kubeslice.egsCoreApis.labels }}
   selector:
-    version: v1
-    app: egs-core-apis
+    {{ toYaml .Values.kubeslice.egsCoreApis.labels | nindent 6 }}
+  {{- end }}
   type: {{ $.Values.kubeslice.egsCoreApis.service.type }}
 {{- end }}

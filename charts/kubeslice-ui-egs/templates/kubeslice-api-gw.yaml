@@ -11,25 +11,31 @@ spec:
       port: 8080
       protocol: TCP
       targetPort: 3000
+  {{- if .Values.kubeslice.apigw.labels }}
   selector:
-    app: kubeslice-api-gw
+    {{ toYaml .Values.kubeslice.apigw.labels | nindent 6 }}
+  {{- end }}
   type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: kubeslice-api-gw
+  {{- if .Values.kubeslice.apigw.labels }}
+  labels: {{ toYaml .Values.kubeslice.apigw.labels | nindent 4 }}
+  {{- end }}
   name: kubeslice-api-gw
 spec:
   replicas: 1
   selector:
+    {{- if .Values.kubeslice.apigw.labels }}
     matchLabels:
-      app: kubeslice-api-gw
+      {{ toYaml .Values.kubeslice.apigw.labels | nindent 6 }}
+    {{- end }}
   template:
     metadata:
-      labels:
-        app: kubeslice-api-gw
+      {{- if .Values.kubeslice.apigw.labels }}
+      labels: {{ toYaml .Values.kubeslice.apigw.labels | nindent 8 }}
+      {{- end }}
     spec:
       containers:
         - image: '{{ .Values.kubeslice.apigw.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
@@ -58,24 +64,12 @@ spec:
               value: /app/config/request-limits/request-limits.json
           {{- end }}
           name: kubeslice-api-gw
-          securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: false
-          resources:
-            limits:
-              cpu: 500m
-              memory: 512Mi
-            requests:
-              cpu: 250m
-              memory: 256Mi
+          {{- if .Values.kubeslice.apigw.securityContext }}
+          securityContext: {{ toYaml .Values.kubeslice.apigw.securityContext | nindent 12 }}
+          {{- end }}
+          {{- if .Values.kubeslice.apigw.resources }}
+          resources: {{ toYaml .Values.kubeslice.apigw.resources | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: 3000
               protocol: TCP
@@ -94,12 +88,9 @@ spec:
         - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
       restartPolicy: Always
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.kubeslice.apigw.securityContext }}
+      securityContext: {{ toYaml .Values.kubeslice.apigw.securityContext | nindent 8 }}
+      {{- end }}
       serviceAccount: kubeslice-api-gw
       serviceAccountName: kubeslice-api-gw
       volumes:
@@ -118,8 +109,9 @@ spec:
             name: kubeslice-api-gw-request-limits
             optional: true
                   
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.kubeslice.apigw.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.apigw.tolerations | nindent 8 }}
+      {{- end }}
 ---
 # create configmap called worker-chart-options
 apiVersion: v1
