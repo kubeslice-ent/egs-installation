@@ -14,10 +14,9 @@ spec:
       spoke-cluster: {{ .Values.cluster.name }}
   template:
     metadata:
-      annotations:
-        kubectl.kubernetes.io/default-container: manager
-        prometheus.io/port: "8080"
-        prometheus.io/scrape: "true"
+      {{- if .Values.operator.annotations }}
+      annotations: {{ toYaml .Values.operator.annotations | nindent 8 }}
+      {{- end }}
       labels:
         control-plane: controller-manager
         spoke-cluster: {{ .Values.cluster.name }}
@@ -30,17 +29,9 @@ spec:
         - --v=10
         image: '{{ .Values.rbacproxy.imageRegistry }}/{{ .Values.rbacproxy.image }}:{{ .Values.rbacproxy.tag }}'
         name: kube-rbac-proxy
-        securityContext:
-          runAsUser: 65536
-          runAsGroup: 65536
-          runAsNonRoot: true
-          seccompProfile:
-            type: RuntimeDefault
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-          readOnlyRootFilesystem: true
+        {{- if .Values.operator.securityContext }}
+        securityContext: {{ toYaml .Values.operator.securityContext | nindent 10 }}
+        {{- end }}
         ports:
         - containerPort: 8443
           name: https
@@ -75,14 +66,13 @@ spec:
           - name: CLUSTER_ENDPOINT
             value: "{{ .Values.cluster.endpoint }}"
           - name: WORKER_INSTALLER_IMAGE
-            value: "{{ .Values.workerInstaller.imageRegistry }}/{{ .Values.workerInstaller.image }}:{{ .Values.workerInstaller.tag }}"
+            value: "{{ .Values.operator.imageRegistry }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}"
               {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
           - name: IMAGE_PULL_SECRET_NAME
             value: kubeslice-image-pull-secret
               {{- end }}
           - name: ENABLE_SLICE_CHARGEBACK
             value: "true"
-
         livenessProbe:
           httpGet:
             path: /healthz
@@ -90,17 +80,9 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
-        securityContext:
-          runAsUser: 65536
-          runAsGroup: 65536
-          runAsNonRoot: true
-          seccompProfile:
-            type: RuntimeDefault
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-          readOnlyRootFilesystem: true
+        {{- if .Values.operator.securityContext }}
+        securityContext: {{ toYaml .Values.operator.securityContext | nindent 10 }}
+        {{- end }}
         ports:
         - containerPort: 9443
           name: webhook-server
@@ -111,13 +93,9 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
+        {{- if .Values.operator.resources }}
+        resources: {{ toYaml .Values.operator.resources | nindent 10 }}
+        {{- end }}
         volumeMounts:
           - name: kubeslice-worker-event-schema-conf
             mountPath: /events/event-schema/
@@ -128,12 +106,9 @@ spec:
             name: webhook-certs
             readOnly: true
       serviceAccountName: kubeslice-controller-manager
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.operator.securityContext }}
+      securityContext: {{ toYaml .Values.operator.securityContext | nindent 8 }}
+      {{- end }}
       terminationGracePeriodSeconds: 10
       volumes:
         - name: kubeslice-worker-event-schema-conf
@@ -165,8 +140,9 @@ spec:
       #           operator: In
       #           values:
       #           - gateway
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.operator.tolerations }}
+      tolerations: {{ toYaml .Values.operator.tolerations | nindent 8 }}
+      {{- end }}
 ---
 apiVersion: v1
 data:

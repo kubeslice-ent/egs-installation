@@ -9,6 +9,30 @@ operator:
   tag: 1.11.0
   pullPolicy: IfNotPresent
   logLevel: INFO
+  annotations:
+    kubectl.kubernetes.io/default-container: manager
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  securityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  tolerations:
+        - operator: "Exists"
 
 controllerSecretName: kubeslice-hub #default name used if not specify any name
 ## Base64 encoded secret values from controller cluster
@@ -29,6 +53,32 @@ aiops:
   tag: 1.11.0
   pullPolicy: IfNotPresent
   logLevel: INFO
+  labels:
+    control-plane: aiops-controller-manager
+  annotations:
+    kubectl.kubernetes.io/default-container: manager
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
+  securityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  tolerations:
+    - operator: "Exists"
 
 egs:
   prometheusEndpoint: ""
@@ -38,6 +88,8 @@ workerInstaller:
   imageRegistry: *defaultRegistry
   image: worker-installer
   tag: 1.5.0
+  
+
 
 jaeger:
   enabled: false
