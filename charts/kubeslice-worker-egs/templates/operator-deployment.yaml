@@ -66,7 +66,7 @@ spec:
           - name: CLUSTER_ENDPOINT
             value: "{{ .Values.cluster.endpoint }}"
           - name: WORKER_INSTALLER_IMAGE
-            value: "{{ .Values.operator.imageRegistry }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}"
+            value: "{{ .Values.workerInstaller.imageRegistry }}/{{ .Values.workerInstaller.image }}:{{ .Values.workerInstaller.tag }}"
               {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
           - name: IMAGE_PULL_SECRET_NAME
             value: kubeslice-image-pull-secret
