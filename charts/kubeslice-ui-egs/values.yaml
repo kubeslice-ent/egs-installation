@@ -34,11 +34,79 @@ kubeslice:
     image: kubeslice-ui-ent-egs
     tag: 1.11.0
     pullPolicy: IfNotPresent
+    labels:
+      app: kubeslice-ui
+    annotations: {}
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    tolerations:
+    - operator: "Exists"
+    affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/hostname
+        #         operator: In
+        #         values:
+        #         - worker-node-1
+        #         - worker-node-2
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     preference:
+        #       matchExpressions:
+        #       - key: node-type
+        #         operator: In
+        #         values:
+        #         - controller
   uiv2:
     imageRegistry: *defaultRegistry
     image: kubeslice-ui-v2-ent-egs
     tag: 1.11.0
     pullPolicy: IfNotPresent
+    labels:
+      app: kubeslice-ui-v2
+    annotations: {}
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    tolerations:
+    - operator: "Exists"
+    affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/hostname
+        #         operator: In
+        #         values:
+        #         - worker-node-1
+        #         - worker-node-2
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     preference:
+        #       matchExpressions:
+        #       - key: node-type
+        #         operator: In
+        #         values:
+        #         - controller
   dashboard:
     enabled: false
     pullPolicy: IfNotPresent
@@ -70,11 +138,86 @@ kubeslice:
       type: LoadBalancer
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
+    labels:
+      app: kubeslice-ui-proxy
+    annotations: {}
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    tolerations:
+    - operator: "Exists"
+    affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/hostname
+        #         operator: In
+        #         values:
+        #         - worker-node-1
+        #         - worker-node-2
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     preference:
+        #       matchExpressions:
+        #       - key: node-type
+        #         operator: In
+        #         values:
+        #         - controller
   apigw:
     imageRegistry: *defaultRegistry
     image: kubeslice-api-gw-ent-egs
     tag: 1.11.0
     pullPolicy: IfNotPresent
+    labels:
+      app: kubeslice-api-gw
+    annotations: {}
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    tolerations:
+      - operator: "Exists"
+    affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/hostname
+        #         operator: In
+        #         values:
+        #         - worker-node-1
+        #         - worker-node-2
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     preference:
+        #       matchExpressions:
+        #       - key: node-type
+        #         operator: In
+        #         values:
+        #         - controller
 
   egsCoreApis:
     enabled: true
@@ -84,6 +227,46 @@ kubeslice:
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
+    labels:
+      app: egs-core-apis
+      version: v1
+    annotations: {}
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    securityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/hostname
+        #         operator: In
+        #         values:
+        #         - worker-node-1
+        #         - worker-node-2
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     preference:
+        #       matchExpressions:
+        #       - key: node-type
+        #         operator: In
+        #         values:
+        #         - controller
 
   workerinstaller:
     imageRegistry: *defaultRegistry

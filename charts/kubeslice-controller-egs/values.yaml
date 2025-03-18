@@ -70,6 +70,50 @@ kubeslice:
     kubeTally:
       # Interval for cleaning up metrics when a worker cluster stops communicating
       metricsCleanupInterval: 15m
+    labels:
+      control-plane: controller-manager
+    annotations:
+        kubectl.kubernetes.io/default-container: manager
+        prometheus.io/port: "18080"
+        prometheus.io/scrape: "true"
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    tolerations:
+    - operator: "Exists"
+    affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/hostname
+        #         operator: In
+        #         values:
+        #         - worker-node-1
+        #         - worker-node-2
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     preference:
+        #       matchExpressions:
+        #       - key: node-type
+        #         operator: In
+        #         values:
+        #         - controller
 
   # Configuration for events
   events:
@@ -99,6 +143,48 @@ egs:
     maxDelayedCount: 10
     # Period for refreshing the GPRs
     refreshWaitTimeInterval: 300
+    labels:
+      control-plane: gpr-controller-manager
+    annotations:
+      kubectl.kubernetes.io/default-container: manager
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+    tolerations:
+    - operator: "Exists"
+    affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/hostname
+        #         operator: In
+        #         values:
+        #         - worker-node-1
+        #         - worker-node-2
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     preference:
+        #       matchExpressions:
+        #       - key: node-type
+        #         operator: In
+        #         values:
+        #         - controller
 
   queueManager:
     imageRegistry: *defaultRegistry
@@ -112,6 +198,41 @@ egs:
       port: 80
     # turn off reflection
     appEnv: "production"
+    labels:
+      app: "queue-manager"
+    annotations: {}
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    resources: {}
+    tolerations:
+    - operator: "Exists"
+    affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/hostname
+        #         operator: In
+        #         values:
+        #         - worker-node-1
+        #         - worker-node-2
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     preference:
+        #       matchExpressions:
+        #       - key: node-type
+        #         operator: In
+        #         values:
+        #         - controller
 
   inventory:
     imageRegistry: *defaultRegistry
@@ -124,6 +245,48 @@ egs:
     service:
       name: egs-inventory-manager
       port: 80
+    labels:
+      control-plane: inventory-controller-manager
+    annotations:
+      kubectl.kubernetes.io/default-container: manager
+    securityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+    tolerations:
+    - operator: "Exists"
+    affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #     - matchExpressions:
+        #       - key: kubernetes.io/hostname
+        #         operator: In
+        #         values:
+        #         - worker-node-1
+        #         - worker-node-2
+        #   preferredDuringSchedulingIgnoredDuringExecution:
+        #   - weight: 100
+        #     preference:
+        #       matchExpressions:
+        #       - key: node-type
+        #         operator: In
+        #         values:
+        #         - controller
 
 imagePullSecretsName: "kubeslice-image-pull-secret"
 # leave the below fields empty if secrets are managed externally.
