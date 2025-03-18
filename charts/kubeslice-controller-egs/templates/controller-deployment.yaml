@@ -19,25 +19,40 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if .Values.kubeslice.controller.labels }}
   labels:
-    control-plane: controller-manager
+  {{ toYaml .Values.kubeslice.controller.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.kubeslice.controller.annotations }}
+  annotations:
+    checksum/secret: {{ now | quote | sha256sum }}
+  {{ toYaml .Values.kubeslice.controller.annotations | nindent 4 }}
+  {{- end }}
   name: kubeslice-controller-manager
   namespace: kubeslice-controller
 spec:
   replicas: 1
   selector:
     matchLabels:
-      control-plane: controller-manager
+    {{- if .Values.kubeslice.controller.labels }}
+    {{ toYaml .Values.kubeslice.controller.labels | nindent 6 }}
+    {{- end }}
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: manager
-        prometheus.io/port: "18080"
-        prometheus.io/scrape: "true"
         checksum/secret: {{ now | quote | sha256sum }}
+        {{- if .Values.kubeslice.controller.annotations }}
+        {{ toYaml .Values.kubeslice.controller.annotations | nindent 8 }}
+        {{- end }}
+      {{- if .Values.kubeslice.controller.labels }}
       labels:
-        control-plane: controller-manager
+      {{ toYaml .Values.kubeslice.controller.labels | nindent 8 }}
+      {{- end }}
     spec:
+      {{- if .Values.kubeslice.controller.affinity }}
+      affinity:
+      {{ toYaml .Values.kubeslice.controller.affinity | nindent 8 }}
+      {{- end }}
       containers:
         - args:
             - --secure-listen-address=0.0.0.0:8443
@@ -46,17 +61,9 @@ spec:
             - --v=0
           image: '{{ .Values.kubeslice.rbacproxy.imageRegistry }}/{{ .Values.kubeslice.rbacproxy.image }}:{{ .Values.kubeslice.rbacproxy.tag }}'
           name: kube-rbac-proxy
-          securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+          {{- if .Values.kubeslice.controller.securityContext }}
+          securityContext: {{ toYaml .Values.kubeslice.controller.securityContext | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: 8443
               name: https
@@ -93,17 +100,9 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
           name: manager
-          securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+          {{- if .Values.kubeslice.controller.securityContext }}
+          securityContext: {{ toYaml .Values.kubeslice.controller.securityContext | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: 9443
               name: webhook-server
@@ -114,13 +113,9 @@ spec:
               port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
-          resources:
-            limits:
-              cpu: 500m
-              memory: 512Mi
-            requests:
-              cpu: 250m
-              memory: 256Mi
+          {{- if .Values.kubeslice.controller.resources }}
+          resources: {{ toYaml .Values.kubeslice.controller.resources | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
@@ -154,8 +149,9 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.kubeslice.controller.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.controller.tolerations | nindent 8 }}
+      {{- end }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
