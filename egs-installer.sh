@@ -2177,6 +2177,51 @@ prepare_worker_values_file() {
                 yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egs.grafanaDashboardBaseUrl = \"${grafana_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
 
             fi
+
+
+            if [ "$ENABLE_INSTALL_UI" = "true" ] && [ "$KUBESLICE_UI_SKIP_INSTALLATION" = "false" ]; then
+                read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
+                    "Kubeslice UI" \
+                    "$KUBESLICE_UI_USE_GLOBAL_KUBECONFIG" \
+                    "$GLOBAL_KUBECONFIG" \
+                    "$GLOBAL_KUBECONTEXT" \
+                    "$KUBESLICE_CONTROLLER_KUBECONFIG" \
+                    "$KUBESLICE_CONTROLLER_KUBECONTEXT")
+
+                kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" || echo "⚠️ Warning: Failed to get services in namespace '$KUBESLICE_UI_NAMESPACE'."
+
+                ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+                if [ -z "$ui_proxy_url" ]; then
+                    ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+                fi
+                if [ -n "$ui_proxy_url" ]; then
+                    echo "🔗 ** updating Kubeslice UI Proxy LoadBalancer URL**: https://$ui_proxy_url in values file"
+                    yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egsAgent.agentSecret.endpoint = \"https://$ui_proxy_url\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
+                else
+                    echo "⚠️ Warning: Kubeslice UI Proxy LoadBalancer URL not available."
+                fi
+            else
+                echo "⏩ **Kubeslice UI installation was skipped or disabled.**"
+            fi
+
+
+            if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+                for project in "${KUBESLICE_PROJECTS[@]}"; do
+                    IFS="|" read -r project_name project_username <<<"$project"
+                    token=$(kubectl get secret "kubeslice-rbac-rw-$project_username" -o jsonpath="{.data.token}" -n "kubeslice-$project_name" --kubeconfig "$kubeconfig_path" --context "$kubecontext" 2>/dev/null | base64 --decode || echo "")
+                    if [ -n "$token" ]; then
+                        echo "🔑 **updating Token for project '$project_name' (username: $project_username)**: $token in values file"
+                        yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egsAgent.agentSecret.key = \"$token\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
+                    else
+                        echo "⚠️ Warning: Token for project '$project_name' (username: $project_username) not available."
+                    fi
+                done
+            else
+                echo "⏩ **Project creation was skipped or disabled.**"
+            fi
+
+
+
         else
             echo "Auto fetch endpoint is not enabled or empty. Skipping Prometheus and Grafana endpoint updates if it is false or please provide proper input if you haven't give any."
         fi
