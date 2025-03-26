@@ -157,6 +157,11 @@ kubeslice_worker_egs:
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
+      egsAgent:
+        secretName: egs-agent-access
+        agentSecret:
+          endpoint: ""
+          key: ""
       metrics:
         insecure: true                        # Allow insecure connections for metrics
       kserve:
