@@ -20,6 +20,14 @@ spec:
       labels:
         control-plane: aiops-controller-manager
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       containers:
         - args:
             - --secure-listen-address=0.0.0.0:8443

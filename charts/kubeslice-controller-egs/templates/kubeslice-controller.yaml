@@ -2949,7 +2949,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: workersliceappserviceresourceusages.worker.kubeslice.io
 spec:
   group: worker.kubeslice.io
@@ -3190,6 +3190,10 @@ spec:
                         the node
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
+                    totalMemory:
+                      description: TotalMemory is the total memory of all the GPUs
+                        in the node
+                      type: string
                   type: object
                 type: array
               gpuResources:
@@ -3223,6 +3227,10 @@ spec:
                               description: GPUWorkloadDetails represents GPU usage
                                 details for a specific workload.
                               properties:
+                                gprId:
+                                  description: GprID is the gprId associated with
+                                    the workload
+                                  type: string
                                 requests:
                                   description: Requests specifies the resource requests
                                     made by the workload in terms of GPU and memory.
@@ -3243,25 +3251,24 @@ spec:
                                     gpuDetails:
                                       description: GPUDetails contains detailed information
                                         about GPU usage.
-                                      items:
-                                        description: GPUDetail represents individual
-                                          GPU utilization metrics.
-                                        properties:
-                                          gpu:
-                                            description: GPU indicates the GPU compute
-                                              utilization as a percentage (e.g., 60).
-                                            type: string
-                                          id:
-                                            description: ID is the unique identifier
-                                              of the GPU being used by the workload.
-                                            type: string
-                                          memory:
-                                            description: Memory represents the amount
-                                              of GPU memory utilized by the workload
-                                              (in MiB).
-                                            type: string
-                                        type: object
-                                      type: array
+                                      properties:
+                                        gpu:
+                                          description: GPU indicates the GPU compute
+                                            utilization as a percentage (e.g., 60).
+                                          type: string
+                                        memory:
+                                          description: Memory represents the amount
+                                            of GPU memory utilized by the workload
+                                            (in MiB).
+                                          type: string
+                                      type: object
+                                    profileNames:
+                                      additionalProperties:
+                                        type: string
+                                      description: ProfileNames contains information
+                                        of GPU usage for GPU Profiles used by the
+                                        workload.
+                                      type: object
                                   type: object
                                 workloadName:
                                   description: WorkloadName is the name of the workload
@@ -6334,6 +6341,8 @@ rules:
       - gpr.kubeslice.io
     resources:
       - gpuprovisioningrequests
+      - gprtemplates
+      - gprtemplatebindings
     verbs:
       - create
       - delete
@@ -6345,6 +6354,8 @@ rules:
   - apiGroups:
       - gpr.kubeslice.io
     resources:
+      - gprtemplates/status
+      - gprtemplatebindings/status
       - gpuprovisioningrequests/status
     verbs:
       - get

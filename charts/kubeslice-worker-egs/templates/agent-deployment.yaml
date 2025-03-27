@@ -1,0 +1,141 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: egs-agent
+  name: egs-agent
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: egs-agent
+  template:
+    metadata:
+      labels:
+        control-plane: egs-agent
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
+      containers:
+      - image: '{{ .Values.egsAgent.imageRegistry }}/{{ .Values.egsAgent.image }}:{{ .Values.egsAgent.tag }}'
+        imagePullPolicy: "{{ .Values.egsAgent.pullPolicy }}"
+        env:
+          - name: LOG_LEVEL
+            value: "{{ .Values.egsAgent.logLevel }}"
+          - name: DEV_MODE
+            value: "false"
+          - name: API_GW_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.egsAgent.secretName }}
+                key: API_GW_ENDPOINT
+          - name: API_GW_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.egsAgent.secretName }}
+                key: API_GW_KEY
+          - name: CLUSTER_NAME
+            value: {{ .Values.cluster.name }}
+        livenessProbe:
+          exec:
+            command:
+            - cat
+            - /tmp/healthy.txt
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        name: main
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+      securityContext:
+        runAsUser: 65536
+        runAsGroup: 65536
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        readOnlyRootFilesystem: true
+      serviceAccountName: {{ .Values.egsAgent.secretName }}
+      terminationGracePeriodSeconds: 10
+      imagePullSecrets:
+        - name: kubeslice-image-pull-secret
+        - name: kubeslice-aveshadev-secret
+        # Allow this pod to be scheduled on nodes with any taints, as it is a critical component
+        # and needs to tolerate all taints to ensure it can run on any available node.
+      tolerations:
+        - operator: "Exists"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.egsAgent.secretName }}
+  namespace: {{ .Release.Namespace }}
+---
+# permissions to do leader election.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.egsAgent.secretName }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.egsAgent.secretName }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.egsAgent.secretName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.egsAgent.secretName }}
+    namespace: {{ .Release.Namespace }}
+
+---
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.egsAgent.secretName }}  # Use provided controllerSecretName
+  namespace: kubeslice-system
+data:
+  {{- with .Values.egsAgent.agentSecret }}
+    API_GW_ENDPOINT: {{.endpoint}}
+    API_GW_KEY: {{.key}}
+    API_GW_CA_CRT: {{ index . "ca.crt"}}
+  {{- end }}

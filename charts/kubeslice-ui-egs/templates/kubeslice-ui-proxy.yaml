@@ -32,6 +32,14 @@ spec:
       labels:
         app: kubeslice-ui-proxy
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       containers:
         - name: kubeslice-ui-proxy
           securityContext:

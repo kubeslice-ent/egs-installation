@@ -74,6 +74,14 @@ spec:
         version: v1
         app: egs-core-apis
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       containers:
         - name: egs-core-apis
           securityContext:

@@ -31,6 +31,14 @@ spec:
       labels:
         app: kubeslice-ui
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       containers:
       - image: '{{ .Values.kubeslice.ui.imageRegistry }}/{{ .Values.kubeslice.ui.image }}:{{ .Values.kubeslice.ui.tag }}'
         imagePullPolicy: '{{ .Values.kubeslice.ui.pullPolicy }}'

@@ -16,6 +16,14 @@ spec:
       labels:
         app: pricing-service
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

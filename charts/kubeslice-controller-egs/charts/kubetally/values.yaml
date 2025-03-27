@@ -2,18 +2,18 @@ global:
   imageRegistry: &defaultRegistry docker.io/aveshasystems
 kubetally:
   pricingService:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: pricing-service
-    tag: 1.11.0
-    imagePullPolicy: Always
+    tag: 1.12.0-RELEASE-5a789d82
+    imagePullPolicy: IfNotPresent
   chargeUpdater:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: price-updater
-    tag: 1.4.0
+    tag: 1.5.0-RELEASE-ccd2ad86
     imagePullPolicy: IfNotPresent
   kubeTallyReport:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubetally-report
-    tag: 1.11.0
-    imagePullPolicy: Always
+    tag: 1.4.0-RELEASE-149bb0e7
+    imagePullPolicy: IfNotPresent
   imagePullSecretName: kubeslice-image-pull-secret

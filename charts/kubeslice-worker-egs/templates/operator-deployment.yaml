@@ -22,6 +22,14 @@ spec:
         control-plane: controller-manager
         spoke-cluster: {{ .Values.cluster.name }}
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       containers:
       - args:
         - --secure-listen-address=0.0.0.0:8443
@@ -82,6 +90,8 @@ spec:
               {{- end }}
           - name: ENABLE_SLICE_CHARGEBACK
             value: "true"
+          - name: EXCLUDED_NS
+            value: '{{ .Values.operator.excludeNamespaces | join "," }}'
 
         livenessProbe:
           httpGet:

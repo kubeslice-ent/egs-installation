@@ -23,6 +23,8 @@ global:
         bypass: 261
       workspaceGprQueue:
         max: 100
+      maxGprPerWorkspace:
+        max: 10000
 
 kubeTally:
   costApiUrl: http://kubetally-pricing-service:30001
@@ -30,14 +32,14 @@ kubeslice:
   productName: egs
 
   ui:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.11.0
+    tag: 1.11.2-RELEASE-a83d71ad
     pullPolicy: IfNotPresent
   uiv2:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.11.0
+    tag: 1.12.0-RELEASE-3caac4f3
     pullPolicy: IfNotPresent
   dashboard:
     enabled: false
@@ -71,16 +73,16 @@ kubeslice:
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
   apigw:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 1.11.0
+    tag: 1.12.0-RELEASE-477c56e5
     pullPolicy: IfNotPresent
 
   egsCoreApis:
     enabled: true
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: egs-core-apis
-    tag: 1.11.0
+    tag: 1.12.1-RELEASE-fa02313e
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
