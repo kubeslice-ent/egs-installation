@@ -131,11 +131,11 @@ subjects:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .Values.egsAgent.secretName }}  # Use provided controllerSecretName
+  name: {{ .Values.egsAgent.secretName }}
   namespace: kubeslice-system
 data:
   {{- with .Values.egsAgent.agentSecret }}
-    API_GW_ENDPOINT: {{.endpoint}}
-    API_GW_KEY: {{.key}}
-    API_GW_CA_CRT: {{ index . "ca.crt"}}
+    API_GW_ENDPOINT: {{ .endpoint | default "" | b64enc | quote }}
+    API_GW_KEY: {{ .key | default "" | b64enc | quote }}
+    API_GW_CA_CRT: {{ get . "ca.crt" | default "" | b64enc | quote }}
   {{- end }}
