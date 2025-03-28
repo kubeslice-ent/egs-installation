@@ -99,6 +99,11 @@ kubeslice_worker_egs:
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
+      egsAgent:
+        secretName: egs-agent-access
+        agentSecret:
+          endpoint: ""
+          key: ""
       metrics:
         insecure: true                        # Allow insecure connections for metrics
       kserve:
@@ -161,6 +166,7 @@ enable_install_worker: true                   # Enable the installation of Kubes
 enable_project_creation: true                   # Enable project creation in Kubeslice
 enable_cluster_registration: true               # Enable cluster registration in Kubeslice
 enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
+skip_autofetch_egsAgent_endpoint_and_token: false # Enable true to skip update values of egsAgent token and endpoint in values file.
 
 # Precheck options
 precheck: true                                  # Run general prechecks before starting the installation
