@@ -38,6 +38,7 @@ run_commands: false
 enable_project_creation: true                   # Enable project creation in Kubeslice
 enable_cluster_registration: true               # Enable cluster registration in Kubeslice
 enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
+skip_autofetch_egsAgent_endpoint_and_token: false # Enable true to skip update values of egsAgent token and endpoint in values file. 
 
 # Global monitoring endpoint settings
 global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
@@ -157,6 +158,11 @@ kubeslice_worker_egs:
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
+      egsAgent:
+        secretName: egs-agent-access
+        agentSecret:
+          endpoint: ""
+          key: ""
       metrics:
         insecure: true                        # Allow insecure connections for metrics
       kserve:
