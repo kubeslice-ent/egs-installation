@@ -52,6 +52,50 @@ webhooks:
       resources:
         - gpuprovisioningrequests
   sideEffects: NoneOnDryRun
+- admissionReviewVersions:
+    - v1
+  clientConfig:
+    caBundle: {{ $ca.Cert | b64enc }}
+    service:
+      name: gpr-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-gpr-kubeslice-io-v1alpha1-gprtemplatebinding
+  failurePolicy: Fail
+  name: vgprtemplatebinding.kubeslice.io
+  rules:
+    - apiGroups:
+        - gpr.kubeslice.io
+      apiVersions:
+        - v1alpha1
+      operations:
+        - CREATE
+        - UPDATE
+        - DELETE
+      resources:
+        - gprtemplatebindings
+  sideEffects: NoneOnDryRun
+- admissionReviewVersions:
+    - v1
+  clientConfig:
+    caBundle: {{ $ca.Cert | b64enc }}
+    service:
+      name: gpr-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-gpr-kubeslice-io-v1alpha1-gprtemplate
+  failurePolicy: Fail
+  name: vgprtemplate.kubeslice.io
+  rules:
+    - apiGroups:
+        - gpr.kubeslice.io
+      apiVersions:
+        - v1alpha1
+      operations:
+        - CREATE
+        - UPDATE
+        - DELETE
+      resources:
+        - gprtemplates
+  sideEffects: NoneOnDryRun
 ---
 apiVersion: apps/v1
 kind: Deployment
