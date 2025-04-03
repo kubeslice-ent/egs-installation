@@ -1063,7 +1063,6 @@ cloud_providers:
 
 ### Running the Script
 
-Save the script as `create-namespaces.sh` and make it executable:
 
 ```bash
 chmod +x custom-pricing-upload.sh
@@ -1086,7 +1085,7 @@ Run the script with the desired parameters:
 
 5.Converts pricing data in YAML → CSV
 
-6. Uploads CSV to:
+6.Uploads CSV to:
 ```
 http://localhost:<random_port>/api/v1/prices
 ```
