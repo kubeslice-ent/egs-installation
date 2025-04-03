@@ -1,6 +1,6 @@
 kubernetes:
-  kubeconfig: "/home/srinivas/Avesha/DevOps/Tasks/automation/custom-price/custom-price-validation/egs-installation/gpu5-egs-uat-gke-cluster-1"
-  kubecontext: "gke_avesha-dev_us-east1-b_gpu5-egs-uat-gke-cluster-1"
+  kubeconfig: ""         #absolute path of kubeconfig
+  kubecontext: ""        #kubecontext name
   namespace: "kubeslice-controller"
   service: "kubetally-pricing-service"
 
