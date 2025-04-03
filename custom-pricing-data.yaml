@@ -1,5 +1,5 @@
 kubernetes:
-  kubeconfig: ""         #absolute path og kubeconfig
+  kubeconfig: ""         #absolute path of kubeconfig
   kubecontext: ""        #kubecontext name
   namespace: "kubeslice-controller"
   service: "kubetally-pricing-service"
