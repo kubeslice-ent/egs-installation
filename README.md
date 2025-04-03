@@ -1043,7 +1043,7 @@ kubernetes:
   namespace: "kubeslice-controller"
   service: "kubetally-pricing-service"
 
-#You can add as many cloud providers and instance types as needed
+#we can add as many cloud providers and instance types as needed
 cloud_providers:
   - name: "gcp"
     instances:
@@ -1068,7 +1068,7 @@ cloud_providers:
 chmod +x custom-pricing-upload.sh
 ```
 
-Run the script with the desired parameters:
+Run the script:
 
 ```bash
 ./custom-pricing-upload.sh 
