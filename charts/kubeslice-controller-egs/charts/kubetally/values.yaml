@@ -4,7 +4,7 @@ kubetally:
   pricingService:
     imageRegistry: aveshadev #*defaultRegistry
     image: pricing-service
-    tag: 1.12.0-RELEASE-5a789d82
+    tag: 1.12.0-RELEASE-357e3fbe
     imagePullPolicy: IfNotPresent
   chargeUpdater:
     imageRegistry: aveshadev #*defaultRegistry
