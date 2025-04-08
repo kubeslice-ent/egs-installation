@@ -2,8 +2,14 @@
 apiVersion: v1
 kind: Service
 metadata:
+  {{- if .Values.kubeslice.apigw.labels }}
   labels:
-    app: kubeslice-api-gw
+  {{ toYaml .Values.kubeslice.apigw.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.kubeslice.apigw.annotations }}
+  annotations:
+  {{ toYaml .Values.kubeslice.apigw.annotations | nindent 4 }}
+  {{- end }}
   name: kubeslice-api-gw
 spec:
   ports:
@@ -12,33 +18,45 @@ spec:
       protocol: TCP
       targetPort: 3000
   selector:
-    app: kubeslice-api-gw
-  type: ClusterIP
+    {{- if .Values.kubeslice.apigw.labels }}
+    {{ toYaml .Values.kubeslice.apigw.labels | nindent 4 }}
+    {{- end }}
+  type: {{ .Values.kubeslice.apigw.service.type }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if .Values.kubeslice.apigw.labels }}
   labels:
-    app: kubeslice-api-gw
+  {{ toYaml .Values.kubeslice.apigw.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.kubeslice.apigw.annotations }}
+  annotations:
+  {{ toYaml .Values.kubeslice.apigw.annotations | nindent 4 }}
+  {{- end }}
   name: kubeslice-api-gw
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kubeslice-api-gw
+    {{- if .Values.kubeslice.apigw.labels }}
+    {{ toYaml .Values.kubeslice.apigw.labels | nindent 6 }}
+    {{- end }}
   template:
     metadata:
+      annotations:
+        {{- if .Values.kubeslice.apigw.annotations }}
+        {{ toYaml .Values.kubeslice.apigw.annotations | nindent 8 }}
+        {{- end }}
+      {{- if .Values.kubeslice.apigw.labels }}
       labels:
-        app: kubeslice-api-gw
+      {{ toYaml .Values.kubeslice.apigw.labels | nindent 8 }}
+      {{- end }}
     spec:
+      {{- if .Values.kubeslice.apigw.affinity }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      {{ toYaml .Values.kubeslice.apigw.affinity | nindent 8 }}
+      {{- end }}
       containers:
         - image: '{{ .Values.kubeslice.apigw.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
@@ -67,23 +85,12 @@ spec:
           {{- end }}
           name: kubeslice-api-gw
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: false
-          resources:
-            limits:
-              cpu: 500m
-              memory: 512Mi
-            requests:
-              cpu: 250m
-              memory: 256Mi
+          {{- if .Values.kubeslice.apigw.containerSecurityContext }}
+          {{ toYaml .Values.kubeslice.apigw.containerSecurityContext | nindent 12 }}
+          {{- end }}
+          {{- if .Values.kubeslice.apigw.resources }}
+          resources: {{ toYaml .Values.kubeslice.apigw.resources | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: 3000
               protocol: TCP
@@ -103,11 +110,9 @@ spec:
       {{- end }}
       restartPolicy: Always
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.kubeslice.apigw.podSecurityContext }}
+      {{ toYaml .Values.kubeslice.apigw.podSecurityContext | nindent 8 }}
+      {{- end }}
       serviceAccount: kubeslice-api-gw
       serviceAccountName: kubeslice-api-gw
       volumes:
@@ -126,8 +131,9 @@ spec:
             name: kubeslice-api-gw-request-limits
             optional: true
                   
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.kubeslice.apigw.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.apigw.tolerations | nindent 8 }}
+      {{- end }}
 ---
 # create configmap called worker-chart-options
 apiVersion: v1

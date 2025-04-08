@@ -9,6 +9,46 @@ operator:
   tag: 1.2.0-RELEASE-912d9bc4
   pullPolicy: IfNotPresent
   logLevel: INFO
+  labels:
+    control-plane: controller-manager
+  annotations:
+    kubectl.kubernetes.io/default-container: manager
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  containerSecurityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  podSecurityContext: 
+    runAsUser: 65536               # Non-root user
+    runAsGroup: 65536              # Non-root group
+    runAsNonRoot: true             # Ensure the container does not run as root
+    seccompProfile:
+      type: RuntimeDefault
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  tolerations:
+    - operator: "Exists"
+  affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
   excludeNamespaces:
   - "kube-system"
   - "default"
@@ -37,6 +77,46 @@ aiops:
   tag: 1.11.0-RELEASE-b4ba9ced
   pullPolicy: IfNotPresent
   logLevel: INFO
+  labels:
+    control-plane: aiops-controller-manager
+  annotations:
+    kubectl.kubernetes.io/default-container: manager
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
+  containerSecurityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  podSecurityContext: 
+    runAsUser: 65536               # Non-root user
+    runAsGroup: 65536              # Non-root group
+    runAsNonRoot: true             # Ensure the container does not run as root
+    seccompProfile:
+      type: RuntimeDefault
+  tolerations:
+    - operator: "Exists"
+  affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
 
 egsAgent:
   imageRegistry: aveshadev #*defaultRegistry
@@ -85,6 +165,17 @@ rbacproxy:
   image: kubebuilder-kube-rbac-proxy
   # Image tag for the RBAC proxy
   tag: v0.18.0
+  containerSecurityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
 
 alpine:
   imageRegistry: *defaultRegistry

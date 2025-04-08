@@ -23,7 +23,9 @@ spec:
   - port: 443
     targetPort: 9443
   selector:
-    control-plane: gpr-controller-manager
+  {{- if .Values.egs.gprManager.labels }}
+  {{ toYaml .Values.egs.gprManager.labels | nindent 4 }}
+  {{- end }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -100,31 +102,40 @@ webhooks:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if .Values.egs.gprManager.labels }}
   labels:
-    control-plane: gpr-controller-manager
+  {{ toYaml .Values.egs.gprManager.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.egs.gprManager.annotations }}
+  annotations:
+    checksum/secret: {{ now | quote | sha256sum }}
+  {{ toYaml .Values.egs.gprManager.annotations | nindent 4 }}
+  {{- end }}
   name: egs-gpr-manager
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      control-plane: gpr-controller-manager
+    {{- if .Values.egs.gprManager.labels }}
+    {{ toYaml .Values.egs.gprManager.labels | nindent 6 }}
+    {{- end }}
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: manager
         checksum/secret: {{ now | quote | sha256sum }}
+        {{- if .Values.egs.gprManager.annotations }}
+        {{ toYaml .Values.egs.gprManager.annotations | nindent 8 }}
+        {{- end }}
+      {{- if .Values.egs.gprManager.labels }}
       labels:
-        control-plane: gpr-controller-manager
+      {{ toYaml .Values.egs.gprManager.labels | nindent 8 }}
+      {{- end }}
     spec:
+      {{- if .Values.egs.gprManager.affinity }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      {{ toYaml .Values.egs.gprManager.affinity | nindent 8 }}
+      {{- end }}
       containers:
       - args:
         - --metrics-bind-address=:8443
@@ -162,34 +173,21 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
+        {{- if .Values.egs.gprManager.resources }}
+        resources: {{ toYaml .Values.egs.gprManager.resources | nindent 10 }}
+        {{- end }}
         securityContext:
-          runAsUser: 65536
-          runAsGroup: 65536
-          runAsNonRoot: true
-          seccompProfile:
-            type: RuntimeDefault
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-          readOnlyRootFilesystem: true
+        {{- if .Values.egs.gprManager.containerSecurityContext }} 
+        {{ toYaml .Values.egs.gprManager.containerSecurityContext | nindent 10 }}
+        {{- end }}
         volumeMounts:
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: webhook-certs
             readOnly: true
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.egs.gprManager.containersecurityContext }}
+      {{ toYaml .Values.egs.gprManager.containersecurityContext | nindent 8 }}
+      {{- end }}
       serviceAccountName: gpr-manager-access
       terminationGracePeriodSeconds: 10
       volumes:
@@ -201,5 +199,6 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.egs.gprManager.tolerations }}
+      tolerations: {{ toYaml .Values.egs.gprManager.tolerations | nindent 8 }}
+      {{- end }}

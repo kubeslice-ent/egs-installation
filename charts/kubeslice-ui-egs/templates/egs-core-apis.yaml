@@ -58,50 +58,46 @@ subjects:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if .Values.kubeslice.egsCoreApis.labels }}
+  labels:
+  {{ toYaml .Values.kubeslice.egsCoreApis.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.kubeslice.egsCoreApis.annotations }}
+  annotations:
+  {{ toYaml .Values.kubeslice.egsCoreApis.annotations | nindent 4 }}
+  {{- end }}
   name: egs-core-apis
   namespace: {{ .Release.Namespace }}
-  labels:
-    app: egs-core-apis
-    version: v1
 spec:
   selector:
     matchLabels:
-      app: egs-core-apis
-      version: v1
+    {{- if .Values.kubeslice.egsCoreApis.labels }}
+    {{ toYaml .Values.kubeslice.egsCoreApis.labels | nindent 6 }}
+    {{- end }}
   template:
     metadata:
+      annotations:
+        {{- if .Values.kubeslice.egsCoreApis.annotations }}
+        {{ toYaml .Values.kubeslice.egsCoreApis.annotations | nindent 8 }}
+        {{- end }}
+      {{- if .Values.kubeslice.egsCoreApis.labels }}
       labels:
-        version: v1
-        app: egs-core-apis
+      {{ toYaml .Values.kubeslice.egsCoreApis.labels | nindent 8 }}
+      {{- end }}
     spec:
+      {{- if.Values.kubeslice.egsCoreApis.affinity }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      {{ toYaml .Values.kubeslice.egsCoreApis.affinity | nindent 8 }}
+      {{- end }}
       containers:
         - name: egs-core-apis
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: false
-          resources:
-            limits:
-              cpu: 500m
-              memory: 512Mi
-            requests:
-              cpu: 250m
-              memory: 256Mi
+          {{- if .Values.kubeslice.egsCoreApis.containerSecurityContext }}
+          {{ toYaml .Values.kubeslice.egsCoreApis.containerSecurityContext | nindent 12 }}
+          {{- end }}
+          {{- if .Values.kubeslice.egsCoreApis.resources }}
+          resources: {{ toYaml .Values.kubeslice.egsCoreApis.resources | nindent 12 }}
+          {{- end }}
           env:
             - name: EGS_CORE_APIS_API_KEY_SECRET_NAMESPACE
               valueFrom:
@@ -123,18 +119,23 @@ spec:
         - name: kubeslice-ui-image-pull-secret
       {{- end }}
       serviceAccountName: egs-core-apis
-      
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.kubeslice.egsCoreApis.podSecurityContext }}
+      {{ toYaml .Values.kubeslice.egsCoreApis.podSecurityContext | nindent 8 }}
+      {{- end }}
   replicas: 1
 ---
 apiVersion: v1
 kind: Service
 metadata:
+  {{- if .Values.kubeslice.egsCoreApis.labels }}
+  labels:
+  {{ toYaml .Values.kubeslice.egsCoreApis.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.kubeslice.egsCoreApis.annotations }}
+  annotations:
+  {{ toYaml .Values.kubeslice.egsCoreApis.annotations | nindent 4 }}
+  {{- end }}
   name: egs-core-apis
   namespace: {{ .Release.Namespace }}
 spec:
@@ -144,7 +145,8 @@ spec:
       protocol: TCP
       targetPort: 8080
   selector:
-    version: v1
-    app: egs-core-apis
-  type: {{ $.Values.kubeslice.egsCoreApis.service.type }}
+    {{- if .Values.kubeslice.egsCoreApis.labels }}
+    {{ toYaml .Values.kubeslice.egsCoreApis.labels | nindent 4 }}
+    {{- end }}
+  type: {{ .Values.kubeslice.egsCoreApis.service.type }}
 {{- end }}

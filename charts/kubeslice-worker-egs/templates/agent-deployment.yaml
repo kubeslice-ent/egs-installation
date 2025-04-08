@@ -74,7 +74,7 @@ spec:
       terminationGracePeriodSeconds: 10
       imagePullSecrets:
         - name: kubeslice-image-pull-secret
-        - name: kubeslice-aveshadev-secret
+        # - name: kubeslice-aveshadev-secret
         # Allow this pod to be scheduled on nodes with any taints, as it is a critical component
         # and needs to tolerate all taints to ensure it can run on any available node.
       tolerations:

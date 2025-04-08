@@ -2,32 +2,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if .Values.aiops.labels }}
   labels:
-    control-plane: aiops-controller-manager
+  {{ toYaml .Values.aiops.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.aiops.annotations }}
+  annotations:
+  {{ toYaml .Values.aiops.annotations | nindent 4 }}
+  {{- end }}
   name: aiops-operator
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      control-plane: aiops-controller-manager
+    {{- if .Values.aiops.labels }}
+    {{ toYaml .Values.aiops.labels | nindent 6 }}
+    {{- end }}
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: manager
-        prometheus.io/port: "8080"
-        prometheus.io/scrape: "true"
+        {{- if .Values.aiops.annotations }}
+        {{ toYaml .Values.aiops.annotations | nindent 8 }}
+        {{- end }}
+      {{- if .Values.aiops.labels }}
       labels:
-        control-plane: aiops-controller-manager
+      {{ toYaml .Values.aiops.labels | nindent 8 }}
+      {{- end }}
     spec:
+      {{- if .Values.aiops.affinity }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      {{ toYaml .Values.aiops.affinity | nindent 8 }}
+      {{- end }}
       containers:
         - args:
             - --secure-listen-address=0.0.0.0:8443
@@ -40,24 +46,14 @@ spec:
             - containerPort: 8443
               name: https
               protocol: TCP
-          resources:
-            limits:
-              cpu: 500m
-              memory: 128Mi
-            requests:
-              cpu: 5m
-              memory: 64Mi
+          {{- if .Values.aiops.resources }}
+          resources: 
+          {{ toYaml .Values.aiops.resources | nindent 12 }}
+          {{- end }}
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+          {{- if .Values.rbacproxy.containerSecurityContext }} 
+          {{ toYaml .Values.rbacproxy.containerSecurityContext | nindent 12 }}
+          {{- end }}
         - args:
             - --health-probe-bind-address=:8081
             - --metrics-bind-address=:8080
@@ -114,24 +110,13 @@ spec:
               port: 8081
             initialDelaySeconds: 5
             periodSeconds: 10
-          resources:
-            limits:
-              cpu: 500m
-              memory: 128Mi
-            requests:
-              cpu: 10m
-              memory: 64Mi
+          {{- if .Values.aiops.resources }}
+          resources: {{ toYaml .Values.aiops.resources | nindent 12 }}
+          {{- end }}
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+          {{- if .Values.aiops.containerSecurityContext }}
+          {{ toYaml .Values.aiops.containerSecurityContext | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: /var/run/secrets/kubernetes.io/hub-serviceaccount
               name: hub-secret
@@ -144,11 +129,9 @@ spec:
               readOnly: true
       serviceAccountName: aiops-operator-access
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.aiops.podSecurityContext }}
+      {{ toYaml .Values.aiops.podSecurityContext | nindent 8 }}
+      {{- end }}
       terminationGracePeriodSeconds: 10
       volumes:
         - name: aiops-config-volume
@@ -170,5 +153,6 @@ spec:
         - name: kubeslice-image-pull-secret
       # Allow this pod to be scheduled on nodes with any taints, as it is a critical component
       # and needs to tolerate all taints to ensure it can run on any available node.
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.aiops.tolerations }}
+      tolerations: {{ toYaml .Values.aiops.tolerations | nindent 8 }}
+      {{- end }}
