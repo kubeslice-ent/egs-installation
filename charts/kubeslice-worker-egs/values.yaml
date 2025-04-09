@@ -128,6 +128,43 @@ egsAgent:
   agentSecret:
     endpoint: ""
     key: ""
+  labels:
+    control-plane: egs-agent
+  annotations: {}
+  containerSecurityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  podSecurityContext: 
+    runAsUser: 65536               # Non-root user
+    runAsGroup: 65536              # Non-root group
+    runAsNonRoot: true             # Ensure the container does not run as root
+    seccompProfile:
+      type: RuntimeDefault
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  tolerations:
+    - operator: "Exists"
+  affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
 
 egs:
   prometheusEndpoint: ""

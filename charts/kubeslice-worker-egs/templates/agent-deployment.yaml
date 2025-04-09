@@ -2,28 +2,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if .Values.egsAgent.labels }}
   labels:
-    control-plane: egs-agent
+  {{ toYaml .Values.egsAgent.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.egsAgent.annotations }}
+  annotations:
+  {{ toYaml .Values.egsAgent.annotations | nindent 4 }}
+  {{- end }}
   name: egs-agent
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      control-plane: egs-agent
+    {{- if .Values.egsAgent.labels }}
+    {{ toYaml .Values.egsAgent.labels | nindent 6 }}
+    {{- end }}
   template:
     metadata:
+      annotations:
+      {{- if .Values.egsAgent.annotations }}
+      {{ toYaml .Values.egsAgent.annotations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.egsAgent.labels }}
       labels:
-        control-plane: egs-agent
+      {{ toYaml .Values.egsAgent.labels | nindent 8 }}
+      {{- end }}
     spec:
+      {{- if .Values.egsAgent.affinity }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      {{ toYaml .Values.egsAgent.affinity | nindent 8 }}
+      {{- end }}
       containers:
       - image: '{{ .Values.egsAgent.imageRegistry }}/{{ .Values.egsAgent.image }}:{{ .Values.egsAgent.tag }}'
         imagePullPolicy: "{{ .Values.egsAgent.pullPolicy }}"
@@ -52,24 +62,13 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
         name: main
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
+        {{- if .Values.egsAgent.resources }}
+        resources: {{ toYaml .Values.egsAgent.resources | nindent 10 }}
+        {{- end }}
       securityContext:
-        runAsUser: 65536
-        runAsGroup: 65536
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop:
-            - ALL
-        readOnlyRootFilesystem: true
+      {{- if .Values.egsAgent.containerSecurityContext }} 
+      {{ toYaml .Values.egsAgent.containerSecurityContext | nindent 8 }}
+      {{- end }}
       serviceAccountName: {{ .Values.egsAgent.secretName }}
       terminationGracePeriodSeconds: 10
       imagePullSecrets:
@@ -77,8 +76,10 @@ spec:
         # - name: kubeslice-aveshadev-secret
         # Allow this pod to be scheduled on nodes with any taints, as it is a critical component
         # and needs to tolerate all taints to ensure it can run on any available node.
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.egsAgent.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.egsAgent.tolerations | nindent 8 }}
+      {{- end }}
 
 ---
 apiVersion: v1
