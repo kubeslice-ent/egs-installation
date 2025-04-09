@@ -84,6 +84,9 @@ kubeslice_controller_egs:
   inline_values:
     global:
       imageRegistry: docker.io/aveshasystems   # Docker registry for the images
+      namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
+        labels: {}
+        annotations: {}
       kubeTally:
         enabled: true                          # Enable KubeTally in the controller
 #### Postgresql Connection Configuration for Kubetally  ####
