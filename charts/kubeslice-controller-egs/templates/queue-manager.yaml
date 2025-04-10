@@ -1,33 +1,44 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: egs-queue-manager
-  namespace: {{ .Release.Namespace }}
+  {{- if .Values.egs.queueManager.labels }}
   labels:
-    app: "queue-manager"
+  {{ toYaml .Values.egs.queueManager.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.egs.queueManager.annotations }}
+  annotations:
+  {{ toYaml .Values.egs.queueManager.annotations | nindent 4 }}
+  {{- end }}
+  namespace: {{ .Release.Namespace }}
+  name: egs-queue-manager
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: "queue-manager"
+    {{- if .Values.egs.queueManager.labels }}
+    {{ toYaml .Values.egs.queueManager.labels | nindent 6 }}
+    {{- end }}
   template:
     metadata:
+      {{- if .Values.egs.queueManager.annotations }}
+      annotations:
+        {{ toYaml .Values.egs.queueManager.annotations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.egs.queueManager.labels }}
       labels:
-        app: "queue-manager"
+      {{ toYaml .Values.egs.queueManager.labels | nindent 8 }}
+      {{- end }}
     spec:
+      {{- if .Values.egs.queueManager.affinity }}
+      affinity:
+      {{ toYaml .Values.egs.queueManager.affinity | nindent 8 }}
+      {{- end }}
       containers:
         - name: "queue-manager"
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
+          {{- if .Values.egs.queueManager.containerSecurityContext }}
+          {{ toYaml .Values.egs.queueManager.containerSecurityContext | nindent 12 }}
+          {{- end }}
           image: '{{ .Values.egs.queueManager.imageRegistry }}/{{ .Values.egs.queueManager.image }}:{{ .Values.egs.queueManager.tag }}'
           ports:
             - containerPort: 50051
@@ -49,18 +60,18 @@ spec:
       serviceAccountName: gpr-manager-access
       serviceAccount: gpr-manager-access
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.egs.queueManager.podSecurityContext }}
+      {{ toYaml .Values.egs.queueManager.podSecurityContext | nindent 8 }}
+      {{- end }}
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
       schedulerName: default-scheduler
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.egs.queueManager.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.egs.queueManager.tolerations | nindent 8 }}
+      {{- end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -81,4 +92,6 @@ spec:
       port: {{ .Values.egs.queueManager.service.port }}
       targetPort: 50051
   selector:
-    app: "queue-manager"
+  {{- if .Values.egs.queueManager.labels }}
+  {{ toYaml .Values.egs.queueManager.labels | nindent 4 }}
+  {{- end }}

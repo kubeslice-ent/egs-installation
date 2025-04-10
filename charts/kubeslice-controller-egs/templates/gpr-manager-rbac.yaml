@@ -52,6 +52,8 @@ rules:
   resources:
   - gpuprovisioningrequests
   - gprautoevictions
+  - gprtemplates
+  - gprtemplatebindings
   verbs:
   - create
   - delete
@@ -65,6 +67,8 @@ rules:
   resources:
   - gpuprovisioningrequests/finalizers
   - gprautoevictions/finalizers
+  - gprtemplates/finalizers
+  - gprtemplatebindings/finalizers
   verbs:
   - update
 - apiGroups:
@@ -72,6 +76,8 @@ rules:
   resources:
   - gpuprovisioningrequests/status
   - gprautoevictions/status
+  - gprtemplates/status
+  - gprtemplatebindings/status
   verbs:
   - get
   - patch
@@ -106,7 +112,6 @@ rules:
   - controller.kubeslice.io
   resources:
   - projects
-  - sliceconfigs
   - clusters
   verbs:
   - get
@@ -118,6 +123,18 @@ rules:
   - events
   verbs:
   - create
+  - patch
+  - update
+- apiGroups:
+  - worker.kubeslice.io
+  - controller.kubeslice.io
+  resources:
+  - sliceconfigs
+  - workersliceconfigs
+  verbs:
+  - get
+  - list
+  - watch
   - patch
   - update
 ---

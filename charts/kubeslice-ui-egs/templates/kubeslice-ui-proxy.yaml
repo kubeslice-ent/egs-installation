@@ -2,9 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: kubeslice-ui-proxy
+  {{- if .Values.kubeslice.uiproxy.labels }}
   labels:
-    app: kubeslice-ui-proxy
+  {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.kubeslice.uiproxy.annotations }}
+  annotations:
+  {{ toYaml .Values.kubeslice.uiproxy.annotations | nindent 4 }}
+  {{- end }}
+  name: kubeslice-ui-proxy
 spec:
   ports:
     - port: 443
@@ -15,36 +21,51 @@ spec:
       nodePort: {{ .Values.kubeslice.uiproxy.service.nodePort }}
       {{ end }}
   selector:
-    app: kubeslice-ui-proxy
+    {{- if .Values.kubeslice.uiproxy.labels }}
+    {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 4 }}
+    {{- end }}
   type: {{ .Values.kubeslice.uiproxy.service.type }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if .Values.kubeslice.uiproxy.labels }}
+  labels:
+  {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.kubeslice.uiproxy.annotations }}
+  annotations:
+  {{ toYaml .Values.kubeslice.uiproxy.annotations | nindent 4 }}
+  {{- end }}
   name: kubeslice-ui-proxy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kubeslice-ui-proxy
+    {{- if .Values.kubeslice.uiproxy.labels }}
+    {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 6 }}
+    {{- end }}
   template:
     metadata:
+      annotations:
+        {{- if .Values.kubeslice.uiproxy.annotations }}
+        {{ toYaml .Values.kubeslice.uiproxy.annotations | nindent 8 }}
+        {{- end }}
+      {{- if .Values.kubeslice.uiproxy.labels }}
       labels:
-        app: kubeslice-ui-proxy
+      {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 8 }}
+      {{- end }}
     spec:
+      {{- if .Values.kubeslice.uiproxy.affinity }}
+      affinity:
+      {{ toYaml .Values.kubeslice.uiproxy.affinity | nindent 8 }}
+      {{- end }}
       containers:
         - name: kubeslice-ui-proxy
           securityContext:
-            runAsUser: 65536
-            runAsGroup: 65536
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            readOnlyRootFilesystem: false
+          {{- if .Values.kubeslice.uiproxy.containerSecurityContext }}
+          {{ toYaml .Values.kubeslice.uiproxy.containerSecurityContext | nindent 12 }}
+          {{- end }}
           image: '{{ .Values.kubeslice.uiproxy.imageRegistry }}/{{ .Values.kubeslice.uiproxy.image }}:{{ .Values.kubeslice.uiproxy.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.uiproxy.pullPolicy }}'
           env:
@@ -58,11 +79,10 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
         {{- end }}
-      tolerations:
-        - operator: "Exists"
+      {{- if .Values.kubeslice.uiproxy.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.uiproxy.tolerations | nindent 8 }}
+      {{- end }}
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if .Values.kubeslice.uiproxy.podSecurityContext }}
+      {{ toYaml .Values.kubeslice.uiproxy.podSecurityContext | nindent 8 }}
+      {{- end }}

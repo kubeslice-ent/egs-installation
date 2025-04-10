@@ -23,6 +23,8 @@ global:
         bypass: 261
       workspaceGprQueue:
         max: 100
+      maxGprPerWorkspace:
+        max: 10000
 
 kubeTally:
   costApiUrl: http://kubetally-pricing-service:30001
@@ -32,13 +34,77 @@ kubeslice:
   ui:
     imageRegistry: *defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.11.0
+    tag: 1.12.0
     pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+    labels:
+      app: kubeslice-ui
+    annotations: {}
+    containerSecurityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    podSecurityContext: 
+      runAsUser: 65536               # Non-root user
+      runAsGroup: 65536              # Non-root group
+      runAsNonRoot: true             # Ensure the container does not run as root
+      seccompProfile:
+        type: RuntimeDefault
+    tolerations:
+    - operator: "Exists"
+    affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
   uiv2:
     imageRegistry: *defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.11.0
+    tag: 1.12.0
     pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+    labels:
+      app: kubeslice-ui-v2
+    annotations: {}
+    containerSecurityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    podSecurityContext: 
+      runAsUser: 65536               # Non-root user
+      runAsGroup: 65536              # Non-root group
+      runAsNonRoot: true             # Ensure the container does not run as root
+      seccompProfile:
+        type: RuntimeDefault
+    tolerations:
+    - operator: "Exists"
+    affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
   dashboard:
     enabled: false
     pullPolicy: IfNotPresent
@@ -70,20 +136,125 @@ kubeslice:
       type: LoadBalancer
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
+    labels:
+      app: kubeslice-ui-proxy
+    annotations: {}
+    containerSecurityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    podSecurityContext: 
+      runAsUser: 65536               # Non-root user
+      runAsGroup: 65536              # Non-root group
+      runAsNonRoot: true             # Ensure the container does not run as root
+      seccompProfile:
+        type: RuntimeDefault
+    tolerations:
+    - operator: "Exists"
+    affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
   apigw:
     imageRegistry: *defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 1.11.0
+    tag: 1.12.0
     pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+    labels:
+      app: kubeslice-api-gw
+    annotations: {}
+    containerSecurityContext: 
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    podSecurityContext: 
+      runAsUser: 65536               # Non-root user
+      runAsGroup: 65536              # Non-root group
+      runAsNonRoot: true             # Ensure the container does not run as root
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    tolerations:
+      - operator: "Exists"
+    affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
 
   egsCoreApis:
     enabled: true
     imageRegistry: *defaultRegistry
     image: egs-core-apis
-    tag: 1.11.0
+    tag: 1.12.0
     pullPolicy: IfNotPresent
     service:
       type: LoadBalancer
+    labels:
+      app: egs-core-apis
+      version: v1
+    annotations: {}
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    containerSecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    podSecurityContext: 
+      runAsUser: 65536               # Non-root user
+      runAsGroup: 65536              # Non-root group
+      runAsNonRoot: true             # Ensure the container does not run as root
+      seccompProfile:
+        type: RuntimeDefault
+    affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
 
   workerinstaller:
     imageRegistry: *defaultRegistry

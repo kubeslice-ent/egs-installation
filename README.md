@@ -40,7 +40,13 @@ Before you begin, ensure the following steps are completed:
 3. **🌐 Kubernetes Access:**
    - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
 
-4. **✅ Run EGS Preflight Check Script (Optional):**
+4. **📂 Clone the Repository:**
+   - Start by cloning the EGS installation Git repository:
+     ```bash
+     git clone https://github.com/kubeslice-ent/egs-installation
+     ```
+
+5. **✅ Run EGS Preflight Check Script (Optional):**
    - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
      - Refer to the [EGS Preflight Check Guide](https://github.com/kubeslice-ent/egs-installation#egs-preflight-check) for detailed instructions.
      - Example command:
@@ -51,7 +57,7 @@ Before you begin, ensure the following steps are completed:
        ```
      - This step validates namespaces, permissions, PVCs, and services, helping to identify and resolve potential issues before installation.
 
-5. **🗂️ Pre-create Required Namespaces (Optional):**
+6. **🗂️ Pre-create Required Namespaces (Optional):**
    - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
      - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
        - Refer to the [Namespace Creation Script](https://github.com/kubeslice-ent/egs-installation#namespace-creation) for details.
@@ -64,7 +70,7 @@ Before you begin, ensure the following steps are completed:
        ```
      - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
 
-6. **🚀 Install Prerequisites for EGS (Optional):**
+7. **🚀 Install Prerequisites for EGS (Optional):**
    - To install prerequisites like GPU Operator, Prometheus for EGS inventory, and PostgreSQL for cost information visibility, you can run the **Prerequisites Installer Script**:
      - Example command:
        ```bash
@@ -993,4 +999,94 @@ This script simplifies the namespace creation process in Kubernetes, making it i
 - **Cluster Access Issues**: Verify that kubeconfig files are correctly configured and that the script can access the clusters specified in the YAML configuration. 🔧
 - **Timeouts**: If a component fails to install within the specified timeout, increase the `verify_install_timeout` in the YAML file. ⏳
 
+---
+
+## Custom Pricing Upload Script
+
+### 🔑 Key Features
+
+1.Define cloud instance pricing data in YAML
+
+2.Specify Kubernetes connection details (via kubeconfig and kubecontext) in the same YAML
+
+3.Automatically port-forward to a Kubernetes service
+
+4.Convert the YAML pricing info to CSV
+
+5.Upload the CSV to a pricing API running inside the cluster
+
+
+
+### 📁 Files
+
+- **custom-pricing-data.yaml**: YAML input file with Kubernetes config and pricing data
+- **custom-pricing-upload.sh**: Bash script to read YAML, port-forward, generate CSV, and upload
+
+### 📦 Prerequisites
+
+
+Make sure the following tools are installed:
+
+- **kubectl**: Communicate with Kubernetes
+- **yq**: Parse YAML in shell
+- **jq**: Parse JSON in shell
+- **curl**: Upload CSV via API
+
+## Input custom-pricing-data YAML Format
+
+The input YAML file should follow this format:
+
+```yaml
+kubernetes:
+  kubeconfig: ""         #absolute path og kubeconfig
+  kubecontext: ""        #kubecontext name
+  namespace: "kubeslice-controller"
+  service: "kubetally-pricing-service"
+
+#we can add as many cloud providers and instance types as needed
+cloud_providers:
+  - name: "gcp"
+    instances:
+      - region: "us-east1"
+        component: "Compute Instance"
+        instance_type: "a2-highgpu-2g"
+        vcpu: 1
+        price: 20
+        gpu: 1
+      - region: "us-east1"
+        component: "Compute Instance"
+        instance_type: "e2-standard-8"
+        vcpu: 1
+        price: 5
+        gpu: 0
+```
+
+### Running the Script
+
+
+```bash
+chmod +x custom-pricing-upload.sh
+```
+
+Run the script:
+
+```bash
+./custom-pricing-upload.sh 
+```
+
+## Summary
+1.Reads Kubernetes config from YAML
+
+2.Auto-discovers the service port (e.g., kubetally-pricing-service:80)
+
+3.Picks a random local port
+
+4.Starts a background port-forward to that service
+
+5.Converts pricing data in YAML → CSV
+
+6.Uploads CSV to:
+```
+http://localhost:<random_port>/api/v1/prices
+```
 ---

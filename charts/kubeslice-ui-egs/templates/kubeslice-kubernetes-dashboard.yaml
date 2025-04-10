@@ -429,6 +429,14 @@ spec:
         app: kubernetes-dashboard-kong
         version: "3.6"
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       serviceAccountName: kubernetes-dashboard-kong
       automountServiceAccountToken: false
       {{- if .Values.imagePullSecretsName }}
@@ -694,6 +702,14 @@ spec:
       annotations:
         checksum/config: 2fd4ea5c12871a22048f73cf94b9384013bdcc272cc2a257dbbe608dc5792e1a
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
@@ -795,6 +811,14 @@ spec:
       annotations:
         checksum/config: 4aba1d9f5960e656a33807d8d0d3db2135b61f339bece9fc55fff0c1aa1b18d0
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
@@ -890,6 +914,14 @@ spec:
         app.kubernetes.io/version: "{{ $.Values.kubeslice.dashboard.scrapper.tag }}"
         app.kubernetes.io/component: metrics-scraper
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
@@ -978,6 +1010,14 @@ spec:
         app.kubernetes.io/version: "{{ $.Values.kubeslice.dashboard.web.tag }}"
         app.kubernetes.io/component: web
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
       {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}

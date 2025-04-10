@@ -6,9 +6,57 @@ global:
 operator:
   imageRegistry: *defaultRegistry
   image: worker-operator-ent-egs
-  tag: 1.11.0
+  tag: 1.12.0
   pullPolicy: IfNotPresent
   logLevel: INFO
+  labels:
+    control-plane: controller-manager
+  annotations:
+    kubectl.kubernetes.io/default-container: manager
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  containerSecurityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  podSecurityContext: 
+    runAsUser: 65536               # Non-root user
+    runAsGroup: 65536              # Non-root group
+    runAsNonRoot: true             # Ensure the container does not run as root
+    seccompProfile:
+      type: RuntimeDefault
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  tolerations:
+    - operator: "Exists"
+  affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
+  excludeNamespaces:
+  - "kube-system"
+  - "default"
+  - "kubeslice-controller"
+  - "kubeslice-system"
+  - "kube-node-lease"
+  - "kube-public"
+  - "istio-system"
 
 controllerSecretName: kubeslice-hub #default name used if not specify any name
 ## Base64 encoded secret values from controller cluster
@@ -26,9 +74,97 @@ cluster:
 aiops:
   imageRegistry: *defaultRegistry
   image: kube-aiops-operator
-  tag: 1.11.0
+  tag: 1.12.0
   pullPolicy: IfNotPresent
   logLevel: INFO
+  labels:
+    control-plane: aiops-controller-manager
+  annotations:
+    kubectl.kubernetes.io/default-container: manager
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
+  containerSecurityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  podSecurityContext: 
+    runAsUser: 65536               # Non-root user
+    runAsGroup: 65536              # Non-root group
+    runAsNonRoot: true             # Ensure the container does not run as root
+    seccompProfile:
+      type: RuntimeDefault
+  tolerations:
+    - operator: "Exists"
+  affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
+
+egsAgent:
+  imageRegistry: *defaultRegistry
+  image: egs-agent
+  tag: 1.0.0
+  pullPolicy: IfNotPresent
+  logLevel: INFO
+  secretName: egs-agent-access
+  agentSecret:
+    endpoint: ""
+    key: ""
+  labels:
+    control-plane: egs-agent
+  annotations: {}
+  containerSecurityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  podSecurityContext: 
+    runAsUser: 65536               # Non-root user
+    runAsGroup: 65536              # Non-root group
+    runAsNonRoot: true             # Ensure the container does not run as root
+    seccompProfile:
+      type: RuntimeDefault
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  tolerations:
+    - operator: "Exists"
+  affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
 
 egs:
   prometheusEndpoint: ""
@@ -66,6 +202,17 @@ rbacproxy:
   image: kubebuilder-kube-rbac-proxy
   # Image tag for the RBAC proxy
   tag: v0.18.0
+  containerSecurityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
 
 alpine:
   imageRegistry: *defaultRegistry

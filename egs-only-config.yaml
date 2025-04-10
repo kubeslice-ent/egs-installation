@@ -25,6 +25,9 @@ kubeslice_controller_egs:
   inline_values:
     global:
       imageRegistry: docker.io/aveshasystems   # Docker registry for the images
+      namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
+        labels: {}
+        annotations: {}
       kubeTally:
         enabled: false                          # Enable KubeTally in the controller
 #### Postgresql Connection Configuration for Kubetally  ####
@@ -99,6 +102,11 @@ kubeslice_worker_egs:
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
+      egsAgent:
+        secretName: egs-agent-access
+        agentSecret:
+          endpoint: ""
+          key: ""
       metrics:
         insecure: true                        # Allow insecure connections for metrics
       kserve:
@@ -150,7 +158,7 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: false                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.0.0"
+version: "1.12.0"
 
 # Enable or disable specific stages of the installation
 enable_install_controller: true               # Enable the installation of the Kubeslice controller
@@ -161,6 +169,7 @@ enable_install_worker: true                   # Enable the installation of Kubes
 enable_project_creation: true                   # Enable project creation in Kubeslice
 enable_cluster_registration: true               # Enable cluster registration in Kubeslice
 enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
+skip_autofetch_egsAgent_endpoint_and_token: false # Enable true to skip update values of egsAgent token and endpoint in values file.
 
 # Precheck options
 precheck: true                                  # Run general prechecks before starting the installation

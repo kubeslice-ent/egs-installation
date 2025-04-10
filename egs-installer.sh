@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the script version
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.12.0"
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
@@ -2177,8 +2177,95 @@ prepare_worker_values_file() {
                 yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egs.grafanaDashboardBaseUrl = \"${grafana_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
 
             fi
+
         else
             echo "Auto fetch endpoint is not enabled or empty. Skipping Prometheus and Grafana endpoint updates if it is false or please provide proper input if you haven't give any."
+        fi
+
+
+        enable_autofetch_egsagent_endpoint_and_token=$(yq e '.enable_autofetch_egsagent_endpoint_and_token' "$EGS_INPUT_YAML")
+        echo "value of enable_autofetch_egsagent_endpoint_and_token: $enable_autofetch_egsagent_endpoint_and_token"
+
+        if [[ "$enable_autofetch_egsagent_endpoint_and_token" == "true" && -n "$enable_autofetch_egsagent_endpoint_and_token" ]]; then
+
+            if [ "$ENABLE_INSTALL_UI" = "true" ] && [ "$KUBESLICE_UI_SKIP_INSTALLATION" = "false" ]; then
+                
+                kubeconfig_path=$(yq e '.global_kubeconfig' "$EGS_INPUT_YAML")
+                kubecontext_path=$(yq e '.global_kubecontext' "$EGS_INPUT_YAML")
+
+                # Service details
+                namespace="$KUBESLICE_UI_NAMESPACE"
+                service_name="kubeslice-ui-proxy"
+
+                # Get the service type
+                service_type_existing=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.type}')
+                echo " existing service type is: $service_type_existing"
+
+                ui_proxy_url=""
+
+                if [ "$service_type_existing" = "LoadBalancer" ]; then
+                    
+                        ui_proxy_url=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' )
+                    
+                    if [ -z "$ui_proxy_url" ]; then
+                        ui_proxy_url=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' )
+                    fi
+
+                    echo "🔗 LoadBalancer service detected. IP/Hostname: $ui_proxy_url"
+
+                elif [ "$service_type_existing" = "NodePort" ]; then
+                    # Get NodePort
+                    node_port=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
+                    
+                    # Get first node's internal IP
+                    node_ip=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+                    
+                    ui_proxy_url="${node_ip}:${node_port}"
+                    echo "🔗 NodePort service detected. Node IP and Port: $ui_proxy_url"
+
+                elif [ "$service_type_existing" = "ClusterIP" ]; then
+                    # Get ClusterIP and port
+                    cluster_ip=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
+                    service_port=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].port}')
+                    
+                    ui_proxy_url="${cluster_ip}:${service_port}"
+                    echo "🔗 ClusterIP service detected. Cluster IP and Port: $ui_proxy_url"
+
+                else
+                    echo "❌ Unsupported service type: $service_type_existing" >&2
+                    exit 1
+                fi
+
+                # Check if we have a valid URL
+                if [ -n "$ui_proxy_url" ]; then
+                    echo "🔗 **Updating Kubeslice UI Proxy URL**: https://$ui_proxy_url in values file"
+                    yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egsAgent.agentSecret.endpoint = \"https://$ui_proxy_url\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
+                else
+                    echo "❌ Error: Unable to retrieve a valid endpoint for kubeslice-ui-proxy"
+                    exit 1
+                fi
+            else
+                echo "⏩ **Kubeslice UI installation was skipped or disabled.**"
+            fi
+
+
+            if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+                for project in "${KUBESLICE_PROJECTS[@]}"; do
+                    IFS="|" read -r project_name project_username <<<"$project"
+                    token=$(kubectl get secret "kubeslice-rbac-rw-$project_username" -o jsonpath="{.data.token}" -n "kubeslice-$project_name" --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" 2>/dev/null | base64 --decode || echo "")
+                    if [ -n "$token" ]; then
+                        echo "🔑 **updating Token for project '$project_name' (username: $project_username)**: $token in values file"
+                        yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egsAgent.agentSecret.key = \"$token\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
+                    else
+                        echo "⚠️ Warning: Token for project '$project_name' (username: $project_username) not available."
+                    fi
+                done
+            else
+                echo "⏩ **Project creation was skipped or disabled.**"
+            fi
+        
+        else
+            echo "Auto fetch endpoint and token is not enabled or empty. Skipping egsAgent Endpoint and Token endpoint updates."
         fi
         
         echo "  Extracted values for worker $worker_name:"
