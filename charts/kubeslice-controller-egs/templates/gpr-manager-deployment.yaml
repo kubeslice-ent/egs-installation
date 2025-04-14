@@ -185,8 +185,8 @@ spec:
             name: webhook-certs
             readOnly: true
       securityContext:
-      {{- if .Values.egs.gprManager.containersecurityContext }}
-      {{ toYaml .Values.egs.gprManager.containersecurityContext | nindent 8 }}
+      {{- if .Values.egs.gprManager.podSecurityContext }}
+      {{ toYaml .Values.egs.gprManager.podSecurityContext | nindent 8 }}
       {{- end }}
       serviceAccountName: gpr-manager-access
       terminationGracePeriodSeconds: 10
