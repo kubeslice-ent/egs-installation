@@ -133,12 +133,56 @@ kubeslice:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
       ## Ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
       ##
-      type: LoadBalancer
+      type: ClusterIP
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
+      # port: 443
+      # targetPort: 8443
     labels:
       app: kubeslice-ui-proxy
     annotations: {}
+
+    ingress:
+      ## If true, ui‑proxy Ingress will be created
+      enabled: false
+
+      ## Port on the Service to route to
+      servicePort: 443
+
+      ## Ingress class name (e.g. "nginx"), if you’re using a custom ingress controller
+      className: ""
+
+      ## Extra labels to add onto the Ingress object
+      extraLabels: {}
+
+      ## Annotations to add onto the Ingress object
+      annotations: {}
+
+      ## (Optional) Override the service port to route to
+      # servicePort: 8081
+      ## defaults to .Values.kubeslice.uiproxy.service.port
+
+      ## UI‑Proxy Ingress hostnames with paths
+      ## Must be provided if Ingress is enabled
+      hosts:
+        - host: ui.kubeslice.com     # ← replace with your FQDN
+          paths:
+            - path: /             # ← base path
+              pathType: Prefix    # ← Prefix | Exact
+
+      ## Extra paths to prepend to every host (e.g. for redirects)
+      extraPaths: []
+      # - path: /*
+      #   backend:
+      #     serviceName: ssl-redirect
+      #     servicePort: use-annotation
+
+      ## TLS configuration (you must create these Secrets ahead of time)
+      tls: []
+        # - hosts:
+        #     - ui.kubeslice.com
+        #   secretName: uitlssecret
+    
     containerSecurityContext: 
       runAsUser: 65536
       runAsGroup: 65536
@@ -166,6 +210,7 @@ kubeslice:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
+
   apigw:
     imageRegistry: *defaultRegistry
     image: kubeslice-api-gw-ent-egs
