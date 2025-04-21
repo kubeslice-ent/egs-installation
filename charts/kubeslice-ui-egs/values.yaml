@@ -133,7 +133,7 @@ kubeslice:
       ## For kind, set this to NodePort, elsewhere use LoadBalancer or NodePort
       ## Ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
       ##
-      type: LoadBalancer
+      type: ClusterIP
       ## if type selected to NodePort then set nodePort value if required
       # nodePort:
       # port: 443
@@ -165,7 +165,7 @@ kubeslice:
       ## UI‑Proxy Ingress hostnames with paths
       ## Must be provided if Ingress is enabled
       hosts:
-        - host: ui.example.com     # ← replace with your FQDN
+        - host: ui.kubeslice.com     # ← replace with your FQDN
           paths:
             - path: /             # ← base path
               pathType: Prefix    # ← Prefix | Exact
@@ -180,18 +180,8 @@ kubeslice:
       ## TLS configuration (you must create these Secrets ahead of time)
       tls: []
         # - hosts:
-        #     - ui.example.com
-        #   secretName: ui‑tls-secret
-
-    ## Server Deployment Strategy type
-    strategy:
-      type: Recreate
-
-    ## hostAliases allows adding entries to /etc/hosts inside the containers
-    hostAliases: []
-    #   - ip: "127.0.0.1"
-    #     hostnames:
-    #       - "example.com"
+        #     - ui.kubeslice.com
+        #   secretName: uitlssecret
     
     containerSecurityContext: 
       runAsUser: 65536

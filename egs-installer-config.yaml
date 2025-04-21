@@ -130,7 +130,7 @@ kubeslice_ui_egs:
         url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
       uiproxy:
         service:
-          type: LoadBalancer                  # Service type for the UI proxy
+          type: ClusterIP                  # Service type for the UI proxy
           ## if type selected to NodePort then set nodePort value if required
           # nodePort:
           # port: 443
@@ -147,21 +147,18 @@ kubeslice_ui_egs:
           ## Ingress class name (e.g. "nginx"), if you’re using a custom ingress controller
           className: ""
           hosts:
-            - host: ui.example.com     # replace with your FQDN
+            - host: ui.kubeslice.com     # replace with your FQDN
               paths:
                 - path: /             # base path
                   pathType: Prefix    # Prefix | Exact
           ## TLS configuration (you must create these Secrets ahead of time)
           tls: []
             # - hosts:
-            #     - ui.example.com
-            #   secretName: ui‑tls-secret
-
-        ## hostAliases allows adding entries to /etc/hosts inside the containers
-        hostAliases: []
-        #   - ip: "127.0.0.1"
-        #     hostnames:
-        #       - "example.com"
+            #     - ui.kubeslice.com
+            #   secretName: uitlssecret
+          annotations: []
+          ## Extra labels to add onto the Ingress object
+          extraLabels: {}
         
       egsCoreApis:
         enabled: true                         # Enable EGS core APIs for the UI
