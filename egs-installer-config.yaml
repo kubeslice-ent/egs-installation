@@ -131,6 +131,38 @@ kubeslice_ui_egs:
       uiproxy:
         service:
           type: LoadBalancer                  # Service type for the UI proxy
+          ## if type selected to NodePort then set nodePort value if required
+          # nodePort:
+          # port: 443
+          # targetPort: 8443
+        labels:
+          app: kubeslice-ui-proxy
+        annotations: {}
+
+        ingress:
+          ## If true, ui‑proxy Ingress will be created
+          enabled: false
+          ## Port on the Service to route to
+          servicePort: 443
+          ## Ingress class name (e.g. "nginx"), if you’re using a custom ingress controller
+          className: ""
+          hosts:
+            - host: ui.example.com     # replace with your FQDN
+              paths:
+                - path: /             # base path
+                  pathType: Prefix    # Prefix | Exact
+          ## TLS configuration (you must create these Secrets ahead of time)
+          tls: []
+            # - hosts:
+            #     - ui.example.com
+            #   secretName: ui‑tls-secret
+
+        ## hostAliases allows adding entries to /etc/hosts inside the containers
+        hostAliases: []
+        #   - ip: "127.0.0.1"
+        #     hostnames:
+        #       - "example.com"
+        
       egsCoreApis:
         enabled: true                         # Enable EGS core APIs for the UI
         service:
@@ -449,4 +481,4 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: false                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.12.0"
+version: "1.12.1"

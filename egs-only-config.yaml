@@ -158,7 +158,7 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: false                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.12.0"
+version: "1.12.1"
 
 # Enable or disable specific stages of the installation
 enable_install_controller: true               # Enable the installation of the Kubeslice controller

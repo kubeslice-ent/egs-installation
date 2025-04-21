@@ -1,0 +1,50 @@
+{{- if .Values.kubeslice.uiproxy.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubeslice-ui-proxy
+  {{- if .Values.kubeslice.uiproxy.labels }}
+  labels:
+  {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.kubeslice.uiproxy.ingress.extraLabels }}
+  {{- with .Values.kubeslice.uiproxy.ingress.extraLabels }}
+  labels:
+  {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  annotations:
+  {{ toYaml .Values.kubeslice.uiproxy.ingress.annotations | nindent 4 }}
+spec:
+  {{- if .Values.kubeslice.uiproxy.ingress.className }}
+  ingressClassName: {{ .Values.kubeslice.uiproxy.ingress.className }}
+  {{- end }}
+
+  rules:
+  {{- range .Values.kubeslice.uiproxy.ingress.hosts }}
+    - host: {{ .host }}
+      http:
+        paths:
+        {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: kubeslice-ui-proxy
+                port:
+                  number: {{ $.Values.kubeslice.uiproxy.ingress.servicePort }}
+        {{- end }}
+  {{- end }}
+
+  {{- if .Values.kubeslice.uiproxy.ingress.tls }}
+  tls:
+  {{- range .Values.kubeslice.uiproxy.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+  {{- end }}
+{{- end }}
