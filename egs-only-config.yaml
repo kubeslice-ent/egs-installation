@@ -45,7 +45,7 @@ kubeslice_controller_egs:
       controller:
         endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
 #### Helm Flags and Verification Settings ####
-  helm_flags: "--wait --timeout 5m --debug --version 1.11.0"            # Additional Helm flags for the installation
+  helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
   verify_install: false                        # Verify the installation of the controller
   verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
   skip_on_verify_fail: true                    # If verification fails, do not skip the step
@@ -105,7 +105,7 @@ kubeslice_ui_egs:
         service:
           type: ClusterIP                  # Service type for the EGS core APIs
 #### Helm Flags and Verification Settings ####
-  helm_flags: "--wait --timeout 5m --debug --version 1.11.0"            # Additional Helm flags for the UI installation
+  helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
   verify_install: false                        # Verify the installation of the UI
   verify_install_timeout: 50                   # Timeout for the UI installation verification (in seconds)
   skip_on_verify_fail: true                    # If UI verification fails, do not skip the step
@@ -146,7 +146,7 @@ kubeslice_worker_egs:
               ingressGateway:
                 className: "nginx"            # Ingress class name for the KServe gateway
 #### Helm Flags and Verification Settings ####
-    helm_flags: "--wait --timeout 5m --debug --version 1.11.0"          # Additional Helm flags for the worker installation
+    helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
     verify_install: true                       # Verify the installation of the worker
     verify_install_timeout: 60                 # Timeout for the worker installation verification (in seconds)
     skip_on_verify_fail: false                 # Do not skip if worker verification fails
