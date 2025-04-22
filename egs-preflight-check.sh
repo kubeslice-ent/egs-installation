@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the script version
-SCRIPT_VERSION="1.12.0"
+SCRIPT_VERSION="1.12.1"
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
@@ -33,6 +33,8 @@ exec > >(tee -a "$output_file") 2>&1
 
 echo "=====================================EGS Preflight Check Script execution started at: $(date)===================================" >> "$output_file"
 # Global default values
+labels="managed-by=egs-script,purpose=preflight-check"
+annotations="managed-by=egs-script,purpose=preflight-check"
 namespaces_to_check=""
 test_namespace="egs-test-namespace"
 pvc_test_namespace="egs-test-namespace"
@@ -77,6 +79,8 @@ display_help() {
   echo -e "Options:"
   echo -e "  🗂️  --namespace-to-check <namespace1,namespace2,...> Comma-separated list of namespaces to check existence."
   echo -e "  🏷️  --test-namespace <namespace>                    Namespace for test creation and deletion (default: egs-test-namespace)."
+  echo -e "  🏷️  --test-namespace-labels <key1=value1,key2=value2,...> Labels to apply to the test namespace (default: purpose=preflight-check,managed-by=egs-script)."
+  echo -e "  📝  --test-namespace-annotations <key1=value1,key2=value2,...> Annotations to apply to the test namespace (default: purpose=preflight-check,managed-by=egs-script)."
   echo -e "  📂  --pvc-test-namespace <namespace>                Namespace for PVC test creation and deletion (default: egs-test-namespace)."
   echo -e "  🛠️  --pvc-name <name>                               Name of the test PVC (default: egs-test-pvc)."
   echo -e "  🗄️  --storage-class <class>                         Storage class for the PVC (default: none)."
@@ -597,6 +601,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --namespace-to-check) namespaces_to_check="$2"; shift 2 ;;
     --test-namespace) test_namespace="$2"; shift 2 ;;
+    --test-namespace-labels) labels="$2"; shift 2 ;;
+    --test-namespace-annotations) annotations="$2"; shift 2 ;;
     --pvc-test-namespace) pvc_test_namespace="$2"; shift 2 ;;
     --invoke-wrappers) wrappers_to_invoke="$2"; shift 2 ;;
     --kubeconfig) kubeconfig="--kubeconfig=$2"; shift 2 ;;
@@ -876,7 +882,46 @@ fi
    wait_after_command "$global_wait"
 }
 
+# Add helper functions for validation
+validate_k8s_name() {
+  local name="$1"
+  # Kubernetes names must be lowercase alphanumeric characters, '-', or '.'
+  if [[ ! "$name" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ ]]; then
+    return 1
+  fi
+  return 0
+}
 
+validate_k8s_label_value() {
+  local value="$1"
+  # Label values must be 63 characters or less
+  if [[ ${#value} -gt 63 ]]; then
+    return 1
+  fi
+  return 0
+}
+
+validate_k8s_annotation_value() {
+  local value="$1"
+  # Annotation values can be any valid string
+  return 0
+}
+
+# Add namespace validation function
+validate_namespace_name() {
+  local namespace="$1"
+  # Namespace names must be lowercase alphanumeric characters or '-'
+  # Must start and end with alphanumeric character
+  # Must be between 1 and 63 characters
+  if [[ ! "$namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || [[ ${#namespace} -gt 63 ]]; then
+    echo "❌ Error: Invalid namespace name: '$namespace'"
+    echo "   - Must be lowercase alphanumeric characters or '-'"
+    echo "   - Must start and end with alphanumeric character"
+    echo "   - Must be between 1 and 63 characters"
+    return 1
+  fi
+  return 0
+}
 
 create_namespace() {
   local kubeconfig="$1"
@@ -891,15 +936,126 @@ create_namespace() {
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespace=$namespace"
   log_command "$function_name" "kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespace=$namespace"
 
+  # Validate namespace name
+  if ! validate_namespace_name "$namespace"; then
+    echo "❌ Error: Namespace name validation failed"
+    log_summary "$function_name - Namespace Validation - $namespace" "$namespace:N/A:Namespace Name Validation:Failure"
+    return 1
+  fi
+
   # Check if the namespace already exists
   echo "🔍 Checking if namespace '$namespace' exists..."
   if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $namespace >/dev/null 2>&1"; then
     echo -e "⚠️ Warning: Namespace '$namespace' already exists. Skipping creation."
     log_summary "$function_name - Namespace Creation - $namespace" "$namespace:N/A:Namespace Already Exists:Skipped"
   else
+    # Prepare YAML with labels and annotations
+    local namespace_yaml="apiVersion: v1
+kind: Namespace
+metadata:
+  name: $namespace"
+
+    # Add labels if provided and not empty
+    if [[ -n "$labels" ]]; then
+      namespace_yaml+="
+  labels:"
+      IFS=',' read -r -a label_pairs <<< "$labels"
+      local invalid_labels=()
+      
+      for pair in "${label_pairs[@]}"; do
+        # Skip empty pairs
+        if [[ -z "$pair" ]]; then
+          continue
+        fi
+
+        # Handle quoted values
+        if [[ "$pair" =~ ^([^=]+)=["']?([^"']*)["']?$ ]]; then
+          local key="${BASH_REMATCH[1]}"
+          local value="${BASH_REMATCH[2]}"
+          
+          # Validate key
+          if ! validate_k8s_name "$key"; then
+            invalid_labels+=("Invalid label key format: '$key' (must be lowercase alphanumeric, '-', or '.')")
+            continue
+          fi
+          
+          # Validate value
+          if ! validate_k8s_label_value "$value"; then
+            invalid_labels+=("Invalid label value for '$key': value too long (max 63 characters)")
+            continue
+          fi
+          
+          namespace_yaml+="
+    $key: $value"
+        else
+          invalid_labels+=("Invalid label format: '$pair' (must be key=value)")
+        fi
+      done
+
+      # Log invalid labels if any
+      if [[ ${#invalid_labels[@]} -gt 0 ]]; then
+        echo "⚠️ Warning: Some namespace labels were invalid and skipped:"
+        for msg in "${invalid_labels[@]}"; do
+          echo "   - $msg"
+        done
+      fi
+    fi
+
+    # Add annotations if provided and not empty
+    if [[ -n "$annotations" ]]; then
+      namespace_yaml+="
+  annotations:"
+      IFS=',' read -r -a annotation_pairs <<< "$annotations"
+      local invalid_annotations=()
+      
+      for pair in "${annotation_pairs[@]}"; do
+        # Skip empty pairs
+        if [[ -z "$pair" ]]; then
+          continue
+        fi
+
+        # Handle quoted values
+        if [[ "$pair" =~ ^([^=]+)=["']?([^"']*)["']?$ ]]; then
+          local key="${BASH_REMATCH[1]}"
+          local value="${BASH_REMATCH[2]}"
+          
+          # Validate key
+          if ! validate_k8s_name "$key"; then
+            invalid_annotations+=("Invalid annotation key format: '$key' (must be lowercase alphanumeric, '-', or '.')")
+            continue
+          fi
+          
+          # Validate value
+          if ! validate_k8s_annotation_value "$value"; then
+            invalid_annotations+=("Invalid annotation value for '$key'")
+            continue
+          fi
+          
+          namespace_yaml+="
+    $key: $value"
+        else
+          invalid_annotations+=("Invalid annotation format: '$pair' (must be key=value)")
+        fi
+      done
+
+      # Log invalid annotations if any
+      if [[ ${#invalid_annotations[@]} -gt 0 ]]; then
+        echo "⚠️ Warning: Some namespace annotations were invalid and skipped:"
+        for msg in "${invalid_annotations[@]}"; do
+          echo "   - $msg"
+        done
+      fi
+    fi
+
+    # Log the YAML being applied (for debugging)
+    if [[ "$function_debug_input" == "true" ]]; then
+      echo "🔍 Generated namespace YAML:"
+      echo "$namespace_yaml"
+    fi
+
     # Attempt to create the namespace
     echo "🔍 Creating namespace: '$namespace'"
-    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $namespace >/dev/null 2>&1"; then
+    if echo "$namespace_yaml" | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
       echo -e "✅ Namespace '$namespace' created successfully."
       log_summary "$function_name - Namespace Creation - $namespace" "$namespace:N/A:Namespace Created:Success"
 
@@ -924,7 +1080,7 @@ create_namespace() {
 
   # Wait for the specified time, if any
   wait_after_command "$global_wait"
-}
+} 
 
 
 delete_namespace() {
