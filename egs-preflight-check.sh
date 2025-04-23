@@ -968,28 +968,28 @@ metadata:
           continue
         fi
 
-        # Handle quoted values
-        if [[ "$pair" =~ ^([^=]+)=["']?([^"']*)["']?$ ]]; then
-          local key="${BASH_REMATCH[1]}"
-          local value="${BASH_REMATCH[2]}"
-          
-          # Validate key
-          if ! validate_k8s_name "$key"; then
-            invalid_labels+=("Invalid label key format: '$key' (must be lowercase alphanumeric, '-', or '.')")
-            continue
-          fi
-          
-          # Validate value
-          if ! validate_k8s_label_value "$value"; then
-            invalid_labels+=("Invalid label value for '$key': value too long (max 63 characters)")
-            continue
-          fi
-          
-          namespace_yaml+="
-    $key: $value"
-        else
-          invalid_labels+=("Invalid label format: '$pair' (must be key=value)")
+        # Extract key and value
+        local key="${pair%%=*}"
+        local value="${pair#*=}"
+        
+        # Remove any surrounding quotes from value
+        value="${value#[\"\']}"
+        value="${value%[\"\']}"
+        
+        # Validate key
+        if ! validate_k8s_name "$key"; then
+          invalid_labels+=("Invalid label key format: '$key' (must be lowercase alphanumeric, '-', or '.')")
+          continue
         fi
+        
+        # Validate value
+        if ! validate_k8s_label_value "$value"; then
+          invalid_labels+=("Invalid label value for '$key': value too long (max 63 characters)")
+          continue
+        fi
+        
+        namespace_yaml+="
+    $key: \"$value\""
       done
 
       # Log invalid labels if any
@@ -1014,28 +1014,22 @@ metadata:
           continue
         fi
 
-        # Handle quoted values
-        if [[ "$pair" =~ ^([^=]+)=["']?([^"']*)["']?$ ]]; then
-          local key="${BASH_REMATCH[1]}"
-          local value="${BASH_REMATCH[2]}"
-          
-          # Validate key
-          if ! validate_k8s_name "$key"; then
-            invalid_annotations+=("Invalid annotation key format: '$key' (must be lowercase alphanumeric, '-', or '.')")
-            continue
-          fi
-          
-          # Validate value
-          if ! validate_k8s_annotation_value "$value"; then
-            invalid_annotations+=("Invalid annotation value for '$key'")
-            continue
-          fi
-          
-          namespace_yaml+="
-    $key: $value"
-        else
-          invalid_annotations+=("Invalid annotation format: '$pair' (must be key=value)")
+        # Extract key and value
+        local key="${pair%%=*}"
+        local value="${pair#*=}"
+        
+        # Remove any surrounding quotes from value
+        value="${value#[\"\']}"
+        value="${value%[\"\']}"
+        
+        # Validate key
+        if ! validate_k8s_name "$key"; then
+          invalid_annotations+=("Invalid annotation key format: '$key' (must be lowercase alphanumeric, '-', or '.')")
+          continue
         fi
+        
+        namespace_yaml+="
+    $key: \"$value\""
       done
 
       # Log invalid annotations if any
