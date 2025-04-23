@@ -406,6 +406,80 @@ grep_k8s_resources_with_crds_and_webhooks() {
     IFS=',' read -r -a resource_name_array <<< "$api_resources"
   fi
 
+  # Function to check resource status
+  check_resource_status() {
+    local kubeconfig="$1"
+    local kubecontext="$2"
+    local resource_type="$3"
+    local resource_name="$4"
+    local namespace="$5"
+    local function_name="$6"
+
+    case "$resource_type" in
+      "pods" | "pod")
+        local pod_status
+        pod_status=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get pod $resource_name -n $namespace -o jsonpath='{.status.phase}' 2>/dev/null")
+        if [[ "$pod_status" == "Running" ]]; then
+          echo "✅ Pod '$resource_name' is in Running state"
+          log_summary "$function_name - Pod Status Check - $resource_name - $namespace" "$namespace:$resource_name:Pod Status:Running:Success"
+          return 0
+        else
+          echo "❌ Pod '$resource_name' is not in Running state (Current: $pod_status)"
+          log_summary "$function_name - Pod Status Check - $resource_name - $namespace" "$namespace:$resource_name:Pod Status:$pod_status:Failure"
+          return 1
+        fi
+        ;;
+      "deployments" | "deployment")
+        local replicas_ready
+        local replicas_desired
+        replicas_ready=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get deployment $resource_name -n $namespace -o jsonpath='{.status.readyReplicas}' 2>/dev/null")
+        replicas_desired=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get deployment $resource_name -n $namespace -o jsonpath='{.spec.replicas}' 2>/dev/null")
+        if [[ "$replicas_ready" == "$replicas_desired" ]]; then
+          echo "✅ Deployment '$resource_name' has all replicas ready ($replicas_ready/$replicas_desired)"
+          log_summary "$function_name - Deployment Status Check - $resource_name - $namespace" "$namespace:$resource_name:Deployment Status:Ready:Success"
+          return 0
+        else
+          echo "❌ Deployment '$resource_name' does not have all replicas ready ($replicas_ready/$replicas_desired)"
+          log_summary "$function_name - Deployment Status Check - $resource_name - $namespace" "$namespace:$resource_name:Deployment Status:NotReady:Failure"
+          return 1
+        fi
+        ;;
+      "services" | "service")
+        local service_type
+        service_type=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get service $resource_name -n $namespace -o jsonpath='{.spec.type}' 2>/dev/null")
+        if [[ -n "$service_type" ]]; then
+          echo "✅ Service '$resource_name' is of type $service_type"
+          log_summary "$function_name - Service Status Check - $resource_name - $namespace" "$namespace:$resource_name:Service Status:$service_type:Success"
+          return 0
+        else
+          echo "❌ Service '$resource_name' status check failed"
+          log_summary "$function_name - Service Status Check - $resource_name - $namespace" "$namespace:$resource_name:Service Status:Unknown:Failure"
+          return 1
+        fi
+        ;;
+      "statefulsets" | "statefulset")
+        local replicas_ready
+        local replicas_desired
+        replicas_ready=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get statefulset $resource_name -n $namespace -o jsonpath='{.status.readyReplicas}' 2>/dev/null")
+        replicas_desired=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get statefulset $resource_name -n $namespace -o jsonpath='{.spec.replicas}' 2>/dev/null")
+        if [[ "$replicas_ready" == "$replicas_desired" ]]; then
+          echo "✅ StatefulSet '$resource_name' has all replicas ready ($replicas_ready/$replicas_desired)"
+          log_summary "$function_name - StatefulSet Status Check - $resource_name - $namespace" "$namespace:$resource_name:StatefulSet Status:Ready:Success"
+          return 0
+        else
+          echo "❌ StatefulSet '$resource_name' does not have all replicas ready ($replicas_ready/$replicas_desired)"
+          log_summary "$function_name - StatefulSet Status Check - $resource_name - $namespace" "$namespace:$resource_name:StatefulSet Status:NotReady:Failure"
+          return 1
+        fi
+        ;;
+      *)
+        echo "⚠️ Status check not implemented for resource type: $resource_type"
+        log_summary "$function_name - Status Check - $resource_name - $namespace" "$namespace:$resource_name:Status Check:NotImplemented:Skipped"
+        return 0
+        ;;
+    esac
+  }
+
   # Perform resource checks if fetch_resource_names is provided
   if [[ -n "$fetch_resource_names" ]]; then
     for resource_type in "${resource_name_array[@]}"; do
@@ -418,7 +492,7 @@ grep_k8s_resources_with_crds_and_webhooks() {
           echo "🔍 Filtering for resource type '$resource_type' with name containing '$resource_name'..."
         fi
         local resource_matches
-        resource_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name 2>/dev/null | grep -i "$resource_name")
+        resource_matches=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name 2>/dev/null | grep -i "$resource_name")
 
         if [[ -n "$resource_matches" ]]; then
           if [[ "$function_debug_input" == "true" ]]; then
@@ -429,7 +503,14 @@ grep_k8s_resources_with_crds_and_webhooks() {
             namespace=$(echo "$match" | awk '{print $1}')
             name=$(echo "$match" | awk '{print $2}')
             [[ -z "$namespace" ]] && namespace="N/A"
-            log_summary "$function_name - $resource_type Check - $name - $namespace" "$namespace:$name:$resource_type Check:Success"
+            
+            # Add status check for the resource
+            echo "🔍 Checking status for $resource_type '$name' in namespace '$namespace'..."
+            if check_resource_status "$kubeconfig" "$kubecontext" "$resource_type" "$name" "$namespace" "$function_name"; then
+              log_summary "$function_name - $resource_type Check - $name - $namespace" "$namespace:$name:$resource_type Check and Status:Success"
+            else
+              log_summary "$function_name - $resource_type Check - $name - $namespace" "$namespace:$name:$resource_type Check and Status:Failure"
+            fi
           done <<< "$resource_matches"
         else
           if [[ "$function_debug_input" == "true" ]]; then
@@ -474,7 +555,7 @@ grep_k8s_resources_with_crds_and_webhooks() {
             echo "🔍 Filtering $webhook_type for name containing '$fetch_name'..."
           fi
           local webhook_matches
-          webhook_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
+          webhook_matches=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $webhook_type -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
 
           if [[ -n "$webhook_matches" ]]; then
             if [[ "$function_debug_input" == "true" ]]; then
@@ -497,7 +578,7 @@ grep_k8s_resources_with_crds_and_webhooks() {
             echo "🔍 Filtering $webhook_type for name containing '$fetch_name'..."
           fi
           local webhook_matches
-          webhook_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
+          webhook_matches=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $webhook_type -o custom-columns=NAME:.metadata.name 2>/dev/null | grep -i "$fetch_name")
 
           if [[ -n "$webhook_matches" ]]; then
             if [[ "$function_debug_input" == "true" ]]; then
@@ -1945,8 +2026,8 @@ if [[ -n "$wrappers_to_invoke" ]]; then
 else
     echo "🔍 Executing all preflight checks by default"
     log_inputs_and_time "$function_debug_input" k8s_privilege_preflight_checks "$kubeconfig" "$kubecontext" "$resource_action_pairs" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-   log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-   log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+    log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+    log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
     log_inputs_and_time "$function_debug_input" service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_resources" "$watch_duration"
     log_inputs_and_time "$function_debug_input" grep_k8s_resources_with_crds_and_webhooks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration" "$fetch_resource_names" "$api_resources" "$webhooks" "$fetch_webhook_names"
     log_inputs_and_time "$function_debug_input" internet_access_preflight_checks "$kubeconfig" "$kubecontext" "$test_pod_image" "$test_namespace" "$test_pod_name" "$target_urls" "$global_wait" "$cleanup" "$watch_resources" "$watch_duration"
