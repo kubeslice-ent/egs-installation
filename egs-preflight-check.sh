@@ -417,8 +417,13 @@ grep_k8s_resources_with_crds_and_webhooks() {
         if [[ "$function_debug_input" == "true" ]]; then
           echo "🔍 Filtering for resource type '$resource_type' with name containing '$resource_name'..."
         fi
+        
+        # Use run_command for logging
+        run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name 2>/dev/null"
+        
+        # Use run_command_silent for actual resource matching
         local resource_matches
-        resource_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name 2>/dev/null | grep -i "$resource_name")
+        resource_matches=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name 2>/dev/null" | grep -i "$resource_name" || true)
 
         if [[ -n "$resource_matches" ]]; then
           if [[ "$function_debug_input" == "true" ]]; then
@@ -430,59 +435,19 @@ grep_k8s_resources_with_crds_and_webhooks() {
             name=$(echo "$match" | awk '{print $2}')
             [[ -z "$namespace" ]] && namespace="N/A"
 
-            # Fetch detailed status for the resource
-            local resource_status
-            local resource_details
-            if [[ "$namespace" != "N/A" ]]; then
-              resource_status=$(run_command kubectl $kubeconfig --context=$kubecontext get $resource_type $name -n $namespace -o jsonpath='{.status.phase}' 2>/dev/null)
-              resource_details=$(run_command kubectl $kubeconfig --context=$kubecontext get $resource_type $name -n $namespace -o json 2>/dev/null)
-            else
-              resource_status=$(run_command kubectl $kubeconfig --context=$kubecontext get $resource_type $name -o jsonpath='{.status.phase}' 2>/dev/null)
-              resource_details=$(run_command kubectl $kubeconfig --context=$kubecontext get $resource_type $name -o json 2>/dev/null)
+            # Get resource status using the silent version
+            local status_info
+            status_info=$(get_resource_status "$resource_type" "$name" "$namespace")
+            
+            # Log summary with clean status information
+            log_summary "$function_name - $resource_type Check - $name - $namespace" "$namespace:$name:$resource_type Check:Success:$status_info"
+            
+            if [[ "$function_debug_input" == "true" ]]; then
+                echo "📊 Resource Status for $resource_type/$name in namespace $namespace:"
+                echo "   $status_info"
             fi
-
-            # Extract additional status details based on resource type
-            local additional_status=""
-            case "$resource_type" in
-              "deployment"|"statefulset"|"daemonset")
-                local replicas=$(echo "$resource_details" | jq -r '.status.replicas // 0')
-                local ready_replicas=$(echo "$resource_details" | jq -r '.status.readyReplicas // 0')
-                local updated_replicas=$(echo "$resource_details" | jq -r '.status.updatedReplicas // 0')
-                additional_status="Replicas: $replicas, Ready: $ready_replicas, Updated: $updated_replicas"
-                ;;
-              "pod")
-                local pod_status=$(echo "$resource_details" | jq -r '.status.phase')
-                local container_statuses=$(echo "$resource_details" | jq -r '.status.containerStatuses[]?.ready' 2>/dev/null)
-                local ready_containers=0
-                local total_containers=0
-                while read -r ready; do
-                  ((total_containers++))
-                  [[ "$ready" == "true" ]] && ((ready_containers++))
-                done <<< "$container_statuses"
-                additional_status="Phase: $pod_status, Containers Ready: $ready_containers/$total_containers"
-                ;;
-              "service")
-                local service_type=$(echo "$resource_details" | jq -r '.spec.type')
-                local cluster_ip=$(echo "$resource_details" | jq -r '.spec.clusterIP')
-                additional_status="Type: $service_type, ClusterIP: $cluster_ip"
-                ;;
-              "pvc")
-                local storage_class=$(echo "$resource_details" | jq -r '.spec.storageClassName')
-                local capacity=$(echo "$resource_details" | jq -r '.status.capacity.storage')
-                additional_status="StorageClass: $storage_class, Capacity: $capacity"
-                ;;
-            esac
-
-            # Combine status information
-            local status_summary="Status: ${resource_status:-Unknown}"
-            [[ -n "$additional_status" ]] && status_summary+=", $additional_status"
-
-            log_summary "$function_name - $resource_type Check - $name - $namespace" "$namespace:$name:$resource_type Check:Success:$status_summary"
           done <<< "$resource_matches"
         else
-          if [[ "$function_debug_input" == "true" ]]; then
-            echo "❌ No resources found for type '$resource_type' containing name '$resource_name'."
-          fi
           log_summary "$function_name - $resource_type Check - $resource_name - N/A" "N/A:$resource_name:$resource_type Check:Failure:Resource not found"
         fi
       done
@@ -641,21 +606,85 @@ log_inputs_and_time() {
 # Function to log, run commands, and continue on error
 run_command() {
     local cmd="$*"
-    if [[ "$function_debug_input" == "true" ]]; then
-        echo -e "🔧 Running: $cmd" >&2
+    echo -e "🔧 Running: $cmd"
+    eval "$cmd"
+    local status=$?
+    if [ $status -ne 0 ]; then
+        echo -e "⚠️ Command failed with status: $status, continuing..."
+    else
+        echo -e "✅ Command succeeded."
     fi
+    return $status
+}
+
+# Add new function for clean command output
+run_command_silent() {
+    local cmd="$*"
     local output
     output=$(eval "$cmd" 2>&1)
-    local status=$?
-    if [[ "$function_debug_input" == "true" ]]; then
-        if [ $status -ne 0 ]; then
-            echo -e "⚠️ Command failed with status: $status, continuing..." >&2
-        else
-            echo -e "✅ Command succeeded." >&2
-        fi
-    fi
     echo "$output"
-    return $status
+}
+
+# Modify the get_resource_status function to use run_command_silent
+get_resource_status() {
+    local resource_type="$1"
+    local resource_name="$2"
+    local namespace="$3"
+    local status_info=""
+
+    case "$resource_type" in
+        "deployment"|"statefulset"|"daemonset")
+            if [[ -n "$namespace" ]]; then
+                local replicas
+                replicas=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.replicas}'")
+                local ready_replicas
+                ready_replicas=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.readyReplicas}'")
+                local updated_replicas
+                updated_replicas=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.updatedReplicas}'")
+                status_info="Replicas: ${replicas:-0}, Ready: ${ready_replicas:-0}, Updated: ${updated_replicas:-0}"
+            fi
+            ;;
+        "pod")
+            if [[ -n "$namespace" ]]; then
+                local phase
+                phase=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.phase}'")
+                local container_statuses
+                container_statuses=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.containerStatuses[*].ready}'")
+                
+                local ready_count=0
+                local total_containers=0
+                for status in $container_statuses; do
+                    ((total_containers++))
+                    [[ "$status" == "true" ]] && ((ready_count++))
+                done
+                
+                status_info="Phase: ${phase:-Unknown}, Containers: $ready_count/$total_containers Ready"
+            fi
+            ;;
+        "service")
+            if [[ -n "$namespace" ]]; then
+                local type
+                type=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.spec.type}'")
+                local cluster_ip
+                cluster_ip=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.spec.clusterIP}'")
+                local external_ip
+                external_ip=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.loadBalancer.ingress[0].ip}'")
+                
+                status_info="Type: ${type:-Unknown}, ClusterIP: ${cluster_ip:-None}"
+                [[ -n "$external_ip" ]] && status_info+=", ExternalIP: $external_ip"
+            fi
+            ;;
+        *)
+            if [[ -n "$namespace" ]]; then
+                local status
+                status=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.phase}'")
+                [[ -z "$status" ]] && status=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.conditions[0].type}'")
+                status_info="Status: ${status:-N/A}"
+            fi
+            ;;
+    esac
+
+    echo "$status_info"
 }
 
 
