@@ -1760,6 +1760,14 @@ main() {
                 test_namespace="$2"
                 shift 2
                 ;;
+            --test-namespace-labels)
+                labels="$2"
+                shift 2
+                ;;
+            --test-namespace-annotations)
+                annotations="$2"
+                shift 2
+                ;;
             --pvc-test-namespace)
                 pvc_test_namespace="$2"
                 shift 2
