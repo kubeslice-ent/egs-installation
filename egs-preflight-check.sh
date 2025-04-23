@@ -1163,9 +1163,9 @@ for namespace in "${namespace_array[@]}"; do
   wait_after_command "$global_wait"
 done
 
-# Test namespace creation
+# Test namespace creation using create_namespace function
 echo "🔍 Testing namespace creation for: '$test_namespace'"
-if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
+if create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait" "$watch_resources" "$watch_duration"; then
   echo "✅ Namespace '$test_namespace' created successfully."
   log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
 else
@@ -1304,38 +1304,28 @@ fi
 pvc_preflight_checks() {
   local kubeconfig="$1"
   local kubecontext="$2"
-  local pvc_test_namespace="${3:-egs-test-namespace}"
-  local pvc_name="${4:-egs-test-pvc}"
-  local storage_class="$5"
-  local storage_size="${6:-1Gi}"
-  local cleanup="${7:-true}"
-  local display_resources_flag="${8:-true}"
-  local global_wait="${9:-0}"
-  local watch_resources="${10:-false}"         
-  local watch_duration="${11:-30}"   
+  local storage_class="$3"
+  local pvc_test_namespace="${4:-egs-pvc-test}"
+  local cleanup="${5:-true}"
+  local display_resources_flag="${6:-true}"
+  local global_wait="${7:-0}"
+  local watch_resources="${8:-false}"          # Flag to enable or disable watching
+  local watch_duration="${9:-30}"             # Duration to watch the resource
   local function_name="pvc_preflight_checks"
 
-  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, pvc_test_namespace=$pvc_test_namespace, pvc_name=$pvc_name, storage_class=$storage_class, storage_size=$storage_size, cleanup=$cleanup, display_resources=$display_resources_flag, watch_resources=$watch_resources, watch_duration=$watch_duration"
-  log_command "$function_name" "kubeconfig=$kubeconfig, kubecontext=$kubecontext, pvc_test_namespace=$pvc_test_namespace, pvc_name=$pvc_name, storage_class=$storage_class, storage_size=$storage_size, cleanup=$cleanup"
+  echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, storage_class=$storage_class, pvc_test_namespace=$pvc_test_namespace, cleanup=$cleanup, display_resources=$display_resources_flag, watch_resources=$watch_resources, watch_duration=$watch_duration"
 
-# Create namespace for PVC testing
-echo "🔍 Creating namespace '$pvc_test_namespace' for PVC testing..."
-if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $pvc_test_namespace >/dev/null 2>&1"; then
-  # Namespace already exists
-  log_summary "$function_name - Namespace for PVC Testing - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Creation:Skipped"
-  echo "⚠️ Namespace '$pvc_test_namespace' already exists. Skipping creation."
-else
-  # Attempt to create the namespace
-  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $pvc_test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
-    log_summary "$function_name - Namespace for PVC Testing - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Creation:Success"
+  # Create namespace for PVC testing
+  echo "🔍 Creating namespace for PVC testing: '$pvc_test_namespace'"
+  if create_namespace "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$display_resources_flag" "$global_wait" "$watch_resources" "$watch_duration"; then
     echo "✅ Namespace '$pvc_test_namespace' created successfully."
+    log_summary "$function_name - Namespace Creation" "$pvc_test_namespace:N/A:Namespace Creation:Success"
   else
-    log_summary "$function_name - Namespace for PVC Testing - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Creation:Failure"
     echo "❌ Error: Failed to create namespace '$pvc_test_namespace'."
-    SUCCESS=false
+    log_summary "$function_name - Namespace Creation" "$pvc_test_namespace:N/A:Namespace Creation:Failure"
+    return 1
   fi
-fi
-
+  wait_after_command "$global_wait"
 
 # Create the PVC
 echo "🔍 Creating PVC '$pvc_name' in namespace '$pvc_test_namespace'..."
