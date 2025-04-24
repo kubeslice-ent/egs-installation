@@ -199,6 +199,7 @@ enable_cluster_registration: true               # Enable cluster registration in
 enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
 enable_autofetch_egsagent_endpoint_and_token: true # if False then, skip update values of egsAgent token and endpoint in values file
 
+
 # Precheck options
 precheck: true                                  # Run general prechecks before starting the installation
 kubeslice_precheck: true                        # Run specific prechecks for Kubeslice components
