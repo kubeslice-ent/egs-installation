@@ -144,12 +144,12 @@ data:
   # set the chart options
   workerChartOptions.yaml: |
     workerChartOptions:
-      controllerChartName: {{- if eq .Values.kubeslice.productName "kubetally" }} kubetally-controller {{- end }} # [Optional] Name of the controller chart. Default is `kubeslice-controller`
+      controllerChartName: {{- if eq .Values.kubeslice.productName "egs" }} kubeslice-controller-egs {{- end }} # [Optional] Name of the controller chart. Default is `kubeslice-controller`
       metricsInsecure: # [Optional] Default is false. Set to true if required to disable TLS for metrics server.
-      networkingEnabled: {{- if eq .Values.kubeslice.productName "kubetally" }} false   {{- end }} # [Optional] Default is true. Set to false if required to disable networking.
-      repository:  {{- if eq .Values.kubeslice.productName "kubetally" }} 'https://kubeslice.aveshalabs.io/repository/kubetally-helm-ent-prod/'   {{- end }}  # [Optional] Helm repository URL for worker charts. Default is `https://kubeslice.aveshalabs.io/repository/kubeslice-helm-ent-prod/`
-      releaseName:  {{- if eq .Values.kubeslice.productName "kubetally" }} kubetally-worker   {{- end }}  # [Optional] Release name of kubeslice-worker. Default is `kubeslice-worker`
-      chartName: {{- if eq .Values.kubeslice.productName "kubetally" }} kubetally-worker   {{- end }}  # [Optional] Name of the chart. Default is `kubeslice-worker`
+      networkingEnabled: {{- if eq .Values.kubeslice.productName "egs" }} false   {{- end }} # [Optional] Default is true. Set to false if required to disable networking.
+      repository:  {{- if eq .Values.kubeslice.productName "egs" }} 'https://kubeslice.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod/'   {{- end }}  # [Optional] Helm repository URL for worker charts. Default is `https://kubeslice.aveshalabs.io/repository/kubeslice-helm-ent-prod/`
+      releaseName:  {{- if eq .Values.kubeslice.productName "egs" }} egs-worker   {{- end }}  # [Optional] Release name of kubeslice-worker. Default is `kubeslice-worker`
+      chartName: {{- if eq .Values.kubeslice.productName "egs" }} kubeslice-worker-egs   {{- end }}  # [Optional] Name of the chart. Default is `kubeslice-worker`
       chartVersion: # [Optional] Version of the chart. Default is the latest version
       debug: # [Optional] Default is false. Set to true if required to enable debug mode.
       helmCredentials:
