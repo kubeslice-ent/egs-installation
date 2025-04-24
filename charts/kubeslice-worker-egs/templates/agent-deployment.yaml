@@ -36,6 +36,10 @@ spec:
       {{- end }}
       containers:
       - image: '{{ .Values.egsAgent.imageRegistry }}/{{ .Values.egsAgent.image }}:{{ .Values.egsAgent.tag }}'
+        securityContext: 
+        {{- if .Values.egsAgent.containerSecurityContext }}
+        {{ toYaml .Values.egsAgent.containerSecurityContext | nindent 10 }}
+        {{- end }}
         imagePullPolicy: "{{ .Values.egsAgent.pullPolicy }}"
         env:
           - name: LOG_LEVEL
@@ -66,8 +70,8 @@ spec:
         resources: {{ toYaml .Values.egsAgent.resources | nindent 10 }}
         {{- end }}
       securityContext:
-      {{- if .Values.egsAgent.containerSecurityContext }} 
-      {{ toYaml .Values.egsAgent.containerSecurityContext | nindent 8 }}
+      {{- if .Values.egsAgent.podSecurityContext }} 
+      {{ toYaml .Values.egsAgent.podSecurityContext | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ .Values.egsAgent.secretName }}
       terminationGracePeriodSeconds: 10
