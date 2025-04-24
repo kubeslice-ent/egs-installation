@@ -34,8 +34,14 @@ spec:
       affinity:
       {{ toYaml .Values.egsAgent.affinity | nindent 8 }}
       {{- end }}
+      volumes: # Add this section
+        - name: tmp-volume
+          emptyDir: {} # Creates a temporary, writable directory
       containers:
       - image: '{{ .Values.egsAgent.imageRegistry }}/{{ .Values.egsAgent.image }}:{{ .Values.egsAgent.tag }}'
+        volumeMounts: # Add this section
+          - name: tmp-volume
+            mountPath: /tmp # Mounts the writable volume at /tmp      
         securityContext: 
         {{- if .Values.egsAgent.containerSecurityContext }}
         {{ toYaml .Values.egsAgent.containerSecurityContext | nindent 10 }}
