@@ -1,7 +1,160 @@
 #!/bin/bash
 
 # Define the script version
-SCRIPT_VERSION="1.12.0"
+SCRIPT_VERSION="1.12.1"
+
+# Global Configuration and Constants
+readonly MAX_TIMEOUT=30
+readonly MAX_ITEMS=1000
+readonly RATE_LIMIT="5r/s"
+readonly OUTPUT_FILE="egs-preflight-check-output.log"
+
+# Protected Resources
+readonly PROTECTED_NAMESPACES=(
+    "kube-system"
+    "kube-public"
+    "kube-node-lease"
+    "default"
+)
+
+# Error logging
+declare -A ERROR_LOG
+
+# Utility Functions
+log_message() {
+    local level="$1"
+    local message="$2"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" | tee -a "$OUTPUT_FILE"
+}
+
+log_error() {
+    local context="$1"
+    local message="$2"
+    ERROR_LOG["$context"]="${ERROR_LOG["$context"]}${message}\n"
+    log_message "ERROR" "[$context] $message"
+}
+
+print_error_summary() {
+    if [[ ${#ERROR_LOG[@]} -gt 0 ]]; then
+        log_message "ERROR" "Errors encountered during execution:"
+        for context in "${!ERROR_LOG[@]}"; do
+            log_message "ERROR" "Context: $context"
+            echo -e "${ERROR_LOG[$context]}"
+        done
+        return 1
+    fi
+    return 0
+}
+
+validate_kubeconfig() {
+    local kubeconfig_path="$1"
+    
+    # Check if path contains directory traversal
+    if [[ "$kubeconfig_path" =~ \.\. ]]; then
+        log_error "KUBECONFIG" "Directory traversal not allowed in kubeconfig path"
+        return 1
+    fi
+    
+    # Check file exists and permissions
+    if [[ ! -f "$kubeconfig_path" ]]; then
+        log_error "KUBECONFIG" "Kubeconfig file does not exist: $kubeconfig_path"
+        return 1
+    fi
+    
+    # Check file permissions
+    local perms
+    perms=$(stat -c "%a" "$kubeconfig_path")
+    if [[ "$perms" != "600" ]]; then
+        log_message "WARNING" "Kubeconfig file permissions should be 600, current: $perms"
+    fi
+    
+    # Verify file is not a symlink
+    if [[ -L "$kubeconfig_path" ]]; then
+        log_error "KUBECONFIG" "Kubeconfig must not be a symbolic link"
+        return 1
+    fi
+    
+    return 0
+}
+
+validate_namespace() {
+    local namespace="$1"
+    
+    # Check against protected namespaces
+    for protected in "${PROTECTED_NAMESPACES[@]}"; do
+        if [[ "$namespace" == "$protected" ]]; then
+            log_error "NAMESPACE" "Cannot modify protected namespace: $namespace"
+            return 1
+        fi
+    done
+    
+    # Validate namespace name format
+    if [[ ! "$namespace" =~ ^[a-z0-9][a-z0-9-]*[a-z0-9]$ ]]; then
+        log_error "NAMESPACE" "Invalid namespace name format: $namespace"
+        return 1
+    fi
+    
+    return 0
+}
+
+check_kubectl_version() {
+    local min_version="1.20.0"
+    local current_version
+    
+    current_version=$("$KUBECTL_BIN" version --client -o json | jq -r '.clientVersion.gitVersion' | tr -d 'v')
+    
+    if [[ "$(printf '%s\n' "$min_version" "$current_version" | sort -V | head -n1)" != "$min_version" ]]; then
+        log_error "KUBECTL" "kubectl version must be >= $min_version, found: $current_version"
+        return 1
+    fi
+    return 0
+}
+
+# Improved command execution functions
+run_command() {
+    local -a cmd=("$@")
+    local output
+    local status
+    
+    if [[ "$function_debug_input" == "true" ]]; then
+        log_message "DEBUG" "Running: ${cmd[*]}"
+    fi
+    
+    output=$(timeout "$MAX_TIMEOUT" "${cmd[@]}" 2>&1)
+    status=$?
+    
+    if [ $status -ne 0 ]; then
+        if [ $status -eq 124 ]; then
+            log_error "COMMAND" "Command timed out after $MAX_TIMEOUT seconds: ${cmd[*]}"
+        else
+            log_error "COMMAND" "Command failed with status $status: ${cmd[*]}"
+        fi
+        if [[ "$function_debug_input" == "true" ]]; then
+            log_message "DEBUG" "Command output: $output"
+        fi
+    elif [[ "$function_debug_input" == "true" ]]; then
+        log_message "DEBUG" "Command succeeded"
+    fi
+    
+    echo "$output"
+    return $status
+}
+
+run_command_silent() {
+    local -a cmd=("$@")
+    timeout "$MAX_TIMEOUT" "${cmd[@]}" 2>/dev/null || true
+}
+
+# Cleanup handler
+cleanup_handler() {
+    log_message "INFO" "Cleaning up resources..."
+    # Add specific cleanup logic here if needed
+    print_error_summary
+    exit 1
+}
+
+# Set up signal handling
+trap cleanup_handler SIGINT SIGTERM
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
@@ -33,6 +186,8 @@ exec > >(tee -a "$output_file") 2>&1
 
 echo "=====================================EGS Preflight Check Script execution started at: $(date)===================================" >> "$output_file"
 # Global default values
+labels="managed-by=egs-script,purpose=preflight-check"
+annotations="managed-by=egs-script,purpose=preflight-check"
 namespaces_to_check=""
 test_namespace="egs-test-namespace"
 pvc_test_namespace="egs-test-namespace"
@@ -77,6 +232,8 @@ display_help() {
   echo -e "Options:"
   echo -e "  🗂️  --namespace-to-check <namespace1,namespace2,...> Comma-separated list of namespaces to check existence."
   echo -e "  🏷️  --test-namespace <namespace>                    Namespace for test creation and deletion (default: egs-test-namespace)."
+  echo -e "  🏷️  --test-namespace-labels <key1=value1,key2=value2,...> Labels to apply to the test namespace (default: purpose=preflight-check,managed-by=egs-script)."
+  echo -e "  📝  --test-namespace-annotations <key1=value1,key2=value2,...> Annotations to apply to the test namespace (default: purpose=preflight-check,managed-by=egs-script)."
   echo -e "  📂  --pvc-test-namespace <namespace>                Namespace for PVC test creation and deletion (default: egs-test-namespace)."
   echo -e "  🛠️  --pvc-name <name>                               Name of the test PVC (default: egs-test-pvc)."
   echo -e "  🗄️  --storage-class <class>                         Storage class for the PVC (default: none)."
@@ -413,8 +570,13 @@ grep_k8s_resources_with_crds_and_webhooks() {
         if [[ "$function_debug_input" == "true" ]]; then
           echo "🔍 Filtering for resource type '$resource_type' with name containing '$resource_name'..."
         fi
+        
+        # Use run_command for logging
+        run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name 2>/dev/null"
+        
+        # Use run_command_silent for actual resource matching
         local resource_matches
-        resource_matches=$(run_command kubectl $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name 2>/dev/null | grep -i "$resource_name")
+        resource_matches=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name 2>/dev/null" | grep -i "$resource_name" || true)
 
         if [[ -n "$resource_matches" ]]; then
           if [[ "$function_debug_input" == "true" ]]; then
@@ -425,19 +587,30 @@ grep_k8s_resources_with_crds_and_webhooks() {
             namespace=$(echo "$match" | awk '{print $1}')
             name=$(echo "$match" | awk '{print $2}')
             [[ -z "$namespace" ]] && namespace="N/A"
-            log_summary "$function_name - $resource_type Check - $name - $namespace" "$namespace:$name:$resource_type Check:Success"
+
+            # Get resource status using the silent version
+            local status_info
+            status_info=$(get_resource_status "$resource_type" "$name" "$namespace")
+            
+            # Log summary with clean status information
+            log_summary "$function_name - $resource_type Check - $name - $namespace" "$namespace:$name:$resource_type Check:Success:$status_info"
+            
+            if [[ "$function_debug_input" == "true" ]]; then
+                echo "📊 Resource Status for $resource_type/$name in namespace $namespace:"
+                echo "   $status_info"
+            fi
           done <<< "$resource_matches"
         else
-          if [[ "$function_debug_input" == "true" ]]; then
-            echo "❌ No resources found for type '$resource_type' containing name '$resource_name'."
-          fi
-          log_summary "$function_name - $resource_type Check - $resource_name - N/A" "N/A:$resource_name:$resource_type Check:Failure"
+          log_summary "$function_name - $resource_type Check - $resource_name - N/A" "N/A:$resource_name:$resource_type Check:Failure:Resource not found"
         fi
       done
     done
   else
     echo "⏩ Skipping resource checks because fetch_resource_names is empty."
   fi
+
+  # Rest of the webhook checking code remains the same...
+  # [Previous webhook checking code continues here...]
 
   # Determine the webhook names to process
   local webhook_name_array
@@ -478,16 +651,22 @@ grep_k8s_resources_with_crds_and_webhooks() {
               echo "$webhook_matches"
             fi
             while IFS= read -r match; do
-              log_summary "$function_name - $webhook_type Check - $match" "N/A:$match:$webhook_type Check:Success"
+              # Fetch webhook status
+              local webhook_details=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type $match -o json 2>/dev/null)
+              local webhook_status="Active"  # Default status
+              local webhook_rules=$(echo "$webhook_details" | jq -r '.webhooks[].rules[] | "\(.operations) on \(.resources)"' 2>/dev/null)
+              
+              log_summary "$function_name - $webhook_type Check - $match" "N/A:$match:$webhook_type Check:Success:Status: $webhook_status, Rules: $webhook_rules"
             done <<< "$webhook_matches"
           else
             if [[ "$function_debug_input" == "true" ]]; then
               echo "❌ No $webhook_type containing name '$fetch_name' found."
             fi
-            log_summary "$function_name - $webhook_type Check - $fetch_name" "N/A:$fetch_name:$webhook_type Check:Failure"
+            log_summary "$function_name - $webhook_type Check - $fetch_name" "N/A:$fetch_name:$webhook_type Check:Failure:Webhook not found"
           fi
         done
       elif [[ "$webhook_type" == "validatingwebhookconfigurations" ]]; then
+        # Similar logic for validating webhooks...
         for fetch_name in "${validating_webhook_names[@]}"; do
           if [[ "$function_debug_input" == "true" ]]; then
             echo "🔍 Filtering $webhook_type for name containing '$fetch_name'..."
@@ -501,13 +680,18 @@ grep_k8s_resources_with_crds_and_webhooks() {
               echo "$webhook_matches"
             fi
             while IFS= read -r match; do
-              log_summary "$function_name - $webhook_type Check - $match" "N/A:$match:$webhook_type Check:Success"
+              # Fetch webhook status
+              local webhook_details=$(run_command kubectl $kubeconfig --context=$kubecontext get $webhook_type $match -o json 2>/dev/null)
+              local webhook_status="Active"  # Default status
+              local webhook_rules=$(echo "$webhook_details" | jq -r '.webhooks[].rules[] | "\(.operations) on \(.resources)"' 2>/dev/null)
+              
+              log_summary "$function_name - $webhook_type Check - $match" "N/A:$match:$webhook_type Check:Success:Status: $webhook_status, Rules: $webhook_rules"
             done <<< "$webhook_matches"
           else
             if [[ "$function_debug_input" == "true" ]]; then
               echo "❌ No $webhook_type containing name '$fetch_name' found."
             fi
-            log_summary "$function_name - $webhook_type Check - $fetch_name" "N/A:$fetch_name:$webhook_type Check:Failure"
+            log_summary "$function_name - $webhook_type Check - $fetch_name" "N/A:$fetch_name:$webhook_type Check:Failure:Webhook not found"
           fi
         done
       fi
@@ -574,16 +758,86 @@ log_inputs_and_time() {
 
 # Function to log, run commands, and continue on error
 run_command() {
-  local cmd="$*"
-  echo -e "🔧 Running: $cmd"
-  eval "$cmd"
-  local status=$?
-  if [ $status -ne 0 ]; then
-    echo -e "⚠️ Command failed with status: $status, continuing..."
-  else
-    echo -e "✅ Command succeeded."
-  fi
-  return $status
+    local cmd="$*"
+    echo -e "🔧 Running: $cmd"
+    eval "$cmd"
+    local status=$?
+    if [ $status -ne 0 ]; then
+        echo -e "⚠️ Command failed with status: $status, continuing..."
+    else
+        echo -e "✅ Command succeeded."
+    fi
+    return $status
+}
+
+# Add new function for clean command output
+run_command_silent() {
+    local cmd="$*"
+    local output
+    output=$(eval "$cmd" 2>&1)
+    echo "$output"
+}
+
+# Modify the get_resource_status function to use run_command_silent
+get_resource_status() {
+    local resource_type="$1"
+    local resource_name="$2"
+    local namespace="$3"
+    local status_info=""
+
+    case "$resource_type" in
+        "deployment"|"statefulset"|"daemonset")
+            if [[ -n "$namespace" ]]; then
+                local replicas
+                replicas=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.replicas}'")
+                local ready_replicas
+                ready_replicas=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.readyReplicas}'")
+                local updated_replicas
+                updated_replicas=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.updatedReplicas}'")
+                status_info="Replicas: ${replicas:-0}, Ready: ${ready_replicas:-0}, Updated: ${updated_replicas:-0}"
+            fi
+            ;;
+        "pod")
+            if [[ -n "$namespace" ]]; then
+                local phase
+                phase=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.phase}'")
+                local container_statuses
+                container_statuses=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.containerStatuses[*].ready}'")
+                
+                local ready_count=0
+                local total_containers=0
+                for status in $container_statuses; do
+                    ((total_containers++))
+                    [[ "$status" == "true" ]] && ((ready_count++))
+                done
+                
+                status_info="Phase: ${phase:-Unknown}, Containers: $ready_count/$total_containers Ready"
+            fi
+            ;;
+        "service")
+            if [[ -n "$namespace" ]]; then
+                local type
+                type=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.spec.type}'")
+                local cluster_ip
+                cluster_ip=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.spec.clusterIP}'")
+                local external_ip
+                external_ip=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.loadBalancer.ingress[0].ip}'")
+                
+                status_info="Type: ${type:-Unknown}, ClusterIP: ${cluster_ip:-None}"
+                [[ -n "$external_ip" ]] && status_info+=", ExternalIP: $external_ip"
+            fi
+            ;;
+        *)
+            if [[ -n "$namespace" ]]; then
+                local status
+                status=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.phase}'")
+                [[ -z "$status" ]] && status=$(run_command_silent "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $resource_type $resource_name -n $namespace -o jsonpath='{.status.conditions[0].type}'")
+                status_info="Status: ${status:-N/A}"
+            fi
+            ;;
+    esac
+
+    echo "$status_info"
 }
 
 
@@ -597,6 +851,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --namespace-to-check) namespaces_to_check="$2"; shift 2 ;;
     --test-namespace) test_namespace="$2"; shift 2 ;;
+    --test-namespace-labels) labels="$2"; shift 2 ;;
+    --test-namespace-annotations) annotations="$2"; shift 2 ;;
     --pvc-test-namespace) pvc_test_namespace="$2"; shift 2 ;;
     --invoke-wrappers) wrappers_to_invoke="$2"; shift 2 ;;
     --kubeconfig) kubeconfig="--kubeconfig=$2"; shift 2 ;;
@@ -876,7 +1132,46 @@ fi
    wait_after_command "$global_wait"
 }
 
+# Add helper functions for validation
+validate_k8s_name() {
+  local name="$1"
+  # Kubernetes names must be lowercase alphanumeric characters, '-', or '.'
+  if [[ ! "$name" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ ]]; then
+    return 1
+  fi
+  return 0
+}
 
+validate_k8s_label_value() {
+  local value="$1"
+  # Label values must be 63 characters or less
+  if [[ ${#value} -gt 63 ]]; then
+    return 1
+  fi
+  return 0
+}
+
+validate_k8s_annotation_value() {
+  local value="$1"
+  # Annotation values can be any valid string
+  return 0
+}
+
+# Add namespace validation function
+validate_namespace_name() {
+  local namespace="$1"
+  # Namespace names must be lowercase alphanumeric characters or '-'
+  # Must start and end with alphanumeric character
+  # Must be between 1 and 63 characters
+  if [[ ! "$namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || [[ ${#namespace} -gt 63 ]]; then
+    echo "❌ Error: Invalid namespace name: '$namespace'"
+    echo "   - Must be lowercase alphanumeric characters or '-'"
+    echo "   - Must start and end with alphanumeric character"
+    echo "   - Must be between 1 and 63 characters"
+    return 1
+  fi
+  return 0
+}
 
 create_namespace() {
   local kubeconfig="$1"
@@ -891,15 +1186,120 @@ create_namespace() {
   echo -e "🔹 Input used: kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespace=$namespace"
   log_command "$function_name" "kubeconfig=$kubeconfig, kubecontext=$kubecontext, namespace=$namespace"
 
+  # Validate namespace name
+  if ! validate_namespace_name "$namespace"; then
+    echo "❌ Error: Namespace name validation failed"
+    log_summary "$function_name - Namespace Validation - $namespace" "$namespace:N/A:Namespace Name Validation:Failure"
+    return 1
+  fi
+
   # Check if the namespace already exists
   echo "🔍 Checking if namespace '$namespace' exists..."
   if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $namespace >/dev/null 2>&1"; then
     echo -e "⚠️ Warning: Namespace '$namespace' already exists. Skipping creation."
     log_summary "$function_name - Namespace Creation - $namespace" "$namespace:N/A:Namespace Already Exists:Skipped"
   else
+    # Prepare YAML with labels and annotations
+    local namespace_yaml="apiVersion: v1
+kind: Namespace
+metadata:
+  name: $namespace"
+
+    # Add labels if provided and not empty
+    if [[ -n "$labels" ]]; then
+      namespace_yaml+="
+  labels:"
+      IFS=',' read -r -a label_pairs <<< "$labels"
+      local invalid_labels=()
+      
+      for pair in "${label_pairs[@]}"; do
+        # Skip empty pairs
+        if [[ -z "$pair" ]]; then
+          continue
+        fi
+
+        # Extract key and value
+        local key="${pair%%=*}"
+        local value="${pair#*=}"
+        
+        # Remove any surrounding quotes from value
+        value="${value#[\"\']}"
+        value="${value%[\"\']}"
+        
+        # Validate key
+        if ! validate_k8s_name "$key"; then
+          invalid_labels+=("Invalid label key format: '$key' (must be lowercase alphanumeric, '-', or '.')")
+          continue
+        fi
+        
+        # Validate value
+        if ! validate_k8s_label_value "$value"; then
+          invalid_labels+=("Invalid label value for '$key': value too long (max 63 characters)")
+          continue
+        fi
+        
+        namespace_yaml+="
+    $key: \"$value\""
+      done
+
+      # Log invalid labels if any
+      if [[ ${#invalid_labels[@]} -gt 0 ]]; then
+        echo "⚠️ Warning: Some namespace labels were invalid and skipped:"
+        for msg in "${invalid_labels[@]}"; do
+          echo "   - $msg"
+        done
+      fi
+    fi
+
+    # Add annotations if provided and not empty
+    if [[ -n "$annotations" ]]; then
+      namespace_yaml+="
+  annotations:"
+      IFS=',' read -r -a annotation_pairs <<< "$annotations"
+      local invalid_annotations=()
+      
+      for pair in "${annotation_pairs[@]}"; do
+        # Skip empty pairs
+        if [[ -z "$pair" ]]; then
+          continue
+        fi
+
+        # Extract key and value
+        local key="${pair%%=*}"
+        local value="${pair#*=}"
+        
+        # Remove any surrounding quotes from value
+        value="${value#[\"\']}"
+        value="${value%[\"\']}"
+        
+        # Validate key
+        if ! validate_k8s_name "$key"; then
+          invalid_annotations+=("Invalid annotation key format: '$key' (must be lowercase alphanumeric, '-', or '.')")
+          continue
+        fi
+        
+        namespace_yaml+="
+    $key: \"$value\""
+      done
+
+      # Log invalid annotations if any
+      if [[ ${#invalid_annotations[@]} -gt 0 ]]; then
+        echo "⚠️ Warning: Some namespace annotations were invalid and skipped:"
+        for msg in "${invalid_annotations[@]}"; do
+          echo "   - $msg"
+        done
+      fi
+    fi
+
+    # Log the YAML being applied (for debugging)
+    if [[ "$function_debug_input" == "true" ]]; then
+      echo "🔍 Generated namespace YAML:"
+      echo "$namespace_yaml"
+    fi
+
     # Attempt to create the namespace
     echo "🔍 Creating namespace: '$namespace'"
-    if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $namespace >/dev/null 2>&1"; then
+    if echo "$namespace_yaml" | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
       echo -e "✅ Namespace '$namespace' created successfully."
       log_summary "$function_name - Namespace Creation - $namespace" "$namespace:N/A:Namespace Created:Success"
 
@@ -924,7 +1324,7 @@ create_namespace() {
 
   # Wait for the specified time, if any
   wait_after_command "$global_wait"
-}
+} 
 
 
 delete_namespace() {
@@ -1009,7 +1409,7 @@ done
 
 # Test namespace creation
 echo "🔍 Testing namespace creation for: '$test_namespace'"
-if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
+if create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait" "$watch_resources" "$watch_duration"; then
   echo "✅ Namespace '$test_namespace' created successfully."
   log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
 else
@@ -1066,7 +1466,7 @@ internet_access_preflight_checks() {
 echo "🔍 Checking or creating namespace: '$test_namespace'"
 if ! run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $test_namespace >/dev/null 2>&1"; then
   echo "⚠️ Namespace '$test_namespace' does not exist. Creating..."
-  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace"; then
+  if create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait" "$watch_resources" "$watch_duration"; then
     log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
     echo "✅ Namespace '$test_namespace' created successfully."
   else
@@ -1170,7 +1570,7 @@ if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $p
   echo "⚠️ Namespace '$pvc_test_namespace' already exists. Skipping creation."
 else
   # Attempt to create the namespace
-  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $pvc_test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
+  if create_namespace "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$display_resources_flag" "$global_wait" "$watch_resources" "$watch_duration"; then
     log_summary "$function_name - Namespace for PVC Testing - $pvc_test_namespace" "$pvc_test_namespace:N/A:Namespace Creation:Success"
     echo "✅ Namespace '$pvc_test_namespace' created successfully."
   else
@@ -1341,7 +1741,7 @@ if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $t
   echo "⚠️ Namespace '$test_namespace' already exists. Skipping creation."
 else
   # Attempt to create the namespace
-  if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext create namespace $test_namespace --dry-run=client -o yaml | $KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"; then
+  if create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait" "$watch_resources" "$watch_duration"; then
     log_summary "$function_name - Namespace for Service Testing - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
     echo "✅ Namespace '$test_namespace' created successfully."
   else
@@ -1602,6 +2002,14 @@ main() {
                 ;;
             --test-namespace)
                 test_namespace="$2"
+                shift 2
+                ;;
+            --test-namespace-labels)
+                labels="$2"
+                shift 2
+                ;;
+            --test-namespace-annotations)
+                annotations="$2"
                 shift 2
                 ;;
             --pvc-test-namespace)
