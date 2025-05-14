@@ -3227,6 +3227,10 @@ spec:
                               description: GPUWorkloadDetails represents GPU usage
                                 details for a specific workload.
                               properties:
+                                appPodName:
+                                  description: AppPodName is the name of the application
+                                    pod name
+                                  type: string
                                 gprId:
                                   description: GprID is the gprId associated with
                                     the workload
@@ -3251,25 +3255,35 @@ spec:
                                     gpuDetails:
                                       description: GPUDetails contains detailed information
                                         about GPU usage.
-                                      properties:
-                                        gpu:
-                                          description: GPU indicates the GPU compute
-                                            utilization as a percentage (e.g., 60).
-                                          type: string
-                                        memory:
-                                          description: Memory represents the amount
-                                            of GPU memory utilized by the workload
-                                            (in MiB).
-                                          type: string
-                                      type: object
-                                    profileNames:
-                                      additionalProperties:
-                                        type: string
-                                      description: ProfileNames contains information
-                                        of GPU usage for GPU Profiles used by the
-                                        workload.
-                                      type: object
+                                      items:
+                                        description: GPUDetail represents individual
+                                          GPU utilization metrics.
+                                        properties:
+                                          compute:
+                                            description: Compute indicates the GPU
+                                              compute utilization as a percentage
+                                              (e.g., 60).
+                                            type: string
+                                          memory:
+                                            description: Memory represents the amount
+                                              of GPU memory utilized by the workload
+                                              (in MiB).
+                                            type: string
+                                          power:
+                                            description: Power represents the amount
+                                              of electical power utilized by the workload
+                                              (in watts).
+                                            type: string
+                                          profileName:
+                                            description: ProfileName is the name of
+                                              the MIG device.
+                                            type: string
+                                        type: object
+                                      type: array
                                   type: object
+                                workloadKind:
+                                  description: WorkloadKind is the kind of the workload
+                                  type: string
                                 workloadName:
                                   description: WorkloadName is the name of the workload
                                     using this GPU.
