@@ -32,9 +32,9 @@ kubeslice:
   productName: egs
 
   ui:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-ui-ent-egs
-    tag: 1.12.2-RELEASE-0723ed44
+    tag: 1.13.0
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -69,9 +69,9 @@ kubeslice:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
   uiv2:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.12.5-RELEASE-59874f71
+    tag: 1.13.0
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -212,9 +212,9 @@ kubeslice:
                     operator: "DoesNotExist"
 
   apigw:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubeslice-api-gw-ent-egs
-    tag: 1.13.0-RELEASE-79ec7a59
+    tag: 1.13.0
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP

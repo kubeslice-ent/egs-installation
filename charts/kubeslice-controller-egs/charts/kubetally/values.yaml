@@ -2,9 +2,9 @@ global:
   imageRegistry: &defaultRegistry docker.io/aveshasystems
 kubetally:
   pricingService:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: pricing-service
-    tag: 1.12.0-RELEASE-9aef72f2
+    tag: 1.13.0
     imagePullPolicy: IfNotPresent
     labels:
       app: pricing-service
@@ -71,9 +71,9 @@ kubetally:
         type: RuntimeDefault
 
   kubeTallyReport:
-    imageRegistry: aveshadev #*defaultRegistry
+    imageRegistry: *defaultRegistry
     image: kubetally-report
-    tag: 1.13.0-RELEASE-da572df2
+    tag: 1.13.0
     imagePullPolicy: IfNotPresent
     labels:
       app: report-service
