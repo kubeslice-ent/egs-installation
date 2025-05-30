@@ -207,6 +207,7 @@ watch_resources="true"
 watch_duration="7"
 function_debug_input="false"
 generate_summary_flag="true"
+test_gpu_flag="true"
 fetch_resource_names="prometheus,gpu-operator,grafana,nginx"
 #fetch_resource_names=""
 #fetch_webhook_names="aiops-mutating-webhook-configuration,kubeslice-mutating-webhook-configuration,prometheus-kube-prometheus-admission,aiops-validating-webhook-configuration,gpr-validating-webhook-configuration,kubeslice-controller-validating-webhook-configuration,kubeslice-validating-webhook-configuration,prometheus-kube-prometheus-admission"
@@ -439,6 +440,7 @@ local kubecontext="$1"
       ["service_preflight_checks"]="Service Configuration Checks"
       ["grep_k8s_resources_with_crds_and_webhooks"]="Kubernetes Resources & CRD/Webhook Validation"
       ["internet_access_preflight_checks"]="Internet Connectivity Checks from Pod"
+      ["test_gpu_with_cuda_vector"]="GPU Functionality Testing"
     )
 
     # Define the predefined list of wrapper function names
@@ -449,6 +451,7 @@ local kubecontext="$1"
       "service_preflight_checks"
       "grep_k8s_resources_with_crds_and_webhooks"
       "internet_access_preflight_checks"
+      "test_gpu_with_cuda_vector"
     )
 
 declare -A grouped_results
@@ -1542,7 +1545,239 @@ fi
 
 }
 
+# Function to test GPU functionality with CUDA vector test Job
+test_gpu_with_cuda_vector() {
+    local kubeconfig="$1"
+    local kubecontext="$2"
+    local test_namespace="${3:-egs-test-namespace}"
+    local cleanup="${4:-true}"
+    local display_resources_flag="${5:-false}"
+    local global_wait="${6:-30}"
+    local watch_resources="${7:-false}"
+    local watch_duration="${8:-30}"
+    local function_name="test_gpu_with_cuda_vector"
+    
+    echo "🔍 Testing GPU functionality with CUDA vector test Job in namespace '$test_namespace'"
+    log_command "$function_name" "kubeconfig=$kubeconfig, kubecontext=$kubecontext, test_namespace=$test_namespace, cleanup=$cleanup"
+    
+    # Check if namespace exists, if not create it
+    echo "🔍 Checking namespace: '$test_namespace'"
+    if ! run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $test_namespace >/dev/null 2>&1"; then
+        echo "⚠️ Namespace '$test_namespace' does not exist. Creating..."
+        if create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait" "$watch_resources" "$watch_duration"; then
+            log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
+            echo "✅ Namespace '$test_namespace' created successfully."
+        else
+            log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Failure"
+            echo "❌ Failed to create namespace '$test_namespace'."
 
+
+
+            return 1
+        fi
+    else
+        echo "✅ Namespace '$test_namespace' exists."
+        log_summary "$function_name - Namespace Check - $test_namespace" "$test_namespace:N/A:Namespace Exists:Success"
+    fi
+    
+    # Check for GPU nodes first
+    # echo "🔍 Checking for GPU nodes in the cluster..."
+    # local gpu_node_count
+    # gpu_node_count=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get nodes -l nvidia.com/gpu.present=true -o name | wc -l")
+    
+    # if [ "$gpu_node_count" -eq 0 ]; then
+    #     echo "⚠️ No GPU nodes found in the cluster. The CUDA vector test will be skipped."
+    #     log_summary "$function_name - GPU Node Check" "$test_namespace:N/A:GPU Node Check:Skipped:No GPU nodes found in cluster"
+    #     # Add to ERROR_LOG for final summary
+    #     ERROR_LOG["GPU Test"]="No GPU nodes found in the cluster. CUDA vector test was skipped.\n"
+    #     return 0
+    # fi
+    
+    # echo "✅ Found $gpu_node_count GPU node(s) in the cluster"
+    # log_summary "$function_name - GPU Node Check" "$test_namespace:N/A:GPU Node Check:Success:Found $gpu_node_count GPU nodes"
+
+    # Create namespace if it doesn't exist
+    if ! run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $test_namespace >/dev/null 2>&1"; then
+        echo "⚠️ Namespace '$test_namespace' does not exist. Creating..."
+        if create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait" "$watch_resources" "$watch_duration"; then
+            log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
+            echo "✅ Namespace '$test_namespace' created successfully."
+        else
+            log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Failure"
+            echo "❌ Failed to create namespace '$test_namespace'."
+            return 1
+        fi
+    fi
+
+    # Create CUDA vector test DaemonSet
+    echo "🔍 Creating CUDA vector test DaemonSet in namespace: '$test_namespace'"
+    
+    cat <<EOF | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cuda-vector-test
+  namespace: $test_namespace
+spec:
+  selector:
+    matchLabels:
+      app: cuda-vector-test
+  template:
+    metadata:
+      labels:
+        app: cuda-vector-test
+    spec:
+      # tolerations:
+      #   - key: "nvidia.com/gpu"
+      #     operator: "Exists"
+      #     effect: "NoSchedule"
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
+      # restartPolicy: Never
+      containers:
+        - name: cuda-vector
+          image: nvidia/cuda:12.2.2-devel-ubuntu22.04
+          command: ["bash", "-c"]
+          args:
+            - |
+              echo "Running CUDA vector add test..."
+              cat > vector_add.cu <<EOF
+              #include <stdio.h>
+              __global__ void add(int *a, int *b, int *c) {
+                  int index = threadIdx.x;
+                  c[index] = a[index] + b[index];
+              }
+              int main() {
+                  int a[5] = {1, 2, 3, 4, 5};
+                  int b[5] = {10, 20, 30, 40, 50};
+                  int c[5] = {0};
+                  int *dev_a, *dev_b, *dev_c;
+                  cudaMalloc((void**)&dev_a, 5 * sizeof(int));
+                  cudaMalloc((void**)&dev_b, 5 * sizeof(int));
+                  cudaMalloc((void**)&dev_c, 5 * sizeof(int));
+                  cudaMemcpy(dev_a, a, 5 * sizeof(int), cudaMemcpyHostToDevice);
+                  cudaMemcpy(dev_b, b, 5 * sizeof(int), cudaMemcpyHostToDevice);
+                  add<<<1,5>>>(dev_a, dev_b, dev_c);
+                  cudaMemcpy(c, dev_c, 5 * sizeof(int), cudaMemcpyDeviceToHost);
+                  for (int i = 0; i < 5; i++) {
+                      printf("%d + %d = %d\n", a[i], b[i], c[i]);
+                  }
+                  cudaFree(dev_a);
+                  cudaFree(dev_b);
+                  cudaFree(dev_c);
+                  return 0;
+              }
+              EOF
+              # nvcc vector_add.cu -o vector_add && ./vector_add
+              echo "Test completed. Sleeping to prevent pod restart..."
+              sleep infinity
+          # resources:
+          #   limits:
+          #     nvidia.com/gpu: "1"
+EOF
+
+    if [ $? -eq 0 ]; then
+        log_summary "$function_name - DaemonSet Creation" "$test_namespace:cuda-vector-test:DaemonSet Creation:Success"
+        echo "✅ CUDA vector test DaemonSet created successfully."
+        
+        # Wait for DaemonSet to stabilize and get its status
+        echo "🔍 Checking CUDA vector test DaemonSet status..."
+        local timeout=300  # 5 minutes timeout
+        local start_time=$(date +%s)
+        local ds_status=""
+        
+        while [ $(($(date +%s) - start_time)) -lt $timeout ]; do
+            local desired
+            local current
+            local ready
+            local up_to_date
+            local available
+            
+            desired=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get daemonset cuda-vector-test -n $test_namespace -o jsonpath='{.status.desiredNumberScheduled}'")
+            current=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get daemonset cuda-vector-test -n $test_namespace -o jsonpath='{.status.currentNumberScheduled}'")
+            ready=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get daemonset cuda-vector-test -n $test_namespace -o jsonpath='{.status.numberReady}'")
+            up_to_date=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get daemonset cuda-vector-test -n $test_namespace -o jsonpath='{.status.updatedNumberScheduled}'")
+            available=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get daemonset cuda-vector-test -n $test_namespace -o jsonpath='{.status.numberAvailable}'")
+            
+            echo "📊 DaemonSet Status:"
+            echo "   - Desired pods: $desired"
+            echo "   - Current pods: $current"
+            echo "   - Ready pods: $ready"
+            echo "   - Up-to-date pods: $up_to_date"
+            echo "   - Available pods: $available"
+            
+            if [[ "$desired" == "0" ]]; then
+                ds_status="No GPU nodes found"
+                break
+            elif [[ "$desired" == "$ready" && "$ready" == "$available" && "$ready" == "$up_to_date" ]]; then
+                ds_status="Ready"
+                break
+            fi
+            
+            echo "⏳ Waiting for DaemonSet to stabilize..."
+            sleep 10
+        done
+        
+        if [[ "$ds_status" == "No GPU nodes found" ]]; then
+            log_summary "$function_name - DaemonSet Status" "$test_namespace:cuda-vector-test:DaemonSet Status:Skipped:No pods scheduled"
+            ERROR_LOG["GPU Test"]="No GPU nodes found in the cluster. CUDA vector test DaemonSet deployed but no pods were scheduled.\n"
+        elif [[ "$ds_status" == "Ready" ]]; then
+            log_summary "$function_name - DaemonSet Status" "$test_namespace:cuda-vector-test:DaemonSet Status:Success:$ready pods running"
+            
+            # Get detailed pod status
+            echo "🔍 Checking individual pod status..."
+            local pods
+            pods=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get pods -n $test_namespace -l app=cuda-vector-test -o name")
+            
+            for pod in $pods; do
+                local pod_name=${pod#*/}
+                local pod_status
+                local pod_node
+                
+                pod_status=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $pod -n $test_namespace -o jsonpath='{.status.phase}'")
+                pod_node=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $pod -n $test_namespace -o jsonpath='{.spec.nodeName}'")
+                
+                # Check for test completion
+                if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext exec $pod -n $test_namespace -- test -f /tmp/test-complete" >/dev/null 2>&1; then
+                    log_summary "$function_name - CUDA Test" "$test_namespace:$pod_name:CUDA Test:Success:Completed on node $pod_node"
+                    
+                    if [[ "$display_resources_flag" == "true" ]]; then
+                        local test_output
+                        test_output=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext logs $pod -n $test_namespace")
+                        log_summary "$function_name - Test Output" "$test_namespace:$pod_name:Test Output:Success:$test_output"
+                    fi
+                else
+                    log_summary "$function_name - CUDA Test" "$test_namespace:$pod_name:CUDA Test:In Progress:Running on node $pod_node"
+                fi
+            done
+        else
+            log_summary "$function_name - DaemonSet Status" "$test_namespace:cuda-vector-test:DaemonSet Status:Failure:Timeout waiting for pods"
+        fi
+    else
+        log_summary "$function_name - DaemonSet Creation" "$test_namespace:cuda-vector-test:DaemonSet Creation:Failure"
+        return 1
+    fi
+    
+    # Cleanup if requested
+    if [ "$cleanup" = "true" ]; then
+        echo "🔍 Cleaning up CUDA vector test resources..."
+        if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete daemonset cuda-vector-test -n $test_namespace --ignore-not-found"; then
+            log_summary "$function_name - Resource Cleanup" "$test_namespace:cuda-vector-test:Resource Cleanup:Success"
+        else
+            log_summary "$function_name - Resource Cleanup" "$test_namespace:cuda-vector-test:Resource Cleanup:Failure"
+        fi
+        
+        if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete namespace $test_namespace --ignore-not-found"; then
+            log_summary "$function_name - Namespace Cleanup" "$test_namespace:N/A:Namespace Cleanup:Success"
+        else
+            log_summary "$function_name - Namespace Cleanup" "$test_namespace:N/A:Namespace Cleanup:Failure"
+        fi
+    else
+        log_summary "$function_name - Cleanup" "$test_namespace:cuda-vector-test:Cleanup:Skipped:Cleanup disabled"
+    fi
+    
+    return 0
+}
 
 
 
@@ -2106,10 +2341,6 @@ main() {
                 fetch_resource_names="$2"
                 shift 2
                 ;;
-            --test-gpu)
-                test_gpu_flag="true"
-                shift
-                ;;
             --help)
                 display_help
                 exit 0
@@ -2151,7 +2382,6 @@ if [[ "$function_debug_input" == "true" ]]; then
     echo "🔹 api_resources: ${api_resources:-Default set}"
     echo "🔹 webhooks: ${webhooks:-Not provided}"
     echo "🔹 fetch_webhook_names: ${fetch_webhook_names:-Not provided}"
-    echo "🔹 test_gpu_flag: ${test_gpu_flag:-false}"
     echo "-------------------------------"
 fi
 
@@ -2185,7 +2415,10 @@ if [[ -n "$wrappers_to_invoke" ]]; then
                 log_inputs_and_time "$function_debug_input" grep_k8s_resources_with_crds_and_webhooks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration" "$fetch_resource_names" "$api_resources" "$webhooks" "$fetch_webhook_names"
                 ;;
             internet_access_preflight_checks)
-                 log_inputs_and_time "$function_debug_input" internet_access_preflight_checks "$kubeconfig" "$kubecontext" "$test_pod_image" "$test_namespace" "$test_pod_name" "$target_urls" "$global_wait" "$cleanup" "$watch_resources" "$watch_duration"
+                log_inputs_and_time "$function_debug_input" internet_access_preflight_checks "$kubeconfig" "$kubecontext" "$test_pod_image" "$test_namespace" "$test_pod_name" "$target_urls" "$global_wait" "$cleanup" "$watch_resources" "$watch_duration"
+                ;;
+            test_gpu_with_cuda_vector)
+                log_inputs_and_time "$function_debug_input" test_gpu_with_cuda_vector "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
                 ;;
             *)
                 echo "❌ Unknown wrapper: $wrapper"
@@ -2196,12 +2429,14 @@ if [[ -n "$wrappers_to_invoke" ]]; then
 else
     echo "🔍 Executing all preflight checks by default"
     log_inputs_and_time "$function_debug_input" k8s_privilege_preflight_checks "$kubeconfig" "$kubecontext" "$resource_action_pairs" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-   log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
-   log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+    log_inputs_and_time "$function_debug_input" namespace_preflight_checks "$kubeconfig" "$kubecontext" "$namespaces_to_check" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+    log_inputs_and_time "$function_debug_input" pvc_preflight_checks "$kubeconfig" "$kubecontext" "$pvc_test_namespace" "$pvc_name" "$storage_class" "$storage_size" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
     log_inputs_and_time "$function_debug_input" service_preflight_checks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$service_name" "$service_type" "$watch_resources" "$watch_duration"
     log_inputs_and_time "$function_debug_input" grep_k8s_resources_with_crds_and_webhooks "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration" "$fetch_resource_names" "$api_resources" "$webhooks" "$fetch_webhook_names"
     log_inputs_and_time "$function_debug_input" internet_access_preflight_checks "$kubeconfig" "$kubecontext" "$test_pod_image" "$test_namespace" "$test_pod_name" "$target_urls" "$global_wait" "$cleanup" "$watch_resources" "$watch_duration"
-    log_inputs_and_time "$function_debug_input" test_gpu_with_cuda_vector "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+    if [[ "$test_gpu_flag" == "true" ]]; then
+        log_inputs_and_time "$function_debug_input" test_gpu_with_cuda_vector "$kubeconfig" "$kubecontext" "$test_namespace" "$cleanup" "$display_resources" "$global_wait" "$watch_resources" "$watch_duration"
+    fi
 fi
 
 }
@@ -2269,178 +2504,4 @@ fi
 
 
 
-
-# Function to test GPU functionality with CUDA vector test DaemonSet
-test_gpu_with_cuda_vector() {
-    local kubeconfig="$1"
-    local kubecontext="$2"
-    local test_namespace="${3:-egs-test-namespace}"
-    local cleanup="${4:-true}"
-    local display_resources_flag="${5:-false}"
-    local global_wait="${6:-30}"
-    local watch_resources="${7:-false}"
-    local watch_duration="${8:-30}"
-    local function_name="test_gpu_with_cuda_vector"
-    
-    echo "🔍 Testing GPU functionality with CUDA vector test DaemonSet in namespace '$test_namespace'"
-    log_command "$function_name" "kubeconfig=$kubeconfig, kubecontext=$kubecontext, test_namespace=$test_namespace, cleanup=$cleanup"
-    
-    # Check if namespace exists, if not create it
-    echo "🔍 Checking namespace: '$test_namespace'"
-    if ! run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get namespace $test_namespace >/dev/null 2>&1"; then
-        echo "⚠️ Namespace '$test_namespace' does not exist. Creating..."
-        if create_namespace "$kubeconfig" "$kubecontext" "$test_namespace" "$display_resources_flag" "$global_wait" "$watch_resources" "$watch_duration"; then
-            log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Success"
-            echo "✅ Namespace '$test_namespace' created successfully."
-        else
-            log_summary "$function_name - Namespace Creation - $test_namespace" "$test_namespace:N/A:Namespace Creation:Failure"
-            echo "❌ Failed to create namespace '$test_namespace'."
-            return 1
-        fi
-    else
-        echo "✅ Namespace '$test_namespace' exists."
-        log_summary "$function_name - Namespace Check - $test_namespace" "$test_namespace:N/A:Namespace Exists:Success"
-    fi
-    
-    # Create CUDA vector test DaemonSet
-    echo "🔍 Creating CUDA vector test DaemonSet in namespace: '$test_namespace'"
-    
-    local ds_manifest="apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: cuda-vector-test
-  namespace: $test_namespace
-spec:
-  selector:
-    matchLabels:
-      app: cuda-vector-test
-  template:
-    metadata:
-      labels:
-        app: cuda-vector-test
-    spec:
-      tolerations:
-        - key: \"nvidia.com/gpu\"
-          operator: \"Exists\"
-          effect: \"NoSchedule\"
-      nodeSelector:
-        nvidia.com/gpu.present: \"true\"
-      restartPolicy: Never
-      containers:
-        - name: cuda-vector
-          image: nvidia/cuda:12.2.0-base
-          command: [\"bash\", \"-c\"]
-          args:
-            - |
-              apt-get update && apt-get install -y build-essential && \\
-              cat > vector_add.cu <<EOF
-              #include <stdio.h>
-              __global__ void add(int *a, int *b, int *c) {
-                  int index = threadIdx.x;
-                  c[index] = a[index] + b[index];
-              }
-              int main() {
-                  int a[5] = {1, 2, 3, 4, 5};
-                  int b[5] = {10, 20, 30, 40, 50};
-                  int c[5] = {0};
-                  int *dev_a, *dev_b, *dev_c;
-                  cudaMalloc((void**)&dev_a, 5 * sizeof(int));
-                  cudaMalloc((void**)&dev_b, 5 * sizeof(int));
-                  cudaMalloc((void**)&dev_c, 5 * sizeof(int));
-                  cudaMemcpy(dev_a, a, 5 * sizeof(int), cudaMemcpyHostToDevice);
-                  cudaMemcpy(dev_b, b, 5 * sizeof(int), cudaMemcpyHostToDevice);
-                  add<<<1,5>>>(dev_a, dev_b, dev_c);
-                  cudaMemcpy(c, dev_c, 5 * sizeof(int), cudaMemcpyDeviceToHost);
-                  for (int i = 0; i < 5; i++) {
-                      printf(\"%d + %d = %d\\n\", a[i], b[i], c[i]);
-                  }
-                  cudaFree(dev_a);
-                  cudaFree(dev_b);
-                  cudaFree(dev_c);
-                  return 0;
-              }
-EOF
-              nvcc vector_add.cu -o vector_add && ./vector_add
-          resources:
-            limits:
-              nvidia.com/gpu: 1"
-    
-    echo "$ds_manifest" | run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext apply -f -"
-    if [ $? -eq 0 ]; then
-        log_summary "$function_name - DaemonSet Creation" "$test_namespace:cuda-vector-test:DaemonSet Creation:Success"
-        echo "✅ CUDA vector test DaemonSet created successfully."
-    else
-        log_summary "$function_name - DaemonSet Creation" "$test_namespace:cuda-vector-test:DaemonSet Creation:Failure"
-        echo "❌ Failed to create CUDA vector test DaemonSet."
-        return 1
-    fi
-    
-    # Wait for DaemonSet to be ready
-    echo "🔍 Waiting for CUDA vector test DaemonSet to be ready..."
-    if watch_resource "$kubeconfig" "$kubecontext" "daemonset" "cuda-vector-test" "$test_namespace" "$watch_resources" "$watch_duration"; then
-        log_summary "$function_name - DaemonSet Watch" "$test_namespace:cuda-vector-test:DaemonSet Watch:Success"
-        echo "✅ CUDA vector test DaemonSet is ready."
-    else
-        log_summary "$function_name - DaemonSet Watch" "$test_namespace:cuda-vector-test:DaemonSet Watch:Failure"
-        echo "❌ Failed to watch CUDA vector test DaemonSet."
-    fi
-    
-    # Check if pods are running on GPU nodes
-    echo "🔍 Checking if CUDA vector test pods are running on GPU nodes..."
-    local pods
-    pods=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get pods -n $test_namespace -l app=cuda-vector-test -o name")
-    if [ -z "$pods" ]; then
-        log_summary "$function_name - Pod Check" "$test_namespace:cuda-vector-test:Pod Check:Failure"
-        echo "❌ No CUDA vector test pods found on GPU nodes."
-    else
-        local gpu_node_count=0
-        local failed_pods=0
-        local gpu_nodes
-        gpu_nodes=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get nodes -l nvidia.com/gpu.present=true -o name | wc -l")
-        
-        for pod in $pods; do
-            local pod_status
-            pod_status=$(run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext get $pod -n $test_namespace -o jsonpath='{.status.phase}'")
-            if [ "$pod_status" = "Succeeded" ]; then
-                gpu_node_count=$((gpu_node_count + 1))
-                log_summary "$function_name - Pod Status" "$test_namespace:$pod:Pod Status:Success"
-                echo "✅ Pod $pod successfully ran CUDA vector test."
-            else
-                failed_pods=$((failed_pods + 1))
-                log_summary "$function_name - Pod Status" "$test_namespace:$pod:Pod Status:$pod_status"
-                echo "❌ Pod $pod did not complete successfully. Status: $pod_status"
-            fi
-        done
-        
-        if [ "$gpu_node_count" -eq "$gpu_nodes" ]; then
-            log_summary "$function_name - Overall Status" "$test_namespace:cuda-vector-test:Overall Status:Success"
-            echo "✅ CUDA vector test passed on all $gpu_node_count GPU nodes."
-        else
-            log_summary "$function_name - Overall Status" "$test_namespace:cuda-vector-test:Overall Status:Partial"
-            echo "⚠️ CUDA vector test passed on $gpu_node_count out of $gpu_nodes GPU nodes. Failed pods: $failed_pods"
-        fi
-    fi
-    
-    # Cleanup if requested
-    if [ "$cleanup" = "true" ]; then
-        echo "🔍 Cleaning up CUDA vector test resources..."
-        if run_command "$KUBECTL_BIN $kubeconfig --context=$kubecontext delete daemonset cuda-vector-test -n $test_namespace --ignore-not-found"; then
-            log_summary "$function_name - DaemonSet Deletion" "$test_namespace:cuda-vector-test:DaemonSet Deletion:Success"
-            echo "✅ CUDA vector test DaemonSet deleted successfully."
-        else
-            log_summary "$function_name - DaemonSet Deletion" "$test_namespace:cuda-vector-test:DaemonSet Deletion:Failure"
-            echo "❌ Failed to delete CUDA vector test DaemonSet."
-        fi
-        
-        # Note: We don't delete the namespace here as it might be used by other tests
-        # and the main script handles namespace cleanup
-    else
-        log_summary "$function_name - Cleanup Skipped" "$test_namespace:cuda-vector-test:Cleanup Skipped:Cleanup Disabled"
-        echo "⚠️ Cleanup skipped as requested."
-    fi
-    
-    return 0
-}
-
-# Cleanup handler
 echo "=======================EGS Preflight Check Script execution completed at: $(date)============================" >> "$output_file"
