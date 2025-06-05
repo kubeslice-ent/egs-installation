@@ -6,7 +6,7 @@ global:
 operator:
   imageRegistry: *defaultRegistry
   image: worker-operator-ent-egs
-  tag: 1.13.0
+  tag: 1.14.0
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -72,9 +72,9 @@ cluster:
   endpoint:
 
 aiops:
-  imageRegistry: aveshadev #*defaultRegistry
+  imageRegistry: *defaultRegistry
   image: kube-aiops-operator
-  tag: 1.11.0-RELEASE-876557ea
+  tag: 1.14.0
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
