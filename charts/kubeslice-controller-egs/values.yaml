@@ -78,7 +78,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.13.0
+    tag: 1.14.0
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -243,7 +243,7 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.12.0
+    tag: 1.13.0
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
