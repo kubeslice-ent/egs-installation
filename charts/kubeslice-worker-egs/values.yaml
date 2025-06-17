@@ -74,7 +74,7 @@ cluster:
 aiops:
   imageRegistry: *defaultRegistry
   image: kube-aiops-operator
-  tag: 1.14.0
+  tag: 1.14.1
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
