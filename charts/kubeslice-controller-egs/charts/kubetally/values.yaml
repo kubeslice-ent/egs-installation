@@ -45,9 +45,9 @@ kubetally:
                     operator: "DoesNotExist"
 
   chargeUpdater:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: price-updater
-    tag: 1.12.0
+    tag: 1.5.0-RELEASE-140a4679 
     imagePullPolicy: IfNotPresent
     annotations:
       prometheus.io/port: '9999'

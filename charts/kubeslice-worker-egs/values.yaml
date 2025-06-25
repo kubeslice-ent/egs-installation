@@ -201,7 +201,7 @@ rbacproxy:
   # Image name for the RBAC proxy
   image: kubebuilder-kube-rbac-proxy
   # Image tag for the RBAC proxy
-  tag: v0.18.0
+  tag: 0.18.2
   containerSecurityContext:
     runAsUser: 65536
     runAsGroup: 65536

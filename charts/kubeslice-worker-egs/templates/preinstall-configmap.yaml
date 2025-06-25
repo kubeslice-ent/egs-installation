@@ -190,7 +190,7 @@ data:
 {{ if eq (toString .Values.metrics.insecure) "true" }}
                 - --kubelet-insecure-tls
 {{ end }}
-              image: '{{ .Values.global.imageRegistry }}/metrics-server:v0.6.1'
+              image: '{{ .Values.global.imageRegistry }}/metrics-server:v0.6.2'
               imagePullPolicy: "{{ .Values.metrics.imagePullPolicy }}"
               livenessProbe:
                 failureThreshold: 3
