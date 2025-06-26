@@ -4,9 +4,9 @@ global:
     openshift: false
 
 operator:
-  imageRegistry: aveshadev #*defaultRegistry
+  imageRegistry: *defaultRegistry
   image: worker-operator-ent-egs
-  tag: 1.3.0-RELEASE-31a78aff
+  tag: 1.14.2
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -72,9 +72,9 @@ cluster:
   endpoint:
 
 aiops:
-  imageRegistry: aveshadev #*defaultRegistry
+  imageRegistry: *defaultRegistry
   image: kube-aiops-operator
-  tag: 1.14.2-RELEASE-41cdb696
+  tag: 1.14.2
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -119,9 +119,9 @@ aiops:
                     operator: "DoesNotExist"
 
 egsAgent:
-  imageRegistry: aveshadev #*defaultRegistry
+  imageRegistry: *defaultRegistry
   image: egs-agent
-  tag: 1.0.0-RELEASE-32294010
+  tag: 1.0.1
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-agent-access
