@@ -6,7 +6,7 @@ global:
 operator:
   imageRegistry: *defaultRegistry
   image: worker-operator-ent-egs
-  tag: 1.14.0
+  tag: 1.14.2
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -74,7 +74,7 @@ cluster:
 aiops:
   imageRegistry: *defaultRegistry
   image: kube-aiops-operator
-  tag: 1.14.1
+  tag: 1.14.2
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -121,7 +121,7 @@ aiops:
 egsAgent:
   imageRegistry: *defaultRegistry
   image: egs-agent
-  tag: 1.0.0
+  tag: 1.0.1
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-agent-access
@@ -201,7 +201,7 @@ rbacproxy:
   # Image name for the RBAC proxy
   image: kubebuilder-kube-rbac-proxy
   # Image tag for the RBAC proxy
-  tag: v0.18.0
+  tag: 0.18.2
   containerSecurityContext:
     runAsUser: 65536
     runAsGroup: 65536

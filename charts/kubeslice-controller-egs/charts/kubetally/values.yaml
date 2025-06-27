@@ -4,7 +4,7 @@ kubetally:
   pricingService:
     imageRegistry: *defaultRegistry
     image: pricing-service
-    tag: 1.13.0
+    tag: 1.13.1
     imagePullPolicy: IfNotPresent
     labels:
       app: pricing-service
@@ -47,7 +47,7 @@ kubetally:
   chargeUpdater:
     imageRegistry: *defaultRegistry
     image: price-updater
-    tag: 1.12.0
+    tag: 1.12.1
     imagePullPolicy: IfNotPresent
     annotations:
       prometheus.io/port: '9999'
@@ -73,7 +73,7 @@ kubetally:
   kubeTallyReport:
     imageRegistry: *defaultRegistry
     image: kubetally-report
-    tag: 1.13.0
+    tag: 1.13.1
     imagePullPolicy: IfNotPresent
     labels:
       app: report-service
