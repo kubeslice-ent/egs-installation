@@ -69,9 +69,9 @@ kubeslice:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
   uiv2:
-    imageRegistry: *defaultRegistry
+    imageRegistry: aveshadev #*defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.14.2
+    tag: 1.15.0-RELEASE-68fd213b
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
