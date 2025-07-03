@@ -74,7 +74,7 @@ cluster:
 aiops:
   imageRegistry: aveshadev #*defaultRegistry
   image: kube-aiops-operator
-  tag: 1.14.3-RELEASE-bd81aeef
+  tag: 1.14.3-RELEASE-5c98dc5c
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
