@@ -478,4 +478,4 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: false                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.14.2"
+version: "1.14.3"
