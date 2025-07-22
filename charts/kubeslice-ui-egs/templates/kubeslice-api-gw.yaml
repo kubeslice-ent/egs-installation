@@ -58,7 +58,7 @@ spec:
       {{ toYaml .Values.kubeslice.apigw.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image: '{{ .Values.kubeslice.apigw.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
+        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
           env:
             - name: DCGM_METRIC_JOB_VALUE
@@ -76,7 +76,7 @@ spec:
             - name: KUBESLICE_CONTROLLER_PROMETHEUS
               value: {{ .Values.kubeslice.prometheus.url }}
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE
-              value: '{{ .Values.kubeslice.workerinstaller.imageRegistry }}/{{ .Values.kubeslice.workerinstaller.image }}:{{ .Values.kubeslice.workerinstaller.tag }}'
+              value: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.workerinstaller.image }}:{{ .Values.kubeslice.workerinstaller.tag }}'
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE_PULL_POLICY
               value: '{{ .Values.kubeslice.workerinstaller.pullPolicy}}'
             - name: COST_API_URI

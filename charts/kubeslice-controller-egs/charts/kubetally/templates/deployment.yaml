@@ -35,7 +35,7 @@ spec:
       {{ toYaml .Values.kubetally.pricingService.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image:  '{{ .Values.kubetally.pricingService.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
+        - image:  '{{ .Values.global.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
           imagePullPolicy: {{.Values.kubetally.pricingService.imagePullPolicy}}
           name: pricing-service
           securityContext:
@@ -127,7 +127,7 @@ spec:
               {{ toYaml .Values.kubetally.chargeUpdater.containerSecurityContext | nindent 16 }}
               {{- end }}
               imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
-              image: '{{ .Values.kubetally.chargeUpdater.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+              image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
               env:
                 - name: APP_ENV
                   value: Production
@@ -225,7 +225,7 @@ spec:
           {{ toYaml .Values.kubetally.kubeTallyReport.containerSecurityContext | nindent 12 }}
           {{- end }}
           imagePullPolicy: {{ .Values.kubetally.kubeTallyReport.imagePullPolicy }}
-          image: '{{ .Values.kubetally.kubeTallyReport.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
           env:
             - name: APP_ENV
               value: production
@@ -318,7 +318,7 @@ spec:
           {{ toYaml .Values.kubetally.chargeUpdater.containerSecurityContext | nindent 12 }}
           {{- end }}
           imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
-          image: '{{ .Values.kubetally.chargeUpdater.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
           env:
             - name: APP_ENV
               value: Production

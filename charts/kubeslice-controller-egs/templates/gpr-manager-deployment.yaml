@@ -158,7 +158,7 @@ spec:
           value: "{{ .Values.egs.gprManager.refreshWaitTimeInterval }}"
         - name: WEBHOOK_CA_BUNDLE
           value: {{ $ca.Cert | b64enc }}
-        image: "{{ .Values.egs.gprManager.imageRegistry }}/{{ .Values.egs.gprManager.image }}:{{ .Values.egs.gprManager.tag }}"
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.egs.gprManager.image }}:{{ .Values.egs.gprManager.tag }}"
         imagePullPolicy: "{{ .Values.egs.gprManager.pullPolicy }}"
         livenessProbe:
           httpGet:
