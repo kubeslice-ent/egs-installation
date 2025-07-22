@@ -61,7 +61,7 @@ spec:
       {{ toYaml .Values.kubeslice.ui.affinity | nindent 8 }}
       {{- end }}
       containers:
-      - image: '{{ .Values.kubeslice.ui.imageRegistry }}/{{ .Values.kubeslice.ui.image }}:{{ .Values.kubeslice.ui.tag }}'
+      - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.ui.image }}:{{ .Values.kubeslice.ui.tag }}'
         imagePullPolicy: '{{ .Values.kubeslice.ui.pullPolicy }}'
         name: kubeslice-ui
         securityContext:

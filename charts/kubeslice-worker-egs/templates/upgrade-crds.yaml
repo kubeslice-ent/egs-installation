@@ -1618,7 +1618,7 @@ spec:
               drop:
                 - ALL
             readOnlyRootFilesystem: true
-          image: '{{ .Values.alpine.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}'
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}'
           command:
             - /bin/sh
             - -c

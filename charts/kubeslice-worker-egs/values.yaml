@@ -1,10 +1,9 @@
 global:
-  imageRegistry: &defaultRegistry docker.io/aveshasystems
+  imageRegistry: docker.io/aveshasystems
   profile:
     openshift: false
 
 operator:
-  imageRegistry: *defaultRegistry
   image: worker-operator-ent-egs
   tag: 1.14.2
   pullPolicy: IfNotPresent
@@ -72,7 +71,6 @@ cluster:
   endpoint:
 
 aiops:
-  imageRegistry: *defaultRegistry
   image: kube-aiops-operator
   tag: 1.14.3
   pullPolicy: IfNotPresent
@@ -119,7 +117,6 @@ aiops:
                     operator: "DoesNotExist"
 
 egsAgent:
-  imageRegistry: *defaultRegistry
   image: egs-agent
   tag: 1.0.1
   pullPolicy: IfNotPresent
@@ -171,7 +168,6 @@ egs:
   grafanaDashboardBaseUrl: ""
 
 workerInstaller:
-  imageRegistry: *defaultRegistry
   image: worker-installer
   tag: 1.5.0
 
@@ -197,7 +193,6 @@ metrics:
   imagePullPolicy: IfNotPresent
 
 rbacproxy:
-  imageRegistry: *defaultRegistry
   # Image name for the RBAC proxy
   image: kubebuilder-kube-rbac-proxy
   # Image tag for the RBAC proxy
@@ -215,7 +210,6 @@ rbacproxy:
     readOnlyRootFilesystem: true
 
 alpine:
-  imageRegistry: *defaultRegistry
   # Image name for the alpine
   image: alpine-k8s
   # Image tag for the alpine

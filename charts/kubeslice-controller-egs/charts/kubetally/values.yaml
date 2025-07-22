@@ -1,8 +1,7 @@
 global:
-  imageRegistry: &defaultRegistry docker.io/aveshasystems
+  imageRegistry: docker.io/aveshasystems
 kubetally:
   pricingService:
-    imageRegistry: *defaultRegistry
     image: pricing-service
     tag: 1.13.1
     imagePullPolicy: IfNotPresent
@@ -45,7 +44,6 @@ kubetally:
                     operator: "DoesNotExist"
 
   chargeUpdater:
-    imageRegistry: *defaultRegistry
     image: price-updater
     tag: 1.12.1
     imagePullPolicy: IfNotPresent
@@ -71,7 +69,6 @@ kubetally:
         type: RuntimeDefault
 
   kubeTallyReport:
-    imageRegistry: *defaultRegistry
     image: kubetally-report
     tag: 1.13.1
     imagePullPolicy: IfNotPresent
