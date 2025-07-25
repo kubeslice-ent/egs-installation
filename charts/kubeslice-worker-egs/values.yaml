@@ -1,11 +1,15 @@
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/docker.io/aveshadev
+
 global:
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   profile:
     openshift: false
 
 operator:
   image: worker-operator-ent-egs
-  tag: 1.14.2
+#  tag: 1.14.2
+  tag: 1.15.0-RELEASE-4a6c8c99
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:

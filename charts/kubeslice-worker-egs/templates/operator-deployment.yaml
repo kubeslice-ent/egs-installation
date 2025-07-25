@@ -61,7 +61,7 @@ spec:
         - --num-of-app-services-per-cr=50
         command:
         - /manager
-        image: '{{ .Values.global.imageRegistry }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
+        image: '{{ .Values.dev.imageRegistry }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
         imagePullPolicy: '{{ .Values.operator.pullPolicy }}'
         env:
           - name: PROMETHEUS_SERVICE_ENDPOINT

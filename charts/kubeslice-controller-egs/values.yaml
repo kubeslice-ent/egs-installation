@@ -1,9 +1,11 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/docker.io/aveshadev
 
 global:
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   # user can configure labels or annotations that EGS Controller namespaces should have
   namespaceConfig:
     labels: {}
@@ -67,6 +69,8 @@ kubeslice:
   controller:
     # Log level for the controller
     logLevel: info
+    # Inventory manager service address
+    invmgrGrpcAddress: egs-inventory-manager:80
     # Prefix for RBAC resources created by KubeSlice
     rbacResourcePrefix: kubeslice-rbac
     # Prefix for project namespaces created by KubeSlice
@@ -76,7 +80,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.14.2
+    tag: 1.15.0-RELEASE-4fc151d6
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -129,15 +133,6 @@ kubeslice:
   events:
     # Whether events are disabled
     disabled: true
-
-  # license details by default mode set to auto and license set to trial - please give company-name or user-name as customerName
-  license:
-    # possible license type values ["kubeslice-trial-license"]
-    type: kubeslice-trial-license
-    # possible license mode - ["auto", "manual"]
-    mode: auto
-    # please give company-name or user-name as customerName
-    customerName: ""
 
 egs:
   gprManager:
@@ -238,7 +233,7 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.13.1
+    tag: 1.13.2-RELEASE-51627df5
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
