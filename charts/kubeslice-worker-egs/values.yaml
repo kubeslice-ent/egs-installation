@@ -1,5 +1,5 @@
 dev:
-  imageRegistry: harbor.saas1.smart-scaler.io/docker.io/aveshadev
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
 
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
