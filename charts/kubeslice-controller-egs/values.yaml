@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 dev:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
 
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
