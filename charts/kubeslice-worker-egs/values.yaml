@@ -74,7 +74,7 @@ cluster:
 aiops:
   imageRegistry: *defaultRegistry
   image: kube-aiops-operator
-  tag: 1.14.3
+  tag: 1.14.2
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -165,6 +165,76 @@ egsAgent:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
+
+metricsAgent:
+  imageRegistry: *defaultRegistry
+  image: metrics-agent
+  tag: 1.0.0
+  pullPolicy: IfNotPresent
+  logLevel: INFO
+  labels:
+    control-plane: metrics-agent
+  annotations:
+    prometheus.io/port: "8080"
+    prometheus.io/scrape: "true"
+  containerSecurityContext:
+    runAsUser: 65536
+    runAsGroup: 65536
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+  podSecurityContext: 
+    runAsUser: 65536               # Non-root user
+    runAsGroup: 65536              # Non-root group
+    runAsNonRoot: true             # Ensure the container does not run as root
+    seccompProfile:
+      type: RuntimeDefault
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  tolerations:
+    - operator: "Exists"
+  affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
+  # Service configuration
+  service:
+    port: 8080
+  # AMD metrics configuration
+  amd:
+    metricsPrefix: ""
+  # Prometheus configuration
+  prometheus:
+    endpoint: "" #http://prometheus-operated.monitoring.svc.cluster.local:9090
+    timeout: "30s"
+    interval: "60s"
+  # Filtering configuration
+  filtering:
+    labels:
+      managed-by: "kubeslice.io/managed-by-egs"
+      slice: "kubeslice.io/slice"
+  # Ingestion configuration
+  ingestion:
+    endpoint: "" #https://kubeslice-ui-proxy.kubeslice-controller.svc.cluster.local:443
+    timeout: "60s"
+    batchSize: 1000
+    interval: "10s"
+    maxQueueSize: 10000
+    key: "" # Bearer token for authentication with ingestion endpoint
 
 egs:
   prometheusEndpoint: ""

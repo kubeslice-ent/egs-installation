@@ -288,6 +288,58 @@ egs:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
 
+  metricsIngestion:
+    imageRegistry: docker.io/gourishbiradar #*defaultRegistry
+    # Image name for saas-metrics-ingestion
+    image: testing #saas-metrics-ingestion
+    # Image tag for saas-metrics-ingestion
+    tag: ingestion 
+    imagePullPolicy: Always
+    logLevel: INFO
+    service:
+      name: egs-metrics-ingestion
+      port: 8080
+    labels:
+      control-plane: metrics-ingestion-manager
+    annotations:
+      kubectl.kubernetes.io/default-container: manager
+      prometheus.io/port: "8080"
+      prometheus.io/scrape: "true"
+    containerSecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podSecurityContext: 
+      runAsUser: 65536               # Non-root user
+      runAsGroup: 65536              # Non-root group
+      runAsNonRoot: true             # Ensure the container does not run as root
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi
+    tolerations:
+    - operator: "Exists"
+    affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
+
 
 imagePullSecretsName: "kubeslice-image-pull-secret"
 # leave the below fields empty if secrets are managed externally.

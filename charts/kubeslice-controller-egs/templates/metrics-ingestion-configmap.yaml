@@ -1,0 +1,14 @@
+{{- if .Values.egs.metricsIngestion.transformationConfig.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.egs.metricsIngestion.transformationConfig.configMapName }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.egs.metricsIngestion.labels }}
+  labels:
+  {{ toYaml .Values.egs.metricsIngestion.labels | nindent 4 }}
+  {{- end }}
+data:
+  metrics-transformation.yaml: |
+{{ .Values.egs.metricsIngestion.transformationConfig.configData | nindent 4 }}
+{{- end }} 

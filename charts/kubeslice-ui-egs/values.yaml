@@ -71,7 +71,7 @@ kubeslice:
   uiv2:
     imageRegistry: *defaultRegistry
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.14.3
+    tag: 1.14.2
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP

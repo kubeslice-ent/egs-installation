@@ -1,0 +1,22 @@
+{{- if .Values.egs.metricsIngestion.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.egs.metricsIngestion.headlessService.name }}
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.egs.metricsIngestion.labels }}
+  labels:
+  {{ toYaml .Values.egs.metricsIngestion.labels | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+  {{- if .Values.egs.metricsIngestion.labels }}
+  {{ toYaml .Values.egs.metricsIngestion.labels | nindent 4 }}
+  {{- end }}
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: {{ .Values.egs.metricsIngestion.headlessService.port }}
+      name: http
+      targetPort: 8080
+{{- end }} 

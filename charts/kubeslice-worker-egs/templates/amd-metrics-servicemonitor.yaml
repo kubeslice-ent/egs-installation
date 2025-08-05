@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: amd-deviceconfig-metrics-exporter
+  namespace: monitoring
+  labels:
+    app: amd-deviceconfig-metrics-exporter
+    component: monitoring
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/service: amd-deviceconfig-metrics-exporter
+  endpoints:
+    - port: exporter-port
+      path: /metrics
+      interval: 10s
+      scrapeTimeout: 5s
+  namespaceSelector:
+    matchNames:
+      - amd-gpu-operator 
