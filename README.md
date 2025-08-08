@@ -245,6 +245,100 @@ Before you begin, ensure the following steps are completed:
      ```bash
      ./egs-installer.sh --input-yaml egs-installer-config.yaml
      ```
+
+### 6. **➕ Adding Additional Workers**
+
+   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. Follow these steps:
+
+   #### **📝 Step 1: Add Worker Configuration**
+   
+   Add a new worker entry to the `kubeslice_worker_egs` array in your configuration file:
+   
+   ```yaml
+   kubeslice_worker_egs:
+     - name: "worker-1"                           # Existing worker
+       # ... existing configuration ...
+     
+     - name: "worker-2"                           # New worker
+       use_global_kubeconfig: true                # Use global kubeconfig for this worker
+       kubeconfig: ""                             # Path to the kubeconfig file specific to the worker, if empty, uses the global kubeconfig
+       kubecontext: ""                            # Kubecontext specific to the worker; if empty, uses the global context
+       skip_installation: false                   # Do not skip the installation of the worker
+       specific_use_local_charts: true            # Override to use local charts for this worker
+       namespace: "kubeslice-system"              # Kubernetes namespace for this worker
+       release: "egs-worker-2"                    # Helm release name for the worker (must be unique)
+       chart: "kubeslice-worker-egs"              # Helm chart name for the worker
+       inline_values:                             # Inline Helm values for the worker chart
+         global:
+           imageRegistry: docker.io/aveshasystems # Docker registry for worker images
+         egs:
+           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
+         egsAgent:
+           secretName: egs-agent-access
+           agentSecret:
+             endpoint: ""
+             key: ""
+         metrics:
+           insecure: true                        # Allow insecure connections for metrics
+         kserve:
+           enabled: true                         # Enable KServe for the worker
+           kserve:                               # KServe chart options
+             controller:
+               gateway:
+                 domain: kubeslice.com
+                 ingressGateway:
+                   className: "nginx"            # Ingress class name for the KServe gateway
+       helm_flags: "--wait --timeout 5m --debug" # Additional Helm flags for the worker installation
+       verify_install: true                      # Verify the installation of the worker
+       verify_install_timeout: 60                # Timeout for the worker installation verification (in seconds)
+       skip_on_verify_fail: false                # Do not skip if worker verification fails
+       enable_troubleshoot: false                # Enable troubleshooting mode for additional logs and checks
+   ```
+
+   #### **📝 Step 2: Add Cluster Registration**
+   
+   Add a corresponding entry in the `cluster_registration` section:
+   
+   ```yaml
+   cluster_registration:
+     - cluster_name: "worker-1"                    # Existing cluster
+       project_name: "avesha"                      # Name of the project to associate with the cluster
+       telemetry:
+         enabled: true                             # Enable telemetry for this cluster
+         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090" # Telemetry endpoint
+         telemetryProvider: "prometheus"           # Telemetry provider (Prometheus in this case)
+       geoLocation:
+         cloudProvider: ""                         # Cloud provider for this cluster (e.g., GCP)
+         cloudRegion: ""                           # Cloud region for this cluster (e.g., us-central1)
+     
+     - cluster_name: "worker-2"                    # New cluster
+       project_name: "avesha"                      # Name of the project to associate with the cluster
+       telemetry:
+         enabled: true                             # Enable telemetry for this cluster
+         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090" # Telemetry endpoint
+         telemetryProvider: "prometheus"           # Telemetry provider (Prometheus in this case)
+       geoLocation:
+         cloudProvider: ""                         # Cloud provider for this cluster (e.g., GCP)
+         cloudRegion: ""                           # Cloud region for this cluster (e.g., us-central1)
+   ```
+
+   #### **⚠️ Important Notes:**
+   
+   - **🔑 Unique Release Names:** Ensure each worker has a unique `release` name to avoid conflicts during installation.
+   - **🌐 Cluster Endpoints:** Update the `prometheusEndpoint` and `grafanaDashboardBaseUrl` with the correct endpoints for the new worker cluster.
+   - **🔧 Kubeconfig:** If the new worker is in a different cluster, provide the appropriate `kubeconfig` and `kubecontext` values.
+   - **📊 Monitoring:** Ensure the monitoring endpoints (Prometheus/Grafana) are accessible from the controller cluster for proper telemetry.
+   - **🔗 Prometheus Accessibility:** **Critical:** Make sure Prometheus endpoints are accessible from the controller cluster. The controller needs to reach the Prometheus service in each worker cluster to collect metrics and telemetry data. If the worker clusters are in different networks, ensure proper network connectivity or use LoadBalancer/NodePort services for Prometheus.
+
+   #### **🚀 Step 3: Run the Installation Script**
+   
+   After adding the new worker configuration, run the installation script to deploy the additional worker:
+   
+   ```bash
+   ./egs-installer.sh --input-yaml egs-installer-config.yaml
+   ```
+
 ---
 
 ### 🗑️ Uninstallation Steps
