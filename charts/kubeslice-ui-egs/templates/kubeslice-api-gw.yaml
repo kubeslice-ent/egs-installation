@@ -76,7 +76,7 @@ spec:
             - name: KUBESLICE_CONTROLLER_PROMETHEUS
               value: {{ .Values.kubeslice.prometheus.url }}
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE
-              value: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.workerinstaller.image }}:{{ .Values.kubeslice.workerinstaller.tag }}'
+              value: '{{ .Values.dev.imageRegistry }}/{{ .Values.kubeslice.workerinstaller.image }}:{{ .Values.kubeslice.workerinstaller.tag }}'
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE_PULL_POLICY
               value: '{{ .Values.kubeslice.workerinstaller.pullPolicy}}'
             - name: COST_API_URI

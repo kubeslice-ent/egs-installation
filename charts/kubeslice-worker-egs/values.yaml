@@ -1,5 +1,6 @@
 dev:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   profile:
@@ -75,7 +76,7 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.14.3
+  tag: 1.14.3-RELEASE-453de951
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -172,7 +173,7 @@ egs:
 
 workerInstaller:
   image: worker-installer
-  tag: 1.5.0
+  tag: 1.7.0-RELEASE-c26a1cdb
 
 jaeger:
   enabled: false
