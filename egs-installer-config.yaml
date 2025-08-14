@@ -83,7 +83,7 @@ kubeslice_controller_egs:
 #### Inline Helm Values for the Controller Chart ####
   inline_values:
     global:
-      imageRegistry: docker.io/aveshasystems   # Docker registry for the images
+      imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the images
       namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
         labels: {}
         annotations: {}
@@ -124,7 +124,7 @@ kubeslice_ui_egs:
 #### Inline Helm Values for the UI Chart ####
   inline_values:
     global:
-      imageRegistry: docker.io/aveshasystems   # Docker registry for the UI images
+      imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the UI images
     kubeslice:
       prometheus:
         url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
@@ -186,7 +186,7 @@ kubeslice_worker_egs:
 #### Inline Helm Values for the Worker Chart ####
     inline_values:
       global:
-        imageRegistry: docker.io/aveshasystems # Docker registry for worker images
+        imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
