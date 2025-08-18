@@ -216,6 +216,9 @@ kubeslice:
 #    tag: 1.14.1
     tag: 1.15.0-RELEASE-179a7704
     pullPolicy: IfNotPresent
+    env:
+      - name: DCGM_METRIC_JOB_VALUE
+        value: tgi  
     service:
       type: ClusterIP
     labels:

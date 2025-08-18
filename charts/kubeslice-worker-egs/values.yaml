@@ -12,6 +12,9 @@ operator:
   tag: 1.15.0-RELEASE-4a6c8c99
   pullPolicy: IfNotPresent
   logLevel: INFO
+  env:
+    - name: DCGM_EXPORTER_JOB_NAME
+      value: gpu-metrics   
   labels:
     control-plane: controller-manager
   annotations:
