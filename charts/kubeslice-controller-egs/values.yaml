@@ -190,7 +190,7 @@ egs:
     # Image name for the gpr-manager
     image: queue-manager
     # Image tag for the gpr-manager
-    tag: 1.13.0-RELEASE-37159611
+    tag: 1.14.0-RELEASE-2b2da96e
     imagePullPolicy: IfNotPresent
     service:
       name: egs-queue-manager
