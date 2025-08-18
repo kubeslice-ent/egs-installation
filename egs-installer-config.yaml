@@ -159,10 +159,10 @@ kubeslice_ui_egs:
           annotations: []
           ## Extra labels to add onto the Ingress object
           extraLabels: {}
-     apigw:
-       env:
-         - name: DCGM_METRIC_JOB_VALUE
-           value: tgi  
+      apigw:
+        env:
+          - name: DCGM_METRIC_JOB_VALUE
+            value: tgi
           
       egsCoreApis:
         enabled: true                         # Enable EGS core APIs for the UI
