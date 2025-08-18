@@ -189,7 +189,7 @@ egs:
   queueManager:
     # Image name for the gpr-manager
     image: queue-manager
-    # Image tag for the queue-manager
+    # Image tag for the gpr-manager
     tag: 1.13.0-RELEASE-37159611
     imagePullPolicy: IfNotPresent
     service:
