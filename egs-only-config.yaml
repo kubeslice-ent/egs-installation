@@ -131,6 +131,10 @@ kubeslice_worker_egs:
     inline_values:
       global:
         imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
+      operator:
+        env:
+          - name: DCGM_EXPORTER_JOB_NAME
+            value: gpu-metrics   
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
