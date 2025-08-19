@@ -47,7 +47,7 @@ Before you begin, ensure the following steps are completed:
 
 5. **✅ Run EGS Preflight Check Script (Optional):**
    - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
-     - Refer to the [EGS Preflight Check Guide](https://github.com/kubeslice-ent/egs-installation#egs-preflight-check) for detailed instructions.
+     - Refer to the [EGS Preflight Check Guide](https://github.com/kubeslice-ent/egs-installation?tab=readme-ov-file#egs-preflight-check-script) for detailed instructions.
      - Example command:
        ```bash
        ./egs-preflight-check.sh \
