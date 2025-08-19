@@ -79,7 +79,7 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.14.3-RELEASE-50f37800
+  tag: 1.14.3-RELEASE-7679ef70
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
