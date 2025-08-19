@@ -862,6 +862,13 @@ A robust preflight check script designed for EGS setup on Kubernetes. This scrip
 ./egs-preflight-check.sh [OPTIONS]
 ```
 
+## Multi Cluster Example
+```bash
+./egs-preflight-check.sh \
+--kubeconfig ~/.kube/config \
+--kubecontext-list context1,context2
+```
+
 ### Key Options:
 
 | Option                     | Description                                                                                  |
