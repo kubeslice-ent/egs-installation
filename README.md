@@ -177,14 +177,9 @@ Before you begin, ensure the following steps are completed:
               postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
               postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
           ```
-         
-### 3. **🚀 Run the Installation Script:**
-   - Execute the installation script using the following command:
-     ```bash
-     ./egs-installer.sh --input-yaml egs-installer-config.yaml
-     ```
 
-### 4. **🔄 Mandatory for Multiple Worker Clusters: Update the Inline Values**
+
+### 4. **🔄 Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
