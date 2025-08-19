@@ -16,7 +16,6 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 📝 For Avesha registration, please complete the [Avesha Registration](https://avesha.io/kubeslice-registration) process 🔑  
 - ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation?tab=readme-ov-file#egs-preflight-check-script) 🔍  
 - 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](https://github.com/kubeslice-ent/egs-installation#token-retrieval) 🔒  
-- 🔍 For preflight check details, please see the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation#preflight-check) ✅  
 - 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](https://github.com/kubeslice-ent/egs-installation#namespace-creation) 🗂️  
 
 ---  
