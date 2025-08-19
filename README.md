@@ -234,12 +234,6 @@ Before you begin, ensure the following steps are completed:
           insecure: true  # Allow insecure connections for metrics
       ```
 
-### 5. **🔄 Run the Installation Script Again:**
-   - Apply the updated configuration by running the installation script again:
-     ```bash
-     ./egs-installer.sh --input-yaml egs-installer-config.yaml
-     ```
-
 ### 6. **➕ Adding Additional Workers (Optional) **
 
    To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. Follow these steps:
