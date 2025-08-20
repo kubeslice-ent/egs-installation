@@ -154,6 +154,58 @@ kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 # Go to Status -> Targets to see if the EGS Controller targets are UP
 ```
 
+### 2.5 Universal Metrics Verification Steps
+
+After implementing any monitoring method, perform these universal checks:
+
+```bash
+# 1. Check Prometheus is running and healthy
+kubectl get pods -n egs-monitoring -l app.kubernetes.io/name=prometheus
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+curl -s http://localhost:9090/-/healthy
+kill %1
+
+# 2. Verify configuration syntax
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+curl -s http://localhost:9090/api/v1/status/config | jq '.status'
+kill %1
+
+# 3. Check all active targets
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health, lastError: .lastError}'
+kill %1
+
+# 4. Look for your specific jobs
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="kubeslice-controller-manager-monitor" or .labels.job=="kubeslice-controller-manager-pod-monitor")'
+kill %1
+```
+
+### 2.6 EGS Controller Metrics Verification
+
+```bash
+# Port forward once for all tests
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+
+# 1. Check if EGS Controller metrics are being collected
+curl -s "http://localhost:9090/api/v1/query?query=up{job=~\"kubeslice.*controller.*\"}" | jq '.data.result | length'
+
+# 2. Verify namespace labeling for EGS Controller metrics
+curl -s "http://localhost:9090/api/v1/query?query=up{job=~\"kubeslice.*controller.*\"}" | jq '.data.result[0].metric.kubernetes_namespace'
+
+# 3. Check pod labeling for EGS Controller metrics
+curl -s "http://localhost:9090/api/v1/query?query=up{job=~\"kubeslice.*controller.*\"}" | jq '.data.result[0].metric.pod_name'
+
+# 4. Verify scrape intervals
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job | contains("kubeslice")) | .scrapeInterval'
+
+# 5. Check specific EGS Controller metrics
+curl -s "http://localhost:9090/api/v1/query?query=process_cpu_seconds_total{job=~\"kubeslice.*controller.*\"}" | jq '.data.result | length'
+
+# Close port forward
+kill %1
+```
+
 ## 3. PostgreSQL Database Setup
 
 The EGS Controller uses PostgreSQL for KubeTally functionality, which handles chargeback and metrics storage. You have two options for PostgreSQL deployment.

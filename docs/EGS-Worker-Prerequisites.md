@@ -187,6 +187,58 @@ kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 # Visit http://localhost:9090/config to verify gpu-metrics job is configured
 ```
 
+### 2.5 Universal Metrics Verification Steps
+
+After implementing any monitoring method, perform these universal checks:
+
+```bash
+# 1. Check Prometheus is running and healthy
+kubectl get pods -n egs-monitoring -l app.kubernetes.io/name=prometheus
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+curl -s http://localhost:9090/-/healthy
+kill %1
+
+# 2. Verify configuration syntax
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+curl -s http://localhost:9090/api/v1/status/config | jq '.status'
+kill %1
+
+# 3. Check all active targets
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health, lastError: .lastError}'
+kill %1
+
+# 4. Look for your specific jobs
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="tgi" or .labels.job=="gpu-metrics" or (.labels.job | contains("servicemonitor")) or (.labels.job | contains("podmonitor")))'
+kill %1
+```
+
+### 2.6 GPU Metrics Verification
+
+```bash
+# Port forward once for all tests
+kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
+
+# 1. Check if GPU metrics are being collected
+curl -s "http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_SM_CLOCK" | jq '.data.result | length'
+
+# 2. Check if TGI metrics are being collected (adjust metric name as needed)
+curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*tgi.*\"}" | jq '.data.result | length'
+
+# 3. Verify node labeling for GPU metrics
+curl -s "http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_SM_CLOCK" | jq '.data.result[0].metric.kubernetes_node'
+
+# 4. Check pod labeling for TGI metrics
+curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*tgi.*\"}" | jq '.data.result[0].metric.pod_name'
+
+# 5. Verify scrape intervals
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job | contains("gpu")) | .scrapeInterval'
+
+# Close port forward
+kill %1
+```
+
 ## 3. GPU Metrics Monitoring Configuration
 
 ### 3.1 GPU Metrics Endpoints
@@ -310,6 +362,9 @@ kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 
 # Check if GPU metrics are being scraped
 # Visit http://localhost:9090/graph and query: up{job="gpu-metrics"}
+
+# For comprehensive verification, use the Universal Metrics Verification Steps (section 2.5)
+# and GPU Metrics Verification (section 2.6) above
 ```
 
 ### 4.3 Verify GPU Metrics Collection
