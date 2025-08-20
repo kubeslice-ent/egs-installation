@@ -6,6 +6,7 @@ This document outlines the prerequisites required for installing and operating t
 
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
+- [EGS Installer Configuration](#egs-installer-configuration)
 - [1. Prometheus Installation](#1-prometheus-installation)
 - [2. Monitoring Configuration](#2-monitoring-configuration)
 - [3. PostgreSQL Database Setup](#3-postgresql-database-setup)
@@ -26,6 +27,120 @@ The EGS Controller requires several components to be properly configured before 
 - PV provisioner support in the underlying infrastructure
 - Access to container registry with EGS images
 - Proper RBAC permissions for monitoring and database operations
+
+## EGS Installer Configuration
+
+The EGS installer can automatically handle most of the prerequisites installation. To use this approach, configure your `egs-installer-config.yaml`:
+
+```yaml
+# Enable additional applications installation
+enable_install_additional_apps: true
+
+# Enable custom applications
+enable_custom_apps: true
+
+# Command execution settings
+run_commands: false
+
+# Additional applications configuration
+additional_apps:
+  - name: "prometheus"
+    skip_installation: false
+    use_global_kubeconfig: true
+    namespace: "egs-monitoring"
+    release: "prometheus"
+    chart: "kube-prometheus-stack"
+    repo_url: "https://prometheus-community.github.io/helm-charts"
+    version: "v45.0.0"
+    specific_use_local_charts: true
+    inline_values:
+      prometheus:
+        service:
+          type: ClusterIP
+        prometheusSpec:
+          storageSpec: {}
+          additionalScrapeConfigs:
+          - job_name: tgi
+            kubernetes_sd_configs:
+            - role: endpoints
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod_name
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              target_label: container_name
+          - job_name: gpu-metrics
+            scrape_interval: 1s
+            metrics_path: /metrics
+            scheme: http
+            kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names:
+                - egs-gpu-operator
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_endpoints_name]
+              action: drop
+              regex: .*-node-feature-discovery-master
+            - source_labels: [__meta_kubernetes_pod_node_name]
+              action: replace
+              target_label: kubernetes_node
+      grafana:
+        enabled: true
+        grafana.ini:
+          auth:
+            disable_login_form: true
+            disable_signout_menu: true
+          auth.anonymous:
+            enabled: true
+            org_role: Viewer
+        service:
+          type: ClusterIP
+        persistence:
+          enabled: false
+          size: 1Gi
+    helm_flags: "--debug"
+    verify_install: false
+    verify_install_timeout: 600
+    skip_on_verify_fail: true
+    enable_troubleshoot: false
+
+  - name: "postgresql"
+    skip_installation: false
+    use_global_kubeconfig: true
+    namespace: "kt-postgresql"
+    release: "kt-postgresql"
+    chart: "postgresql"
+    repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql"
+    version: "16.2.1"
+    specific_use_local_charts: true
+    inline_values:
+      auth:
+        postgresPassword: "postgres"
+        username: "postgres"
+        password: "postgres"
+        database: "postgres"
+      primary:
+        persistence:
+          enabled: false
+          size: 10Gi
+    helm_flags: "--wait --debug"
+    verify_install: true
+    verify_install_timeout: 600
+    skip_on_verify_fail: false
+```
+
+Then run the prerequisites installer:
+
+```bash
+./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+```
+
+This will automatically install:
+- **Prometheus Stack** (v45.0.0) in the `egs-monitoring` namespace
+- **PostgreSQL** (v16.2.1) in the `kt-postgresql` namespace
+- **GPU Operator** (if configured) in the `egs-gpu-operator` namespace
+
+After running the prerequisites installer, proceed with the manual configuration steps below for fine-tuning and verification.
 
 ## 1. Prometheus Installation
 
@@ -220,37 +335,47 @@ helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
 
 # Create namespace for PostgreSQL
-kubectl create namespace egs-postgresql
+kubectl create namespace kt-postgresql
 
-# Install PostgreSQL
-helm install postgresql bitnami/postgresql \
-  --namespace egs-postgresql \
-  --set auth.postgresPassword=your_password \
-  --set auth.database=kubetally \
-  --set primary.persistence.enabled=true \
-  --set primary.persistence.size=8Gi
+# Install PostgreSQL using the latest configuration
+helm install kt-postgresql oci://registry-1.docker.io/bitnamicharts/postgresql \
+  --namespace kt-postgresql \
+  --version 16.2.1 \
+  --set auth.postgresPassword=postgres \
+  --set auth.username=postgres \
+  --set auth.database=postgres \
+  --set primary.persistence.enabled=false \
+  --set primary.persistence.size=10Gi
 ```
 
 #### 3.2 Configure EGS Controller for Internal PostgreSQL
 
-Update your EGS Controller values.yaml:
+Update your EGS Controller configuration in `egs-installer-config.yaml`:
 
 ```yaml
-global:
-  kubeTally:
-    enabled: true
-    postgresSecretName: kubetally-db-credentials
-    # PostgreSQL connection details will be retrieved from the secret
+kubeslice_controller_egs:
+  inline_values:
+    global:
+      kubeTally:
+        enabled: true
+        postgresSecretName: kubetally-db-credentials
+        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"
+        postgresPort: 5432
+        postgresUser: "postgres"
+        postgresPassword: "postgres"
+        postgresDB: "postgres"
+        postgresSslmode: disable
+        prometheusUrl: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
 ```
 
 #### 3.3 Create Database Credentials Secret
 
 ```bash
 # Get PostgreSQL credentials
-export POSTGRES_PASSWORD=$(kubectl get secret --namespace egs-postgresql postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
-export POSTGRES_HOST="postgresql.egs-postgresql.svc.cluster.local"
+export POSTGRES_PASSWORD=$(kubectl get secret --namespace kt-postgresql kt-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
+export POSTGRES_HOST="kt-postgresql.kt-postgresql.svc.cluster.local"
 export POSTGRES_PORT="5432"
-export POSTGRES_DB="kubetally"
+export POSTGRES_DB="postgres"
 
 # Create secret for EGS Controller
 kubectl create secret generic kubetally-db-credentials \
@@ -259,7 +384,7 @@ kubectl create secret generic kubetally-db-credentials \
   --from-literal=postgres-user=postgres \
   --from-literal=postgres-password=$POSTGRES_PASSWORD \
   --from-literal=postgres-db=$POSTGRES_DB \
-  --from-literal=postgres-sslmode=require \
+  --from-literal=postgres-sslmode=disable \
   -n kubeslice-controller
 ```
 
@@ -274,20 +399,23 @@ kubectl create secret generic kubetally-db-credentials \
 
 #### 3.2 Configure EGS Controller for External PostgreSQL
 
-Update your EGS Controller values.yaml:
+Update your EGS Controller configuration in `egs-installer-config.yaml`:
 
 ```yaml
-global:
-  kubeTally:
-    enabled: true
-    postgresSecretName: kubetally-db-credentials
-    # Optional: You can specify connection details directly
-    # postgresAddr: your-postgres-host
-    # postgresPort: 5432
-    # postgresUser: your-username
-    # postgresPassword: your-password
-    # postgresDB: kubetally
-    # postgresSslmode: require
+kubeslice_controller_egs:
+  inline_values:
+    global:
+      kubeTally:
+        enabled: true
+        postgresSecretName: kubetally-db-credentials
+        # Leave these empty if using external secret
+        postgresAddr: ""
+        postgresPort: 5432
+        postgresUser: ""
+        postgresPassword: ""
+        postgresDB: ""
+        postgresSslmode: disable
+        prometheusUrl: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
 ```
 
 #### 3.3 Create External Database Secret
@@ -298,7 +426,7 @@ kubectl create secret generic kubetally-db-credentials \
   --from-literal=postgres-port=5432 \
   --from-literal=postgres-user=your-username \
   --from-literal=postgres-password=your-password \
-  --from-literal=postgres-db=kubetally \
+  --from-literal=postgres-db=your-database-name \
   --from-literal=postgres-sslmode=require \
   -n kubeslice-controller
 ```
@@ -309,12 +437,53 @@ The EGS Controller will automatically create the required database schema when i
 
 ```sql
 -- Connect to your PostgreSQL instance
-\c kubetally
+\c your-database-name
 
 -- Grant necessary permissions
-GRANT CREATE ON DATABASE kubetally TO your_username;
+GRANT CREATE ON DATABASE your-database-name TO your_username;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO your_username;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO your_username;
+```
+
+### 3.5 Using EGS Installer for PostgreSQL
+
+The EGS installer can automatically deploy PostgreSQL as part of the prerequisites installation. Configure your `egs-installer-config.yaml`:
+
+```yaml
+# Enable additional applications installation
+enable_install_additional_apps: true
+
+# PostgreSQL configuration
+additional_apps:
+  - name: "postgresql"
+    skip_installation: false
+    use_global_kubeconfig: true
+    namespace: "kt-postgresql"
+    release: "kt-postgresql"
+    chart: "postgresql"
+    repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql"
+    version: "16.2.1"
+    specific_use_local_charts: true
+    inline_values:
+      auth:
+        postgresPassword: "postgres"
+        username: "postgres"
+        password: "postgres"
+        database: "postgres"
+      primary:
+        persistence:
+          enabled: false
+          size: 10Gi
+    helm_flags: "--wait --debug"
+    verify_install: true
+    verify_install_timeout: 600
+    skip_on_verify_fail: false
+```
+
+Then run the prerequisites installer:
+
+```bash
+./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
 ```
 
 ## 4. Verification Steps
@@ -336,16 +505,16 @@ kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 ```bash
 # Test internal PostgreSQL connection
 kubectl run postgresql-client --rm --tty -i --restart='Never' \
-  --namespace egs-postgresql \
+  --namespace kt-postgresql \
   --image docker.io/bitnami/postgresql:latest \
   --env="PGPASSWORD=$POSTGRES_PASSWORD" \
-  --command -- psql --host postgresql -U postgres -d kubetally -p 5432
+  --command -- psql --host kt-postgresql -U postgres -d postgres -p 5432
 
 # Test external PostgreSQL connection (if applicable)
 kubectl run postgresql-client --rm --tty -i --restart='Never' \
   --image docker.io/bitnami/postgresql:latest \
   --env="PGPASSWORD=your_password" \
-  --command -- psql --host your-external-host -U your-username -d kubetally -p 5432
+  --command -- psql --host your-external-host -U your-username -d your-database-name -p 5432
 ```
 
 ### 4.3 Verify EGS Controller Metrics
