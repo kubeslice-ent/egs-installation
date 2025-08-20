@@ -97,11 +97,13 @@ Before you begin, ensure the following steps are completed:
      1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
      2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes
      3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
-     4. **Run the Prerequisites Script** - Execute the prerequisites installer after configuration:
-        ```bash
-        ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
-        ```
 
+9. **🚀 Install Prerequisites (After Configuration):**
+   - After configuring the YAML file, run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
+   ```bash
+   ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+   ```
+   - **Note:** This step installs the required infrastructure components before the main EGS installation.
 ---
 
 ## 🛠️ Installation Steps
@@ -155,13 +157,6 @@ Before you begin, ensure the following steps are completed:
          # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
          run_commands: false
          ```
-
-     - **🚀 Install Prerequisites (After Configuration):**
-       - After configuring the YAML file, run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
-         ```bash
-         ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
-         ```
-       - **Note:** This step installs the required infrastructure components before the main EGS installation.
 
          ⚙️ **PostgreSQL Connection Configuration (*Mandatory only if `kubetallyEnabled` is set to `true` (Optional otherwise)*)** 
 
