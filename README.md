@@ -47,11 +47,6 @@ Before you begin, ensure the following steps are completed:
      git clone https://github.com/kubeslice-ent/egs-installation
      ```
 
-5. **📋 EGS Prerequisites Setup:**
-   - **For EGS Controller**: Review the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) to understand Prometheus and PostgreSQL requirements
-   - **For EGS Worker**: Review the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) to understand GPU Operator and monitoring requirements
-   - **For EGS License**: Review the [EGS License Setup Guide](docs/EGS-License-Setup.md) to understand the licensing process
-
 5. **✅ Run EGS Preflight Check Script (Optional):**
    - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
      - Refer to the [EGS Preflight Check Guide](https://github.com/kubeslice-ent/egs-installation?tab=readme-ov-file#egs-preflight-check-script) for detailed instructions.
@@ -109,10 +104,6 @@ Before you begin, ensure the following steps are completed:
    ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
    ```
    - **Note:** This step installs the required infrastructure components before the main EGS installation.
-   - **📋 Detailed Prerequisites Documentation:**
-     - **Controller Setup**: See [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) for Prometheus and PostgreSQL configuration details
-     - **Worker Setup**: See [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) for GPU Operator and monitoring setup
-     - **License Setup**: See [EGS License Setup Guide](docs/EGS-License-Setup.md) for licensing requirements
 ---
 
 ## 🛠️ Installation Steps
@@ -125,10 +116,6 @@ Before you begin, ensure the following steps are completed:
 
 ### 2. **📝 Modify the Configuration File (Mandatory):**
    - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`.
-   - **📋 Before proceeding, review the prerequisites documentation:**
-     - **Controller Setup**: [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) - Prometheus and PostgreSQL requirements
-     - **Worker Setup**: [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) - GPU Operator and monitoring requirements
-     - **License Setup**: [EGS License Setup Guide](docs/EGS-License-Setup.md) - Licensing process and requirements
    - Update the following mandatory parameters:
 
      - **⚙️ Kubernetes Configuration (Mandatory) :**
@@ -161,16 +148,10 @@ Before you begin, ensure the following steps are completed:
          # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
          run_commands: false
          ```
-         
-         📋 **For detailed configuration of these components, see:**
-         - **GPU Operator & Monitoring**: [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) - GPU metrics and monitoring setup
-         - **PostgreSQL Database**: [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) - Database configuration and setup
 
          ⚙️ **PostgreSQL Connection Configuration (*Mandatory only if `kubetallyEnabled` is set to `true` (Optional otherwise)*)** 
 
          📌 **Note:** The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
-         
-         📋 **For detailed PostgreSQL setup instructions, see [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)**
          - **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
          - The secret must contain the following key-value pairs:
            
@@ -219,8 +200,6 @@ Before you begin, ensure the following steps are completed:
 ### 3. **🔄 Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
-   
-   📋 **For detailed worker setup and GPU configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md)**
    
    #### **⚠️ Set the `global_auto_fetch_endpoint` Flag Appropriately**
    
@@ -276,8 +255,6 @@ Before you begin, ensure the following steps are completed:
 ### 4. **➕ Adding Additional Workers (Optional) **
 
    To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. Follow these steps:
-   
-   📋 **For detailed worker configuration and GPU setup, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md)**
 
    #### **📝 Step 1: Add Worker Configuration**
    
@@ -1167,11 +1144,6 @@ For more details on usage or troubleshooting, you can refer to the help option:
 ```bash
 ./fetch_egs_slice_token.sh --help
 ```
-
-📋 **For detailed prerequisites and setup guidance, see:**
-- **Controller Setup**: [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) - Prometheus and PostgreSQL setup
-- **Worker Setup**: [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) - GPU Operator and monitoring setup
-- **License Setup**: [EGS License Setup Guide](docs/EGS-License-Setup.md) - Licensing process
 ## EGS Preflight Check Script
 
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-✔️-blue?logo=kubernetes) ![Bash](https://img.shields.io/badge/Shell_Script-Bash-121011?logo=gnu-bash) ![License](https://img.shields.io/badge/License-@Avesha-orange)
@@ -1251,10 +1223,6 @@ A robust preflight check script designed for EGS setup on Kubernetes. This scrip
 | 🗂️ `namespace_preflight_checks`   | Validates namespace creation and existence.                                |
 | 🔍 `grep_k8s_resources_with_crds_and_webhooks` | Validates existing resources available in the cluster based on resource names. (e.g., prometheus, gpu-operator, postgresql) |
 | 📂 `pvc_preflight_checks`         | Validates PVC creation, deletion, and storage properties.                   |
-
-📋 **For detailed setup of these resources, see:**
-- **Prometheus & PostgreSQL**: [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)
-- **GPU Operator**: [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md)
 | ⚙️ `service_preflight_checks`     | Validates the creation and deletion of services (`ClusterIP`, `NodePort`, `LoadBalancer`). |
 | 🔐 `k8s_privilege_preflight_checks` | Validates privileges for Kubernetes actions on resources.                  |
 | 🌐 `internet_access_preflight_checks` | Validates internet connectivity from within the Kubernetes cluster.         |
@@ -1433,10 +1401,6 @@ This script simplifies the namespace creation process in Kubernetes, making it i
 - **Missing Binaries**: Ensure all required binaries are installed and accessible in your system's `PATH`. ⚠️
 - **Cluster Access Issues**: Verify that kubeconfig files are correctly configured and that the script can access the clusters specified in the YAML configuration. 🔧
 - **Timeouts**: If a component fails to install within the specified timeout, increase the `verify_install_timeout` in the YAML file. ⏳
-- **Prerequisites Issues**: For specific troubleshooting related to prerequisites, see:
-  - **Controller Issues**: [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) - Prometheus and PostgreSQL troubleshooting
-  - **Worker Issues**: [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) - GPU Operator and monitoring troubleshooting
-  - **License Issues**: [EGS License Setup Guide](docs/EGS-License-Setup.md) - Licensing troubleshooting
 
 ---
 
