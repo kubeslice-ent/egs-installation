@@ -326,7 +326,7 @@ kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 # Visit http://localhost:9090/config to verify gpu-metrics job is configured
 ```
 
-### 2.5 Universal Metrics Verification Steps
+### 2.5 Metrics Verification Steps
 
 After implementing any monitoring method, perform these universal checks:
 
