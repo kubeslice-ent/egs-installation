@@ -29,7 +29,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 Before you begin, ensure the following steps are completed:
 
 1. **📝 Registration:**
-   - Complete the registration process at [Avesha Registration](https://avesha.io/kubeslice-registration) to receive the image pull secrets required for running the script.
+   - Complete the registration process at [Avesha Registration](https://avesha.io/kubeslice-registration) to receive the required access credentials for running the script.
 
 2. **🔧 Required Binaries:**
    - Verify that the following binaries are installed and available in your system's `PATH`:
@@ -117,15 +117,6 @@ Before you begin, ensure the following steps are completed:
 ### 2. **📝 Modify the Configuration File (Mandatory):**
    - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`.
    - Update the following mandatory parameters:
-
-     - **🔑 Image Pull Secrets (Mandatory):**
-       - Insert the image pull secrets received via email as part of the registration process:
-         ```yaml
-         global_image_pull_secret:
-           repository: "https://index.docker.io/v1/"
-           username: ""  # Global Docker registry username (MANDATORY)
-           password: ""  # Global Docker registry password (MANDATORY)
-         ```
 
      - **⚙️ Kubernetes Configuration (Mandatory) :**
        - Set the global `kubeconfig` and `kubecontext` parameters:
@@ -405,11 +396,7 @@ required_binaries:
   - jq  # JSON processor
   - kubectl  # Kubernetes command-line tool
 
-# Global image pull secret settings
-global_image_pull_secret:
-  repository: "https://index.docker.io/v1/"  # Docker registry URL
-  username: ""  # Global Docker registry username
-  password: ""  # Global Docker registry password
+
 
 # Node labeling settings
 add_node_label: true  # Enable node labeling during installation
@@ -675,7 +662,7 @@ commands:
 | `global_helm_password`              | Password for accessing the global Helm repository, if required.                                                   | `""`                                                                                                |
 | `readd_helm_repos`                  | Re-add Helm repositories if they already exist to ensure the latest repository configuration is used.             | `true`                                                                                              |
 | `required_binaries`                 | List of binaries that are required for the installation process. The script will check for these binaries and exit if any are missing. | `yq`, `helm`, `kubectl`                                                                             |
-| `global_image_pull_secret`          | Global image pull secret settings for accessing private Docker registries.                                         | Repository: `https://index.docker.io/v1/`, Username: `""`, Password: `""`                           |
+
 | `add_node_label`                    | Enable node labeling during installation, useful for reserving nodes for specific tasks.                           | `true`                                                                                              |
 | `global_kubeconfig`                 | Relative path to the global kubeconfig file used to access Kubernetes clusters.                                    | `""` (empty string)                                                                                 |
 | `use_local_charts`                  | Use local Helm charts instead of pulling them from a repository, useful for testing or restricted access scenarios. | `true`                                                                                              |
