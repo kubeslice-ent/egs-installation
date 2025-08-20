@@ -71,7 +71,7 @@ Upon successful registration, you will receive:
 
 After successful registration, Avesha will process your license request and send the license secret YAML file to your registered email address.
 
-**Expected Delivery Time**: 1-2 business days (may vary based on request volume)
+**Expected Delivery Time**: Within 5 minutes of registration
 
 ### 2.2 License File Format
 
