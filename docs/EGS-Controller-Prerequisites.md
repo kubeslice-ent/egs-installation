@@ -352,9 +352,3 @@ kubectl port-forward svc/kubeslice-controller-manager-service 18080:18080 -n kub
 - [EGS Controller Values Reference](charts/kubeslice-controller-egs/values.yaml)
 - [Prometheus Operator Documentation](https://prometheus-operator.dev/)
 
-## Support
-
-For additional support or questions regarding EGS Controller prerequisites, please refer to:
-- EGS Documentation: [docs.avesha.io](https://docs.avesha.io)
-- GitHub Issues: [EGS Repository](https://github.com/kubeslice/egs)
-- Community Support: [KubeSlice Community](https://kubeslice.io/community)
