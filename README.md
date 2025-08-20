@@ -71,14 +71,6 @@ Before you begin, ensure the following steps are completed:
        ```
      - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
 
-7. **🚀 Install Prerequisites for EGS (Optional):**
-   - To install prerequisites like GPU Operator, Prometheus for EGS inventory, and PostgreSQL for cost information visibility, you can run the **Prerequisites Installer Script**:
-     - Example command:
-       ```bash
-       ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
-       ```
-     - **Note:** This step is optional but recommended if an existing instance of these services is not already running and configured. If skipped, some features might be broken or unavailable.
-
 8. **⚙️ Configure EGS Installer for Prerequisites Installation (Mandatory if using prerequisites):**
    - Before running the prerequisites installer, you must configure the `egs-installer-config.yaml` file to enable additional applications installation:
      ```yaml
@@ -150,7 +142,7 @@ Before you begin, ensure the following steps are completed:
          enable_install_worker: true                   # Enable the installation of Kubeslice workers
 
          # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
-         enable_install_additional_apps: false          # Set to true to enable additional apps installation
+         enable_install_additional_apps: true          # Set to true to enable additional apps installation
 
          # Enable custom applications
          # Set this to true if you want to allow custom applications to be deployed.
@@ -163,6 +155,13 @@ Before you begin, ensure the following steps are completed:
          # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
          run_commands: false
          ```
+
+     - **🚀 Install Prerequisites (After Configuration):**
+       - After configuring the YAML file, run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
+         ```bash
+         ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+         ```
+       - **Note:** This step installs the required infrastructure components before the main EGS installation.
 
          ⚙️ **PostgreSQL Connection Configuration (*Mandatory only if `kubetallyEnabled` is set to `true` (Optional otherwise)*)** 
 
@@ -212,7 +211,7 @@ Before you begin, ensure the following steps are completed:
           ```
 
 
-### 4. **🔄 Worker Clusters: Update the Inline Values**
+### 3. **🔄 Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
@@ -267,7 +266,7 @@ Before you begin, ensure the following steps are completed:
           insecure: true  # Allow insecure connections for metrics
       ```
 
-### 6. **➕ Adding Additional Workers (Optional) **
+### 4. **➕ Adding Additional Workers (Optional) **
 
    To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. Follow these steps:
 
