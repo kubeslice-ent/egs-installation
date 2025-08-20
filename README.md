@@ -280,11 +280,12 @@ Before you begin, ensure the following steps are completed:
          egs:
            prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
            grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
+         # Leave egsAgent section empty as the script will auto-fetch token and endpoint details
          egsAgent:
            secretName: egs-agent-access
            agentSecret:
-             endpoint: ""
-             key: ""
+             endpoint: ""  # Leave empty - script will auto-fetch
+             key: ""       # Leave empty - script will auto-fetch
          metrics:
            insecure: true                        # Allow insecure connections for metrics
          kserve:
