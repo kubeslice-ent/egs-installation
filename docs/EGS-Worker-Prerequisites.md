@@ -6,6 +6,7 @@ This document outlines the prerequisites required for installing and operating t
 
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
+- [EGS Installer Configuration](#egs-installer-configuration)
 - [1. GPU Operator Installation](#1-gpu-operator-installation)
 - [2. Kube-Prometheus-Stack Installation](#2-kube-prometheus-stack-installation)
 - [3. GPU Metrics Monitoring Configuration](#3-gpu-metrics-monitoring-configuration)
@@ -29,7 +30,143 @@ The EGS Worker requires several components to be properly configured before inst
 - Access to container registry with EGS and NVIDIA images
 - Proper RBAC permissions for monitoring and GPU operations
 
+## EGS Installer Configuration
+
+The EGS installer can automatically handle most of the prerequisites installation. To use this approach, configure your `egs-installer-config.yaml`:
+
+```yaml
+# Enable additional applications installation
+enable_install_additional_apps: true
+
+# Enable custom applications
+enable_custom_apps: true
+
+# Command execution settings
+run_commands: false
+
+# Additional applications configuration
+additional_apps:
+  - name: "gpu-operator"
+    skip_installation: false
+    use_global_kubeconfig: true
+    namespace: "egs-gpu-operator"
+    release: "gpu-operator"
+    chart: "gpu-operator"
+    repo_url: "https://helm.ngc.nvidia.com/nvidia"
+    version: "v24.9.1"
+    specific_use_local_charts: true
+    inline_values:
+      hostPaths:
+        driverInstallDir: "/home/kubernetes/bin/nvidia"
+      toolkit:
+        installDir: "/home/kubernetes/bin/nvidia"
+      cdi:
+        enabled: true
+        default: true
+      driver:
+        enabled: false
+    helm_flags: "--debug"
+    verify_install: false
+    verify_install_timeout: 600
+    skip_on_verify_fail: true
+    enable_troubleshoot: false
+
+  - name: "prometheus"
+    skip_installation: false
+    use_global_kubeconfig: true
+    namespace: "egs-monitoring"
+    release: "prometheus"
+    chart: "kube-prometheus-stack"
+    repo_url: "https://prometheus-community.github.io/helm-charts"
+    version: "v45.0.0"
+    specific_use_local_charts: true
+    inline_values:
+      prometheus:
+        service:
+          type: ClusterIP
+        prometheusSpec:
+          storageSpec: {}
+          additionalScrapeConfigs:
+          - job_name: tgi
+            kubernetes_sd_configs:
+            - role: endpoints
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod_name
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              target_label: container_name
+          - job_name: gpu-metrics
+            scrape_interval: 1s
+            metrics_path: /metrics
+            scheme: http
+            kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names:
+                - egs-gpu-operator
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_endpoints_name]
+              action: drop
+              regex: .*-node-feature-discovery-master
+            - source_labels: [__meta_kubernetes_pod_node_name]
+              action: replace
+              target_label: kubernetes_node
+      grafana:
+        enabled: true
+        grafana.ini:
+          auth:
+            disable_login_form: true
+            disable_signout_menu: true
+          auth.anonymous:
+            enabled: true
+            org_role: Viewer
+        service:
+          type: ClusterIP
+        persistence:
+          enabled: false
+          size: 1Gi
+    helm_flags: "--debug"
+    verify_install: false
+    verify_install_timeout: 600
+    skip_on_verify_fail: true
+    enable_troubleshoot: false
+```
+
+Then run the prerequisites installer:
+
+```bash
+./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+```
+
+This will automatically install:
+- **GPU Operator** (v24.9.1) in the `egs-gpu-operator` namespace
+- **Prometheus Stack** (v45.0.0) in the `egs-monitoring` namespace with GPU metrics configuration
+
+## ⚠️ Important: Choose Only One Approach
+
+**You have two options for setting up prerequisites - choose ONE:**
+
+### **Option 1: Use EGS Prerequisites Script (Recommended for new installations)**
+- Run the prerequisites installer: `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml`
+- This automatically installs and configures all required components
+- Skip the manual installation sections below
+
+### **Option 2: Use Existing Infrastructure**
+- If you already have GPU Operator, Prometheus, or other components running
+- Ensure they meet the version and configuration requirements
+- Follow the manual configuration steps below to integrate with existing setup
+
+**⚠️ Do NOT use both approaches simultaneously** - this will cause conflicts and duplicate installations.
+
+---
+
+**If you chose Option 1 (Prerequisites Script):** You can skip the manual installation sections below and proceed directly to [Verification Steps](#4-verification-steps).
+
+**If you chose Option 2 (Existing Setup):** Continue reading the manual installation sections below.
+
 ## 1. GPU Operator Installation
+
+> **📝 Note:** This section is for **Option 2 (Existing Infrastructure)** users only. If you used the EGS Prerequisites Script (Option 1), skip to [Verification Steps](#4-verification-steps).
 
 The NVIDIA GPU Operator is essential for managing GPU resources and exposing GPU metrics that EGS Worker needs for GPU slicing operations.
 
@@ -96,6 +233,8 @@ The GPU Operator installs several components that expose metrics:
 - **GPU Feature Discovery**: Discovers GPU features and capabilities
 
 ## 2. Kube-Prometheus-Stack Installation
+
+> **📝 Note:** This section is for **Option 2 (Existing Infrastructure)** users only. If you used the EGS Prerequisites Script (Option 1), skip to [Verification Steps](#4-verification-steps).
 
 The kube-prometheus-stack provides comprehensive monitoring capabilities for the EGS Worker cluster.
 
@@ -240,6 +379,8 @@ kill %1
 ```
 
 ## 3. GPU Metrics Monitoring Configuration
+
+> **📝 Note:** This section is for **Option 2 (Existing Infrastructure)** users only. If you used the EGS Prerequisites Script (Option 1), skip to [Verification Steps](#4-verification-steps).
 
 ### 3.1 GPU Metrics Endpoints
 
@@ -486,6 +627,32 @@ prometheus:
         memory: 4Gi
         cpu: 1000m
 ```
+
+## 📋 Next Steps Summary
+
+### **For Option 1 Users (EGS Prerequisites Script):**
+✅ **Prerequisites are already installed and configured**
+- GPU Operator v24.9.1 is running in `egs-gpu-operator` namespace
+- Prometheus Stack v45.0.0 is running in `egs-monitoring` namespace
+- GPU metrics scraping is configured with `additionalScrapeConfigs`
+- All required secrets and configurations are in place
+- **Proceed directly to EGS Worker installation**
+
+### **For Option 2 Users (Existing Infrastructure):**
+✅ **Manual configuration completed**
+- GPU Operator is installed and configured for GPU management
+- Prometheus monitoring is configured and scraping GPU metrics
+- GPU metrics endpoints are properly configured
+- All required monitoring components are in place
+- **Proceed to EGS Worker installation**
+
+### **Common Next Steps for Both Options:**
+1. **Verify all prerequisites** using the verification steps above
+2. **Install EGS Worker** using your preferred method
+3. **Configure EGS Worker** with the appropriate GPU settings
+4. **Test GPU slicing functionality** and verify all metrics collection
+
+---
 
 ## Additional Resources
 
