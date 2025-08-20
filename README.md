@@ -58,6 +58,10 @@ Before you begin, ensure the following steps are completed:
        ```
      - This step validates namespaces, permissions, PVCs, and services, helping to identify and resolve potential issues before installation.
 
+6. **📋 EGS Prerequisites Setup:**
+   - **For Controller**: Review [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) for Prometheus and PostgreSQL requirements
+   - **For Worker**: Review [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) for GPU Operator and monitoring requirements
+
 6. **🗂️ Pre-create Required Namespaces (Optional):**
    - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
      - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
@@ -152,6 +156,8 @@ Before you begin, ensure the following steps are completed:
          ⚙️ **PostgreSQL Connection Configuration (*Mandatory only if `kubetallyEnabled` is set to `true` (Optional otherwise)*)** 
 
          📌 **Note:** The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
+         
+         📋 **For detailed PostgreSQL setup, see [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)**
          - **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
          - The secret must contain the following key-value pairs:
            
