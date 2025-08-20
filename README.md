@@ -62,7 +62,7 @@ Before you begin, ensure the following steps are completed:
    - **For Controller**: Review [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) for Prometheus and PostgreSQL requirements
    - **For Worker**: Review [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) for GPU Operator and monitoring requirements
 
-6. **🗂️ Pre-create Required Namespaces (Optional):**
+7. **🗂️ Pre-create Required Namespaces (Optional):**
    - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
      - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
        - Refer to the [Namespace Creation Script](https://github.com/kubeslice-ent/egs-installation#namespace-creation) for details.
@@ -169,39 +169,36 @@ Before you begin, ensure the following steps are completed:
            | `postgresPassword`| The PostgreSQL password                      |
            | `postgresDB`      | The PostgreSQL database name                 |
            | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
-           
-    
+
          **Example Configuration to use pre-created secret**
          
-            ```yaml
-            postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials.
-                                                           # Created by install, all the below values must be specified.
-                                                           # Alternatively, leave all values empty and provide a pre-created secret.
-            postgresAddr: ""  # Change to your PostgreSQL endpoint
-            postgresPort: ""   # Change this to match your PostgreSQL service port
-            postgresUser: ""  # Set your PostgreSQL username
-            postgresPassword: ""  # Set your PostgreSQL password
-            postgresDB: ""  # Set your PostgreSQL database name
-            postgresSslmode: ""  # Change this based on your SSL configuration
-            ```
-            
+         ```yaml
+         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials.
+                                                        # Created by install, all the below values must be specified.
+                                                        # Alternatively, leave all values empty and provide a pre-created secret.
+         postgresAddr: ""  # Change to your PostgreSQL endpoint
+         postgresPort: ""   # Change this to match your PostgreSQL service port
+         postgresUser: ""  # Set your PostgreSQL username
+         postgresPassword: ""  # Set your PostgreSQL password
+         postgresDB: ""  # Set your PostgreSQL database name
+         postgresSslmode: ""  # Change this based on your SSL configuration
+         ```
          
-           📌 **Alternatively**, if you provide all values with a secret name as specified for `postgresSecretName` in the values file, using the key-value format below, it will automatically create the specified secret in the `kubeslice-controller` namespace with the provided values.
+         📌 **Alternatively**, if you provide all values with a secret name as specified for `postgresSecretName` in the values file, using the key-value format below, it will automatically create the specified secret in the `kubeslice-controller` namespace with the provided values.
    
-            **Example Configuration to auto-create secret with provided values**
-            
-          ```yaml
-              postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
-                                                             # then a secret will be created with specified name. 
-                                                             # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
-              postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
-              postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
-              postgresUser: "postgres"               # Change this PostgreSQL username to your values
-              postgresPassword: "postgres"           # Change this PostgreSQL password to your value
-              postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
-              postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
-          ```
-
+         **Example Configuration to auto-create secret with provided values**
+         
+         ```yaml
+         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
+                                                        # then a secret will be created with specified name. 
+                                                        # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
+         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
+         postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
+         postgresUser: "postgres"               # Change this PostgreSQL username to your values
+         postgresPassword: "postgres"           # Change this PostgreSQL password to your value
+         postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
+         postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
+         ```
 
 ### 3. **🔄 Worker Clusters: Update the Inline Values**
 
@@ -1414,15 +1411,11 @@ This script simplifies the namespace creation process in Kubernetes, making it i
 
 ### 🔑 Key Features
 
-1.Define cloud instance pricing data in YAML
-
-2.Specify Kubernetes connection details (via kubeconfig and kubecontext) in the same YAML
-
-3.Automatically port-forward to a Kubernetes service
-
-4.Convert the YAML pricing info to CSV
-
-5.Upload the CSV to a pricing API running inside the cluster
+1. **Define cloud instance pricing data** in YAML
+2. **Specify Kubernetes connection details** (via kubeconfig and kubecontext) in the same YAML
+3. **Automatically port-forward** to a Kubernetes service
+4. **Convert the YAML pricing info** to CSV
+5. **Upload the CSV** to a pricing API running inside the cluster
 
 
 
@@ -1484,17 +1477,12 @@ Run the script:
 ```
 
 ## Summary
-1.Reads Kubernetes config from YAML
-
-2.Auto-discovers the service port (e.g., kubetally-pricing-service:80)
-
-3.Picks a random local port
-
-4.Starts a background port-forward to that service
-
-5.Converts pricing data in YAML → CSV
-
-6.Uploads CSV to:
+1. **Reads Kubernetes config** from YAML
+2. **Auto-discovers the service port** (e.g., kubetally-pricing-service:80)
+3. **Picks a random local port**
+4. **Starts a background port-forward** to that service
+5. **Converts pricing data** in YAML → CSV
+6. **Uploads CSV** to:
 ```
 http://localhost:<random_port>/api/v1/prices
 ```
