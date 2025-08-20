@@ -17,6 +17,9 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation?tab=readme-ov-file#egs-preflight-check-script) 🔍  
 - 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](https://github.com/kubeslice-ent/egs-installation#token-retrieval) 🔒  
 - 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](https://github.com/kubeslice-ent/egs-installation#namespace-creation) 🗂️  
+- 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
+- ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
+- 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
 
 ---  
 
@@ -76,6 +79,37 @@ Before you begin, ensure the following steps are completed:
        ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
        ```
      - **Note:** This step is optional but recommended if an existing instance of these services is not already running and configured. If skipped, some features might be broken or unavailable.
+
+8. **⚙️ Configure EGS Installer for Prerequisites Installation (Mandatory if using prerequisites):**
+   - Before running the prerequisites installer, you must configure the `egs-installer-config.yaml` file to enable additional applications installation:
+     ```yaml
+     # Enable or disable specific stages of the installation
+     enable_install_controller: true               # Enable the installation of the Kubeslice controller
+     enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+     enable_install_worker: true                   # Enable the installation of Kubeslice workers
+
+     # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
+     enable_install_additional_apps: true          # Set to true to enable additional apps installation
+
+     # Enable custom applications
+     # Set this to true if you want to allow custom applications to be deployed.
+     # This is specifically useful for enabling NVIDIA driver installation on your nodes.
+     enable_custom_apps: false
+
+     # Command execution settings
+     # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
+     # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
+     # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
+     run_commands: false
+     ```
+   - **Critical Configuration Steps:**
+     1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
+     2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes
+     3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
+     4. **Run the Prerequisites Script** - Execute the prerequisites installer after configuration:
+        ```bash
+        ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+        ```
 
 ---
 
