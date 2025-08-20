@@ -956,6 +956,7 @@ version: "1.14.4"
 | `verify_install_timeout`    | Timeout for verifying the installation of the worker, in seconds.                                       | `60` (60 seconds)                                                                                           |
 | `skip_on_verify_fail`       | Skip further steps or exit if the worker verification fails.                                            | `false`                                                                                                     |
 | `enable_troubleshoot`       | Enable troubleshooting mode for additional logs and checks.                                              | `false`                                                                                                     |
+
 #### `additional_apps` Subfields
 
 | **Subfield**                | **Description**                                                                                         | **Default/Example**                                                             |
