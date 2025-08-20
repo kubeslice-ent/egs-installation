@@ -73,7 +73,7 @@ kubeslice:
                     operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.16.0-RELEASE-bed20230
+    tag: 1.16.0-RELEASE-368c5723
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -214,7 +214,7 @@ kubeslice:
   apigw:
     image: kubeslice-api-gw-ent-egs
 #    tag: 1.14.1
-    tag: 1.15.0-RELEASE-2bd2eb6f
+    tag: 1.15.0-RELEASE-dd92a9eb 
     pullPolicy: IfNotPresent
     env:
       - name: DCGM_METRIC_JOB_VALUE
@@ -305,7 +305,7 @@ kubeslice:
 
   workerinstaller:
     image: worker-installer
-    tag: 1.7.0-RELEASE-c26a1cdb
+    tag: 1.7.0-RELEASE-28c699f6
     pullPolicy: IfNotPresent
 
   prometheus:

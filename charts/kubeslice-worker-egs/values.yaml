@@ -79,7 +79,7 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.14.3-RELEASE-7679ef70
+  tag: 1.14.3-RELEASE-af0a046d
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -176,7 +176,7 @@ egs:
 
 workerInstaller:
   image: worker-installer
-  tag: 1.7.0-RELEASE-c26a1cdb
+  tag: 1.7.0-RELEASE-28c699f6
 
 jaeger:
   enabled: false
