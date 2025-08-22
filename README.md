@@ -613,6 +613,67 @@ Before you begin, ensure the following steps are completed:
    - **📊 Monitoring:** Ensure the monitoring endpoints (Prometheus/Grafana) are accessible from the controller cluster for proper telemetry.
    - **🔗 Prometheus Accessibility:** **Critical:** Make sure Prometheus endpoints are accessible from the controller cluster. The controller needs to reach the Prometheus service in each worker cluster to collect metrics and telemetry data. If the worker clusters are in different networks, ensure proper network connectivity or use LoadBalancer/NodePort services for Prometheus.
 
+   **📌 Point 6 Note - Multiple Worker Configuration:**
+   
+   When configuring multiple workers, you can use an array structure in your `egs-installer-config.yaml`. Here's a sample snippet showing how to efficiently handle multiple workers:
+   
+   ```yaml
+   kubeslice_worker_egs:
+     # Worker 1 - Complete configuration
+     - name: "worker-1"
+       use_global_kubeconfig: true
+       kubeconfig: ""
+       kubecontext: ""
+       skip_installation: false
+       specific_use_local_charts: true
+       namespace: "kubeslice-system"
+       release: "egs-worker-1"
+       chart: "kubeslice-worker-egs"
+       inline_values:
+         global:
+           imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+         operator:
+           env:
+             - name: DCGM_EXPORTER_JOB_NAME
+               value: gpu-metrics
+         egs:
+           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
+         # ... other worker-1 specific values
+       
+     # Worker 2 - Pattern for additional workers
+     - name: "worker-2"
+       use_global_kubeconfig: true
+       kubeconfig: ""
+       kubecontext: ""
+       skip_installation: false
+       specific_use_local_charts: true
+       namespace: "kubeslice-system"
+       release: "egs-worker-2"                    # Unique release name
+       chart: "kubeslice-worker-egs"
+       inline_values:
+         global:
+           imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+         operator:
+           env:
+             - name: DCGM_EXPORTER_JOB_NAME
+               value: gpu-metrics
+         egs:
+           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
+         # ... other worker-2 specific values
+       
+     # Worker 3 - Follow same pattern
+     - name: "worker-3"
+       # ... similar configuration with unique name, release, and endpoints
+   ```
+   
+   **💡 Key Points for Multiple Workers:**
+   - **Unique Identifiers:** Each worker must have unique `name` and `release` values
+   - **Endpoint Configuration:** Configure worker-specific monitoring endpoints if they're in different clusters
+   - **Array Structure:** Use YAML array syntax with `-` for each worker entry
+   - **Consistent Pattern:** Follow the same configuration structure for all workers
+
 ---
 
 ### 7. **🚀 Run the Installation Script**
