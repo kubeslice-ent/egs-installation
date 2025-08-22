@@ -585,8 +585,6 @@ Before you begin, ensure the following steps are completed:
        enable_troubleshoot: false                # Enable troubleshooting mode for additional logs and checks
    ```
 
-   **📌 IMPORTANT NOTE:** The `DCGM_EXPORTER_JOB_NAME` value (`gpu-metrics`) must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected from the worker cluster and monitoring dashboards will not display GPU data. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md).
-
    **Step 2: Add Cluster Registration**
    
    Add corresponding entries in the `cluster_registration` section for each new worker:
