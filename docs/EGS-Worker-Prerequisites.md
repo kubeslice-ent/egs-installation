@@ -5,13 +5,16 @@ This document outlines the prerequisites required for installing and operating t
 ## Table of Contents
 
 - [Overview](#overview)
+- [🚀 Quick Start Workflow](#-quick-start-workflow)
 - [Prerequisites](#prerequisites)
-- [EGS Installer Configuration](#egs-installer-configuration)
-- [1. GPU Operator Installation](#1-gpu-operator-installation)
-- [2. Kube-Prometheus-Stack Installation](#2-kube-prometheus-stack-installation)
-- [3. GPU Metrics Monitoring Configuration](#3-gpu-metrics-monitoring-configuration)
+- [EGS Installer Configuration](#egs-installer-configuration) *(Option 1)*
+- [Manual Installation Steps](#manual-installation-steps-option-2) *(Option 2)*
+  - [1. GPU Operator Installation](#1-gpu-operator-installation)
+  - [2. Kube-Prometheus-Stack Installation](#2-kube-prometheus-stack-installation)
+  - [3. GPU Metrics Monitoring Configuration](#3-gpu-metrics-monitoring-configuration)
 - [4. Verification Steps](#4-verification-steps)
 - [5. Troubleshooting](#5-troubleshooting)
+- [📋 Next Steps Summary](#-next-steps-summary)
 
 ## Overview
 
@@ -20,6 +23,24 @@ The EGS Worker requires several components to be properly configured before inst
 - Kube-Prometheus-Stack for metrics collection and visualization
 - Proper monitoring configuration to scrape GPU metrics from GPU Operator components
 - GPU-enabled nodes with NVIDIA drivers
+
+## 🚀 Quick Start Workflow
+
+**Choose ONE approach based on your setup:**
+
+### **🔄 Option 1: Use EGS Prerequisites Script (Recommended for new installations)**
+- **What it does:** Automatically installs and configures all required components
+- **Best for:** New installations, single clusters, simplified setup
+- **Time to complete:** ~15-20 minutes
+- **Skip to:** [EGS Installer Configuration](#egs-installer-configuration) → [Verification Steps](#4-verification-steps)
+
+### **🌐 Option 2: Use Existing Infrastructure (Advanced)**
+- **What it does:** Integrates with your existing GPU Operator, Prometheus, and monitoring setup
+- **Best for:** Production environments, multi-cluster setups, existing monitoring infrastructure
+- **Time to complete:** ~25-35 minutes (depending on existing setup complexity)
+- **Skip to:** [Manual Installation Steps](#manual-installation-steps-option-2)
+
+**⚠️ Important:** Choose only ONE approach - do NOT use both simultaneously to avoid conflicts.
 
 ## Prerequisites
 
@@ -32,7 +53,7 @@ The EGS Worker requires several components to be properly configured before inst
 
 ## EGS Installer Configuration
 
-The EGS installer can automatically handle most of the prerequisites installation. To use this approach, configure your `egs-installer-config.yaml`:
+The EGS installer can automatically handle most of the prerequisites installation. To use this approach, configure your `egs-installer-config.yaml`. **For the complete configuration template, see [egs-installer-config.yaml](../egs-installer-config.yaml)**:
 
 ```yaml
 # Enable additional applications installation
@@ -142,21 +163,22 @@ This will automatically install:
 - **GPU Operator** (v24.9.1) in the `egs-gpu-operator` namespace
 - **Prometheus Stack** (v45.0.0) in the `egs-monitoring` namespace with GPU metrics configuration
 
-## ⚠️ Important: Choose Only One Approach
+---
 
-**You have two options for setting up prerequisites - choose ONE:**
+## 📋 Workflow Summary
 
-### **Option 1: Use EGS Prerequisites Script (Recommended for new installations)**
-- Run the prerequisites installer: `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml`
-- This automatically installs and configures all required components
-- Skip the manual installation sections below
+### **🔄 Option 1 Workflow (EGS Prerequisites Script):**
+1. ✅ **Configure** `egs-installer-config.yaml` with `enable_install_additional_apps: true` ([see template](../egs-installer-config.yaml))
+2. ✅ **Run** prerequisites installer: `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml`
+3. ✅ **Verify** installation using [Verification Steps](#4-verification-steps)
+4. ✅ **Proceed** to EGS Worker installation
 
-### **Option 2: Use Existing Infrastructure**
-- If you already have GPU Operator, Prometheus, or other components running
-- Ensure they meet the version and configuration requirements
-- Follow the manual configuration steps below to integrate with existing setup
-
-**⚠️ Do NOT use both approaches simultaneously** - this will cause conflicts and duplicate installations.
+### **🌐 Option 2 Workflow (Existing Infrastructure):**
+1. ✅ **Verify** existing GPU Operator, Prometheus, and monitoring setup
+2. ✅ **Configure** monitoring to scrape GPU metrics from GPU Operator components
+3. ✅ **Set up** GPU metrics collection and visualization
+4. ✅ **Verify** all components using [Verification Steps](#4-verification-steps)
+5. ✅ **Proceed** to EGS Worker installation
 
 ---
 
@@ -164,7 +186,19 @@ This will automatically install:
 
 **If you chose Option 2 (Existing Setup):** Continue reading the manual installation sections below.
 
-## 1. GPU Operator Installation
+## Manual Installation Steps (Option 2)
+
+> **📝 Note:** This section is for **Option 2 (Existing Infrastructure)** users only. If you used the EGS Prerequisites Script (Option 1), skip to [Verification Steps](#4-verification-steps).
+
+**📋 Reference:** For configuration examples and templates, see [egs-installer-config.yaml](../egs-installer-config.yaml)
+
+### **📋 Manual Installation Workflow:**
+1. **[GPU Operator Installation](#1-gpu-operator-installation)** - Set up GPU management and monitoring
+2. **[Kube-Prometheus-Stack Installation](#2-kube-prometheus-stack-installation)** - Set up monitoring stack
+3. **[GPU Metrics Monitoring Configuration](#3-gpu-metrics-monitoring-configuration)** - Configure GPU metrics collection
+4. **[Verification Steps](#4-verification-steps)** - Verify all components are working
+
+### 1. GPU Operator Installation
 
 > **📝 Note:** This section is for **Option 2 (Existing Infrastructure)** users only. If you used the EGS Prerequisites Script (Option 1), skip to [Verification Steps](#4-verification-steps).
 
@@ -629,6 +663,15 @@ prometheus:
 
 ---
 
+## 🎯 Quick Navigation
+
+**Need to jump to a specific section?**
+
+- **🔄 Option 1 Users:** [EGS Installer Configuration](#egs-installer-configuration) → [Verification Steps](#4-verification-steps)
+- **🌐 Option 2 Users:** [Manual Installation Steps](#manual-installation-steps-option-2) → [Verification Steps](#4-verification-steps)
+- **📋 All Users:** [Next Steps Summary](#-next-steps-summary) → [Additional Resources](#additional-resources)
+- **📁 Configuration Template:** [egs-installer-config.yaml](../egs-installer-config.yaml)
+
 ## Additional Resources
 
 - [NVIDIA GPU Operator Documentation](https://docs.ngc.nvidia.com/kubernetes/gpu-operator/)
@@ -636,6 +679,7 @@ prometheus:
 - [DCGM Exporter Metrics Reference](https://github.com/NVIDIA/dcgm-exporter)
 - [EGS Worker Values Reference](charts/kubeslice-worker-egs/values.yaml)
 - [GPU Operator Values Reference](charts/gpu-operator/values.yaml)
+- [EGS Installer Configuration Template](../egs-installer-config.yaml)
 
 ## Support
 
