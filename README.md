@@ -382,30 +382,6 @@ This documentation covers:
 - Custom applications and manifests
 - Troubleshooting and verification settings
 
-
-
-For detailed explanations of all YAML configuration fields, please refer to **[📋 Configuration Documentation](docs/Configuration-README.md)**.
-
-### 🧑‍💻 Script Usage
-To run the script, use the following command:
-```
-```bash
-./egs-installer.sh --input-yaml <yaml_file>
-```
-
-
-Replace `<yaml_file>` with the path to your YAML configuration file. For example:
-
-```bash
-./egs-installer.sh --input-yaml egs-installer-config.yaml
-```
-
-### 💡 Command-Line Options
-
-- `--input-yaml <yaml_file>`: Specifies the YAML configuration file to be used.
-- `--help`: Displays usage information.
-
-
 ---
 
 ## 🔑 Slice & Admin Token Retrieval
@@ -419,6 +395,8 @@ This documentation covers:
 - Script parameters and usage options
 - Examples for slice tokens, admin tokens, and combined retrieval
 - Help and troubleshooting information
+
+
 ## ✅ EGS Preflight Check
 
 For detailed information about running preflight checks to validate your EGS installation environment, including comprehensive script options and usage examples, please refer to:
@@ -433,6 +411,7 @@ This documentation covers:
 - Troubleshooting and best practices
 
 ---
+
 ## 🗂️ Namespace Creation
 
 For detailed information about creating Kubernetes namespaces with custom annotations and labels, including the automated namespace creation script, please refer to:
