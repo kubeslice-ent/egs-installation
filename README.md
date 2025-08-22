@@ -10,7 +10,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 ## 📄 EGS Documents
 
 - 📖 For the EGS platform overview, please see the [Platform Overview Documentation](https://docs.avesha.io/) 🌐  
-- 🔧 For the Admin guide, please see the [Admin Guide Documentation](https://docs.avesha.io/) 🛠️  
+- 🔧 For the Admin guide, please see the [EGS Admin Guide](docs/EGS-Admin-guide.pdf) 🛠️  
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/) 📚  
 - 🛠️ For the Installation guide, please see the documentation on [Installation Guide Documentation](https://github.com/kubeslice-ent/egs-installation) 💻  
 - 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
@@ -777,6 +777,19 @@ This documentation covers:
 - Additional applications configuration
 - Custom applications and manifests
 - Troubleshooting and verification settings
+
+---
+
+## 📚 EGS Documentation
+
+For comprehensive EGS documentation including admin guides, user guides, and platform overview, please refer to:
+
+**[🛠️ EGS Admin Guide](docs/EGS-Admin-guide.pdf)** | **[👤 EGS User Guide](docs/EGS-User-guide.pdf)** | **[🌐 EGS Platform Overview](docs/EGS-Overview.pdf)**
+
+This documentation covers:
+- **Admin Guide**: Administrative tasks, configuration management, and operational procedures
+- **User Guide**: End-user features, workflows, and best practices
+- **Platform Overview**: Architecture, components, and system requirements
 
 ---
 
