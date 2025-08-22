@@ -131,6 +131,19 @@ Before you begin, ensure the following steps are completed:
          use_global_context: true  # If true, use the global kubecontext for all operations by default
          ```
 
+     - **🖥 Global Monitoring Endpoint Settings (Optional):**
+       - Configure global monitoring endpoint settings for multi-cluster setups:
+         ```yaml
+         # Global monitoring endpoint settings
+         global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
+         global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
+         global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
+         global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
+         global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
+         global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
+         global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
+         ```
+
      - **⚙️ Additional Configuration (Optional):**
        - Configure installation stages and additional applications:
          ```yaml
@@ -252,34 +265,11 @@ Before you begin, ensure the following steps are completed:
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
-   #### **⚠️ Set the `global_auto_fetch_endpoint` Flag Appropriately**
+   **📝 Note:** Global monitoring endpoint settings are configured in the [Additional Configuration](#2-modify-the-configuration-file-mandatory) section above, including `global_auto_fetch_endpoint` and related Grafana/Prometheus settings.
    
-   1. **🌐 Single-Cluster Setups**  
-      - If the **controller** and **worker** are in the same cluster, all the below setting can be ignored, and no change is required
+   #### **⚠️ Multi-Cluster Setup Configuration**
    
-   2. **Default Setting**  
-      - By default, `global_auto_fetch_endpoint` is set to `false`. If you enable it (`true`), ensure the following configurations:  
-        - **💡 Worker Cluster Service Details:** Provide the service details for each worker cluster to fetch the correct monitoring endpoints.  
-        - **📊 Multiple Worker Clusters:** Ensure the service endpoints (e.g., Grafana and Prometheus) are accessible from the **controller cluster**.  
-   
-      #### **🖥 Global Monitoring Endpoint Settings**
-   
-      These configurations are **mandatory** if `global_auto_fetch_endpoint` is set to `true`. Update the following in your `egs-installer-config.yaml`:
-      
-      ```yaml
-      # Global monitoring endpoint settings
-      global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
-      global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
-      global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
-      global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
-      global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
-      global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
-      global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
-      ```
-   
-   3. **📢 Update `inline-values` for Multi-Cluster Setups**
-   
-   If `global_auto_fetch_endpoint` is `false` and the **controller** and **worker** are in different clusters, follow these steps:
+   If the **controller** and **worker** are in different clusters, you need to configure monitoring endpoints manually:
    
    1. **🗒 Fetch the Grafana & Prometheus External IP**  
       Use the following command to get the **Grafana LoadBalancer External IP**:  
