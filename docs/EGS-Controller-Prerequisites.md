@@ -220,7 +220,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: kubeslice-controller-manager-monitor
-  namespace: egs-monitoring
+  namespace: egs-monitoring # NAMESPACE: Change this to your monitoring namespace
   labels:
     app.kubernetes.io/instance: kube-prometheus-stack  # PROMETHEUS_INSTANCE: Change to your Prometheus instance
     release: prometheus  # PROMETHEUS_RELEASE: Change to your Prometheus release name
