@@ -399,12 +399,6 @@ Before you begin, ensure the following steps are completed:
 
    **For detailed PostgreSQL setup, see [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)**
 
-   **Default Behavior:**
-   - Uses global kubeconfig and context
-   - Installs in `kubeslice-controller` namespace
-   - Auto-fetches controller endpoint
-   - Uses standard Helm flags and verification settings
-
 ### 4. **Kubeslice UI Installation Settings (Optional)**
 
    **Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
