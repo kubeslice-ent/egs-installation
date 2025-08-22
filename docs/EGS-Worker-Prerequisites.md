@@ -14,7 +14,6 @@ This document outlines the prerequisites required for installing and operating t
   - [3. GPU Metrics Monitoring Configuration](#3-gpu-metrics-monitoring-configuration)
 - [4. Verification Steps](#4-verification-steps)
 - [5. Troubleshooting](#5-troubleshooting)
-- [📋 Next Steps Summary](#-next-steps-summary)
 
 ## Overview
 
