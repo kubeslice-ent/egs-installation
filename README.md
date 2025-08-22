@@ -86,7 +86,37 @@ Before you begin, ensure the following steps are completed:
        global_kubecontext: ""  # Global kubecontext (MANDATORY)
        use_global_context: true  # If true, use the global kubecontext for all operations by default
        ```
-     
+
+   If you want EGS to automatically install and configure Prometheus, GPU Operator, and PostgreSQL:
+   
+   - Configure the `egs-installer-config.yaml` file to enable additional applications installation:
+     ```yaml
+     # Enable or disable specific stages of the installation
+     enable_install_controller: true               # Enable the installation of the Kubeslice controller
+     enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+     enable_install_worker: true                   # Enable the installation of Kubeslice workers
+
+     # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
+     enable_install_additional_apps: true          # Set to true to enable additional apps installation
+
+     # Enable custom applications
+     # Set this to true if you want to allow custom applications to be deployed.
+     # This is specifically useful for enabling NVIDIA driver installation on your nodes.
+     enable_custom_apps: false
+
+     # Command execution settings
+     # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
+     # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
+     # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
+     run_commands: false
+     ```
+   
+   - **Critical Configuration Steps:**
+     1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
+     2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes
+     3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
+
+
      - **Additional Apps Configuration for Each Worker:**
        - **📌 IMPORTANT:** For different worker clusters, you need to add additional apps array for each component in the `kubeslice_worker_egs` section
        - Each worker cluster requires its own instances of GPU Operator and Prometheus if `enable_install_additional_apps: true`
@@ -193,34 +223,6 @@ Before you begin, ensure the following steps are completed:
          #   release: "prometheus-worker-2"
          ```
 
-   If you want EGS to automatically install and configure Prometheus, GPU Operator, and PostgreSQL:
-   
-   - Configure the `egs-installer-config.yaml` file to enable additional applications installation:
-     ```yaml
-     # Enable or disable specific stages of the installation
-     enable_install_controller: true               # Enable the installation of the Kubeslice controller
-     enable_install_ui: true                       # Enable the installation of the Kubeslice UI
-     enable_install_worker: true                   # Enable the installation of Kubeslice workers
-
-     # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
-     enable_install_additional_apps: true          # Set to true to enable additional apps installation
-
-     # Enable custom applications
-     # Set this to true if you want to allow custom applications to be deployed.
-     # This is specifically useful for enabling NVIDIA driver installation on your nodes.
-     enable_custom_apps: false
-
-     # Command execution settings
-     # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
-     # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
-     # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
-     run_commands: false
-     ```
-   
-   - **Critical Configuration Steps:**
-     1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
-     2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes
-     3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
 
    #### **Option B: Using Pre-existing Infrastructure**
    
