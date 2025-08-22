@@ -429,21 +429,7 @@ kubectl create secret generic kubetally-db-credentials \
   -n kubeslice-controller
 ```
 
-### 3.4 Database Schema
-
-The EGS Controller will automatically create the required database schema when it starts. Ensure the database user has the following permissions:
-
-```sql
--- Connect to your PostgreSQL instance
-\c your-database-name
-
--- Grant necessary permissions
-GRANT CREATE ON DATABASE your-database-name TO your_username;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO your_username;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO your_username;
-```
-
-### 3.5 Using EGS Installer for PostgreSQL
+### 3.4 Using EGS Installer for PostgreSQL
 
 The EGS installer can automatically deploy PostgreSQL as part of the prerequisites installation. Configure your `egs-installer-config.yaml`:
 
