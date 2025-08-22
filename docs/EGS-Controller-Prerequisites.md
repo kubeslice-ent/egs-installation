@@ -220,23 +220,29 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: kubeslice-controller-manager-monitor
-  namespace: egs-monitoring  # NAMESPACE: Change this to your monitoring namespace
+  namespace: egs-monitoring
   labels:
     app.kubernetes.io/instance: kube-prometheus-stack  # PROMETHEUS_INSTANCE: Change to your Prometheus instance
     release: prometheus  # PROMETHEUS_RELEASE: Change to your Prometheus release name
 spec:
-  endpoints:
-    - interval: 30s  # SCRAPE_INTERVAL: How often to collect metrics (30s, 15s, 60s, etc.)
-      port: metrics  # Port name where metrics are exposed (port 18080)
-      path: /metrics  # METRICS_PATH: Path where metrics are exposed (default: /metrics)
-      scrapeTimeout: 10s  # SCRAPE_TIMEOUT: Maximum time to wait for metrics response
-      scheme: http  # SCHEME: Use http for port 18080
-  namespaceSelector:
-    matchNames:
-      - kubeslice-controller  # KUBESLICE_CONTROLLER_NAMESPACE: Namespace where controller is deployed
   selector:
     matchLabels:
       control-plane: controller-manager  # Matches the service selector
+  namespaceSelector:
+    matchNames:
+      - kubeslice-controller  # KUBESLICE_CONTROLLER_NAMESPACE: Namespace where controller is deployed
+  endpoints:
+  - port: metrics
+    interval: 15s
+    path: /metrics
+    scheme: http
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod_name
+    - sourceLabels: [__meta_kubernetes_pod_container_name]
+      targetLabel: container_name
+    - targetLabel: job
+      replacement: nvidia-dcgm-exporter
 ```
 
 ### 2.2 Pod Monitor Configuration
