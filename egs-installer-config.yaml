@@ -1,11 +1,5 @@
 ########################### MANDATORY PARAMETERS ####################################################################
 
-# Global image pull secret settings
-global_image_pull_secret:
-  repository: "https://index.docker.io/v1/"   # Docker registry URL
-  username: ""                                # Global Docker registry username
-  password: ""                                # Global Docker registry password
-
 # Kubeconfig settings
 global_kubeconfig: ""                         # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
 global_kubecontext: ""                        # Global kubecontext to use - Mandatory
@@ -33,7 +27,14 @@ run_commands: false
 
 
 #########################################################################################################################
-########################### OPTIONAL CONFIGURATION PARAMETERS ###########################################################
+########################### OPTIONAL CONFIGURATION PARAMETERS FOR MULTICLUSTER SETUP###########################################################
+
+# Global image pull secret settings for AirGap Installations
+global_image_pull_secret:
+  repository: "https://index.docker.io/v1/"   # Docker registry URL
+  username: ""                                # Global Docker registry username
+  password: ""                                # Global Docker registry password
+
 # Project and cluster registration settings
 enable_project_creation: true                   # Enable project creation in Kubeslice
 enable_cluster_registration: true               # Enable cluster registration in Kubeslice
