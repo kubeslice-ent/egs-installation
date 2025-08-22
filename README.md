@@ -321,20 +321,6 @@ Before you begin, ensure the following steps are completed:
      specific_use_local_charts: true              # Override to use local charts for the UI
    ```
 
-   **When to Modify:**
-   - **Custom namespace**: Change `namespace` if you need a different namespace than `kubeslice-controller`
-   - **Custom release name**: Change `release` if you need a different Helm release name than `egs-ui`
-   - **Custom image registry**: Modify `imageRegistry` if using a different container registry
-   - **Ingress configuration**: Enable and configure ingress if you need external access
-   - **Service type**: Change service type if you need NodePort or LoadBalancer access
-   - **Custom domain**: Update the host in ingress configuration for your domain
-
-   **Default Behavior:**
-   - Uses global kubeconfig and context
-   - Installs in `kubeslice-controller` namespace
-   - Uses ClusterIP service type (internal access only)
-   - Ingress disabled by default
-   - Uses standard Helm flags and verification settings
 
 ### 5. **Worker Clusters: Update the Inline Values**
 
