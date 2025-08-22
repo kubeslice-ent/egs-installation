@@ -60,11 +60,7 @@ Before you begin, ensure the following steps are completed:
        ```
      - This step validates namespaces, permissions, PVCs, and services, helping to identify and resolve potential issues before installation.
 
-6. **📋 EGS Prerequisites Setup:**
-   - **For Controller**: Review [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) for Prometheus and PostgreSQL requirements
-   - **For Worker**: Review [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) for GPU Operator and monitoring requirements
-
-7. **🗂️ Pre-create Required Namespaces (Optional):**
+6. **🗂️ Pre-create Required Namespaces (Optional):**
    - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
      - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
        - Refer to the [Namespace Creation Script](https://github.com/kubeslice-ent/egs-installation#namespace-creation) for details.
@@ -77,8 +73,15 @@ Before you begin, ensure the following steps are completed:
        ```
      - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
 
-8. **⚙️ Configure EGS Installer for Prerequisites Installation (Mandatory if using prerequisites):**
-   - Before running the prerequisites installer, you must configure the `egs-installer-config.yaml` file to enable additional applications installation:
+7. **⚙️ Configure EGS Installer for Prerequisites Installation:**
+
+   **⚠️ IMPORTANT: Choose ONE approach - do NOT use both simultaneously**
+
+   #### **Option A: Using EGS Prerequisites Script (Recommended for new installations)**
+   
+   If you want EGS to automatically install and configure Prometheus, GPU Operator, and PostgreSQL:
+   
+   - Configure the `egs-installer-config.yaml` file to enable additional applications installation:
      ```yaml
      # Enable or disable specific stages of the installation
      enable_install_controller: true               # Enable the installation of the Kubeslice controller
@@ -99,12 +102,24 @@ Before you begin, ensure the following steps are completed:
      # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
      run_commands: false
      ```
+   
    - **Critical Configuration Steps:**
      1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
      2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes
      3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
 
-9. **🚀 Install Prerequisites (After Configuration):**
+   #### **Option B: Using Pre-existing Infrastructure**
+   
+   If you already have Prometheus, GPU Operator, or PostgreSQL running in your cluster:
+   
+   - **Set `enable_install_additional_apps: false`** in your `egs-installer-config.yaml`
+   - **Refer to the prerequisite documentation** to ensure proper configuration for metrics scraping:
+     - **[EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)** - For Prometheus and PostgreSQL configuration
+     - **[EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md)** - For GPU Operator and monitoring configuration
+   - **Verify that your existing components** are properly configured to scrape EGS metrics
+   - **Ensure proper RBAC permissions** and network policies are in place
+
+8. **🚀 Install Prerequisites (After Configuration):**
    - After configuring the YAML file, run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
    ```bash
    ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
