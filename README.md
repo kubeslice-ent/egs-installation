@@ -203,7 +203,7 @@ Before you begin, ensure the following steps are completed:
            annotations: {}
          kubeTally:
            enabled: false                          # Enable KubeTally in the controller
-   #### Postgresql Connection Configuration for Kubetally  ####
+   #### PostgreSQL Connection Configuration for Kubetally  ####
            postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
                                                           # then a secret will be created with specified name. 
                                                           # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
@@ -226,22 +226,54 @@ Before you begin, ensure the following steps are completed:
      enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
    ```
 
-   **PostgreSQL Connection Configuration (Mandatory only if `kubetallyEnabled` is set to `true`, Optional otherwise)**
+   **⚙️ PostgreSQL Connection Configuration (Mandatory only if `kubetallyEnabled` is set to `true` (Optional otherwise))**
 
-   **Note:** The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
+   **📌 Note:** The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
+
+   **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
+
+   The secret must contain the following key-value pairs:
+
+   | Key               | Description                                  |
+   |-------------------|----------------------------------------------|
+   | `postgresAddr`    | The PostgreSQL service endpoint              |
+   | `postgresPort`    | The PostgreSQL service port (default: 5432)  |
+   | `postgresUser`    | The PostgreSQL username                      |
+   | `postgresPassword`| The PostgreSQL password                      |
+   | `postgresDB`      | The PostgreSQL database name                 |
+   | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
+
+   **Example Configuration to use pre-created secret**
    
+   ```yaml
+   postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials.
+                                                  # Created by install, all the below values must be specified.
+                                                  # Alternatively, leave all values empty and provide a pre-created secret.
+   postgresAddr: ""  # Change to your PostgreSQL endpoint
+   postgresPort: ""   # Change this to match your PostgreSQL service port
+   postgresUser: ""  # Set your PostgreSQL username
+   postgresPassword: ""  # Set your PostgreSQL password
+   postgresDB: ""  # Set your PostgreSQL database name
+   postgresSslmode: ""  # Change this based on your SSL configuration
+   ```
+   
+   **📌 Alternatively**, if you provide all values with a secret name as specified for `postgresSecretName` in the values file, using the key-value format below, it will automatically create the specified secret in the `kubeslice-controller` namespace with the provided values.
+   
+   **Example Configuration to auto-create secret with provided values**
+   
+   ```yaml
+   postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
+                                                  # then a secret will be created with specified name. 
+                                                  # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
+   postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
+   postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
+   postgresUser: "postgres"               # Change this PostgreSQL username to your values
+   postgresPassword: "postgres"           # Change this PostgreSQL password to your value
+   postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
+   postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
+   ```
+
    **For detailed PostgreSQL setup, see [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)**
-   - **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
-   - The secret must contain the following key-value pairs:
-     
-     | Key               | Description                                  |
-     |-------------------|----------------------------------------------|
-     | `postgresAddr`    | The PostgreSQL service endpoint              |
-     | `postgresPort`    | The PostgreSQL service port (default: 5432)  |
-     | `postgresUser`    | The PostgreSQL username                      |
-     | `postgresPassword`| The PostgreSQL password                      |
-     | `postgresDB`      | The PostgreSQL database name                 |
-     | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
 
    **Default Behavior:**
    - Uses global kubeconfig and context
