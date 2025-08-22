@@ -204,7 +204,7 @@ kubectl get svc -n egs-monitoring | grep prometheus
 
 If you prefer to install Prometheus manually, ensure you have:
 - Prometheus Operator
-- ServiceMonitor and PodMonitor CRDs
+- ServiceMonitor CRDs
 - Proper RBAC configuration
 
 ## 2. Monitoring Configuration
@@ -489,9 +489,9 @@ Then run the prerequisites installer:
 ### 4.1 Verify Prometheus Configuration
 
 ```bash
-# Check if ServiceMonitor and PodMonitor are created
+# Check if ServiceMonitor are created
 kubectl get servicemonitor -n egs-monitoring
-kubectl get podmonitor -n egs-monitoring
+
 
 # Check Prometheus targets
 kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
@@ -532,7 +532,7 @@ kubectl port-forward svc/kubeslice-controller-manager-service 18080:18080 -n kub
 
 **Problem**: Metrics not being scraped
 **Solution**: 
-- Verify ServiceMonitor/PodMonitor labels match Prometheus configuration
+- Verify ServiceMonitor labels match Prometheus configuration
 - Check if EGS Controller pods have proper annotations
 - Ensure Prometheus has access to the EGS Controller namespace
 
