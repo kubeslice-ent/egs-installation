@@ -14,7 +14,7 @@ EGS provides two main scrape configurations:
 - **CRITICAL**: Prometheus Operator installed (required for Method 1)
 - NVIDIA GPU Operator installed (for GPU metrics)
 - Appropriate RBAC permissions for Prometheus to discover Kubernetes endpoints
-- Text Generation Inference or similar AI/ML workloads (for nvidia-dcgm-exporter metrics)
+- similar AI/ML workloads (for nvidia-dcgm-exporter metrics)
 
 ## Important: Prometheus Operator Requirement
 
