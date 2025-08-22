@@ -464,8 +464,6 @@ Before you begin, ensure the following steps are completed:
            service:
              type: ClusterIP                  # Service type for the EGS core APIs
    
-   **📌 IMPORTANT NOTE:** The `DCGM_METRIC_JOB_VALUE` must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected and UI visualization will not work. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md).
-   
    # Helm Flags and Verification Settings
      helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
      verify_install: false                        # Verify the installation of the UI
@@ -476,6 +474,7 @@ Before you begin, ensure the following steps are completed:
      specific_use_local_charts: true              # Override to use local charts for the UI
    ```
 
+   **📌 IMPORTANT NOTE:** The `DCGM_METRIC_JOB_VALUE` must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected and UI visualization will not work. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md).
 
 ### 5. **Worker Clusters: Update the Inline Values**
 
