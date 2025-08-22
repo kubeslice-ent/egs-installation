@@ -12,7 +12,7 @@ enable_install_worker: true                   # Enable the installation of Kubes
 
 # Enable or disable the installation of additional applications(prometheus, gpu-operator, postgresql)
 
-enable_install_additional_apps: false         # Set to true to enable additional apps installation
+enable_install_additional_apps: true         # Set to true to enable additional apps installation
 
 # Enable custom applications
 # Set this to true if you want to allow custom applications to be deployed.
