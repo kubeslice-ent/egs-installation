@@ -260,17 +260,17 @@ Before you begin, ensure the following steps are completed:
    
    For single cluster setups where controller and workers are in the same cluster, you only need to update basic configuration:
    
-         ```yaml
+   ```yaml
    # Kubernetes Configuration (Mandatory)
-         global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
-         global_kubecontext: ""  # Global kubecontext (MANDATORY)
-         use_global_context: true  # If true, use the global kubecontext for all operations by default
+   global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
+   global_kubecontext: ""  # Global kubecontext (MANDATORY)
+   use_global_context: true  # If true, use the global kubecontext for all operations by default
 
    # Installation Flags (Mandatory)
-         enable_install_controller: true               # Enable the installation of the Kubeslice controller
-         enable_install_ui: true                       # Enable the installation of the Kubeslice UI
-         enable_install_worker: true                   # Enable the installation of Kubeslice workers
-         enable_install_additional_apps: true          # Set to true to enable additional apps installation
+   enable_install_controller: true               # Enable the installation of the Kubeslice controller
+   enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+   enable_install_worker: true                   # Enable the installation of Kubeslice workers
+   enable_install_additional_apps: true          # Set to true to enable additional apps installation
    enable_custom_apps: true                      # Set to true if you want to allow custom applications to be deployed
    run_commands: false                           # Set to true to allow the execution of commands for configuring NVIDIA MIG
    ```
@@ -291,13 +291,13 @@ Before you begin, ensure the following steps are completed:
       ```yaml
       # Global monitoring endpoint settings
      global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
-      global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
-      global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
-      global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
-      global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
-      global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
-      global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
-      ```
+     global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
+     global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
+     global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
+     global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
+     global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
+     global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
+     ```
    
    **📋 When to Use Each Approach:**
    
@@ -313,49 +313,49 @@ Before you begin, ensure the following steps are completed:
    
    ```yaml
    # Kubeslice Controller Installation Settings
-kubeslice_controller_egs:
-  skip_installation: false                     # Do not skip the installation of the controller
-  use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
-  specific_use_local_charts: true              # Override to use local charts for the controller
-  kubeconfig: ""                               # Path to the kubeconfig file specific to the controller, if empty, uses the global kubeconfig
-  kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global context
-  namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
-  release: "egs-controller"                    # Helm release name for the controller
-  chart: "kubeslice-controller-egs"            # Helm chart name for the controller
+   kubeslice_controller_egs:
+     skip_installation: false                     # Do not skip the installation of the controller
+     use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
+     specific_use_local_charts: true              # Override to use local charts for the controller
+     kubeconfig: ""                               # Path to the kubeconfig file specific to the controller, if empty, uses the global kubeconfig
+     kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global context
+     namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
+     release: "egs-controller"                    # Helm release name for the controller
+     chart: "kubeslice-controller-egs"            # Helm chart name for the controller
    
      # Inline Helm Values for the Controller Chart
-  inline_values:
-    global:
+     inline_values:
+       global:
          imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the images
-      namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
-        labels: {}
-        annotations: {}
-      kubeTally:
+         namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
+           labels: {}
+           annotations: {}
+         kubeTally:
            enabled: true                           # Enable KubeTally in the controller
    
          # PostgreSQL Connection Configuration for Kubetally
-        postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
-                                                       # then a secret will be created with specified name. 
-                                                       # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
-        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
-        postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
-        postgresUser: "postgres"               # Change this PostgreSQL username to your values
-        postgresPassword: "postgres"           # Change this PostgreSQL password to your value
-        postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
-        postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
-        prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
-    kubeslice:
-      controller:
-        endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
+         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
+                                                        # then a secret will be created with specified name. 
+                                                        # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
+         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
+         postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
+         postgresUser: "postgres"               # Change this PostgreSQL username to your values
+         postgresPassword: "postgres"           # Change this PostgreSQL password to your value
+         postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
+         postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
+         prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
+       kubeslice:
+         controller:
+           endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
    
      # Helm Flags and Verification Settings
-  helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
-  verify_install: false                        # Verify the installation of the controller
-  verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
-  skip_on_verify_fail: true                    # If verification fails, do not skip the step
+     helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
+     verify_install: false                        # Verify the installation of the controller
+     verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
+     skip_on_verify_fail: true                    # If verification fails, do not skip the step
    
      # Troubleshooting Settings
-  enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
+     enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
    ```
 
    **⚙️ PostgreSQL Connection Configuration (Mandatory - KubeTally is enabled by default)**
@@ -415,71 +415,71 @@ kubeslice_controller_egs:
 
    ```yaml
    # Kubeslice UI Installation Settings
-kubeslice_ui_egs:
-  skip_installation: false                     # Do not skip the installation of the UI
-  use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
-  kubeconfig: ""                               # Path to the kubeconfig file specific to the UI, if empty, uses the global kubeconfig
-  kubecontext: ""                              # Kubecontext specific to the UI; if empty, uses the global context
-  namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
-  release: "egs-ui"                            # Helm release name for the UI
-  chart: "kubeslice-ui-egs"                    # Helm chart name for the UI
+   kubeslice_ui_egs:
+     skip_installation: false                     # Do not skip the installation of the UI
+     use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
+     kubeconfig: ""                               # Path to the kubeconfig file specific to the UI, if empty, uses the global kubeconfig
+     kubecontext: ""                              # Kubecontext specific to the UI; if empty, uses the global context
+     namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
+     release: "egs-ui"                            # Helm release name for the UI
+     chart: "kubeslice-ui-egs"                    # Helm chart name for the UI
    
      # Inline Helm Values for the UI Chart
-  inline_values:
-    global:
+     inline_values:
+       global:
          imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the UI images
-    kubeslice:
-      prometheus:
-        url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
-      uiproxy:
-        service:
-          type: ClusterIP                  # Service type for the UI proxy
-          ## if type selected to NodePort then set nodePort value if required
-          # nodePort:
-          # port: 443
-          # targetPort: 8443
-        labels:
-          app: kubeslice-ui-proxy
-        annotations: {}
+       kubeslice:
+         prometheus:
+           url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
+         uiproxy:
+           service:
+             type: ClusterIP                  # Service type for the UI proxy
+             ## if type selected to NodePort then set nodePort value if required
+             # nodePort:
+             # port: 443
+             # targetPort: 8443
+           labels:
+             app: kubeslice-ui-proxy
+           annotations: {}
 
-        ingress:
-          ## If true, ui‑proxy Ingress will be created
-          enabled: false
-          ## Port on the Service to route to
-          servicePort: 443
-          ## Ingress class name (e.g. "nginx"), if you're using a custom ingress controller
-          className: ""
-          hosts:
-            - host: ui.kubeslice.com     # replace with your FQDN
-              paths:
-                - path: /             # base path
-                  pathType: Prefix    # Prefix | Exact
-          ## TLS configuration (you must create these Secrets ahead of time)
-          tls: []
-            # - hosts:
-            #     - ui.kubeslice.com
-            #   secretName: uitlssecret
-          annotations: []
-          ## Extra labels to add onto the Ingress object
-          extraLabels: {}
-         apigw:
-           env:
-             - name: DCGM_METRIC_JOB_VALUE
-               value: nvidia-dcgm-exporter  # This value must match the Prometheus scrape job name for GPU metrics collection
+           ingress:
+             ## If true, ui‑proxy Ingress will be created
+             enabled: false
+             ## Port on the Service to route to
+             servicePort: 443
+             ## Ingress class name (e.g. "nginx"), if you're using a custom ingress controller
+             className: ""
+             hosts:
+               - host: ui.kubeslice.com     # replace with your FQDN
+                 paths:
+                   - path: /             # base path
+                     pathType: Prefix    # Prefix | Exact
+             ## TLS configuration (you must create these Secrets ahead of time)
+             tls: []
+               # - hosts:
+               #     - ui.kubeslice.com
+               #   secretName: uitlssecret
+             annotations: []
+             ## Extra labels to add onto the Ingress object
+             extraLabels: {}
+            apigw:
+              env:
+                - name: DCGM_METRIC_JOB_VALUE
+                  value: nvidia-dcgm-exporter  # This value must match the Prometheus scrape job name for GPU metrics collection
         
-      egsCoreApis:
-        enabled: true                         # Enable EGS core APIs for the UI
-        service:
-          type: ClusterIP                  # Service type for the EGS core APIs
+        egsCoreApis:
+          enabled: true                         # Enable EGS core APIs for the UI
+          service:
+            type: ClusterIP                  # Service type for the EGS core APIs
    
      # Helm Flags and Verification Settings
-  helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
-  verify_install: false                        # Verify the installation of the UI
-  verify_install_timeout: 50                   # Timeout for the UI installation verification (in seconds)
-  skip_on_verify_fail: true                    # If UI verification fails, do not skip the step
+     helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
+     verify_install: false                        # Verify the installation of the UI
+     verify_install_timeout: 50                   # Timeout for the UI installation verification (in seconds)
+     skip_on_verify_fail: true                    # If UI verification fails, do not skip the step
    
      # Chart Source Settings
-  specific_use_local_charts: true              # Override to use local charts for the UI
+     specific_use_local_charts: true              # Override to use local charts for the UI
    ```
 
    **📌 IMPORTANT NOTE:** The `DCGM_METRIC_JOB_VALUE` must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected and UI visualization will not work. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md).
