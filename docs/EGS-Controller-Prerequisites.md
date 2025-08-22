@@ -204,7 +204,7 @@ kubectl get svc -n egs-monitoring | grep prometheus
 
 If you prefer to install Prometheus manually, ensure you have:
 - Prometheus Operator
-- ServiceMonitor and PodMonitor CRDs
+- ServiceMonitor CRDs
 - Proper RBAC configuration
 
 ## 2. Monitoring Configuration
@@ -245,49 +245,17 @@ spec:
       replacement: nvidia-dcgm-exporter
 ```
 
-### 2.2 Pod Monitor Configuration
-
-Create a PodMonitor for direct pod metrics collection:
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: kubeslice-controller-manager-pod-monitor
-  namespace: egs-monitoring  # NAMESPACE: Change this to your monitoring namespace
-  labels:
-    app.kubernetes.io/instance: kube-prometheus-stack  # PROMETHEUS_INSTANCE: Change to your Prometheus instance
-    release: prometheus  # PROMETHEUS_RELEASE: Change to your Prometheus release name
-spec:
-  selector:
-    matchLabels:
-      control-plane: controller-manager  # Matches the pod labels
-  namespaceSelector:
-    matchNames:
-      - kubeslice-controller  # KUBESLICE_CONTROLLER_NAMESPACE: Namespace where controller is deployed
-  podMetricsEndpoints:
-    - interval: 30s  # SCRAPE_INTERVAL: How often to collect metrics (30s, 15s, 60s, etc.)
-      port: "18080"  # PORT: Direct port number as string (matches prometheus.io/port annotation)
-      path: /metrics  # METRICS_PATH: Path where metrics are exposed (default: /metrics)
-      scrapeTimeout: 10s  # SCRAPE_TIMEOUT: Maximum time to wait for metrics response
-      scheme: http  # SCHEME: Use http for direct pod access
-```
-
-### 2.3 Apply Monitoring Configuration
+### 2.2 Apply Monitoring Configuration
 
 ```bash
 # Apply the ServiceMonitor
 kubectl apply -f servicemonitor.yaml
 
-# Apply the PodMonitor
-kubectl apply -f podmonitor.yaml
-
 # Verify the monitors are created
 kubectl get servicemonitor -n egs-monitoring
-kubectl get podmonitor -n egs-monitoring
 ```
 
-### 2.4 Verify Metrics Scraping
+### 2.3 Verify Metrics Scraping
 
 ```bash
 # Check if metrics are being scraped in Prometheus
@@ -297,7 +265,7 @@ kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 # Go to Status -> Targets to see if the EGS Controller targets are UP
 ```
 
-### 2.5 Universal Metrics Verification Steps
+### 2.4 Universal Metrics Verification Steps
 
 After implementing any monitoring method, perform these universal checks:
 
@@ -324,7 +292,7 @@ curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | selec
 kill %1
 ```
 
-### 2.6 EGS Controller Metrics Verification
+### 2.5 EGS Controller Metrics Verification
 
 ```bash
 # Port forward once for all tests
@@ -521,9 +489,9 @@ Then run the prerequisites installer:
 ### 4.1 Verify Prometheus Configuration
 
 ```bash
-# Check if ServiceMonitor and PodMonitor are created
+# Check if ServiceMonitor are created
 kubectl get servicemonitor -n egs-monitoring
-kubectl get podmonitor -n egs-monitoring
+
 
 # Check Prometheus targets
 kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
@@ -564,7 +532,7 @@ kubectl port-forward svc/kubeslice-controller-manager-service 18080:18080 -n kub
 
 **Problem**: Metrics not being scraped
 **Solution**: 
-- Verify ServiceMonitor/PodMonitor labels match Prometheus configuration
+- Verify ServiceMonitor labels match Prometheus configuration
 - Check if EGS Controller pods have proper annotations
 - Ensure Prometheus has access to the EGS Controller namespace
 
