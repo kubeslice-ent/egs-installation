@@ -234,6 +234,131 @@ Before you begin, ensure the following steps are completed:
    - **Verify that your existing components** are properly configured to scrape EGS metrics
    - **Ensure proper RBAC permissions** and network policies are in place
 
+### **📋 Prerequisite Installation Options:**
+
+**Option A: Single Cluster Prerequisites (Default Configuration)**
+
+For single cluster setups where controller and workers are in the same cluster, use the default configuration:
+
+```yaml
+# Prerequisites Configuration for Single Cluster
+enable_install_additional_apps: true          # Enable installation of GPU Operator, Prometheus, and PostgreSQL
+enable_custom_apps: false                     # Disable custom applications (NVIDIA driver installation)
+run_commands: false                           # Disable MIG configuration commands
+
+# Additional Apps will be installed in the same cluster
+additional_apps:
+  - name: "gpu-operator"                      # GPU Operator for single cluster
+    use_global_kubeconfig: true               # Use global kubeconfig
+    namespace: "egs-gpu-operator"             # Namespace for GPU Operator
+    release: "gpu-operator"                   # Helm release name
+    chart: "gpu-operator"                     # Helm chart name
+    # ... other GPU operator configuration
+
+  - name: "prometheus"                        # Prometheus for single cluster
+    use_global_kubeconfig: true               # Use global kubeconfig
+    namespace: "egs-monitoring"               # Namespace for Prometheus
+    release: "prometheus"                     # Helm release name
+    chart: "kube-prometheus-stack"            # Helm chart name
+    # ... other Prometheus configuration
+
+  - name: "postgresql"                        # PostgreSQL for single cluster (controller only)
+    use_global_kubeconfig: true               # Use global kubeconfig
+    namespace: "egs-postgresql"               # Namespace for PostgreSQL
+    release: "postgresql"                     # Helm release name
+    chart: "postgresql"                       # Helm chart name
+    # ... other PostgreSQL configuration
+```
+
+**📌 Note - PostgreSQL Architecture in Single Cluster:**
+Even in single cluster setups, PostgreSQL is installed to serve ONLY the Kubeslice Controller (KubeTally). Worker components in the same cluster do NOT need their own PostgreSQL instance - they connect to the controller's PostgreSQL for data storage and retrieval.
+
+**Option B: Multi-Cluster Prerequisites (Advanced Configuration)**
+
+For multi-cluster setups where workers are in different clusters, define prerequisites for each worker:
+
+```yaml
+# Prerequisites Configuration for Multi-Cluster
+enable_install_additional_apps: true          # Enable installation of prerequisites
+enable_custom_apps: false                     # Disable custom applications
+run_commands: false                           # Disable MIG configuration commands
+
+# Additional Apps for Multiple Worker Clusters
+additional_apps:
+  # Worker-1 Prerequisites
+  - name: "gpu-operator-worker-1"             # GPU Operator for worker-1
+    use_global_kubeconfig: false              # Use specific kubeconfig for this worker
+    kubeconfig: "~/.kube/config-worker-1"     # Path to worker-1 kubeconfig file
+    kubecontext: "worker-1-context"           # Kubecontext specific to worker-1
+    namespace: "egs-gpu-operator"             # Namespace for GPU Operator
+    release: "gpu-operator-worker-1"          # Unique Helm release name
+    chart: "gpu-operator"                     # Helm chart name
+    # ... other GPU operator configuration
+
+  - name: "prometheus-worker-1"               # Prometheus for worker-1
+    use_global_kubeconfig: false              # Use specific kubeconfig for this worker
+    kubeconfig: "~/.kube/config-worker-1"     # Path to worker-1 kubeconfig file
+    kubecontext: "worker-1-context"           # Kubecontext specific to worker-1
+    namespace: "egs-monitoring"               # Namespace for Prometheus
+    release: "prometheus-worker-1"            # Unique Helm release name
+    chart: "kube-prometheus-stack"            # Helm chart name
+    # ... other Prometheus configuration
+
+  # Worker-2 Prerequisites (Pattern for additional workers)
+  - name: "gpu-operator-worker-2"             # GPU Operator for worker-2
+    use_global_kubeconfig: false              # Use specific kubeconfig for this worker
+    kubeconfig: "~/.kube/config-worker-2"     # Path to worker-2 kubeconfig file
+    kubecontext: "worker-2-context"           # Kubecontext specific to worker-2
+    namespace: "egs-gpu-operator"             # Namespace for GPU Operator
+    release: "gpu-operator-worker-2"          # Unique Helm release name
+    chart: "gpu-operator"                     # Helm chart name
+    # ... other GPU operator configuration
+
+  - name: "prometheus-worker-2"               # Prometheus for worker-2
+    use_global_kubeconfig: false              # Use specific kubeconfig for this worker
+    kubeconfig: "~/.kube/config-worker-2"     # Path to worker-2 kubeconfig file
+    kubecontext: "worker-2-context"           # Kubecontext specific to worker-2
+    namespace: "egs-monitoring"               # Namespace for Prometheus
+    release: "prometheus-worker-2"            # Unique Helm release name
+    chart: "kube-prometheus-stack"            # Helm chart name
+    # ... other Prometheus configuration
+
+  # PostgreSQL (ONLY installed in controller cluster, not in worker clusters)
+  - name: "postgresql"                        # PostgreSQL for controller cluster only
+    use_global_kubeconfig: true               # Use global kubeconfig (controller cluster)
+    namespace: "egs-postgresql"               # Namespace for PostgreSQL
+    release: "postgresql"                     # Helm release name
+    chart: "postgresql"                       # Helm chart name
+    # ... other PostgreSQL configuration
+```
+
+**📌 Key Differences Between Single and Multi-Cluster Prerequisites:**
+
+| **Aspect** | **Single Cluster (Option A)** | **Multi-Cluster (Option B)** |
+|------------|-------------------------------|------------------------------|
+| **Kubeconfig Usage** | `use_global_kubeconfig: true` | `use_global_kubeconfig: false` for workers |
+| **Service Types** | `ClusterIP` (default) | `NodePort` or `LoadBalancer` for external access |
+| **Release Names** | Simple names (e.g., `gpu-operator`) | Unique names (e.g., `gpu-operator-worker-1`) |
+| **Configuration** | Single configuration block | Repeated configuration for each worker |
+| **Network Access** | Internal cluster access | External cluster access required |
+| **Complexity** | Simple, minimal configuration | Advanced, requires careful planning |
+| **PostgreSQL** | Installed in same cluster | Installed ONLY in controller cluster |
+
+**💡 When to Use Each Option:**
+
+- **🔄 Option A (Single Cluster):** Use when controller and all workers are in the same Kubernetes cluster. This is the simplest setup and requires minimal configuration.
+
+- **🌐 Option B (Multi-Cluster):** Use when you have workers in different clusters, need custom worker configurations, or want detailed control over monitoring endpoints and worker settings.
+
+**⚠️ Important Notes for Multi-Cluster Setup:**
+
+1. **Unique Release Names:** Each worker must have unique `release` names to avoid conflicts
+2. **Worker-Specific Kubeconfig:** Provide appropriate `kubeconfig` and `kubecontext` for each worker cluster
+3. **Service Types:** Use `NodePort` or `LoadBalancer` for Prometheus/Grafana services to ensure accessibility from controller cluster
+4. **Network Connectivity:** Ensure proper network connectivity between controller and worker clusters
+5. **Monitoring Endpoints:** Configure worker-specific monitoring endpoints accessible from the controller cluster
+6. **PostgreSQL Architecture:** **CRITICAL:** PostgreSQL is installed ONLY in the controller cluster. Worker clusters do NOT need PostgreSQL - they connect to the controller's PostgreSQL instance for KubeTally data.
+
 8. **🚀 Install Prerequisites (After Configuration):**
    - After configuring the YAML file, run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
    ```bash
