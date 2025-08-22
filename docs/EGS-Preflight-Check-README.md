@@ -129,6 +129,24 @@ Not all preflight checks may be required to pass depending on your specific setu
 4. **Evaluate optional failures** based on your specific requirements
 5. **Re-run checks** after resolving issues to verify fixes
 
+**📄 Detailed Logs for Troubleshooting:**
+The preflight check script generates a comprehensive log file `egs-preflight-check-output.log` that contains:
+- **Detailed execution logs** for each check performed
+- **Command outputs** and error messages
+- **Resource creation/deletion details** for test resources
+- **Permission check results** with specific failure reasons
+- **Timing information** for performance analysis
+- **Context-specific details** for multi-cluster setups
+
+**🔍 Using the Log File:**
+- **Location**: Generated in the same directory as the script
+- **Format**: Human-readable with timestamps and clear section separators
+- **Search**: Use `grep` to find specific failures (e.g., `grep -i "fail\|error" egs-preflight-check-output.log`)
+- **Debugging**: Enable `--function-debug-input true` for additional verbose logging
+- **Retention**: Logs are preserved between runs for comparison and analysis
+
 ## Related Files
 
 - **`egs-preflight-check.sh`**: The main preflight check script
+- **`egs-preflight-check-output.log`**: Detailed execution logs and troubleshooting information
+- **Test Resources**: Temporary namespaces, services, and PVCs created during checks (cleaned up by default)
