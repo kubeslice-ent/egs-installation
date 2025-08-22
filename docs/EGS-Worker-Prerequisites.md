@@ -170,6 +170,8 @@ This will automatically install:
 
 **📋 Reference:** For configuration examples and templates, see [egs-installer-config.yaml](../egs-installer-config.yaml)
 
+**💡 Pro Tip:** The installer config contains the most up-to-date and tested GPU Operator configuration. Use it as your primary reference for production deployments.
+
 ### **📋 Manual Installation Workflow:**
 1. **[GPU Operator Installation](#1-gpu-operator-installation)** - Set up GPU management and monitoring
 2. **[Kube-Prometheus-Stack Installation](#2-kube-prometheus-stack-installation)** - Set up monitoring stack
@@ -195,27 +197,23 @@ helm repo update
 # Create namespace for GPU Operator
 kubectl create namespace egs-gpu-operator
 
-# Install GPU Operator with EGS-specific configuration
+# Install GPU Operator with EGS-specific configuration (simplified)
 helm install gpu-operator nvidia/gpu-operator \
   --namespace egs-gpu-operator \
-  --set nfd.enabled=true \
-  --set nfd.nodefeaturerules=false \
-  --set driver.enabled=true \
-  --set driver.version="550.144.03" \
-  --set driver.useOpenKernelModules=false \
-  --set driver.upgradePolicy.autoUpgrade=true \
-  --set driver.upgradePolicy.maxParallelUpgrades=1 \
-  --set driver.upgradePolicy.maxUnavailable="25%" \
-  --set mig.strategy=single \
-  --set node-feature-discovery.enableNodeFeatureApi=true \
-  --set node-feature-discovery.master.config.extraLabelNs=["nvidia.com"] \
-  --set daemonsets.tolerations[0].key="nvidia.com/gpu" \
-  --set daemonsets.tolerations[0].operator="Exists" \
-  --set daemonsets.tolerations[0].effect="NoSchedule" \
-  --set daemonsets.tolerations[1].key="kubeslice.io/egs" \
-  --set daemonsets.tolerations[1].operator="Exists" \
-  --set daemonsets.tolerations[1].effect="NoSchedule"
+  --version v24.9.1 \
+  --set hostPaths.driverInstallDir="/home/kubernetes/bin/nvidia" \
+  --set toolkit.installDir="/home/kubernetes/bin/nvidia" \
+  --set cdi.enabled=true \
+  --set cdi.default=true \
+  --set driver.enabled=false
 ```
+
+**📋 Configuration Details:**
+- **Version:** v24.9.1 (matches installer config)
+- **Installation Paths:** Custom paths for NVIDIA tools and drivers
+- **CDI:** Enabled for container device interface
+- **Driver Management:** Disabled (managed separately if needed)
+- **Namespace:** egs-gpu-operator
 
 ### 1.3 Verify GPU Operator Installation
 
@@ -574,21 +572,28 @@ kubectl get pods -n egs-gpu-operator -o wide
 
 For production environments, consider these additional GPU Operator settings:
 
-```yaml
-# Advanced GPU Operator values
+```bash
+# Advanced GPU Operator values (production-ready)
 helm install gpu-operator nvidia/gpu-operator \
   --namespace egs-gpu-operator \
-  --set driver.enabled=true \
-  --set driver.version="550.144.03" \
-  --set driver.upgradePolicy.autoUpgrade=false \
+  --version v24.9.1 \
+  --set hostPaths.driverInstallDir="/home/kubernetes/bin/nvidia" \
+  --set toolkit.installDir="/home/kubernetes/bin/nvidia" \
+  --set cdi.enabled=true \
+  --set cdi.default=true \
+  --set driver.enabled=false \
   --set mig.strategy=single \
   --set nfd.enabled=true \
-  --set nfd.nodefeaturerules=false \
-  --set node-feature-discovery.enableNodeFeatureApi=true \
-  --set node-feature-discovery.master.config.extraLabelNs=["nvidia.com"] \
-  --set daemonsets.updateStrategy="OnDelete" \
-  --set daemonsets.rollingUpdate.maxUnavailable="1"
+  --set nfd.nodefeaturerules=false
 ```
+
+**📋 Production Configuration Details:**
+- **Version:** v24.9.1 (latest stable)
+- **Installation Paths:** Custom paths for NVIDIA tools
+- **CDI:** Enabled for container device interface
+- **Driver Management:** Disabled (managed separately)
+- **MIG Strategy:** Single GPU mode
+- **Node Feature Discovery:** Enabled for GPU labeling
 
 ### 5.5 Monitoring Stack Optimization
 
