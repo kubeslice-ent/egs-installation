@@ -267,7 +267,7 @@ Before you begin, ensure the following steps are completed:
       
       ```yaml
       # Global monitoring endpoint settings
-      global_auto_fetch_endpoint: true               # Enable automatic fetching of monitoring endpoints globally
+      global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
       global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
       global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
       global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
@@ -293,13 +293,30 @@ Before you begin, ensure the following steps are completed:
    
       ```yaml
       inline_values:  # Inline Helm values for the worker chart
-        kubesliceNetworking:
-          enabled: false  # Disable Kubeslice networking for this worker
+        global:
+          imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
+        operator:
+          env:
+            - name: DCGM_EXPORTER_JOB_NAME
+              value: gpu-metrics
         egs:
-          prometheusEndpoint: "http://<prometheus-lb>"  # Prometheus endpoint
-          grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"  # Replace <grafana-lb> with the actual External IP
+          prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+          grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
+        egsAgent:
+          secretName: egs-agent-access
+          agentSecret:
+            endpoint: ""
+            key: ""
         metrics:
-          insecure: true  # Allow insecure connections for metrics
+          insecure: true                        # Allow insecure connections for metrics
+        kserve:
+          enabled: true                         # Enable KServe for the worker
+          kserve:                               # KServe chart options
+            controller:
+              gateway:
+                domain: kubeslice.com
+                ingressGateway:
+                  className: "nginx"            # Ingress class name for the KServe gateway
       ```
 
 ### 4. **➕ Adding Additional Workers (Optional) **
@@ -312,30 +329,30 @@ Before you begin, ensure the following steps are completed:
    
    ```yaml
    kubeslice_worker_egs:
-     - name: "worker-1"                           # Existing worker
-       # ... existing configuration ...
-     
-     - name: "worker-2"                           # New worker
+     - name: "worker-1"                           # Worker name
        use_global_kubeconfig: true                # Use global kubeconfig for this worker
        kubeconfig: ""                             # Path to the kubeconfig file specific to the worker, if empty, uses the global kubeconfig
        kubecontext: ""                            # Kubecontext specific to the worker; if empty, uses the global context
        skip_installation: false                   # Do not skip the installation of the worker
        specific_use_local_charts: true            # Override to use local charts for this worker
        namespace: "kubeslice-system"              # Kubernetes namespace for this worker
-       release: "egs-worker-2"                    # Helm release name for the worker (must be unique)
+       release: "egs-worker"                      # Helm release name for the worker
        chart: "kubeslice-worker-egs"              # Helm chart name for the worker
        inline_values:                             # Inline Helm values for the worker chart
          global:
-           imageRegistry: docker.io/aveshasystems # Docker registry for worker images
+           imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
+         operator:
+           env:
+             - name: DCGM_EXPORTER_JOB_NAME
+               value: gpu-metrics
          egs:
            prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
            grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
-         # Leave egsAgent section empty as the script will auto-fetch token and endpoint details
          egsAgent:
            secretName: egs-agent-access
            agentSecret:
-             endpoint: ""  # Leave empty - script will auto-fetch
-             key: ""       # Leave empty - script will auto-fetch
+             endpoint: ""
+             key: ""
          metrics:
            insecure: true                        # Allow insecure connections for metrics
          kserve:
