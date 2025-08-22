@@ -153,6 +153,11 @@ Before you begin, ensure the following steps are completed:
          ```yaml
          # Global monitoring endpoint settings
          global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
+         
+         **⚠️ IMPORTANT NOTE:** It is recommended to set `global_auto_fetch_endpoint: true` for automatic endpoint discovery. If set to `false`, you must manually provide the Prometheus endpoints in the respective worker values section or cluster definition section. Ensure that worker Prometheus endpoints are accessible from the controller cluster for proper monitoring.
+         
+         **📌 CLUSTER SETUP CONSIDERATION:** If using ClusterIP service type, this is only valid for single cluster setups. For multi-worker setups where worker and controller clusters are different, ClusterIP will NOT work as the controller cluster cannot access worker cluster services. Use NodePort, LoadBalancer, or ensure proper network connectivity between clusters.
+         
          global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
          global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
          global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
