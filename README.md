@@ -90,7 +90,7 @@ Before you begin, ensure the following steps are completed:
      ```
 
    **Configuration File Setup:**
-   - Configure the `egs-installer-config.yaml` file to enable additional applications installation:
+   - Configure the `egs-installer-config.yaml` file to enable additional applications installation. **For complete configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml)**:
      ```yaml
      # Enable or disable specific stages of the installation
      enable_install_controller: true               # Enable the installation of the Kubeslice controller
@@ -120,6 +120,7 @@ Before you begin, ensure the following steps are completed:
    **Additional Apps Configuration for Each Worker:**
    - **📌 IMPORTANT:** For different worker clusters, you need to add additional apps array for each component in the `kubeslice_worker_egs` section
    - Each worker cluster requires its own instances of GPU Operator and Prometheus if `enable_install_additional_apps: true`
+   - **For complete additional apps configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L370-L450)**
    - Example structure for multiple workers with additional apps:
      ```yaml
      additional_apps:
@@ -235,7 +236,7 @@ Before you begin, ensure the following steps are completed:
    - **Ensure proper RBAC permissions** and network policies are in place
 
 8. **🚀 Install Prerequisites (After Configuration):**
-   - After configuring the YAML file, run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
+   - After configuring the YAML file (refer to [egs-installer-config.yaml](egs-installer-config.yaml) for examples), run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
    ```bash
    ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
    ```
@@ -252,7 +253,7 @@ Before you begin, ensure the following steps are completed:
      ```
 
 ### 2. **📝 Modify the Configuration File (Mandatory):**
-   - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`.
+   - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`. **For the complete configuration template, see [egs-installer-config.yaml](egs-installer-config.yaml)**.
    - Choose your installation approach:
 
    **🔄 Option A: Single Cluster Installation (Simplified)**
@@ -308,7 +309,7 @@ Before you begin, ensure the following steps are completed:
 
 ### 3. **Kubeslice Controller Installation Settings (Mandatory)**
 
-   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.**
+   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.** **For the complete controller configuration example, see [egs-installer-config.yaml](egs-installer-config.yaml#L70-L120)**.
    
    ```yaml
    # Kubeslice Controller Installation Settings
@@ -410,7 +411,7 @@ Before you begin, ensure the following steps are completed:
 
    **Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
 
-   The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required.
+   The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required. **For the complete UI configuration example, see [egs-installer-config.yaml](egs-installer-config.yaml#L140-L200)**.
 
    ```yaml
    # Kubeslice UI Installation Settings
@@ -536,7 +537,7 @@ Before you begin, ensure the following steps are completed:
 
 ### 6. **Adding Additional Workers (Optional)**
 
-   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. Follow these steps:
+   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. **For complete worker configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L220-L300)**. Follow these steps:
 
    **Step 1: Add Worker Configuration**
    
@@ -587,7 +588,7 @@ Before you begin, ensure the following steps are completed:
 
    **Step 2: Add Cluster Registration**
    
-   Add corresponding entries in the `cluster_registration` section for each new worker:
+   Add corresponding entries in the `cluster_registration` section for each new worker. **For cluster registration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L320-L350)**:
 
    ```yaml
 cluster_registration:
@@ -767,7 +768,7 @@ The uninstallation script will delete **all resources** associated with EGS, inc
 
 For detailed information about configuring your EGS installation, including the complete YAML configuration file with all parameters and settings, please refer to:
 
-**[📋 Configuration Documentation](docs/Configuration-README.md)**
+**[📋 Configuration Documentation](docs/Configuration-README.md)** | **[egs-installer-config.yaml Template](egs-installer-config.yaml)**
 
 This documentation covers:
 - Complete YAML configuration file structure
