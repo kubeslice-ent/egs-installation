@@ -1,6 +1,6 @@
 # EGS Controller Prerequisites
 
-This document outlines the prerequisites required for installing and operating the EGS (Enterprise GPU Slicing) Controller in your Kubernetes cluster.
+This document outlines the prerequisites required for installing and operating the EGS (Elastic GPU Service) Controller in your Kubernetes cluster.
 
 ## Table of Contents
 
