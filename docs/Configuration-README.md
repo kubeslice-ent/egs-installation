@@ -95,7 +95,7 @@ kubeslice_controller_egs:
         labels: {}
         annotations: {}
       kubeTally:
-        enabled: false                          # Enable KubeTally in the controller
+        enabled: true                          # Enable KubeTally in the controller
 #### Postgresql Connection Configuration for Kubetally  ####
         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
                                                        # then a secret will be created with specified name. 
@@ -663,80 +663,4 @@ This section provides detailed explanations of all configuration fields availabl
 | `manifests[].use_global_kubeconfig` | Determines whether the global kubeconfig and context should be used. If `false`, specific kubeconfig and context must be provided. | `boolean`        | Yes          | `true`                                                                                                              |
 | `manifests[].kubeconfig`        | Path to a specific Kubernetes configuration file to be used instead of the global kubeconfig.                           | `string`          | No           | `/path/to/specific/kubeconfig`                                                                                      |
 | `manifests[].kubecontext`       | The context name in the specific Kubernetes configuration file to be used for this manifest.                            | `string`          | No           | `specific-context`                                                                                                  |
-| `manifests[].skip_installation` | Whether to skip the installation of this manifest. Useful for conditional deployments.                                  | `boolean`         | Yes          | `false`                                                                                                             |
-| `manifests[].verify_install`    | Whether to verify that the application or resource was successfully deployed.                                           | `boolean`         | Yes          | `false`                                                                                                             |
-| `manifests[].verify_install_timeout` | The timeout in seconds for the installation verification.                                                        | `integer`         | Yes          | `30`                                                                                                                |
-| `manifests[].skip_on_verify_fail` | Whether to skip the remaining operations if the verification fails.                                                  | `boolean`         | Yes          | `true`                                                                                                              |
-| `manifests[].namespace`         | The Kubernetes namespace where the resources should be applied.                                                        | `string`          | Yes          | `egs-gpu-operator`                                                                                                  |
-
-### Commands Configuration (`commands`)
-
-| **Subfield**                | **Description**                                                                                         | **Default/Example**                                                             |
-|-----------------------------|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `use_global_kubeconfig`     | Use the global kubeconfig file for these commands.                                                      | `true`                                                                         |
-| `kubeconfig`                | Path to the kubeconfig file specific to these commands.                                                 | `""` (empty string)                                                            |
-| `kubecontext`               | Kubecontext specific to these commands; uses global context if empty.                                  | `""` (empty string)                                                            |
-| `skip_installation`         | Skip the execution of these commands.                                                                   | `false`                                                                        |
-| `verify_install`            | Verify the execution of these commands.                                                                 | `false`                                                                        |
-| `verify_install_timeout`    | Timeout for verifying the command execution, in seconds.                                                | `200`                                                                          |
-| `skip_on_verify_fail`       | Skip if command verification fails.                                                                     | `true`                                                                         |
-| `namespace`                 | Namespace context for these commands.                                                                   | `kube-system`                                                                  |
-| `command_stream`            | Commands to execute (e.g., node labeling, MIG configuration).                                           | See command examples below                                                     |
-
-### Troubleshooting Configuration (`enable_troubleshoot`)
-
-| **Subfield**                | **Description**                                                                                         | **Default/Example**                                                             |
-|-----------------------------|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `enabled`                   | Global enable troubleshooting mode for additional logs and checks.                                       | `false`                                                                        |
-| `resource_types`            | List of resource types to troubleshoot (pods, deployments, daemonsets, etc.).                           | `["pods", "deployments", "daemonsets"]`                                        |
-| `api_groups`                | List of API groups to troubleshoot (controller.kubeslice.io, worker.kubeslice.io, etc.).                | `["controller.kubeslice.io", "worker.kubeslice.io"]`                           |
-| `upload_logs.enabled`       | Enable log upload functionality.                                                                         | `false`                                                                        |
-| `upload_logs.command`       | Command to execute for log upload.                                                                      | `""`                                                                           |
-
-### Projects Configuration (`projects`)
-
-| **Subfield**                | **Description**                                                                                         | **Default/Example**                                                             |
-|-----------------------------|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `name`                      | Name of the Kubeslice project.                                                                          | `"avesha"`                                                                     |
-| `username`                  | Username for accessing the Kubeslice project.                                                            | `"admin"`                                                                      |
-
-### Cluster Registration Configuration (`cluster_registration`)
-
-| **Subfield**                | **Description**                                                                                         | **Default/Example**                                                             |
-|-----------------------------|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `cluster_name`              | Name of the cluster to be registered.                                                                   | `"worker-1"`                                                                   |
-| `project_name`              | Name of the project to associate with the cluster.                                                      | `"avesha"`                                                                     |
-| `telemetry.enabled`         | Enable telemetry for this cluster.                                                                      | `true`                                                                         |
-| `telemetry.endpoint`        | Telemetry endpoint for the cluster.                                                                     | `"http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"` |
-| `telemetry.telemetryProvider` | Telemetry provider (Prometheus in this case).                                                        | `"prometheus"`                                                                 |
-| `geoLocation.cloudProvider` | Cloud provider for this cluster (e.g., GCP, AWS, Azure).                                               | `""`                                                                           |
-| `geoLocation.cloudRegion`   | Cloud region for this cluster (e.g., us-central1, eu-west-1).                                          | `""`                                                                           |
-
----
-
-## 🧑‍💻 Script Usage
-
-To run the EGS installer script, use the following command:
-
-```bash
-./egs-installer.sh --input-yaml <yaml_file>
-```
-
-Replace `<yaml_file>` with the path to your YAML configuration file. For example:
-
-```bash
-./egs-installer.sh --input-yaml egs-installer-config.yaml
-```
-
-### Command-Line Options
-
-- `--input-yaml <yaml_file>`: Specifies the YAML configuration file to be used.
-- `--help`: Displays usage information and available options.
-
----
-
-## Related Files
-
-- **`egs-installer-config.yaml`**: The main configuration file
-- **`egs-installer.sh`**: The main installation script
-- **`egs-uninstall.sh`**: The uninstallation script
+| `
