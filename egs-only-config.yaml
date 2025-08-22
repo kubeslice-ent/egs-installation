@@ -71,7 +71,7 @@ kubeslice_ui_egs:
         url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
       uiproxy:
         service:
-          type: ClusterIP                  # Service type for the UI proxy
+          type: LoadBalancer                  # Service type for the UI proxy
           ## if type selected to NodePort then set nodePort value if required
           # nodePort:
           # port: 443
