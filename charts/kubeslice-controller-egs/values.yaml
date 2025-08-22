@@ -1,9 +1,8 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-
 global:
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   # user can configure labels or annotations that EGS Controller namespaces should have
   namespaceConfig:
     labels: {}
@@ -67,6 +66,8 @@ kubeslice:
   controller:
     # Log level for the controller
     logLevel: info
+    # Inventory manager service address
+    invmgrGrpcAddress: egs-inventory-manager:80
     # Prefix for RBAC resources created by KubeSlice
     rbacResourcePrefix: kubeslice-rbac
     # Prefix for project namespaces created by KubeSlice
@@ -76,7 +77,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.14.2
+    tag: 1.15.0
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -130,21 +131,12 @@ kubeslice:
     # Whether events are disabled
     disabled: true
 
-  # license details by default mode set to auto and license set to trial - please give company-name or user-name as customerName
-  license:
-    # possible license type values ["kubeslice-trial-license"]
-    type: kubeslice-trial-license
-    # possible license mode - ["auto", "manual"]
-    mode: auto
-    # please give company-name or user-name as customerName
-    customerName: ""
-
 egs:
   gprManager:
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: 1.13.1
+    tag: 1.14.0
     imagePullPolicy: IfNotPresent
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60
@@ -192,10 +184,10 @@ egs:
                     operator: "DoesNotExist"
 
   queueManager:
-    # Image name for the gpr-manager
+    # Image name for the queue-manager
     image: queue-manager
-    # Image tag for the gpr-manager
-    tag: 1.12.1
+    # Image tag for the queue-manager
+    tag: 1.13.0
     imagePullPolicy: IfNotPresent
     service:
       name: egs-queue-manager
@@ -238,7 +230,7 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.13.1
+    tag: 1.14.0
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
