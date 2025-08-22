@@ -675,6 +675,88 @@ Before you begin, ensure the following steps are completed:
    - **Consistent Pattern:** Follow the same configuration structure for all workers
    - **🔧 Cluster Access:** **Critical:** For workers in different clusters, ensure worker-specific `kubeconfig` and `kubecontext` values are properly specified. If using global kubeconfig, verify it has access to all worker clusters.
 
+   **📋 Cluster Registration YAML Examples:**
+
+   **⚠️ CRITICAL NOTE - Prometheus Endpoint Accessibility:**
+   
+   The examples below show **example Prometheus endpoints** for demonstration purposes. **IMPORTANT:** If your controller and worker clusters are in different Kubernetes clusters, the Kubernetes cluster service URLs (like `*.svc.cluster.local`) will **NOT work** because the controller cluster cannot reach the internal service endpoints of worker clusters.
+   
+   **For Multi-Cluster Setups, you must use:**
+   - **LoadBalancer External IPs** for Prometheus services
+   - **NodePort** services with accessible node IPs
+   - **Ingress/LoadBalancer** endpoints that are reachable from the controller cluster
+   - **External Prometheus instances** with public endpoints
+   
+   **Single Cluster Setup (All workers in same cluster):**
+   
+   ```yaml
+   cluster_registration:
+     - cluster_name: "egs-cluster"
+       project_name: "avesha"
+       telemetry:
+         enabled: true
+         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+         telemetryProvider: "prometheus"
+       geoLocation:
+         cloudProvider: "GCP"
+         cloudRegion: "us-central1"
+   ```
+
+   **Multi-Cluster Setup (Workers in different clusters):**
+   
+   ```yaml
+   cluster_registration:
+     # Controller cluster
+     - cluster_name: "controller-cluster"
+       project_name: "avesha"
+       telemetry:
+         enabled: true
+         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+         telemetryProvider: "prometheus"
+       geoLocation:
+         cloudProvider: "GCP"
+         cloudRegion: "us-central1"
+     
+     # Worker 1 cluster
+     - cluster_name: "worker-1-cluster"
+       project_name: "avesha"
+       telemetry:
+         enabled: true
+         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+         telemetryProvider: "prometheus"
+       geoLocation:
+         cloudProvider: "GCP"
+         cloudRegion: "us-west1"
+     
+     # Worker 2 cluster
+     - cluster_name: "worker-2-cluster"
+       project_name: "avesha"
+       telemetry:
+         enabled: true
+         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+         telemetryProvider: "prometheus"
+       geoLocation:
+         cloudProvider: "AWS"
+         cloudRegion: "us-east-1"
+     
+     # Worker 3 cluster
+     - cluster_name: "worker-3-cluster"
+       project_name: "avesha"
+       telemetry:
+         enabled: true
+         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+         telemetryProvider: "prometheus"
+       geoLocation:
+         cloudProvider: "Azure"
+         cloudRegion: "eastus"
+   ```
+
+   **🔑 Cluster Registration Key Points:**
+   - **Unique Cluster Names:** Each cluster must have a unique `cluster_name` value
+   - **Telemetry Endpoints:** Configure cluster-specific Prometheus endpoints for each worker cluster
+   - **Geographic Distribution:** Use `geoLocation` to specify cloud provider and region for each cluster
+   - **Project Association:** All clusters should be associated with the same `project_name` for unified management
+
 ---
 
 ### 7. **🚀 Run the Installation Script**
