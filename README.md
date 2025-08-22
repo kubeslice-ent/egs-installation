@@ -10,7 +10,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 ## 📄 EGS Documents
 
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
-- 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) in this README 💻  
+- 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
 - 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
 - ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README.md) 🔍  
 - 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](docs/Slice-Admin-Token-README.md) 🔒  
