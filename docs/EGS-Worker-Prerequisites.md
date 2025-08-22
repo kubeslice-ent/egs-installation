@@ -426,49 +426,17 @@ spec:
       replacement: gpu-metrics
 ```
 
-### 3.3 Pod Monitor for GPU Metrics
-
-Create a PodMonitor for direct GPU metrics collection:
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: gpu-pod-metrics-monitor
-  namespace: egs-monitoring
-  labels:
-    app.kubernetes.io/instance: kube-prometheus-stack
-    release: prometheus
-spec:
-  selector:
-    matchLabels:
-      app: nvidia-dcgm-exporter
-  namespaceSelector:
-    matchNames:
-      - egs-gpu-operator
-  podMetricsEndpoints:
-    - interval: 30s
-      port: "9400"
-      path: /metrics
-      scrapeTimeout: 10s
-      scheme: http
-```
-
-### 3.4 Apply Monitoring Configuration
+### 3.3 Apply Monitoring Configuration
 
 ```bash
 # Apply the ServiceMonitor
 kubectl apply -f gpu-servicemonitor.yaml
 
-# Apply the PodMonitor
-kubectl apply -f gpu-podmonitor.yaml
-
 # Verify the monitors are created
 kubectl get servicemonitor -n egs-monitoring
-kubectl get podmonitor -n egs-monitoring
 ```
 
-### 3.5 GPU Metrics Dashboard
+### 3.4 GPU Metrics Dashboard
 
 Import a GPU monitoring dashboard into Grafana:
 
