@@ -673,6 +673,7 @@ Before you begin, ensure the following steps are completed:
    - **Endpoint Configuration:** Configure worker-specific monitoring endpoints if they're in different clusters
    - **Array Structure:** Use YAML array syntax with `-` for each worker entry
    - **Consistent Pattern:** Follow the same configuration structure for all workers
+   - **🔧 Cluster Access:** **Critical:** For workers in different clusters, ensure worker-specific `kubeconfig` and `kubecontext` values are properly specified. If using global kubeconfig, verify it has access to all worker clusters.
 
 ---
 
