@@ -5,13 +5,16 @@ This document outlines the prerequisites required for installing and operating t
 ## Table of Contents
 
 - [Overview](#overview)
+- [🚀 Quick Start Workflow](#-quick-start-workflow)
 - [Prerequisites](#prerequisites)
-- [EGS Installer Configuration](#egs-installer-configuration)
-- [1. Prometheus Installation](#1-prometheus-installation)
-- [2. Monitoring Configuration](#2-monitoring-configuration)
-- [3. PostgreSQL Database Setup](#3-postgresql-database-setup)
+- [EGS Installer Configuration](#egs-installer-configuration) *(Option 1)*
+- [Manual Installation Steps](#manual-installation-steps-option-2) *(Option 2)*
+  - [1. Prometheus Installation](#1-prometheus-installation)
+  - [2. Monitoring Configuration](#2-monitoring-configuration)
+  - [3. PostgreSQL Database Setup](#3-postgresql-database-setup)
 - [4. Verification Steps](#4-verification-steps)
 - [5. Troubleshooting](#5-troubleshooting)
+- [📋 Next Steps Summary](#-next-steps-summary)
 
 ## Overview
 
@@ -19,6 +22,24 @@ The EGS Controller requires several components to be properly configured before 
 - A monitoring stack (preferably kube-prometheus-stack) for metrics collection
 - Proper monitoring configuration to scrape EGS Controller metrics
 - PostgreSQL database for KubeTally functionality (chargeback and metrics)
+
+## 🚀 Quick Start Workflow
+
+**Choose ONE approach based on your setup:**
+
+### **🔄 Option 1: Use EGS Prerequisites Script (Recommended for new installations)**
+- **What it does:** Automatically installs and configures all required components
+- **Best for:** New installations, single clusters, simplified setup
+- **Time to complete:** ~10-15 minutes
+- **Skip to:** [EGS Installer Configuration](#egs-installer-configuration) → [Verification Steps](#4-verification-steps)
+
+### **🌐 Option 2: Use Existing Infrastructure (Advanced)**
+- **What it does:** Integrates with your existing Prometheus, PostgreSQL, and monitoring setup
+- **Best for:** Production environments, multi-cluster setups, existing monitoring infrastructure
+- **Time to complete:** ~20-30 minutes (depending on existing setup complexity)
+- **Skip to:** [Manual Installation Steps](#manual-installation-steps-option-2)
+
+**⚠️ Important:** Choose only ONE approach - do NOT use both simultaneously to avoid conflicts.
 
 ## Prerequisites
 
@@ -158,13 +179,38 @@ This will automatically install:
 
 ---
 
+## 📋 Workflow Summary
+
+### **🔄 Option 1 Workflow (EGS Prerequisites Script):**
+1. ✅ **Configure** `egs-installer-config.yaml` with `enable_install_additional_apps: true`
+2. ✅ **Run** prerequisites installer: `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml`
+3. ✅ **Verify** installation using [Verification Steps](#4-verification-steps)
+4. ✅ **Proceed** to EGS Controller installation
+
+### **🌐 Option 2 Workflow (Existing Infrastructure):**
+1. ✅ **Verify** existing Prometheus, PostgreSQL, and monitoring setup
+2. ✅ **Configure** monitoring to scrape EGS Controller metrics
+3. ✅ **Set up** PostgreSQL database and credentials
+4. ✅ **Verify** all components using [Verification Steps](#4-verification-steps)
+5. ✅ **Proceed** to EGS Controller installation
+
+---
+
 **If you chose Option 1 (Prerequisites Script):** You can skip the manual installation sections below and proceed directly to [Verification Steps](#4-verification-steps).
 
 **If you chose Option 2 (Existing Setup):** Continue reading the manual installation sections below.
 
-## 1. Prometheus Installation
+## Manual Installation Steps (Option 2)
 
 > **📝 Note:** This section is for **Option 2 (Existing Infrastructure)** users only. If you used the EGS Prerequisites Script (Option 1), skip to [Verification Steps](#4-verification-steps).
+
+### **📋 Manual Installation Workflow:**
+1. **[Prometheus Installation](#1-prometheus-installation)** - Set up monitoring stack
+2. **[Monitoring Configuration](#2-monitoring-configuration)** - Configure metrics scraping
+3. **[PostgreSQL Database Setup](#3-postgresql-database-setup)** - Set up database and credentials
+4. **[Verification Steps](#4-verification-steps)** - Verify all components are working
+
+### 1. Prometheus Installation
 
 ### Option A: Kube-Prometheus-Stack (Recommended)
 
@@ -552,25 +598,35 @@ kubectl port-forward svc/kubeslice-controller-manager-service 18080:18080 -n kub
 
 ## 📋 Next Steps Summary
 
-### **For Option 1 Users (EGS Prerequisites Script):**
+### **🔄 For Option 1 Users (EGS Prerequisites Script):**
 ✅ **Prerequisites are already installed and configured**
 - Prometheus Stack is running in `egs-monitoring` namespace
 - PostgreSQL is running in `kt-postgresql` namespace
 - All required secrets and configurations are in place
 - **Proceed directly to EGS Controller installation**
 
-### **For Option 2 Users (Existing Infrastructure):**
+### **🌐 For Option 2 Users (Existing Infrastructure):**
 ✅ **Manual configuration completed**
 - Prometheus monitoring is configured and scraping EGS Controller metrics
 - PostgreSQL database is accessible with proper credentials
 - All required secrets are created in `kubeslice-controller` namespace
 - **Proceed to EGS Controller installation**
 
-### **Common Next Steps for Both Options:**
+### **🚀 Common Next Steps for Both Options:**
 1. **Verify all prerequisites** using the verification steps above
 2. **Install EGS Controller** using your preferred method
 3. **Configure EGS Controller** with the appropriate values
 4. **Test the complete setup** and verify all functionality
+
+---
+
+## 🎯 Quick Navigation
+
+**Need to jump to a specific section?**
+
+- **🔄 Option 1 Users:** [EGS Installer Configuration](#egs-installer-configuration) → [Verification Steps](#4-verification-steps)
+- **🌐 Option 2 Users:** [Manual Installation Steps](#manual-installation-steps-option-2) → [Verification Steps](#4-verification-steps)
+- **📋 All Users:** [Next Steps Summary](#-next-steps-summary) → [Additional Resources](#additional-resources)
 
 ---
 
