@@ -697,49 +697,27 @@ Before you begin, ensure the following steps are completed:
    
    ```yaml
    cluster_registration:
-     # Controller cluster
-     - cluster_name: "controller-cluster"
-       project_name: "avesha"
-       telemetry:
-         enabled: true
-         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
-         telemetryProvider: "prometheus"
-       geoLocation:
-         cloudProvider: "GCP"
-         cloudRegion: "us-central1"
      
-     # Worker 1 cluster
+     # Worker clusters - follow same pattern with unique names and endpoints
      - cluster_name: "worker-1-cluster"
        project_name: "avesha"
        telemetry:
          enabled: true
-         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+         endpoint: "http://<worker-1-prometheus-endpoint>:9090"  # Use accessible endpoint
          telemetryProvider: "prometheus"
        geoLocation:
          cloudProvider: "GCP"
          cloudRegion: "us-west1"
      
-     # Worker 2 cluster
      - cluster_name: "worker-2-cluster"
        project_name: "avesha"
        telemetry:
          enabled: true
-         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+         endpoint: "http://<worker-2-prometheus-endpoint>:9090"  # Use accessible endpoint
          telemetryProvider: "prometheus"
        geoLocation:
          cloudProvider: "AWS"
          cloudRegion: "us-east-1"
-     
-     # Worker 3 cluster
-     - cluster_name: "worker-3-cluster"
-       project_name: "avesha"
-       telemetry:
-         enabled: true
-         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
-         telemetryProvider: "prometheus"
-       geoLocation:
-         cloudProvider: "Azure"
-         cloudRegion: "eastus"
    ```
 
    **🔑 Cluster Registration Key Points:**
