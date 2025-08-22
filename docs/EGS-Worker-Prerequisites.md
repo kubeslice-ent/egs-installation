@@ -165,27 +165,6 @@ This will automatically install:
 
 ---
 
-## 📋 Workflow Summary
-
-### **🔄 Option 1 Workflow (EGS Prerequisites Script):**
-1. ✅ **Configure** `egs-installer-config.yaml` with `enable_install_additional_apps: true` ([see template](../egs-installer-config.yaml))
-2. ✅ **Run** prerequisites installer: `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml`
-3. ✅ **Verify** installation using [Verification Steps](#4-verification-steps)
-4. ✅ **Proceed** to EGS Worker installation
-
-### **🌐 Option 2 Workflow (Existing Infrastructure):**
-1. ✅ **Verify** existing GPU Operator, Prometheus, and monitoring setup
-2. ✅ **Configure** monitoring to scrape GPU metrics from GPU Operator components
-3. ✅ **Set up** GPU metrics collection and visualization
-4. ✅ **Verify** all components using [Verification Steps](#4-verification-steps)
-5. ✅ **Proceed** to EGS Worker installation
-
----
-
-**If you chose Option 1 (Prerequisites Script):** You can skip the manual installation sections below and proceed directly to [Verification Steps](#4-verification-steps).
-
-**If you chose Option 2 (Existing Setup):** Continue reading the manual installation sections below.
-
 ## Manual Installation Steps (Option 2)
 
 > **📝 Note:** This section is for **Option 2 (Existing Infrastructure)** users only. If you used the EGS Prerequisites Script (Option 1), skip to [Verification Steps](#4-verification-steps).
@@ -635,42 +614,8 @@ prometheus:
       limits:
         memory: 4Gi
         cpu: 1000m
-```
-
-## 📋 Next Steps Summary
-
-### **For Option 1 Users (EGS Prerequisites Script):**
-✅ **Prerequisites are already installed and configured**
-- GPU Operator v24.9.1 is running in `egs-gpu-operator` namespace
-- Prometheus Stack v45.0.0 is running in `egs-monitoring` namespace
-- GPU metrics scraping is configured with `additionalScrapeConfigs`
-- All required secrets and configurations are in place
-- **Proceed directly to EGS Worker installation**
-
-### **For Option 2 Users (Existing Infrastructure):**
-✅ **Manual configuration completed**
-- GPU Operator is installed and configured for GPU management
-- Prometheus monitoring is configured and scraping GPU metrics
-- GPU metrics endpoints are properly configured
-- All required monitoring components are in place
-- **Proceed to EGS Worker installation**
-
-### **Common Next Steps for Both Options:**
-1. **Verify all prerequisites** using the verification steps above
-2. **Install EGS Worker** using your preferred method
-3. **Configure EGS Worker** with the appropriate GPU settings
-4. **Test GPU slicing functionality** and verify all metrics collection
 
 ---
-
-## 🎯 Quick Navigation
-
-**Need to jump to a specific section?**
-
-- **🔄 Option 1 Users:** [EGS Installer Configuration](#egs-installer-configuration) → [Verification Steps](#4-verification-steps)
-- **🌐 Option 2 Users:** [Manual Installation Steps](#manual-installation-steps-option-2) → [Verification Steps](#4-verification-steps)
-- **📋 All Users:** [Next Steps Summary](#-next-steps-summary) → [Additional Resources](#additional-resources)
-- **📁 Configuration Template:** [egs-installer-config.yaml](../egs-installer-config.yaml)
 
 ## Additional Resources
 
