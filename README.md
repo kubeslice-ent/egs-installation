@@ -16,7 +16,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
 - ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README.md) 🔍  
 - 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](https://github.com/kubeslice-ent/egs-installation#token-retrieval) 🔒  
-- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](https://github.com/kubeslice-ent/egs-installation#namespace-creation) 🗂️  
+- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](docs/Namespace-Creation-README.md) 🗂️  
 - 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
 - ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
 
@@ -63,7 +63,7 @@ Before you begin, ensure the following steps are completed:
 6. **🗂️ Pre-create Required Namespaces (Optional):**
    - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
      - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
-       - Refer to the [Namespace Creation Script](https://github.com/kubeslice-ent/egs-installation#namespace-creation) for details.
+       - Refer to the [Namespace Creation Guide](docs/Namespace-Creation-README.md) for details.
      - Example command:
        ```bash
        ./create-namespaces.sh \
