@@ -68,7 +68,7 @@ spec:
             {{- end }}
             {{- end }}
             - name: KUBESLICE_METRIC_JOB_VALUE
-              value: tgi
+              value: nvidia-dcgm-exporter
             - name: DCGM_METRIC_HOSTNAME_KEY
               value: Hostname
             - name: DCGM_METRIC_NAMESPACE_KEY
