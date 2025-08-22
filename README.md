@@ -463,12 +463,14 @@ Before you begin, ensure the following steps are completed:
          apigw:
            env:
              - name: DCGM_METRIC_JOB_VALUE
-               value: nvidia-dcgm-exporter
+               value: nvidia-dcgm-exporter  # This value must match the Prometheus scrape job name for GPU metrics collection
              
          egsCoreApis:
            enabled: true                         # Enable EGS core APIs for the UI
            service:
              type: ClusterIP                  # Service type for the EGS core APIs
+   
+   **📌 IMPORTANT NOTE:** The `DCGM_METRIC_JOB_VALUE` must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected and UI visualization will not work. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md).
    
    # Helm Flags and Verification Settings
      helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
@@ -509,7 +511,7 @@ Before you begin, ensure the following steps are completed:
         operator:
           env:
             - name: DCGM_EXPORTER_JOB_NAME
-              value: gpu-metrics
+              value: gpu-metrics  # This value must match the Prometheus scrape job name for GPU metrics collection
         egs:
           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
@@ -529,6 +531,8 @@ Before you begin, ensure the following steps are completed:
                 ingressGateway:
                   className: "nginx"            # Ingress class name for the KServe gateway
       ```
+
+   **📌 IMPORTANT NOTE:** The `DCGM_EXPORTER_JOB_NAME` value (`gpu-metrics`) must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected from the worker cluster and monitoring dashboards will not display GPU data. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md).
 
 ### 6. **Adding Additional Workers (Optional)**
 
@@ -555,7 +559,7 @@ Before you begin, ensure the following steps are completed:
          operator:
            env:
              - name: DCGM_EXPORTER_JOB_NAME
-               value: gpu-metrics
+               value: gpu-metrics  # This value must match the Prometheus scrape job name for GPU metrics collection
          egs:
            prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
            grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
@@ -580,6 +584,8 @@ Before you begin, ensure the following steps are completed:
        skip_on_verify_fail: false                # Do not skip if worker verification fails
        enable_troubleshoot: false                # Enable troubleshooting mode for additional logs and checks
    ```
+
+   **📌 IMPORTANT NOTE:** The `DCGM_EXPORTER_JOB_NAME` value (`gpu-metrics`) must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected from the worker cluster and monitoring dashboards will not display GPU data. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md).
 
    **Step 2: Add Cluster Registration**
    
