@@ -309,7 +309,7 @@ Before you begin, ensure the following steps are completed:
 
 ### 3. **Kubeslice Controller Installation Settings (Mandatory)**
 
-   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.** **For the complete controller configuration example, see [egs-installer-config.yaml](egs-installer-config.yaml#L70-L120)**.
+   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.** **For the complete controller configuration example, see [egs-installer-config.yaml](egs-installer-config.yaml#L75-L120)**.
    
    ```yaml
    # Kubeslice Controller Installation Settings
@@ -411,7 +411,7 @@ Before you begin, ensure the following steps are completed:
 
    **Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
 
-   The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required. **For the complete UI configuration example, see [egs-installer-config.yaml](egs-installer-config.yaml#L140-L200)**.
+   The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required. **For the complete UI configuration example, see [egs-installer-config.yaml](egs-installer-config.yaml#L117-L200)**.
 
    ```yaml
    # Kubeslice UI Installation Settings
@@ -537,7 +537,7 @@ Before you begin, ensure the following steps are completed:
 
 ### 6. **Adding Additional Workers (Optional)**
 
-   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. **For complete worker configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L175-L240)**. Follow these steps:
+   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. **For complete worker configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L181-L240)**. Follow these steps:
 
    **Step 1: Add Worker Configuration**
    
