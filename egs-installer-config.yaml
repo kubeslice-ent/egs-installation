@@ -306,7 +306,7 @@ additional_apps:
         prometheusSpec:
           storageSpec: {}                     # Placeholder for storage configuration
           additionalScrapeConfigs:
-          - job_name: tgi
+          - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
             - role: endpoints
             relabel_configs:
