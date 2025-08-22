@@ -161,8 +161,8 @@ Before you begin, ensure the following steps are completed:
          global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
          ```
 
-     - **⚙️ Additional Configuration (Optional):**
-       - Configure installation stages and additional applications:
+     - **🔧 Installation Flags (Mandatory):**
+       - Configure the installation flags based on your requirements:
          ```yaml
          # Enable or disable specific stages of the installation
          enable_install_controller: true               # Enable the installation of the Kubeslice controller
@@ -173,20 +173,15 @@ Before you begin, ensure the following steps are completed:
          enable_install_additional_apps: true          # Set to true to enable additional apps installation
 
          # Enable custom applications
-         # Set this to true if you want to allow custom applications to be deployed.
-         # This is specifically useful for enabling NVIDIA driver installation on your nodes.
-         enable_custom_apps: false
+         enable_custom_apps: true                      # Set to true if you want to allow custom applications to be deployed
 
          # Command execution settings
-         # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
-         # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
-         # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
-         run_commands: false
+         run_commands: false                           # Set to true to allow the execution of commands for configuring NVIDIA MIG
          ```
 
-         ⚙️ **Kubeslice Controller Configuration**
+### 3. **🎮 Kubeslice Controller Installation Settings (Mandatory)**
 
-         The controller installation is configured through the `kubeslice_controller_egs` section in your `egs-installer-config.yaml`:
+   **📌 Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.**
 
          ```yaml
          #### Kubeslice Controller Installation Settings ####
@@ -248,37 +243,101 @@ Before you begin, ensure the following steps are completed:
            | `postgresDB`      | The PostgreSQL database name                 |
            | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
 
-         **Example Configuration to use pre-created secret**
-         
-         ```yaml
-         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials.
-                                                        # Created by install, all the below values must be specified.
-                                                        # Alternatively, leave all values empty and provide a pre-created secret.
-         postgresAddr: ""  # Change to your PostgreSQL endpoint
-         postgresPort: ""   # Change this to match your PostgreSQL service port
-         postgresUser: ""  # Set your PostgreSQL username
-         postgresPassword: ""  # Set your PostgreSQL password
-         postgresDB: ""  # Set your PostgreSQL database name
-         postgresSslmode: ""  # Change this based on your SSL configuration
-         ```
-         
-         📌 **Alternatively**, if you provide all values with a secret name as specified for `postgresSecretName` in the values file, using the key-value format below, it will automatically create the specified secret in the `kubeslice-controller` namespace with the provided values.
-   
-         **Example Configuration to auto-create secret with provided values**
-         
-         ```yaml
-         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
-                                                        # then a secret will be created with specified name. 
-                                                        # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
-         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
-         postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
-         postgresUser: "postgres"               # Change this PostgreSQL username to your values
-         postgresPassword: "postgres"           # Change this PostgreSQL password to your value
-         postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
-         postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
-         ```
 
-### 3. **🔄 Worker Clusters: Update the Inline Values**
+   **✅ Default Behavior:**
+   - Uses global kubeconfig and context
+   - Installs in `kubeslice-controller` namespace
+   - Auto-fetches controller endpoint
+   - Uses standard Helm flags and verification settings
+
+### 4. **🖥️ Kubeslice UI Installation Settings (Optional)**
+
+   **📌 Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
+
+   The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required.
+
+   ```yaml
+   #### Kubeslice UI Installation Settings ####
+   kubeslice_ui_egs:
+     skip_installation: false                     # Do not skip the installation of the UI
+     use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
+     kubeconfig: ""                               # Path to the kubeconfig file specific to the UI, if empty, uses the global kubeconfig
+     kubecontext: ""                              # Kubecontext specific to the UI; if empty, uses the global context
+     namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
+     release: "egs-ui"                            # Helm release name for the UI
+     chart: "kubeslice-ui-egs"                    # Helm chart name for the UI
+   #### Inline Helm Values for the UI Chart ####
+     inline_values:
+       global:
+         imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the UI images
+       kubeslice:
+         prometheus:
+           url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
+         uiproxy:
+           service:
+             type: ClusterIP                  # Service type for the UI proxy
+             ## if type selected to NodePort then set nodePort value if required
+             # nodePort:
+             # port: 443
+             # targetPort: 8443
+           labels:
+             app: kubeslice-ui-proxy
+           annotations: {}
+
+           ingress:
+             ## If true, ui‑proxy Ingress will be created
+             enabled: false
+             ## Port on the Service to route to
+             servicePort: 443
+             ## Ingress class name (e.g. "nginx"), if you're using a custom ingress controller
+             className: ""
+             hosts:
+               - host: ui.kubeslice.com     # replace with your FQDN
+                 paths:
+                   - path: /             # base path
+                     pathType: Prefix    # Prefix | Exact
+             ## TLS configuration (you must create these Secrets ahead of time)
+             tls: []
+               # - hosts:
+               #     - ui.kubeslice.com
+               #   secretName: uitlssecret
+             annotations: []
+             ## Extra labels to add onto the Ingress object
+             extraLabels: {}
+         apigw:
+           env:
+             - name: DCGM_METRIC_JOB_VALUE
+               value: nvidia-dcgm-exporter
+             
+         egsCoreApis:
+           enabled: true                         # Enable EGS core APIs for the UI
+           service:
+             type: ClusterIP                  # Service type for the EGS core APIs
+   #### Helm Flags and Verification Settings ####
+     helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
+     verify_install: false                        # Verify the installation of the UI
+     verify_install_timeout: 50                   # Timeout for the UI installation verification (in seconds)
+     skip_on_verify_fail: true                    # If UI verification fails, do not skip the step
+   #### Chart Source Settings ####
+     specific_use_local_charts: true              # Override to use local charts for the UI
+   ```
+
+   **🔧 When to Modify:**
+   - **Custom namespace**: Change `namespace` if you need a different namespace than `kubeslice-controller`
+   - **Custom release name**: Change `release` if you need a different Helm release name than `egs-ui`
+   - **Custom image registry**: Modify `imageRegistry` if using a different container registry
+   - **Ingress configuration**: Enable and configure ingress if you need external access
+   - **Service type**: Change service type if you need NodePort or LoadBalancer access
+   - **Custom domain**: Update the host in ingress configuration for your domain
+
+   **✅ Default Behavior:**
+   - Uses global kubeconfig and context
+   - Installs in `kubeslice-controller` namespace
+   - Uses ClusterIP service type (internal access only)
+   - Ingress disabled by default
+   - Uses standard Helm flags and verification settings
+
+### 5. **🔄 Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
@@ -327,7 +386,7 @@ Before you begin, ensure the following steps are completed:
                   className: "nginx"            # Ingress class name for the KServe gateway
       ```
 
-### 4. **➕ Adding Additional Workers (Optional) **
+### 6. **➕ Adding Additional Workers (Optional) **
 
    To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. Follow these steps:
 
