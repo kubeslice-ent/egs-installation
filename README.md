@@ -79,6 +79,120 @@ Before you begin, ensure the following steps are completed:
 
    #### **Option A: Using EGS Prerequisites Script (Recommended for new installations)**
    
+   - **Global Kubeconfig Configuration:**
+     - Ensure your global kubeconfig is properly configured for multi-cluster access:
+       ```yaml
+       global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path (MANDATORY)
+       global_kubecontext: ""  # Global kubecontext (MANDATORY)
+       use_global_context: true  # If true, use the global kubecontext for all operations by default
+       ```
+     
+     - **Additional Apps Configuration for Each Worker:**
+       - **📌 IMPORTANT:** For different worker clusters, you need to add additional apps array for each component in the `kubeslice_worker_egs` section
+       - Each worker cluster requires its own instances of GPU Operator and Prometheus if `enable_install_additional_apps: true`
+       - Example structure for multiple workers with additional apps:
+         ```yaml
+         additional_apps:
+           - name: "gpu-operator-worker-1"              # Name of the application
+             skip_installation: false                   # Do not skip the installation of the GPU operator
+             use_global_kubeconfig: false               # Use specific kubeconfig for this worker
+             kubeconfig: "~/.kube/config-worker-1"      # Path to worker-1 kubeconfig file
+             kubecontext: "worker-1-context"            # Kubecontext specific to worker-1
+             namespace: "egs-gpu-operator"              # Namespace where the GPU operator will be installed
+             release: "gpu-operator-worker-1"           # Helm release name for the GPU operator
+             chart: "gpu-operator"                      # Helm chart name for the GPU operator
+             repo_url: "https://helm.ngc.nvidia.com/nvidia" # Helm repository URL for the GPU operator
+             version: "v24.9.1"                         # Version of the GPU operator to install
+             specific_use_local_charts: true            # Use local charts for this application
+             inline_values:
+               hostPaths:
+                 driverInstallDir: "/home/kubernetes/bin/nvidia"
+               toolkit:
+                 installDir: "/home/kubernetes/bin/nvidia"
+               cdi:
+                 enabled: true
+                 default: true
+               driver:
+                 enabled: false
+             helm_flags: "--debug"                      # Additional Helm flags for this application's installation
+             verify_install: false                      # Verify the installation of the GPU operator
+             verify_install_timeout: 600                # Timeout for verification (in seconds)
+             skip_on_verify_fail: true                  # Skip the step if verification fails
+             enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+           
+           - name: "prometheus-worker-1"                # Name of the application
+             skip_installation: false                   # Do not skip the installation of Prometheus
+             use_global_kubeconfig: false               # Use specific kubeconfig for this worker
+             kubeconfig: "~/.kube/config-worker-1"      # Path to worker-1 kubeconfig file
+             kubecontext: "worker-1-context"            # Kubecontext specific to worker-1
+             namespace: "egs-monitoring"                # Namespace where Prometheus will be installed
+             release: "prometheus-worker-1"             # Helm release name for Prometheus
+             chart: "kube-prometheus-stack"             # Helm chart name for Prometheus
+             repo_url: "https://prometheus-community.github.io/helm-charts" # Helm repository URL for Prometheus
+             version: "v45.0.0"                         # Version of the Prometheus stack to install
+             specific_use_local_charts: true            # Use local charts for this application
+             inline_values:
+               prometheus:
+                 service:
+                   type: ClusterIP                     # Service type for Prometheus
+                 prometheusSpec:
+                   storageSpec: {}                     # Placeholder for storage configuration
+                   additionalScrapeConfigs:
+                   - job_name: nvidia-dcgm-exporter
+                     kubernetes_sd_configs:
+                     - role: endpoints
+                     relabel_configs:
+                     - source_labels: [__meta_kubernetes_pod_name]
+                       target_label: pod_name
+                     - source_labels: [__meta_kubernetes_pod_container_name]
+                       target_label: container_name
+                   - job_name: gpu-metrics
+                     scrape_interval: 1s
+                     metrics_path: /metrics
+                     scheme: http
+                     kubernetes_sd_configs:
+                     - role: endpoints
+                       namespaces:
+                         names:
+                         - egs-gpu-operator
+                     relabel_configs:
+                     - source_labels: [__meta_kubernetes_endpoints_name]
+                       action: drop
+                       regex: .*-node-feature-discovery-master
+                     - source_labels: [__meta_kubernetes_pod_node_name]
+                       action: replace
+                       target_label: kubernetes_node
+               grafana:
+                 enabled: true                         # Enable Grafana
+                 grafana.ini:
+                   auth:
+                     disable_login_form: true
+                     disable_signout_menu: true
+                   auth.anonymous:
+                     enabled: true
+                     org_role: Viewer
+                 service:
+                   type: ClusterIP                  # Service type for Grafana
+                 persistence:
+                   enabled: false                      # Disable persistence
+                   size: 1Gi                           # Default persistence size
+             helm_flags: "--debug"                     # Additional Helm flags for this application's installation
+             verify_install: false                      # Verify the installation of Prometheus
+             verify_install_timeout: 600                # Timeout for verification (in seconds)
+             skip_on_verify_fail: true                  # Skip the step if verification fails
+             enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+         
+         # For worker-2, repeat the same structure with different kubeconfig, kubecontext, and release names:
+         # - name: "gpu-operator-worker-2"
+         #   kubeconfig: "~/.kube/config-worker-2"
+         #   kubecontext: "worker-2-context"
+         #   release: "gpu-operator-worker-2"
+         # - name: "prometheus-worker-2"
+         #   kubeconfig: "~/.kube/config-worker-2"
+         #   kubecontext: "worker-2-context"
+         #   release: "prometheus-worker-2"
+         ```
+
    If you want EGS to automatically install and configure Prometheus, GPU Operator, and PostgreSQL:
    
    - Configure the `egs-installer-config.yaml` file to enable additional applications installation:
