@@ -87,7 +87,7 @@ additional_apps:
         prometheusSpec:
           storageSpec: {}
           additionalScrapeConfigs:
-          - job_name: tgi
+          - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
             - role: endpoints
             relabel_configs:
@@ -258,7 +258,7 @@ inline_values:
     prometheusSpec:
       storageSpec: {}                     # Placeholder for storage configuration
       additionalScrapeConfigs:
-      - job_name: tgi
+      - job_name: nvidia-dcgm-exporter
         kubernetes_sd_configs:
         - role: endpoints
         relabel_configs:
@@ -349,7 +349,7 @@ kill %1
 
 # 4. Look for your specific jobs
 kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
-curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="tgi" or .labels.job=="gpu-metrics" or (.labels.job | contains("servicemonitor")) or (.labels.job | contains("podmonitor")))'
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="nvidia-dcgm-exporter" or .labels.job=="gpu-metrics" or (.labels.job | contains("servicemonitor")) or (.labels.job | contains("podmonitor")))'
 kill %1
 ```
 
@@ -362,14 +362,14 @@ kubectl port-forward -n egs-monitoring prometheus-operated 9090:9090 &
 # 1. Check if GPU metrics are being collected
 curl -s "http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_SM_CLOCK" | jq '.data.result | length'
 
-# 2. Check if TGI metrics are being collected (adjust metric name as needed)
-curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*tgi.*\"}" | jq '.data.result | length'
+# 2. Check if nvidia-dcgm-exporter metrics are being collected (adjust metric name as needed)
+curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*nvidia-dcgm-exporter.*\"}" | jq '.data.result | length'
 
 # 3. Verify node labeling for GPU metrics
 curl -s "http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_SM_CLOCK" | jq '.data.result[0].metric.kubernetes_node'
 
-# 4. Check pod labeling for TGI metrics
-curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*tgi.*\"}" | jq '.data.result[0].metric.pod_name'
+# 4. Check pod labeling for nvidia-dcgm-exporter metrics
+curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*nvidia-dcgm-exporter.*\"}" | jq '.data.result[0].metric.pod_name'
 
 # 5. Verify scrape intervals
 curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job | contains("gpu")) | .scrapeInterval'
