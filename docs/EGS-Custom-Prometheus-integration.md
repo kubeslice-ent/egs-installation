@@ -5,7 +5,7 @@ This guide explains how to integrate EGS (Enterprise GPU Slice) monitoring confi
 ## Overview
 
 EGS provides two main scrape configurations:
-1. **TGI (Text Generation Inference) metrics** - Monitors AI/ML inference workloads
+1. **nvidia-dcgm-exporter metrics** - Monitors AI/ML inference workloads
 2. **GPU metrics** - Monitors GPU hardware utilization via NVIDIA GPU Operator
 
 ## Prerequisites
@@ -14,7 +14,7 @@ EGS provides two main scrape configurations:
 - **CRITICAL**: Prometheus Operator installed (required for Method 1)
 - NVIDIA GPU Operator installed (for GPU metrics)
 - Appropriate RBAC permissions for Prometheus to discover Kubernetes endpoints
-- Text Generation Inference or similar AI/ML workloads (for TGI metrics)
+- Text Generation Inference or similar AI/ML workloads (for nvidia-dcgm-exporter metrics)
 
 ## Important: Prometheus Operator Requirement
 
@@ -70,8 +70,8 @@ If you're using the `kube-prometheus-stack` Helm chart, update your `values.yaml
 prometheus:
   prometheusSpec:
     additionalScrapeConfigs:
-      # TGI (Text Generation Inference) Metrics
-      - job_name: tgi
+      # nvidia-dcgm-exporter (Text Generation Inference) Metrics
+      - job_name: nvidia-dcgm-exporter
         kubernetes_sd_configs:
         - role: endpoints
         relabel_configs:
@@ -117,7 +117,7 @@ helm status prometheus
 kubectl port-forward -n your-monitoring-namespace prometheus-prometheus-kube-prometheus-prometheus-0 9090:9090
 
 
-curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="tgi" or .labels.job=="gpu-metrics")'
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="nvidia-dcgm-exporter" or .labels.job=="gpu-metrics")'
 
 ```
 
@@ -161,23 +161,23 @@ spec:
       replacement: gpu-metrics
 ```
 
-#### TGI Metrics ServiceMonitor
+#### nvidia-dcgm-exporter Metrics ServiceMonitor
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: egs-tgi-metrics-service-monitor
+  name: egs-nvidia-dcgm-exporter-metrics-service-monitor
   namespace: your-monitoring-namespace
   labels:
-    app: egs-tgi-monitoring
+    app: egs-nvidia-dcgm-exporter-monitoring
     release: prometheus-operator # Required label for Prometheus to discover this ServiceMonitor
 spec:
   selector: {}
     # matchLabels:
-    #   control-plane: controller-manager  # Adjust based on your TGI service labels
+    #   control-plane: controller-manager  # Adjust based on your nvidia-dcgm-exporter service labels
   namespaceSelector:
-    any: true  # Monitor TGI services across all namespaces
+    any: true  # Monitor nvidia-dcgm-exporter services across all namespaces
   endpoints:
   - port: metrics
     interval: 15s
@@ -189,26 +189,26 @@ spec:
     - sourceLabels: [__meta_kubernetes_pod_container_name]
       targetLabel: container_name
     - targetLabel: job
-      replacement: tgi
+      replacement: nvidia-dcgm-exporter
 ```
 
 Apply the ServiceMonitors:
 
 ```bash
 kubectl apply -f gpu-servicemonitor.yaml
-kubectl apply -f tgi-servicemonitor.yaml
+kubectl apply -f nvidia-dcgm-exporter-servicemonitor.yaml
 ```
 
 **Testing Method 2:**
 ```bash
 # 1. Apply ServiceMonitors
 kubectl apply -f gpu-servicemonitor.yaml
-kubectl apply -f tgi-servicemonitor.yaml
+kubectl apply -f nvidia-dcgm-exporter-servicemonitor.yaml
 
 # 2. Verify ServiceMonitors were created
 kubectl get servicemonitors -n your-monitoring-namespace
 kubectl describe servicemonitor egs-gpu-metrics -n your-monitoring-namespace
-kubectl describe servicemonitor egs-tgi-metrics -n your-monitoring-namespace
+kubectl describe servicemonitor egs-nvidia-dcgm-exporter-metrics -n your-monitoring-namespace
 
 
 # 3. Verify targets in Prometheus service port forward
@@ -248,7 +248,7 @@ kill %1
 
 # 4. Look for your specific jobs
 kubectl port-forward -n your-monitoring-namespace prometheus-your-prometheus-0 9090:9090 &
-curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="tgi" or .labels.job=="gpu-metrics" or (.labels.job | contains("servicemonitor")) or (.labels.job | contains("podmonitor")))'
+curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job=="nvidia-dcgm-exporter" or .labels.job=="gpu-metrics" or (.labels.job | contains("servicemonitor")) or (.labels.job | contains("podmonitor")))'
 kill %1
 ```
 
@@ -261,14 +261,14 @@ kubectl port-forward -n your-monitoring-namespace prometheus-your-prometheus-0 9
 # 1. Check if GPU metrics are being collected
 curl -s "http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_SM_CLOCK" | jq '.data.result | length'
 
-# 2. Check if TGI metrics are being collected (adjust metric name as needed)
-curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*tgi.*\"}" | jq '.data.result | length'
+# 2. Check if nvidia-dcgm-exporter metrics are being collected (adjust metric name as needed)
+curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*nvidia-dcgm-exporter.*\"}" | jq '.data.result | length'
 
 # 3. Verify node labeling for GPU metrics
 curl -s "http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_SM_CLOCK" | jq '.data.result[0].metric.kubernetes_node'
 
-# 4. Check pod labeling for TGI metrics
-curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*tgi.*\"}" | jq '.data.result[0].metric.pod_name'
+# 4. Check pod labeling for nvidia-dcgm-exporter metrics
+curl -s "http://localhost:9090/api/v1/query?query=up{job=~\".*nvidia-dcgm-exporter.*\"}" | jq '.data.result[0].metric.pod_name'
 
 # 5. Verify scrape intervals
 curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | select(.labels.job | contains("gpu")) | .scrapeInterval'
@@ -319,14 +319,14 @@ kubectl get servicemonitors-A
 Update the namespace configurations to match your environment:
 
 - **GPU Operator Namespace**: Change `your-gpu-operator-namespace` to your actual GPU operator namespace
-- **TGI Namespace**: Add specific namespace targeting if your TGI workloads are in specific namespaces
+- **nvidia-dcgm-exporter Namespace**: Add specific namespace targeting if your nvidia-dcgm-exporter workloads are in specific namespaces
 - **Monitoring Namespace**: Change `your-monitoring-namespace` to where your Prometheus is deployed
 
 
 ### Scrape Interval Adjustments
 
 - **GPU metrics**: Default is 1s for high-resolution monitoring, but you can increase to 5s or 10s if needed
-- **TGI metrics**: Default uses global interval, but you can specify a custom interval
+- **nvidia-dcgm-exporter metrics**: Default uses global interval, but you can specify a custom interval
 
 ## Common Issues and Solutions
 
@@ -394,7 +394,7 @@ Update the namespace configurations to match your environment:
    kubectl port-forward -n your-monitoring-namespace prometheus-your-prometheus-0 9090:9090
    ```
 2. Go to `http://localhost:9090/targets`
-3. Look for the `tgi` and `gpu-metrics` jobs (or ServiceMonitor/PodMonitor targets)
+3. Look for the `nvidia-dcgm-exporter` and `gpu-metrics` jobs (or ServiceMonitor/PodMonitor targets)
 4. Verify they show as "UP" with discovered endpoints
 
 ### Verify Metrics Collection
@@ -408,8 +408,8 @@ DCGM_FI_DEV_SM_CLOCK
 # GPU memory usage
 DCGM_FI_DEV_FB_USED
 
-# TGI request metrics (example)
-tgi_request_duration_seconds
+# nvidia-dcgm-exporter request metrics (example)
+nvidia-dcgm-exporter_request_duration_seconds
 
 # Node information with GPU context
 up{job="gpu-metrics"}
@@ -421,14 +421,14 @@ For additional assistance with EGS monitoring integration:
 
 1. Check the EGS documentation for specific metric definitions
 2. Verify your GPU operator installation follows EGS requirements
-3. Ensure your TGI workloads are properly instrumented for metrics export
+3. Ensure your nvidia-dcgm-exporter workloads are properly instrumented for metrics export
 4. Review Prometheus Operator documentation for CRD-specific issues
 
 ## Notes
 
 - **Prometheus Operator is REQUIRED** for Methods 1 (CRD approach), 2, and 3
 - The GPU metrics scrape interval of 1s provides high-resolution monitoring but may increase storage requirements
-- TGI metrics discovery across all namespaces provides comprehensive coverage but may need filtering in large clusters
+- nvidia-dcgm-exporter metrics discovery across all namespaces provides comprehensive coverage but may need filtering in large clusters
 - Regular review of discovered targets is recommended to ensure optimal performance
 - Always test RBAC permissions before deploying to production
 - Consider network policies and security implications when allowing cross-namespace monitoring 
