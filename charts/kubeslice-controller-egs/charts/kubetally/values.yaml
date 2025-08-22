@@ -1,5 +1,5 @@
 global:
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
 kubetally:
   pricingService:
     image: pricing-service

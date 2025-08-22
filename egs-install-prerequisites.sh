@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the script version
-SCRIPT_VERSION="1.14.4"
+SCRIPT_VERSION="1.15.0"
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
@@ -1399,10 +1399,8 @@ install_or_upgrade_helm_chart() {
         if [ -n "$image_pull_secret_username_used" ]; then
             echo "✔️ Using global username: $image_pull_secret_username_used"
         else
-            echo "❌ Error: Username is missing!"
-            echo "🔗 You can generate the required image pull secrets using the following URL:"
-            echo "   https://avesha.io/kubeslice-registration"
-            exit 1
+            echo "ℹ️ No username provided - suitable for public repositories"
+            image_pull_secret_username_used=""
         fi
     fi
 
@@ -1415,10 +1413,8 @@ install_or_upgrade_helm_chart() {
         if [ -n "$image_pull_secret_password_used" ]; then
             echo "✔️ Using global password: [Hidden for security]"
         else
-            echo "❌ Error: Password is missing!"
-            echo "🔗 You can generate the required image pull secrets using the following URL:"
-            echo "   https://avesha.io/kubeslice-registration"
-            exit 1
+            echo "ℹ️ No password provided - suitable for public repositories"
+            image_pull_secret_password_used=""
         fi
     fi
 
@@ -1428,17 +1424,21 @@ install_or_upgrade_helm_chart() {
     echo "   Username: $image_pull_secret_username_used"
     echo "   Password: [Hidden for security]"
 
-    # Create inline values for imagePullSecrets
-    image_pull_secrets_inline=$(
-        cat <<EOF
+    # Create inline values for imagePullSecrets only if username and password are provided
+    if [ -n "$image_pull_secret_username_used" ] && [ -n "$image_pull_secret_password_used" ]; then
+        image_pull_secrets_inline=$(
+            cat <<EOF
 imagePullSecrets:
   repository: $image_pull_secret_repo_used
   username: $image_pull_secret_username_used
   password: $image_pull_secret_password_used
 EOF
-    )
-
-    echo "✅ Image pull secrets configured successfully."
+        )
+        echo "✅ Image pull secrets configured successfully with credentials."
+    else
+        image_pull_secrets_inline=""
+        echo "ℹ️ No image pull secrets created - suitable for public repositories."
+    fi
 
     # Define the base Helm command
     helm_cmd="helm --namespace $namespace --kubeconfig $kubeconfig_path $context_arg"

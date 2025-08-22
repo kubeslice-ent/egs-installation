@@ -61,8 +61,12 @@ spec:
         - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
           env:
-            - name: DCGM_METRIC_JOB_VALUE
-              value: tgi
+            {{- if .Values.kubeslice.apigw.env }}
+            {{- range .Values.kubeslice.apigw.env }}
+            - name: {{ .name }}
+              value: {{ .value }}
+            {{- end }}
+            {{- end }}
             - name: KUBESLICE_METRIC_JOB_VALUE
               value: tgi
             - name: DCGM_METRIC_HOSTNAME_KEY
@@ -72,7 +76,7 @@ spec:
             - name: DCGM_METRIC_JOB_KEY
               value: job
             - name: DCGM_METRIC_POD_KEY
-              value: pod
+              value: pod    
             - name: KUBESLICE_CONTROLLER_PROMETHEUS
               value: {{ .Values.kubeslice.prometheus.url }}
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE

@@ -92,6 +92,12 @@ spec:
             value: "true"
           - name: EXCLUDED_NS
             value: '{{ .Values.operator.excludeNamespaces | join "," }}'
+          {{- if .Values.operator.env }}
+          {{- range .Values.operator.env }}
+          - name: {{ .name }}
+            value: {{ .value }}
+          {{- end }}
+          {{- end }}
 
         livenessProbe:
           httpGet:
