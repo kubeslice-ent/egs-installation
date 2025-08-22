@@ -15,7 +15,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🛠️ For the Installation guide, please see the documentation on [Installation Guide Documentation](https://github.com/kubeslice-ent/egs-installation) 💻  
 - 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
 - ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README.md) 🔍  
-- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](https://github.com/kubeslice-ent/egs-installation#token-retrieval) 🔒  
+- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](docs/Slice-Admin-Token-README.md) 🔒  
 - 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](docs/Namespace-Creation-README.md) 🗂️  
 - 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
 - ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
@@ -77,7 +77,7 @@ Before you begin, ensure the following steps are completed:
 
    **⚠️ IMPORTANT: Choose ONE approach - do NOT use both simultaneously**
 
-   #### **Option A: Using EGS Prerequisites Script (Recommended for new installations)**
+   **Option A: Using EGS Prerequisites Script (Recommended for new installations)**
    
    If you want EGS to automatically install and configure Prometheus, GPU Operator, and PostgreSQL:
    
@@ -223,7 +223,7 @@ Before you begin, ensure the following steps are completed:
      #   release: "prometheus-worker-2"
      ```
 
-   #### **Option B: Using Pre-existing Infrastructure**
+   **Option B: Using Pre-existing Infrastructure**
    
    If you already have Prometheus, GPU Operator, or PostgreSQL running in your cluster:
    
@@ -304,7 +304,7 @@ Before you begin, ensure the following steps are completed:
    **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.**
 
    ```yaml
-   #### Kubeslice Controller Installation Settings ####
+   # Kubeslice Controller Installation Settings
    kubeslice_controller_egs:
      skip_installation: false                     # Do not skip the installation of the controller
      use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
@@ -314,7 +314,8 @@ Before you begin, ensure the following steps are completed:
      namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
      release: "egs-controller"                    # Helm release name for the controller
      chart: "kubeslice-controller-egs"            # Helm chart name for the controller
-   #### Inline Helm Values for the Controller Chart ####
+   
+   # Inline Helm Values for the Controller Chart
      inline_values:
        global:
          imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the images
@@ -323,7 +324,8 @@ Before you begin, ensure the following steps are completed:
            annotations: {}
          kubeTally:
            enabled: false                          # Enable KubeTally in the controller
-   #### PostgreSQL Connection Configuration for Kubetally  ####
+   
+   # PostgreSQL Connection Configuration for Kubetally
            postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
                                                           # then a secret will be created with specified name. 
                                                           # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
@@ -337,12 +339,14 @@ Before you begin, ensure the following steps are completed:
        kubeslice:
          controller:
            endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
-   #### Helm Flags and Verification Settings ####
+   
+   # Helm Flags and Verification Settings
      helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
      verify_install: false                        # Verify the installation of the controller
      verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
      skip_on_verify_fail: true                    # If verification fails, do not skip the step
-   #### Troubleshooting Settings ####
+   
+   # Troubleshooting Settings
      enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
    ```
 
@@ -408,7 +412,7 @@ Before you begin, ensure the following steps are completed:
    The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required.
 
    ```yaml
-   #### Kubeslice UI Installation Settings ####
+   # Kubeslice UI Installation Settings
    kubeslice_ui_egs:
      skip_installation: false                     # Do not skip the installation of the UI
      use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
@@ -417,7 +421,8 @@ Before you begin, ensure the following steps are completed:
      namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
      release: "egs-ui"                            # Helm release name for the UI
      chart: "kubeslice-ui-egs"                    # Helm chart name for the UI
-   #### Inline Helm Values for the UI Chart ####
+   
+   # Inline Helm Values for the UI Chart
      inline_values:
        global:
          imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the UI images
@@ -464,12 +469,14 @@ Before you begin, ensure the following steps are completed:
            enabled: true                         # Enable EGS core APIs for the UI
            service:
              type: ClusterIP                  # Service type for the EGS core APIs
-   #### Helm Flags and Verification Settings ####
+   
+   # Helm Flags and Verification Settings
      helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
      verify_install: false                        # Verify the installation of the UI
      verify_install_timeout: 50                   # Timeout for the UI installation verification (in seconds)
      skip_on_verify_fail: true                    # If UI verification fails, do not skip the step
-   #### Chart Source Settings ####
+   
+   # Chart Source Settings
      specific_use_local_charts: true              # Override to use local charts for the UI
    ```
 
@@ -480,7 +487,7 @@ Before you begin, ensure the following steps are completed:
    
    **📝 Note:** Global monitoring endpoint settings are configured in the [Modify the Configuration File](https://github.com/kubeslice-ent/egs-installation/tree/main?tab=readme-ov-file#2--modify-the-configuration-file-mandatory) section above, including `global_auto_fetch_endpoint` and related Grafana/Prometheus settings.
    
-   #### **⚠️ Multi-Cluster Setup Configuration**
+   **⚠️ Multi-Cluster Setup Configuration**
    
    If the **controller** and **worker** are in different clusters, you need to configure monitoring endpoints manually:
    
@@ -527,7 +534,7 @@ Before you begin, ensure the following steps are completed:
 
    To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. Follow these steps:
 
-   #### **Step 1: Add Worker Configuration**
+   **Step 1: Add Worker Configuration**
    
    Add a new worker entry to the `kubeslice_worker_egs` array in your configuration file:
    
@@ -574,32 +581,10 @@ Before you begin, ensure the following steps are completed:
        enable_troubleshoot: false                # Enable troubleshooting mode for additional logs and checks
    ```
 
-   **To add more workers (worker-2, worker-3, etc.), simply add additional entries to the array:**
-   
-   ```yaml
-   kubeslice_worker_egs:
-     - name: "worker-1"                           # First worker (existing)
-       # ... existing configuration ...
-     
-     - name: "worker-2"                           # Second worker (new)
-       use_global_kubeconfig: true
-       kubeconfig: ""
-       kubecontext: ""
-       skip_installation: false
-       specific_use_local_charts: true
-       namespace: "kubeslice-system"
-       release: "egs-worker-2"                    # Unique release name
-       chart: "kubeslice-worker-egs"
-       # ... copy inline_values from worker-1 and update endpoints ...
-     
-     - name: "worker-3"                           # Third worker (new)
-       # ... similar configuration with unique release name ...
-   ```
-
-   #### **Step 2: Add Cluster Registration**
+   **Step 2: Add Cluster Registration**
    
    Add corresponding entries in the `cluster_registration` section for each new worker:
-   
+
    ```yaml
    cluster_registration:
      - cluster_name: "worker-1"                    # Existing cluster
@@ -611,7 +596,7 @@ Before you begin, ensure the following steps are completed:
        geoLocation:
          cloudProvider: ""                         # Cloud provider for this cluster (e.g., GCP)
          cloudRegion: ""                           # Cloud region for this cluster (e.g., us-central1)
-     
+   
      - cluster_name: "worker-2"                    # New cluster
        project_name: "avesha"                      # Name of the project to associate with the cluster
        telemetry:
@@ -623,7 +608,7 @@ Before you begin, ensure the following steps are completed:
          cloudRegion: ""                           # Cloud region for this cluster (e.g., us-central1)
    ```
 
-   #### **⚠️ Important Notes:**
+   **⚠️ Important Notes:**
    
    - **🔑 Unique Release Names:** Ensure each worker has a unique `release` name to avoid conflicts during installation.
    - **🌐 Cluster Endpoints:** Update the `prometheusEndpoint` and `grafanaDashboardBaseUrl` with the correct endpoints for the new worker cluster.
@@ -631,7 +616,7 @@ Before you begin, ensure the following steps are completed:
    - **📊 Monitoring:** Ensure the monitoring endpoints (Prometheus/Grafana) are accessible from the controller cluster for proper telemetry.
    - **🔗 Prometheus Accessibility:** **Critical:** Make sure Prometheus endpoints are accessible from the controller cluster. The controller needs to reach the Prometheus service in each worker cluster to collect metrics and telemetry data. If the worker clusters are in different networks, ensure proper network connectivity or use LoadBalancer/NodePort services for Prometheus.
 
-   #### **🚀 Step 3: Run the Installation Script**
+   **🚀 Step 3: Run the Installation Script**
    
    After adding the new worker configuration, run the installation script to deploy the additional worker:
    
