@@ -90,7 +90,7 @@ kubeslice_controller_egs:
 #### Inline Helm Values for the Controller Chart ####
   inline_values:
     global:
-      imageRegistry: docker.io/aveshasystems   # Docker registry for the images
+      imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the images
       namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
         labels: {}
         annotations: {}
@@ -130,7 +130,7 @@ kubeslice_ui_egs:
 #### Inline Helm Values for the UI Chart ####
   inline_values:
     global:
-      imageRegistry: docker.io/aveshasystems   # Docker registry for the UI images
+      imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the UI images
     kubeslice:
       prometheus:
         url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
@@ -165,7 +165,11 @@ kubeslice_ui_egs:
           annotations: []
           ## Extra labels to add onto the Ingress object
           extraLabels: {}
-        
+      apigw:
+        env:
+          - name: DCGM_METRIC_JOB_VALUE
+            value: nvidia-dcgm-exporter
+          
       egsCoreApis:
         enabled: true                         # Enable EGS core APIs for the UI
         service:
@@ -192,16 +196,19 @@ kubeslice_worker_egs:
 #### Inline Helm Values for the Worker Chart ####
     inline_values:
       global:
-        imageRegistry: docker.io/aveshasystems # Docker registry for worker images
+        imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
+      operator:
+        env:
+          - name: DCGM_EXPORTER_JOB_NAME
+            value: gpu-metrics
       egs:
         prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
-      # Leave egsAgent section empty as the script will auto-fetch token and endpoint details
       egsAgent:
         secretName: egs-agent-access
         agentSecret:
-          endpoint: ""  # Leave empty - script will auto-fetch
-          key: ""       # Leave empty - script will auto-fetch
+          endpoint: ""
+          key: ""
       metrics:
         insecure: true                        # Allow insecure connections for metrics
       kserve:
@@ -303,7 +310,7 @@ additional_apps:
         prometheusSpec:
           storageSpec: {}                     # Placeholder for storage configuration
           additionalScrapeConfigs:
-          - job_name: tgi
+          - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
             - role: endpoints
             relabel_configs:
@@ -356,7 +363,6 @@ additional_apps:
     release: "kt-postgresql"                  # Helm release name for PostgreSQL
     chart: "postgresql"                       # Helm chart name for PostgreSQL
     repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql" # Helm repository URL for PostgreSQL
-    chart: "postgresql"                       # Helm chart name for PostgreSQL
     version: "16.2.1"                         # Version of the PostgreSQL chart to install
     specific_use_local_charts: true           # Use local charts for this application
     values_file: ""                            # Path to an external values file, if any
@@ -481,8 +487,43 @@ required_binaries:
 add_node_label: false                        # Enable node labeling during installation
 
 # Version of the input configuration file
-version: "1.14.4"
+version: "1.15.0"
 ```
+
+## Key Updates in Version 1.15.0
+
+### 🆕 New Features and Sections
+
+#### **API Gateway Configuration (`apigw`)**
+- **DCGM Metric Job Value**: Configure the DCGM exporter job name for metrics collection
+- **Environment Variables**: Set custom environment variables for the API gateway
+
+#### **Enhanced Worker Configuration**
+- **Operator Environment Variables**: Configure DCGM exporter job name for GPU metrics
+- **Updated Image Registry**: Changed to `harbor.saas1.smart-scaler.io/avesha/aveshasystems`
+
+#### **Updated Prometheus Configuration**
+- **NVIDIA DCGM Exporter Job**: Added dedicated scrape configuration for NVIDIA DCGM metrics
+- **Enhanced GPU Metrics Collection**: Improved monitoring for GPU operator deployments
+- **Job Naming**: Consistent naming convention for GPU monitoring jobs
+
+### 🔄 Updated Configurations
+
+#### **Image Registry Changes**
+- **Controller**: `harbor.saas1.smart-scaler.io/avesha/aveshasystems`
+- **UI**: `harbor.saas1.smart-scaler.io/avesha/aveshasystems`
+- **Worker**: `harbor.saas1.smart-scaler.io/avesha/aveshasystems`
+
+#### **PostgreSQL Configuration**
+- **Removed Duplicate Fields**: Cleaned up redundant chart specifications
+- **Improved Structure**: Better organization of database configuration options
+
+### 📊 Monitoring Enhancements
+
+#### **GPU Metrics Collection**
+- **DCGM Exporter Integration**: Dedicated job for NVIDIA DCGM metrics
+- **Enhanced Scraping**: Improved configuration for GPU-related metrics collection
+- **Job Naming**: Consistent naming convention for GPU monitoring jobs
 
 ## Related Files
 
