@@ -97,7 +97,10 @@ A robust preflight check script designed for EGS setup on Kubernetes. This scrip
 
 > **Note**: If no wrapper function is specified, all preflight check functions will be executed by default.
 
-## Output
+## Sample Output
+
+<img width="1436" height="980" alt="image" src="https://github.com/user-attachments/assets/0fa45220-f2b3-4df5-9495-48374ab441b8" />
+
 
 - 📝 **Logs**: Detailed logs are generated for each step, including successes and failures.
 - 📊 **Summary**: A final summary is displayed, highlighting the status of all checks.
