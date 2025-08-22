@@ -593,16 +593,7 @@ Before you begin, ensure the following steps are completed:
        geoLocation:
          cloudProvider: ""                         # Cloud provider for this cluster (e.g., GCP)
          cloudRegion: ""                           # Cloud region for this cluster (e.g., us-central1)
-   
-     - cluster_name: "worker-2"                    # New cluster
-       project_name: "avesha"                      # Name of the project to associate with the cluster
-       telemetry:
-         enabled: true                             # Enable telemetry for this cluster
-         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090" # Telemetry endpoint
-         telemetryProvider: "prometheus"           # Telemetry provider (Prometheus in this case)
-       geoLocation:
-         cloudProvider: ""                         # Cloud provider for this cluster (e.g., GCP)
-         cloudRegion: ""                           # Cloud region for this cluster (e.g., us-central1)
+
    ```
 
    **⚠️ Important Notes:**
@@ -613,7 +604,7 @@ Before you begin, ensure the following steps are completed:
    - **📊 Monitoring:** Ensure the monitoring endpoints (Prometheus/Grafana) are accessible from the controller cluster for proper telemetry.
    - **🔗 Prometheus Accessibility:** **Critical:** Make sure Prometheus endpoints are accessible from the controller cluster. The controller needs to reach the Prometheus service in each worker cluster to collect metrics and telemetry data. If the worker clusters are in different networks, ensure proper network connectivity or use LoadBalancer/NodePort services for Prometheus.
 
-   **📌 Point 6 Note - Multiple Worker Configuration:**
+   **📌 Note - Multiple Worker Configuration:**
    
    When configuring multiple workers, you can use an array structure in your `egs-installer-config.yaml`. Here's a sample snippet showing how to efficiently handle multiple workers:
    
