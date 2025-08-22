@@ -112,9 +112,9 @@ After running the preflight check script, carefully review any failures or warni
 **🔍 Understanding Check Requirements:**
 Not all preflight checks may be required to pass depending on your specific setup and requirements:
 
-- **🔴 Critical Failures**: Must be resolved (e.g., namespace creation permissions, basic Kubernetes access)
-- **🟡 Warnings**: Review and resolve if they impact your specific use case
-- **🟢 Optional Checks**: May not be required for your deployment scenario
+- **🔴 Critical Failures**: Must be resolved before proceeding (e.g., namespace creation permissions, basic Kubernetes access) and may be ignored if not applicable.
+- **🟡 Warnings**: Review and resolve if they impact your specific use case and can be ignored if not applicable
+- **🟢 Optional Checks**: Checks are passing for your deployment scenario 
 
 **💡 Examples of Setup-Dependent Checks:**
 - **Storage Class Checks**: May fail if you don't need persistent storage
