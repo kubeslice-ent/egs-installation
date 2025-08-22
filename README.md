@@ -442,7 +442,7 @@ additional_apps:
           port: 32270
         prometheusSpec:
           additionalScrapeConfigs:
-          - job_name: tgi
+          - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
             - role: endpoints
             relabel_configs:

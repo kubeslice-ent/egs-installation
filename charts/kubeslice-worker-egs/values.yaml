@@ -1,6 +1,3 @@
-dev:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
-
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   profile:
@@ -8,8 +5,7 @@ global:
 
 operator:
   image: worker-operator-ent-egs
-#  tag: 1.14.2
-  tag: 1.15.0-RELEASE-4a6c8c99
+  tag: 1.15.0
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -79,7 +75,7 @@ cluster:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.14.3-RELEASE-af0a046d
+  tag: 1.15.0
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -176,7 +172,7 @@ egs:
 
 workerInstaller:
   image: worker-installer
-  tag: 1.7.0-RELEASE-28c699f6
+  tag: 1.8.0
 
 jaeger:
   enabled: false
