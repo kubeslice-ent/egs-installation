@@ -253,51 +253,58 @@ Before you begin, ensure the following steps are completed:
 
 ### 2. **📝 Modify the Configuration File (Mandatory):**
    - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`.
-   - Update the following mandatory parameters:
+   - Choose your installation approach:
 
-     - **⚙️ Kubernetes Configuration (Mandatory) :**
-       - Set the global `kubeconfig` and `kubecontext` parameters:
-         ```yaml
-         global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
-         global_kubecontext: ""  # Global kubecontext (MANDATORY)
-         use_global_context: true  # If true, use the global kubecontext for all operations by default
-         ```
+   **🔄 Option A: Single Cluster Installation (Simplified)**
+   
+   For single cluster setups where controller and workers are in the same cluster, you only need to update basic configuration:
+   
+   ```yaml
+   # Kubernetes Configuration (Mandatory)
+   global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
+   global_kubecontext: ""  # Global kubecontext (MANDATORY)
+   use_global_context: true  # If true, use the global kubecontext for all operations by default
+   
+   # Installation Flags (Mandatory)
+   enable_install_controller: true               # Enable the installation of the Kubeslice controller
+   enable_install_ui: true                       # Enable the installation of the Kubeslice UI
+   enable_install_worker: true                   # Enable the installation of Kubeslice workers
+   enable_install_additional_apps: true          # Set to true to enable additional apps installation
+   enable_custom_apps: true                      # Set to true if you want to allow custom applications to be deployed
+   run_commands: false                           # Set to true to allow the execution of commands for configuring NVIDIA MIG
+   ```
+   
+   **After updating these values, you can proceed directly to Step 7 (Run Installation Script).**
+   
+   **🌐 Option B: Multi-Worker Installation (Advanced)**
+   
+   For multi-cluster setups or when you need detailed worker configuration, continue with the following sections:
+   
+   **⚙️ Global Monitoring Endpoint Settings (Optional):**
+   - Configure global monitoring endpoint settings for multi-cluster setups:
+     
+     **⚠️ IMPORTANT NOTE:** It is recommended to set `global_auto_fetch_endpoint: true` for automatic endpoint discovery. If set to `false`, you must manually provide the Prometheus endpoints in the respective worker values section or cluster definition section. Ensure that worker Prometheus endpoints are accessible from the controller cluster for proper monitoring.
+     
+     **📌 CLUSTER SETUP CONSIDERATION:** If using ClusterIP service type, this is only valid for single cluster setups. For multi-worker setups where worker and controller clusters are different, ClusterIP will NOT work as the controller cluster cannot access worker cluster services. Use NodePort, LoadBalancer, or ensure proper network connectivity between clusters.
+     
+     ```yaml
+     # Global monitoring endpoint settings
+     global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
+     global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
+     global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
+     global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
+     global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
+     global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
+     global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
+     ```
 
-     - **🖥 Global Monitoring Endpoint Settings (Optional):**
-       - Configure global monitoring endpoint settings for multi-cluster setups:
-         
-         **⚠️ IMPORTANT NOTE:** It is recommended to set `global_auto_fetch_endpoint: true` for automatic endpoint discovery. If set to `false`, you must manually provide the Prometheus endpoints in the respective worker values section or cluster definition section. Ensure that worker Prometheus endpoints are accessible from the controller cluster for proper monitoring.
-         
-         **📌 CLUSTER SETUP CONSIDERATION:** If using ClusterIP service type, this is only valid for single cluster setups. For multi-worker setups where worker and controller clusters are different, ClusterIP will NOT work as the controller cluster cannot access worker cluster services. Use NodePort, LoadBalancer, or ensure proper network connectivity between clusters.
-         
-         ```yaml
-         # Global monitoring endpoint settings
-         global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
-         global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
-         global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
-         global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
-         global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
-         global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
-         global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
-         ```
-
-     - **🔧 Installation Flags (Mandatory):**
-       - Configure the installation flags based on your requirements:
-         ```yaml
-         # Enable or disable specific stages of the installation
-         enable_install_controller: true               # Enable the installation of the Kubeslice controller
-         enable_install_ui: true                       # Enable the installation of the Kubeslice UI
-         enable_install_worker: true                   # Enable the installation of Kubeslice workers
-
-         # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
-         enable_install_additional_apps: true          # Set to true to enable additional apps installation
-
-         # Enable custom applications
-         enable_custom_apps: true                      # Set to true if you want to allow custom applications to be deployed
-
-         # Command execution settings
-         run_commands: false                           # Set to true to allow the execution of commands for configuring NVIDIA MIG
-         ```
+   **📋 When to Use Each Approach:**
+   
+   - **🔄 Option A (Single Cluster):** Use when controller and all workers are in the same Kubernetes cluster. This is the simplest setup and requires minimal configuration.
+   
+   - **🌐 Option B (Multi-Worker):** Use when you have workers in different clusters, need custom worker configurations, or want detailed control over monitoring endpoints and worker settings.
+   
+   **Continue with the following sections for detailed configuration (Option B users only):**
 
 ### 3. **Kubeslice Controller Installation Settings (Mandatory)**
 
