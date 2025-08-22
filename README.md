@@ -363,7 +363,7 @@ Before you begin, ensure the following steps are completed:
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
-   **📝 Note:** Global monitoring endpoint settings are configured in the [Modify the Configuration File](#2-modify-the-configuration-file-mandatory) section above, including `global_auto_fetch_endpoint` and related Grafana/Prometheus settings.
+   **📝 Note:** Global monitoring endpoint settings are configured in the [Modify the Configuration File](https://github.com/kubeslice-ent/egs-installation/tree/main?tab=readme-ov-file#2--modify-the-configuration-file-mandatory) section above, including `global_auto_fetch_endpoint` and related Grafana/Prometheus settings.
    
    #### **⚠️ Multi-Cluster Setup Configuration**
    
