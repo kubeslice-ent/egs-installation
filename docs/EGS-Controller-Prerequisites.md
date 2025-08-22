@@ -14,7 +14,6 @@ This document outlines the prerequisites required for installing and operating t
   - [3. PostgreSQL Database Setup](#3-postgresql-database-setup)
 - [4. Verification Steps](#4-verification-steps)
 - [5. Troubleshooting](#5-troubleshooting)
-- [📋 Next Steps Summary](#-next-steps-summary)
 
 ## Overview
 
@@ -161,27 +160,6 @@ This will automatically install:
 - **PostgreSQL** (v16.2.1) in the `kt-postgresql` namespace
 
 ---
-
-## 📋 Workflow Summary
-
-### **🔄 Option 1 Workflow (EGS Prerequisites Script):**
-1. ✅ **Configure** `egs-installer-config.yaml` with `enable_install_additional_apps: true` ([see template](../egs-installer-config.yaml))
-2. ✅ **Run** prerequisites installer: `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml`
-3. ✅ **Verify** installation using [Verification Steps](#4-verification-steps)
-4. ✅ **Proceed** to EGS Controller installation
-
-### **🌐 Option 2 Workflow (Existing Infrastructure):**
-1. ✅ **Verify** existing Prometheus, PostgreSQL, and monitoring setup
-2. ✅ **Configure** monitoring to scrape EGS Controller metrics
-3. ✅ **Set up** PostgreSQL database and credentials
-4. ✅ **Verify** all components using [Verification Steps](#4-verification-steps)
-5. ✅ **Proceed** to EGS Controller installation
-
----
-
-**If you chose Option 1 (Prerequisites Script):** You can skip the manual installation sections below and proceed directly to [Verification Steps](#4-verification-steps).
-
-**If you chose Option 2 (Existing Setup):** Continue reading the manual installation sections below.
 
 ## Manual Installation Steps (Option 2)
 
@@ -580,39 +558,6 @@ kubectl port-forward svc/kubeslice-controller-manager-service 18080:18080 -n kub
 - Check logs: `kubectl logs -f deployment/kubeslice-controller-manager -n kubeslice-controller`
 - Verify all required secrets exist
 - Check resource limits and requests
-
-## 📋 Next Steps Summary
-
-### **🔄 For Option 1 Users (EGS Prerequisites Script):**
-✅ **Prerequisites are already installed and configured**
-- Prometheus Stack is running in `egs-monitoring` namespace
-- PostgreSQL is running in `kt-postgresql` namespace
-- All required secrets and configurations are in place
-- **Proceed directly to EGS Controller installation**
-
-### **🌐 For Option 2 Users (Existing Infrastructure):**
-✅ **Manual configuration completed**
-- Prometheus monitoring is configured and scraping EGS Controller metrics
-- PostgreSQL database is accessible with proper credentials
-- All required secrets are created in `kubeslice-controller` namespace
-- **Proceed to EGS Controller installation**
-
-### **🚀 Common Next Steps for Both Options:**
-1. **Verify all prerequisites** using the verification steps above
-2. **Install EGS Controller** using your preferred method
-3. **Configure EGS Controller** with the appropriate values
-4. **Test the complete setup** and verify all functionality
-
----
-
-## 🎯 Quick Navigation
-
-**Need to jump to a specific section?**
-
-- **🔄 Option 1 Users:** [EGS Installer Configuration](#egs-installer-configuration) → [Verification Steps](#4-verification-steps)
-- **🌐 Option 2 Users:** [Manual Installation Steps](#manual-installation-steps-option-2) → [Verification Steps](#4-verification-steps)
-- **📋 All Users:** [Next Steps Summary](#-next-steps-summary) → [Additional Resources](#additional-resources)
-- **📁 Configuration Template:** [egs-installer-config.yaml](../egs-installer-config.yaml)
 
 ---
 
