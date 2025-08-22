@@ -18,7 +18,8 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
 - ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
 - 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README.md) 📋  
-- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰
+- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰  
+- 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
 
 ---
 
@@ -121,6 +122,7 @@ Before you begin, ensure the following steps are completed:
    - **📌 IMPORTANT:** For different worker clusters, you need to add additional apps array for each component in the `kubeslice_worker_egs` section
    - Each worker cluster requires its own instances of GPU Operator and Prometheus if `enable_install_additional_apps: true`
    - **For complete additional apps configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L255-L380)**
+   - **📋 For comprehensive multi-cluster prerequisites setup with complete examples, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**
    - Example structure for multiple workers with additional apps:
      ```yaml
      additional_apps:
@@ -232,6 +234,7 @@ Before you begin, ensure the following steps are completed:
    - **Refer to the prerequisite documentation** to ensure proper configuration for metrics scraping:
      - **[EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)** - For Prometheus and PostgreSQL configuration
      - **[EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md)** - For GPU Operator and monitoring configuration
+   - **📋 For multi-cluster setup examples with existing infrastructure, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**
    - **Verify that your existing components** are properly configured to scrape EGS metrics
    - **Ensure proper RBAC permissions** and network policies are in place
 
@@ -281,6 +284,8 @@ Before you begin, ensure the following steps are completed:
    
    For multi-cluster setups or when you need detailed worker configuration, continue with the following sections:
    
+   **📋 Multi-Cluster Configuration Reference:** For a complete multi-cluster installation example with detailed YAML configuration, see [Multi-Cluster Installation Example](multi-cluster-example.yaml).
+   
    **⚙️ Global Monitoring Endpoint Settings (Optional):**
    - Configure global monitoring endpoint settings for multi-cluster setups:
      
@@ -303,7 +308,7 @@ Before you begin, ensure the following steps are completed:
    
    - **🔄 Option A (Single Cluster):** Use when controller and all workers are in the same Kubernetes cluster. This is the simplest setup and requires minimal configuration.
    
-   - **🌐 Option B (Multi-Worker):** Use when you have workers in different clusters, need custom worker configurations, or want detailed control over monitoring endpoints and worker settings.
+   - **🌐 Option B (Multi-Worker):** Use when you have workers in different clusters, need custom worker configurations, or want detailed control over monitoring endpoints and worker settings. **For a complete multi-cluster configuration example, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**.
    
    **Continue with the following sections for detailed configuration (Option B users only):**
 
@@ -537,7 +542,7 @@ Before you begin, ensure the following steps are completed:
 
 ### 6. **Adding Additional Workers (Optional)**
 
-   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. **For complete worker configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L181-L231)**. Follow these steps:
+   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. **For complete worker configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L181-L240)**. **For a comprehensive multi-cluster example with multiple workers, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**. Follow these steps:
 
    **Step 1: Add Worker Configuration**
    
@@ -684,6 +689,8 @@ cluster_registration:
    - **NodePort** services with accessible node IPs
    - **Ingress/LoadBalancer** endpoints that are reachable from the controller cluster
    - **External Prometheus instances** with public endpoints
+   
+   **📋 For complete multi-cluster examples with cluster registration, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**
    
    **Single Cluster Setup (All workers in same cluster):**
    
