@@ -1312,39 +1312,6 @@ This documentation covers:
 - Multi-context support and logging
 - Troubleshooting and best practices
 
-
-### 🔑 Key Features
-
-1. **Prerequisite Checks**: Ensures that required binaries are installed. 🛠️
-2. **Kubeslice Pre-Checks**: Validates access to clusters and labels nodes if required. ✅
-3. **Helm Chart Management**: Adds, updates, or removes Helm repositories and manages chart installations. 📦
-4. **Project and Cluster Management**: Automates the creation of projects and registration of clusters in the Kubeslice controller. 🗂️
-5. **Worker Configuration**: Fetches secrets from the controller cluster, prepares worker-specific values files, and manages worker installations. ⚙️
-
-### 📜 Example Workflow
-
-1. **Run Pre-checks**: The script first validates that all prerequisites are met. ✅
-2. **Kubeslice Pre-Checks**: Validates that the script can access all necessary clusters. 🔍
-3. **Install or Upgrade Helm Charts**:
-   - Installs or upgrades the Kubeslice controller. 📦
-   - Installs or upgrades the Kubeslice UI. 💻
-4. **Project and Cluster Management**:
-   - Creates defined projects in the Kubeslice controller. 🗂️
-   - Registers defined clusters within these projects. 🌍
-5. **Worker Installation**: Installs or upgrades worker nodes, applying the necessary configuration. ⚙️
-
-### 📝 Notes
-
-- Ensure the YAML configuration file is correctly formatted and contains all necessary fields. 📄
-- The script will exit with an error if any critical steps fail unless configured to skip on failure. ❌
-- Paths specified in the YAML file should be relative to the `base_path` unless absolute paths are used. 📁
-
-### 🛠️ Troubleshooting
-
-- **Missing Binaries**: Ensure all required binaries are installed and accessible in your system's `PATH`. ⚠️
-- **Cluster Access Issues**: Verify that kubeconfig files are correctly configured and that the script can access the clusters specified in the YAML configuration. 🔧
-- **Timeouts**: If a component fails to install within the specified timeout, increase the `verify_install_timeout` in the YAML file. ⏳
-
 ---
 
 ## 📊 Custom Pricing Configuration
