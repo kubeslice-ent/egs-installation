@@ -403,20 +403,27 @@ metadata:
   namespace: egs-monitoring
   labels:
     app.kubernetes.io/instance: kube-prometheus-stack
-    release: prometheus
+    release: prometheus  # Required label for Prometheus to discover this ServiceMonitor
 spec:
-  endpoints:
-    - interval: 30s
-      port: metrics
-      path: /metrics
-      scrapeTimeout: 10s
-      scheme: http
-  namespaceSelector:
-    matchNames:
-      - egs-gpu-operator
   selector:
     matchLabels:
-      app: nvidia-dcgm-exporter
+      app: nvidia-dcgm-exporter  # Adjust based on your GPU operator setup
+  namespaceSelector:
+    matchNames:
+    - egs-gpu-operator  # Change this to your GPU operator namespace
+  endpoints:
+  - port: gpu-metrics
+    interval: 1s
+    path: /metrics
+    scheme: http
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: kubernetes_node
+    - sourceLabels: [__meta_kubernetes_endpoints_name]
+      action: drop
+      regex: .*-node-feature-discovery-master
+    - targetLabel: job
+      replacement: gpu-metrics
 ```
 
 ### 3.3 Pod Monitor for GPU Metrics
