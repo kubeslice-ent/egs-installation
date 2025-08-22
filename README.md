@@ -46,6 +46,7 @@ Before you begin, ensure the following steps are completed:
    - Start by cloning the EGS installation Git repository:
      ```bash
      git clone https://github.com/kubeslice-ent/egs-installation
+     cd egs-installation
      ```
 
 5. **✅ Run EGS Preflight Check Script (Optional):**
@@ -117,6 +118,7 @@ Before you begin, ensure the following steps are completed:
    - Start by cloning the EGS installation Git repository:
      ```bash
      git clone https://github.com/kubeslice-ent/egs-installation
+     cd egs-installation
      ```
 
 ### 2. **📝 Modify the Configuration File (Mandatory):**
