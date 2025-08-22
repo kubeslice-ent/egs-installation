@@ -101,9 +101,33 @@ A robust preflight check script designed for EGS setup on Kubernetes. This scrip
 
 <img width="1436" height="980" alt="image" src="https://github.com/user-attachments/assets/0fa45220-f2b3-4df5-9495-48374ab441b8" />
 
-
 - 📝 **Logs**: Detailed logs are generated for each step, including successes and failures.
 - 📊 **Summary**: A final summary is displayed, highlighting the status of all checks.
+
+## ⚠️ Important: Interpreting Preflight Check Results
+
+**📋 Review Failures Before Proceeding:**
+After running the preflight check script, carefully review any failures or warnings in the output. These issues should be addressed before proceeding with EGS installation to ensure a smooth deployment process.
+
+**🔍 Understanding Check Requirements:**
+Not all preflight checks may be required to pass depending on your specific setup and requirements:
+
+- **🔴 Critical Failures**: Must be resolved (e.g., namespace creation permissions, basic Kubernetes access)
+- **🟡 Warnings**: Review and resolve if they impact your specific use case
+- **🟢 Optional Checks**: May not be required for your deployment scenario
+
+**💡 Examples of Setup-Dependent Checks:**
+- **Storage Class Checks**: May fail if you don't need persistent storage
+- **Service Type Checks**: LoadBalancer services may not be available in all environments
+- **Internet Connectivity**: May not be required for air-gapped deployments
+- **Resource Quotas**: May not apply if your cluster doesn't use resource quotas
+
+**📚 Next Steps:**
+1. **Review the summary** to identify failed checks
+2. **Analyze failures** to understand their impact on your deployment
+3. **Resolve critical issues** that affect basic functionality
+4. **Evaluate optional failures** based on your specific requirements
+5. **Re-run checks** after resolving issues to verify fixes
 
 ## Related Files
 
