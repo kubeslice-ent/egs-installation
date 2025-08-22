@@ -29,7 +29,8 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 Before you begin, ensure the following steps are completed:
 
 1. **📝 Registration:**
-   - Complete the registration process at [Avesha Registration](https://avesha.io/kubeslice-registration) to receive the required access credentials for running the script.
+   - Complete the registration process at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive the required access credentials and product license for running the script.
+   - For detailed license setup instructions, refer to **[📋 EGS License Setup](docs/EGS-License-Setup.md)**.
 
 2. **🔧 Required Binaries:**
    - Verify that the following binaries are installed and available in your system's `PATH`:
