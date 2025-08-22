@@ -28,7 +28,16 @@ The EGS Controller requires several components to be properly configured before 
 - Access to container registry with EGS images
 - Proper RBAC permissions for monitoring and database operations
 
-## EGS Installer Configuration
+## ⚠️ Important: Choose Only One Approach
+
+**You have two options for setting up prerequisites - choose ONE:**
+
+### **Option 1: Use EGS Prerequisites Script (Recommended for new installations)**
+- Run the prerequisites installer: `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml`
+- This automatically installs and configures all required components
+- Skip the manual installation sections below
+
+### EGS Installer Configuration
 
 The EGS installer can automatically handle most of the prerequisites installation. To use this approach, configure your `egs-installer-config.yaml`:
 
@@ -139,15 +148,6 @@ This will automatically install:
 - **Prometheus Stack** (v45.0.0) in the `egs-monitoring` namespace
 - **PostgreSQL** (v16.2.1) in the `kt-postgresql` namespace
 - **GPU Operator** (if configured) in the `egs-gpu-operator` namespace
-
-## ⚠️ Important: Choose Only One Approach
-
-**You have two options for setting up prerequisites - choose ONE:**
-
-### **Option 1: Use EGS Prerequisites Script (Recommended for new installations)**
-- Run the prerequisites installer: `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml`
-- This automatically installs and configures all required components
-- Skip the manual installation sections below
 
 ### **Option 2: Use Existing Infrastructure**
 - If you already have Prometheus, PostgreSQL, or other components running
