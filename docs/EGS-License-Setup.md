@@ -69,20 +69,31 @@ Upon successful registration, you will receive:
 
 ### 2.1 Check Email for License
 
-After successful registration, Avesha will process your license request and send the license secret YAML file to your registered email address.
+After successful registration, Avesha will process your license request and send the license YAML file to your registered email address.
 
 **Expected Delivery Time**: Within 5 minutes of registration
 
-### 2.2 License File Format
+### 2.2 License Email Details
 
-The license file will be named in the following format:
+You will receive an email from "Avesha Team" (`avesha@avesha.io`) with the subject "Your Elastic GPU Service License". The email contains:
+
+- **Welcome message** explaining the EGS platform capabilities
+- **Installation guidance** directing you to EGS documentation
+- **License file attachment** named `egs-license.yaml`
+- **Support information** with contact details at `support@avesha.io`
+
+**📧 Email Screenshot Reference**: The email will show the license file `egs-license.yaml` as an attachment, clearly visible in the Gmail interface with the file name displayed below the email content.
+
+### 2.3 License File Format
+
+The license file will be named:
 ```
-egs-license-secret-<customer-name>.yaml
+egs-license.yaml
 ```
 
-**Example**: `egs-license-secret-acme-corp.yaml`
+This file is attached to the email and contains your EGS license configuration.
 
-### 2.3 License File Contents
+### 2.4 License File Contents
 
 The license file contains a Kubernetes secret with the following structure:
 
@@ -97,7 +108,6 @@ metadata:
     app.kubernetes.io/managed-by: kubeslice-controller
     app.kubernetes.io/license-type: egs_30_days_trial_license
 data:
-  customer-name: <base64-encoded-customer-name>
   grace-period: <base64-encoded-grace-period>
   license-expiration: <base64-encoded-expiration-date>
   license-type: <base64-encoded-license-type>
@@ -132,10 +142,10 @@ Apply the license secret to your controller cluster:
 
 ```bash
 # Apply the license secret
-kubectl apply -f egs-license-secret-<customer-name>.yaml
+kubectl apply -f egs-license.yaml
 
-# Example:
-kubectl apply -f egs-license-secret-acme-corp.yaml
+# Verify the secret was created
+kubectl get secret -n kubeslice-controller
 ```
 
 ### 3.3 Verify License Application
@@ -162,27 +172,6 @@ kubectl get secret egs-license-file -n kubeslice-controller -o yaml
 kubectl get secret egs-license-file -n kubeslice-controller --show-labels
 ```
 
-### 4.2 Namespace Verification
-
-```bash
-# Verify namespace exists and is ready
-kubectl get namespace kubeslice-controller
-
-# Check namespace labels and annotations
-kubectl get namespace kubeslice-controller -o yaml
-```
-
-### 4.3 License Status Check
-
-After installing KubeSlice Controller, verify the license is being used:
-
-```bash
-# Check controller logs for license validation
-kubectl logs -f deployment/kubeslice-controller-manager -n kubeslice-controller | grep -i license
-
-# Verify license status in controller status
-kubectl get kubesliceconfig -n kubeslice-system -o yaml
-```
 
 ## 5. Troubleshooting
 
@@ -229,7 +218,7 @@ kubectl get kubesliceconfig -n kubeslice-system -o yaml
 **Problem**: License secret application fails
 **Solution**:
 - Verify namespace exists: `kubectl get namespace kubeslice-controller`
-- Check file syntax: `kubectl apply --dry-run=client -f egs-license-secret-<customer-name>.yaml`
+- Check file syntax: `kubectl apply --dry-run=client -f egs-license.yaml`
 - Verify cluster permissions: `kubectl auth can-i create secret -n kubeslice-controller`
 - Check for naming conflicts with existing secrets
 
