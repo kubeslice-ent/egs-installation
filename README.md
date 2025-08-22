@@ -375,7 +375,7 @@ Before you begin, ensure the following steps are completed:
 
    To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. Follow these steps:
 
-   #### **📝 Step 1: Add Worker Configuration**
+   #### **Step 1: Add Worker Configuration**
    
    Add a new worker entry to the `kubeslice_worker_egs` array in your configuration file:
    
@@ -422,9 +422,31 @@ Before you begin, ensure the following steps are completed:
        enable_troubleshoot: false                # Enable troubleshooting mode for additional logs and checks
    ```
 
-   #### **📝 Step 2: Add Cluster Registration**
+   **To add more workers (worker-2, worker-3, etc.), simply add additional entries to the array:**
    
-   Add a corresponding entry in the `cluster_registration` section:
+   ```yaml
+   kubeslice_worker_egs:
+     - name: "worker-1"                           # First worker (existing)
+       # ... existing configuration ...
+     
+     - name: "worker-2"                           # Second worker (new)
+       use_global_kubeconfig: true
+       kubeconfig: ""
+       kubecontext: ""
+       skip_installation: false
+       specific_use_local_charts: true
+       namespace: "kubeslice-system"
+       release: "egs-worker-2"                    # Unique release name
+       chart: "kubeslice-worker-egs"
+       # ... copy inline_values from worker-1 and update endpoints ...
+     
+     - name: "worker-3"                           # Third worker (new)
+       # ... similar configuration with unique release name ...
+   ```
+
+   #### **Step 2: Add Cluster Registration**
+   
+   Add corresponding entries in the `cluster_registration` section for each new worker:
    
    ```yaml
    cluster_registration:
