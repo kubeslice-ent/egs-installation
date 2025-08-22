@@ -179,80 +179,79 @@ Before you begin, ensure the following steps are completed:
          run_commands: false                           # Set to true to allow the execution of commands for configuring NVIDIA MIG
          ```
 
-### 3. **🎮 Kubeslice Controller Installation Settings (Mandatory)**
+### 3. **Kubeslice Controller Installation Settings (Mandatory)**
 
-   **📌 Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.**
+   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.**
 
-         ```yaml
-         #### Kubeslice Controller Installation Settings ####
-         kubeslice_controller_egs:
-           skip_installation: false                     # Do not skip the installation of the controller
-           use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
-           specific_use_local_charts: true              # Override to use local charts for the controller
-           kubeconfig: ""                               # Path to the kubeconfig file specific to the controller, if empty, uses the global kubeconfig
-           kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global context
-           namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
-           release: "egs-controller"                    # Helm release name for the controller
-           chart: "kubeslice-controller-egs"            # Helm chart name for the controller
-         #### Inline Helm Values for the Controller Chart ####
-           inline_values:
-             global:
-               imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the images
-               namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
-                 labels: {}
-                 annotations: {}
-               kubeTally:
-                 enabled: false                          # Enable KubeTally in the controller
-         #### Postgresql Connection Configuration for Kubetally  ####
-                 postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
-                                                                # then a secret will be created with specified name. 
-                                                                # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
-                 postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
-                 postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
-                 postgresUser: "postgres"               # Change this PostgreSQL username to your values
-                 postgresPassword: "postgres"           # Change this PostgreSQL password to your value
-                 postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
-                 postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
-                 prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
-             kubeslice:
-               controller:
-                 endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
-         #### Helm Flags and Verification Settings ####
-           helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
-           verify_install: false                        # Verify the installation of the controller
-           verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
-           skip_on_verify_fail: true                    # If verification fails, do not skip the step
-         #### Troubleshooting Settings ####
-           enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
-         ```
+   ```yaml
+   #### Kubeslice Controller Installation Settings ####
+   kubeslice_controller_egs:
+     skip_installation: false                     # Do not skip the installation of the controller
+     use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
+     specific_use_local_charts: true              # Override to use local charts for the controller
+     kubeconfig: ""                               # Path to the kubeconfig file specific to the controller, if empty, uses the global kubeconfig
+     kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global context
+     namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
+     release: "egs-controller"                    # Helm release name for the controller
+     chart: "kubeslice-controller-egs"            # Helm chart name for the controller
+   #### Inline Helm Values for the Controller Chart ####
+     inline_values:
+       global:
+         imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the images
+         namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
+           labels: {}
+           annotations: {}
+         kubeTally:
+           enabled: false                          # Enable KubeTally in the controller
+   #### Postgresql Connection Configuration for Kubetally  ####
+           postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
+                                                          # then a secret will be created with specified name. 
+                                                          # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
+           postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
+           postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
+           postgresUser: "postgres"               # Change this PostgreSQL username to your values
+           postgresPassword: "postgres"           # Change this PostgreSQL password to your value
+           postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
+           postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
+           prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
+       kubeslice:
+         controller:
+           endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
+   #### Helm Flags and Verification Settings ####
+     helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
+     verify_install: false                        # Verify the installation of the controller
+     verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
+     skip_on_verify_fail: true                    # If verification fails, do not skip the step
+   #### Troubleshooting Settings ####
+     enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
+   ```
 
-         ⚙️ **PostgreSQL Connection Configuration (*Mandatory only if `kubetallyEnabled` is set to `true` (Optional otherwise)*)** 
+   **PostgreSQL Connection Configuration (Mandatory only if `kubetallyEnabled` is set to `true`, Optional otherwise)**
 
-         📌 **Note:** The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
-         
-         📋 **For detailed PostgreSQL setup, see [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)**
-         - **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
-         - The secret must contain the following key-value pairs:
-           
-           | Key               | Description                                  |
-           |-------------------|----------------------------------------------|
-           | `postgresAddr`    | The PostgreSQL service endpoint              |
-           | `postgresPort`    | The PostgreSQL service port (default: 5432)  |
-           | `postgresUser`    | The PostgreSQL username                      |
-           | `postgresPassword`| The PostgreSQL password                      |
-           | `postgresDB`      | The PostgreSQL database name                 |
-           | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
+   **Note:** The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
+   
+   **For detailed PostgreSQL setup, see [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)**
+   - **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
+   - The secret must contain the following key-value pairs:
+     
+     | Key               | Description                                  |
+     |-------------------|----------------------------------------------|
+     | `postgresAddr`    | The PostgreSQL service endpoint              |
+     | `postgresPort`    | The PostgreSQL service port (default: 5432)  |
+     | `postgresUser`    | The PostgreSQL username                      |
+     | `postgresPassword`| The PostgreSQL password                      |
+     | `postgresDB`      | The PostgreSQL database name                 |
+     | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
 
-
-   **✅ Default Behavior:**
+   **Default Behavior:**
    - Uses global kubeconfig and context
    - Installs in `kubeslice-controller` namespace
    - Auto-fetches controller endpoint
    - Uses standard Helm flags and verification settings
 
-### 4. **🖥️ Kubeslice UI Installation Settings (Optional)**
+### 4. **Kubeslice UI Installation Settings (Optional)**
 
-   **📌 Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
+   **Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
 
    The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required.
 
@@ -322,7 +321,7 @@ Before you begin, ensure the following steps are completed:
      specific_use_local_charts: true              # Override to use local charts for the UI
    ```
 
-   **🔧 When to Modify:**
+   **When to Modify:**
    - **Custom namespace**: Change `namespace` if you need a different namespace than `kubeslice-controller`
    - **Custom release name**: Change `release` if you need a different Helm release name than `egs-ui`
    - **Custom image registry**: Modify `imageRegistry` if using a different container registry
@@ -330,14 +329,14 @@ Before you begin, ensure the following steps are completed:
    - **Service type**: Change service type if you need NodePort or LoadBalancer access
    - **Custom domain**: Update the host in ingress configuration for your domain
 
-   **✅ Default Behavior:**
+   **Default Behavior:**
    - Uses global kubeconfig and context
    - Installs in `kubeslice-controller` namespace
    - Uses ClusterIP service type (internal access only)
    - Ingress disabled by default
    - Uses standard Helm flags and verification settings
 
-### 5. **🔄 Worker Clusters: Update the Inline Values**
+### 5. **Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
@@ -386,7 +385,7 @@ Before you begin, ensure the following steps are completed:
                   className: "nginx"            # Ingress class name for the KServe gateway
       ```
 
-### 6. **➕ Adding Additional Workers (Optional) **
+### 6. **Adding Additional Workers (Optional)**
 
    To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. Follow these steps:
 
