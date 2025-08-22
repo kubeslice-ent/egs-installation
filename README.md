@@ -19,8 +19,10 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](docs/Namespace-Creation-README.md) 🗂️  
 - 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
 - ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
+- 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README.md) 📋  
+- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰
 
----  
+---
 
 ## Getting Started
 
@@ -761,92 +763,5 @@ The uninstallation script will delete **all resources** associated with EGS, inc
 ```bash
   ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
   ```
-
----
-
-## 🛠️ Configuration
-
-For detailed information about configuring your EGS installation, including the complete YAML configuration file with all parameters and settings, please refer to:
-
-**[📋 Configuration Documentation](docs/Configuration-README.md)** | **[egs-installer-config.yaml Template](egs-installer-config.yaml)**
-
-This documentation covers:
-- Complete YAML configuration file structure
-- Mandatory and optional parameters
-- Kubeslice controller, UI, and worker settings
-- Additional applications configuration
-- Custom applications and manifests
-- Troubleshooting and verification settings
-
----
-
-## 📚 EGS Documentation
-
-For comprehensive EGS documentation including admin guides, user guides, and platform overview, please refer to:
-
-**[🛠️ EGS Admin Guide](docs/EGS-Admin-guide.pdf)** | **[👤 EGS User Guide](docs/EGS-User-guide.pdf)** | **[🌐 EGS Platform Overview](docs/EGS-Overview.pdf)**
-
-This documentation covers:
-- **Admin Guide**: Administrative tasks, configuration management, and operational procedures
-- **User Guide**: End-user features, workflows, and best practices
-- **Platform Overview**: Architecture, components, and system requirements
-
----
-
-## 🔑 Slice & Admin Token Retrieval
-
-For detailed information about retrieving slice and admin tokens for Kubernetes authentication, including comprehensive script usage and examples, please refer to:
-
-**[🔒 Slice & Admin Token Documentation](docs/Slice-Admin-Token-README.md)**
-
-This documentation covers:
-- Token retrieval script features and capabilities
-- Script parameters and usage options
-- Examples for slice tokens, admin tokens, and combined retrieval
-- Help and troubleshooting information
-
-
-## ✅ EGS Preflight Check
-
-For detailed information about running preflight checks to validate your EGS installation environment, including comprehensive script options and usage examples, please refer to:
-
-**[🔍 EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README.md)**
-
-This documentation covers:
-- Comprehensive preflight check script features and options
-- Resource validation and privilege checking
-- Multi-cluster and multi-context support
-- Wrapper functions and usage examples
-- Troubleshooting and best practices
-
----
-
-## 🗂️ Namespace Creation
-
-For detailed information about creating Kubernetes namespaces with custom annotations and labels, including the automated namespace creation script, please refer to:
-
-**[📋 Namespace Creation Documentation](docs/Namespace-Creation-README.md)**
-
-This documentation covers:
-- Automated namespace creation script features
-- Input YAML format specifications
-- Script parameters and usage examples
-- Multi-context support and logging
-- Troubleshooting and best practices
-
----
-
-## 📊 Custom Pricing Configuration
-
-For detailed information about configuring custom pricing for your EGS installation, including pricing data upload scripts and YAML configuration formats, please refer to:
-
-**[📋 Custom Pricing Documentation](docs/Custom-Pricing-README.md)**
-
-This documentation covers:
-- Cloud instance pricing data configuration
-- Kubernetes connection setup
-- Pricing upload scripts
-- YAML format specifications
-- Troubleshooting and best practices
 
 ---
