@@ -614,13 +614,21 @@ Before you begin, ensure the following steps are completed:
    - **📊 Monitoring:** Ensure the monitoring endpoints (Prometheus/Grafana) are accessible from the controller cluster for proper telemetry.
    - **🔗 Prometheus Accessibility:** **Critical:** Make sure Prometheus endpoints are accessible from the controller cluster. The controller needs to reach the Prometheus service in each worker cluster to collect metrics and telemetry data. If the worker clusters are in different networks, ensure proper network connectivity or use LoadBalancer/NodePort services for Prometheus.
 
-   **🚀 Step 3: Run the Installation Script**
-   
-   After adding the new worker configuration, run the installation script to deploy the additional worker:
-   
-   ```bash
-   ./egs-installer.sh --input-yaml egs-installer-config.yaml
-   ```
+---
+
+### 7. **🚀 Run the Installation Script**
+
+After completing all configuration changes, run the installation script to deploy EGS:
+
+```bash
+./egs-installer.sh --input-yaml egs-installer-config.yaml
+```
+
+**📌 IMPORTANT NOTES:**
+
+- **🔄 Configuration Changes:** If you make any changes to the configuration file after the initial installation, you must re-run the installation script to apply the changes.
+- **⬆️ Upgrades:** For EGS upgrades or configuration modifications, update your `egs-installer-config.yaml` file and re-run the installation script. The installer will handle upgrades automatically.
+- **✅ Verification:** Always verify the installation after making configuration changes to ensure all components are properly deployed.
 
 ---
 
