@@ -9,8 +9,6 @@ This document provides step-by-step instructions for obtaining and applying the 
 - [1. EGS Registration Process](#1-egs-registration-process)
 - [2. License Retrieval](#2-license-retrieval)
 - [3. License Application](#3-license-application)
-- [4. Verification Steps](#4-verification-steps)
-- [5. Troubleshooting](#5-troubleshooting)
 
 ## Overview
 
@@ -83,6 +81,9 @@ You will receive an email from "Avesha Team" (`avesha@avesha.io`) with the subje
 - **Support information** with contact details at `support@avesha.io`
 
 **📧 Email Screenshot Reference**: The email will show the license file `egs-license.yaml` as an attachment, clearly visible in the Gmail interface with the file name displayed below the email content.
+
+<img width="397" height="766" alt="image" src="https://github.com/user-attachments/assets/f332bbb4-3c6a-4e18-acff-23ec86b5747b" />
+
 
 ### 2.3 License File Format
 
@@ -159,75 +160,6 @@ kubectl get secret -n kubeslice-controller
 # Verify secret details
 kubectl describe secret egs-license-file -n kubeslice-controller
 ```
-
-## 4. Verification Steps
-
-### 4.1 License Secret Verification
-
-```bash
-# Verify secret exists and has correct data
-kubectl get secret egs-license-file -n kubeslice-controller -o yaml
-
-# Check secret labels and annotations
-kubectl get secret egs-license-file -n kubeslice-controller --show-labels
-```
-
-
-## 5. Troubleshooting
-
-### 5.1 Registration Issues
-
-**Problem**: Registration form submission fails
-**Solution**: 
-- Ensure all required fields are completed
-- Verify email format is correct
-- Check internet connection
-- Try refreshing the page and resubmitting
-
-**Problem**: No confirmation email received
-**Solution**:
-- Check spam/junk folder
-- Verify email address was entered correctly
-- Wait 24-48 hours for processing
-- Contact Avesha support if issue persists
-
-### 5.2 License File Issues
-
-**Problem**: License file not received
-**Solution**:
-- Check email delivery timeframe (1-2 business days)
-- Verify email address in registration
-- Contact Avesha support for assistance
-- Check if license request was approved
-
-**Problem**: License file format is incorrect
-**Solution**:
-- Ensure file has `.yaml` extension
-- Verify file contains valid YAML content
-- Check if file is corrupted during download
-- Re-download the license file
-
-### 5.3 Application Issues
-
-**Problem**: Namespace creation fails
-**Solution**:
-- Verify cluster permissions: `kubectl auth can-i create namespace`
-- Check if namespace already exists: `kubectl get namespace kubeslice-controller`
-- Ensure cluster is accessible and healthy
-
-**Problem**: License secret application fails
-**Solution**:
-- Verify namespace exists: `kubectl get namespace kubeslice-controller`
-- Check file syntax: `kubectl apply --dry-run=client -f egs-license.yaml`
-- Verify cluster permissions: `kubectl auth can-i create secret -n kubeslice-controller`
-- Check for naming conflicts with existing secrets
-
-**Problem**: License validation fails in controller
-**Solution**:
-- Verify secret name matches controller configuration (`egs-license-file`)
-- Check secret data format and encoding
-- Ensure secret is in the correct namespace
-- Review controller logs for specific error messages
 
 ## Additional Information
 
