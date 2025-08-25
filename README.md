@@ -504,7 +504,7 @@ Before you begin, ensure the following steps are completed:
    
       ```bash
       kubectl get svc prometheus-grafana -n monitoring
-      kubectl get svc prometheus -n monitoring
+      kubectl get svc prometheus-kube-prometheus-prometheus -n monitoring
       ```
    
    2. **✏ Update the `egs-installer-config.yaml`**  
