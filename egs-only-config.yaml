@@ -97,7 +97,7 @@ kubeslice_ui_egs:
             # - hosts:
             #     - ui.kubeslice.com
             #   secretName: uitlssecret
-          annotations: []
+          annotations: {}
           ## Extra labels to add onto the Ingress object
           extraLabels: {}
       apigw:
