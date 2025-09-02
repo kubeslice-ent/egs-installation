@@ -1355,10 +1355,6 @@ display_summary() {
                 echo "│ Cluster IP  : 🔗 $cluster_ip:$KUBESLICE_UI_PROXY_SERVICE_PORT" | awk '{printf "%-84s│\n", $0}'
                 echo "│ Status      : ✅ Internal cluster access available                                 │"
                 echo "├─────────────────────────────────────────────────────────────────────────────────────┤"
-                echo "│ 💡 EXTERNAL ACCESS OPTIONS:                                                        │"
-                echo "│    • Port Forward: kubectl port-forward svc/kubeslice-ui-proxy \\                  │"
-                echo "│                    -n $KUBESLICE_UI_NAMESPACE $KUBESLICE_UI_PROXY_SERVICE_PORT:$KUBESLICE_UI_PROXY_SERVICE_PORT" | awk '{printf "%-84s│\n", $0}'
-                echo "│    • Access via  : https://localhost:$KUBESLICE_UI_PROXY_SERVICE_PORT" | awk '{printf "%-84s│\n", $0}'
             else
                 echo "│ Cluster IP  : ⚠️  ClusterIP not available                                          │"
                 echo "│ Status      : ❌ Service not accessible                                            │"
