@@ -915,6 +915,13 @@ parse_yaml() {
 
     KUBESLICE_UI_INLINE_VALUES=$(yq e '.kubeslice_ui_egs.inline_values // {}' "$yaml_file")
 
+    # Parse UI proxy service type and ingress settings
+    KUBESLICE_UI_PROXY_SERVICE_TYPE=$(yq e '.kubeslice_ui_egs.inline_values.kubeslice.uiproxy.service.type // "ClusterIP"' "$yaml_file")
+    KUBESLICE_UI_PROXY_SERVICE_PORT=$(yq e '.kubeslice_ui_egs.inline_values.kubeslice.uiproxy.service.port // 443' "$yaml_file")
+    KUBESLICE_UI_PROXY_SERVICE_NODEPORT=$(yq e '.kubeslice_ui_egs.inline_values.kubeslice.uiproxy.service.nodePort // null' "$yaml_file")
+    KUBESLICE_UI_INGRESS_ENABLED=$(yq e '.kubeslice_ui_egs.inline_values.kubeslice.uiproxy.ingress.enabled // false' "$yaml_file")
+    KUBESLICE_UI_INGRESS_HOST=$(yq e '.kubeslice_ui_egs.inline_values.kubeslice.uiproxy.ingress.hosts[0].host // "ui.kubeslice.com"' "$yaml_file")
+
     KUBESLICE_UI_IMAGE_PULL_SECRET_REPO=$(yq e '.kubeslice_ui_egs.imagePullSecrets.repository' "$yaml_file")
     if [ -z "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" ] || [ "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" = "null" ]; then
         KUBESLICE_UI_IMAGE_PULL_SECRET_REPO="$GLOBAL_IMAGE_PULL_SECRET_REPO"
@@ -1275,11 +1282,13 @@ display_summary() {
         echo "⏩ **Worker installation was skipped or disabled.**"
     fi
 
-    echo "========================================="
-    echo "           📋 Summary - Details          "
-    echo "========================================="
+    echo ""
+    echo "╔═════════════════════════════════════════════════════════════════════════════════════╗"
+    echo "║                          📋 INSTALLATION SUMMARY & ACCESS DETAILS                 ║"
+    echo "╚═════════════════════════════════════════════════════════════════════════════════════╝"
+    echo ""
 
-    # Fetch the kubeslice-ui-proxy service LoadBalancer URL using the controller's kubeconfig and context
+    # Fetch the kubeslice-ui-proxy service information based on service type configuration
     if [ "$ENABLE_INSTALL_UI" = "true" ] && [ "$KUBESLICE_UI_SKIP_INSTALLATION" = "false" ]; then
         echo "🔍 **Service Information for Kubeslice UI**:"
         read -r kubeconfig_path kubecontext < <(kubeaccess_precheck \
@@ -1292,37 +1301,134 @@ display_summary() {
 
         kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" || echo "⚠️ Warning: Failed to get services in namespace '$KUBESLICE_UI_NAMESPACE'."
 
-        ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
-        if [ -z "$ui_proxy_url" ]; then
-            ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-        fi
-        if [ -n "$ui_proxy_url" ]; then
-            echo "🔗 **Kubeslice UI Proxy LoadBalancer URL**: https://$ui_proxy_url"
+        # Dynamic service type handling based on configuration
+        echo ""
+        echo "┌─────────────────────────────────────────────────────────────────────────────────────┐"
+        echo "│                           🌐 KUBESLICE UI ACCESS INFORMATION                        │"
+        echo "├─────────────────────────────────────────────────────────────────────────────────────┤"
+        
+        if [ "$KUBESLICE_UI_INGRESS_ENABLED" = "true" ]; then
+            echo "│ Service Type: 🔀 Ingress                                                            │"
+            echo "│ Access URL  : 🔗 https://$KUBESLICE_UI_INGRESS_HOST" | awk '{printf "%-84s│\n", $0}'
+            echo "│ Status      : ✅ Ready for external access via Ingress                             │"
+        elif [ "$KUBESLICE_UI_PROXY_SERVICE_TYPE" = "LoadBalancer" ]; then
+            ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+            if [ -z "$ui_proxy_url" ]; then
+                ui_proxy_url=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+            fi
+            echo "│ Service Type: ⚖️  LoadBalancer                                                      │"
+            if [ -n "$ui_proxy_url" ]; then
+                echo "│ Access URL  : 🔗 https://$ui_proxy_url" | awk '{printf "%-84s│\n", $0}'
+                echo "│ Status      : ✅ Ready for external access via LoadBalancer                        │"
+            else
+                echo "│ Access URL  : ⚠️  LoadBalancer IP/Hostname not yet available                       │"
+                echo "│ Status      : ⏳ Waiting for LoadBalancer provisioning...                          │"
+            fi
+        elif [ "$KUBESLICE_UI_PROXY_SERVICE_TYPE" = "NodePort" ]; then
+            # Get external IP addresses and filter for IPv4 only
+            node_ip=$(kubectl get nodes --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || echo "")
+            if [ -z "$node_ip" ]; then
+                # Get internal IP addresses and filter for IPv4 only
+                node_ip=$(kubectl get nodes --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || echo "")
+            fi
+            if [ "$KUBESLICE_UI_PROXY_SERVICE_NODEPORT" != "null" ] && [ -n "$KUBESLICE_UI_PROXY_SERVICE_NODEPORT" ]; then
+                node_port="$KUBESLICE_UI_PROXY_SERVICE_NODEPORT"
+            else
+                node_port=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
+            fi
+            echo "│ Service Type: 🚪 NodePort                                                           │"
+            if [ -n "$node_ip" ] && [ -n "$node_port" ]; then
+                echo "│ Access URL  : 🔗 https://$node_ip:$node_port" | awk '{printf "%-84s│\n", $0}'
+                echo "│ Node IP     : 🖥️  $node_ip" | awk '{printf "%-84s│\n", $0}'
+                echo "│ Node Port   : 🔢 $node_port" | awk '{printf "%-84s│\n", $0}'
+                echo "│ Status      : ✅ Ready for external access via NodePort                            │"
+            else
+                echo "│ Access URL  : ⚠️  NodePort access information not available                        │"
+                echo "│ Node IP     : 🖥️  ${node_ip:-'Not available'}" | awk '{printf "%-84s│\n", $0}'
+                echo "│ Node Port   : 🔢 ${node_port:-'Not available'}" | awk '{printf "%-84s│\n", $0}'
+                echo "│ Status      : ❌ NodePort configuration incomplete                                  │"
+            fi
+        elif [ "$KUBESLICE_UI_PROXY_SERVICE_TYPE" = "ClusterIP" ]; then
+            cluster_ip=$(kubectl get svc kubeslice-ui-proxy -n "$KUBESLICE_UI_NAMESPACE" --kubeconfig "$kubeconfig_path" --context "$kubecontext" -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+            echo "│ Service Type: 🏠 ClusterIP (Internal Only)                                         │"
+            if [ -n "$cluster_ip" ]; then
+                echo "│ Cluster IP  : 🔗 $cluster_ip:$KUBESLICE_UI_PROXY_SERVICE_PORT" | awk '{printf "%-84s│\n", $0}'
+                echo "│ Status      : ✅ Internal cluster access available                                 │"
+                echo "├─────────────────────────────────────────────────────────────────────────────────────┤"
+                echo "│ 💡 EXTERNAL ACCESS OPTIONS:                                                        │"
+                echo "│    • Port Forward: kubectl port-forward svc/kubeslice-ui-proxy \\                  │"
+                echo "│                    -n $KUBESLICE_UI_NAMESPACE $KUBESLICE_UI_PROXY_SERVICE_PORT:$KUBESLICE_UI_PROXY_SERVICE_PORT" | awk '{printf "%-84s│\n", $0}'
+                echo "│    • Access via  : https://localhost:$KUBESLICE_UI_PROXY_SERVICE_PORT" | awk '{printf "%-84s│\n", $0}'
+            else
+                echo "│ Cluster IP  : ⚠️  ClusterIP not available                                          │"
+                echo "│ Status      : ❌ Service not accessible                                            │"
+            fi
         else
-            echo "⚠️ Warning: Kubeslice UI Proxy LoadBalancer URL not available."
+            echo "│ Service Type: ❓ Unknown ($KUBESLICE_UI_PROXY_SERVICE_TYPE)                        │"
+            echo "│ Status      : ⚠️  Unsupported service type configuration                           │"
         fi
+        
+        echo "└─────────────────────────────────────────────────────────────────────────────────────┘"
+        echo ""
     else
         echo "⏩ **Kubeslice UI installation was skipped or disabled.**"
     fi
 
     # Fetch the token for each project provided in the input YAML
     if [ "$ENABLE_PROJECT_CREATION" = "true" ]; then
+        echo "┌─────────────────────────────────────────────────────────────────────────────────────┐"
+        echo "│                         🔐 KUBESLICE PROJECT ACCESS TOKENS                         │"
+        echo "├─────────────────────────────────────────────────────────────────────────────────────┤"
+        
+        project_count=0
         for project in "${KUBESLICE_PROJECTS[@]}"; do
             IFS="|" read -r project_name project_username <<<"$project"
             token=$(kubectl get secret "kubeslice-rbac-rw-$project_username" -o jsonpath="{.data.token}" -n "kubeslice-$project_name" --kubeconfig "$kubeconfig_path" --context "$kubecontext" 2>/dev/null | base64 --decode || echo "")
-            if [ -n "$token" ]; then
-                echo "🔑 **Token for project '$project_name' (username: $project_username)**: $token"
-            else
-                echo "⚠️ Warning: Token for project '$project_name' (username: $project_username) not available."
+            
+            if [ $project_count -gt 0 ]; then
+                echo "├─────────────────────────────────────────────────────────────────────────────────────┤"
             fi
+            
+            if [ -n "$token" ]; then
+                echo "│ 🔑 TOKEN: ✅ Available                                                              │"
+                echo "│                                                                                     │"
+                echo "│                                                                                     │"
+                echo "├─────────────────────────────────────────────────────────────────────────────────────┤"
+                echo "$token"
+                echo "├─────────────────────────────────────────────────────────────────────────────────────┤"
+                echo "│                                                                                     │"
+                echo "│ 💡 USAGE: 📋 COPY THE ABOVE TOKEN AND PASTE IT ON PLACE OF ENTER SERVICE ACCOUNT    |"
+                echo "|              TOKEN IN BROWSER :                                                     │"
+            else
+                echo "│ 🔑 TOKEN: ❌ Not Available                                                          │"
+                echo "│ ⚠️  STATUS: Token generation failed or service not ready                            │"
+            fi
+            
+            project_count=$((project_count + 1))
         done
+        
+        echo "└─────────────────────────────────────────────────────────────────────────────────────┘"
+        echo ""
     else
-        echo "⏩ **Project creation was skipped or disabled.**"
+        echo "┌─────────────────────────────────────────────────────────────────────────────────────┐"
+        echo "│                         🔐 KUBESLICE PROJECT ACCESS TOKENS                          │"
+        echo "├─────────────────────────────────────────────────────────────────────────────────────┤"
+        echo "│ ⏩ TOKEN GENERATION: Disabled                                                       │"
+        echo "│ 📝 NOTE: Token generation was skipped as project creation is disabled               │"
+        echo "└─────────────────────────────────────────────────────────────────────────────────────┘"
+        echo ""
     fi
 
-    echo "========================================="
-    echo "          🏁 Summary Output Complete      "
-    echo "========================================="
+    echo "┌─────────────────────────────────────────────────────────────────────────────────────┐"
+    echo "│                            🏁 INSTALLATION SUMMARY COMPLETE                         │"
+    echo "├─────────────────────────────────────────────────────────────────────────────────────┤"
+    echo "│ ✅ All configured components have been processed.                                   │"
+    echo "│ 📋 Access information displayed above for quick reference.                          │"
+    echo "│ 🔧 For troubleshooting, check logs in file egs-installer-output.log in current      |"
+    echo "|    installation directory and verify service status.                                │"
+    echo "│ 📚 Refer to documentation https://docs.avesha.io/documentation/enterprise-egs for   |" 
+    echo "|    additional configuration options.                                                │"
+    echo "└─────────────────────────────────────────────────────────────────────────────────────┘"
 }
 
 install_or_upgrade_helm_chart() {
