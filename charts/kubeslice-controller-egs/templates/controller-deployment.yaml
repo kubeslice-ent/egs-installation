@@ -90,7 +90,7 @@ spec:
               value: {{ .Values.kubeslice.controller.invmgrGrpcAddress }}
             - name: WEBHOOK_CA_BUNDLE
               value: {{ $ca.Cert | b64enc }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
+          image: '{{ .Values.dev.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.controller.pullPolicy }}'
           livenessProbe:
             httpGet:

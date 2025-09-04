@@ -33,5 +33,5 @@ dependencies:
     repository: file://./charts/kserve
     version: v0.14.0
     condition: kserve.enabled
-version: 1.15.0
-appVersion: 1.15.0
+version: 1.15.1
+appVersion: 1.15.1
