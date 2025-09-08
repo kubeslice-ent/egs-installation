@@ -39,7 +39,7 @@ spec:
           {{- if .Values.egs.queueManager.containerSecurityContext }}
           {{ toYaml .Values.egs.queueManager.containerSecurityContext | nindent 12 }}
           {{- end }}
-          image: '{{ .Values.dev.imageRegistry }}/{{ .Values.egs.queueManager.image }}:{{ .Values.egs.queueManager.tag }}'
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.egs.queueManager.image }}:{{ .Values.egs.queueManager.tag }}'
           ports:
             - containerPort: 50051
               protocol: TCP
