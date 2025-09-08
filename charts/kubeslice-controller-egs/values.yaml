@@ -77,7 +77,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.15.0
+    tag: 1.15.1
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -136,7 +136,7 @@ egs:
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: 1.14.0
+    tag: 1.14.1
     imagePullPolicy: IfNotPresent
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60
@@ -187,7 +187,7 @@ egs:
     # Image name for the queue-manager
     image: queue-manager
     # Image tag for the queue-manager
-    tag: 1.13.0
+    tag: 1.13.1
     imagePullPolicy: IfNotPresent
     service:
       name: egs-queue-manager
@@ -230,7 +230,7 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.14.0
+    tag: 1.14.1
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
