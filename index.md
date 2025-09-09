@@ -1,7 +1,6 @@
 ---
 layout: page
 title: EGS Installer Script
-description: A comprehensive guide for installing, upgrading, and configuring EGS components in Kubernetes clusters
 ---
 
 # 🌐 EGS Installer Script
@@ -16,14 +15,14 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
 - 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
-- 🔑 For EGS License setup, please refer to the [EGS License Setup Guide]({{ site.baseurl }}/docs/license-setup/) 🗝️  
-- ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation]({{ site.baseurl }}/docs/preflight-check/) 🔍  
-- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation]({{ site.baseurl }}/docs/token-retrieval/) 🔒  
-- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation]({{ site.baseurl }}/docs/namespace-creation/) 🗂️  
-- 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites]({{ site.baseurl }}/docs/controller-prerequisites/) 📋  
-- ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites]({{ site.baseurl }}/docs/worker-prerequisites/) 🔧  
-- 🛠️ For configuration details, please refer to the [Configuration Documentation]({{ site.baseurl }}/docs/configuration/) 📋  
-- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation]({{ site.baseurl }}/docs/custom-pricing/) 💰  
+- 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup) 🗝️  
+- ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README) 🔍  
+- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](docs/Slice-Admin-Token-README) 🔒  
+- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](docs/Namespace-Creation-README) 🗂️  
+- 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites) 📋  
+- ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites) 🔧  
+- 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README) 📋  
+- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README) 💰  
 - 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
 
 ---
@@ -36,7 +35,7 @@ Before you begin, ensure the following steps are completed:
 
 1. **📝 Registration:**
    - Complete the registration process at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive the required access credentials and product license for running the script.
-   - For detailed license setup instructions, refer to **[📋 EGS License Setup]({{ site.baseurl }}/docs/license-setup/)**.
+   - For detailed license setup instructions, refer to **[📋 EGS License Setup](docs/EGS-License-Setup)**.
 
 2. **🔧 Required Binaries:**
    - Verify that the following binaries are installed and available in your system's `PATH`:
@@ -57,45 +56,41 @@ Before you begin, ensure the following steps are completed:
 
 5. **✅ Run EGS Preflight Check Script (Optional):**
    - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
-     - Refer to the [EGS Preflight Check Guide]({{ site.baseurl }}/docs/preflight-check/) for detailed instructions.
+     - Refer to the [EGS Preflight Check Guide](docs/EGS-Preflight-Check-README) for detailed instructions.
+     - Example command:
+       ```bash
+       ./egs-preflight-check.sh \
+         --kubeconfig ~/.kube/config \
+         --kubecontext-list context1,context2
+       ```
+     - This step validates namespaces, permissions, PVCs, and services, helping to identify and resolve potential issues before installation.
 
-For complete installation instructions, please refer to the [full README documentation]({{ site.baseurl }}/readme/).
+6. **🗂️ Pre-create Required Namespaces (Optional):**
+   - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
+     - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
+       - Refer to the [Namespace Creation Guide](docs/Namespace-Creation-README) for details.
+     - Example command:
+       ```bash
+       ./create-namespaces.sh \
+         --input-yaml namespace-input.yaml \
+         --kubeconfig ~/.kube/config \
+         --kubecontext-list context1,context2
+       ```
+     - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
 
----
-
-## Quick Links
-
-<div class="grid-container">
-  <div class="grid-item">
-    <h3>🚀 Getting Started</h3>
-    <p>New to EGS? Start here for a complete installation guide.</p>
-    <a href="#getting-started" class="btn">Get Started</a>
-  </div>
-  
-  <div class="grid-item">
-    <h3>📋 Prerequisites</h3>
-    <p>Check system requirements and prepare your environment.</p>
-    <a href="{{ site.baseurl }}/docs/controller-prerequisites/" class="btn">View Prerequisites</a>
-  </div>
-  
-  <div class="grid-item">
-    <h3>🔧 Configuration</h3>
-    <p>Configure EGS components for your specific needs.</p>
-    <a href="{{ site.baseurl }}/docs/configuration/" class="btn">Configure EGS</a>
-  </div>
-  
-  <div class="grid-item">
-    <h3>✅ Preflight Check</h3>
-    <p>Validate your environment before installation.</p>
-    <a href="{{ site.baseurl }}/docs/preflight-check/" class="btn">Run Checks</a>
-  </div>
-</div>
+For the complete installation guide, see the [Full Documentation](README).
 
 ---
 
-## Support
+## 🗑️ Uninstallation Steps
 
-For additional support and documentation, visit:
-- 📚 [Official Documentation](https://docs.avesha.io/documentation/enterprise-egs)
-- 💬 [Community Support](https://github.com/kubeslice-ent/egs-installation/issues)
-- 🔗 [Avesha Website](https://avesha.io)
+**⚠️ Important Note:**  
+The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources provisioned by egs**. Use this script with caution, as it performs a complete cleanup of the egs setup.
+
+**Run the Cleanup Script**  
+- Execute the uninstallation script using the following command:  
+```bash
+./egs-uninstall.sh --input-yaml egs-installer-config.yaml
+```
+
+---
