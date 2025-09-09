@@ -17,7 +17,6 @@ plugins:
 # Navigation
 header_pages:
   - index.md
-  - README.md
 
 # Exclude from processing
 exclude:
