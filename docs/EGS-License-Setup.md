@@ -1,3 +1,10 @@
+---
+layout: page
+title: EGS License Setup Guide
+description: Instructions for setting up EGS license and credentials
+permalink: /docs/license-setup/
+---
+
 # EGS License Setup Guide
 
 This document provides step-by-step instructions for obtaining and applying the EGS (Elastic GPU Service) license required for KubeSlice Controller operation.

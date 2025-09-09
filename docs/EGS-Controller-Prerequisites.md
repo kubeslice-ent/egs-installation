@@ -1,3 +1,10 @@
+---
+layout: page
+title: EGS Controller Prerequisites
+description: Prerequisites and requirements for EGS Controller installation
+permalink: /docs/controller-prerequisites/
+---
+
 # EGS Controller Prerequisites
 
 This document outlines the prerequisites required for installing and operating the EGS (Elastic GPU Service) Controller in your Kubernetes cluster.

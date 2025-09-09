@@ -1,4 +1,10 @@
 ---
+layout: page
+title: EGS Installer Script - Complete Guide
+description: Comprehensive installation and configuration guide for EGS components
+permalink: /readme/
+---
+
 # 🌐 EGS Installer Script
 
 ## 🚀 Overview

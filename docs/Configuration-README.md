@@ -1,3 +1,10 @@
+---
+layout: page
+title: EGS Configuration Guide
+description: Detailed configuration instructions for EGS components
+permalink: /docs/configuration/
+---
+
 # 🛠️ EGS Configuration Details
 
 The script requires a YAML configuration file to define various parameters and settings for the installation process. Below is an example configuration file (`egs-installer-config.yaml`) with descriptions for each section.

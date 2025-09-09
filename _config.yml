@@ -1,0 +1,87 @@
+# Site settings
+title: EGS Installation Guide
+description: >-
+  The EGS Installer Script is a Bash script designed to streamline the installation, 
+  upgrade, and configuration of EGS components in Kubernetes clusters.
+baseurl: "/egs-installation" # the subpath of your site, e.g. /blog
+url: "https://kubeslice-ent.github.io" # the base hostname & protocol for your site
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Minima theme settings
+minima:
+  skin: dark
+
+# Plugin settings
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Navigation structure
+header_pages:
+  - README.md
+  - docs/Configuration-README.md
+  - docs/EGS-License-Setup.md
+  - docs/EGS-Preflight-Check-README.md
+  - docs/EGS-Controller-Prerequisites.md
+  - docs/EGS-Worker-Prerequisites.md
+
+# SEO settings
+author: Avesha Systems
+twitter:
+  username: AveshaSystems
+social:
+  name: Avesha Systems
+  links:
+    - https://github.com/kubeslice-ent
+
+# Exclude files from processing
+exclude:
+  - .gitignore
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+
+# Include files in processing
+include:
+  - docs/
+
+# Collections for better organization
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:name/
+
+# Default layouts
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page"
+  - scope:
+      path: "docs"
+      type: "pages"  
+    values:
+      layout: "page"
+      permalink: /:basename/
+  - scope:
+      path: ""
+      type: "docs"
+    values:
+      layout: "page"
+
+# Code highlighting
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: true
+
+# GitHub Pages specific settings
+repository: kubeslice-ent/egs-installation
+github_username: kubeslice-ent
