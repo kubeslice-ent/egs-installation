@@ -249,9 +249,11 @@ Before you begin, ensure the following steps are completed:
 8. **🚀 Install Prerequisites (After Configuration):**
    - After configuring the YAML file (refer to [https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml) for examples), run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
    ```bash
-   ./egs-install-prerequisites.sh --input-yaml https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml
+   ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
    ```
-   - **Note:** This step installs the required infrastructure components before the main EGS installation.
+   <div class="note">
+   **📌 Note:** This step installs the required infrastructure components before the main EGS installation.
+   </div>
 ---
 
 ## 🛠️ Installation Steps
@@ -373,7 +375,9 @@ Before you begin, ensure the following steps are completed:
 
    **⚙️ PostgreSQL Connection Configuration (Mandatory - KubeTally is enabled by default)**
 
+   <div class="important">
    **📌 Note:** Since KubeTally is enabled by default, PostgreSQL configuration is now mandatory for EGS installation. The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
+   </div>
 
    **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
 
@@ -495,13 +499,15 @@ Before you begin, ensure the following steps are completed:
      specific_use_local_charts: true              # Override to use local charts for the UI
    ```
 
+   <div class="important">
    **📌 IMPORTANT NOTE:** The `DCGM_METRIC_JOB_VALUE` must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected and UI visualization will not work. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md).
+   </div>
 
 ### 5. **Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
-   **📝 Note:** Global monitoring endpoint settings are configured in the [Modify the Configuration File](https://github.com/kubeslice-ent/egs-installation/tree/main?tab=readme-ov-file#2--modify-the-configuration-file-mandatory) section above, including `global_auto_fetch_endpoint` and related Grafana/Prometheus settings.
+   **📝 Note:** Global monitoring endpoint settings are configured in the [Modify the Configuration File](#2-modify-the-configuration-file-mandatory) section above, including `global_auto_fetch_endpoint` and related Grafana/Prometheus settings.
    
    **⚠️ Multi-Cluster Setup Configuration**
    
@@ -546,7 +552,9 @@ Before you begin, ensure the following steps are completed:
                   className: "nginx"            # Ingress class name for the KServe gateway
       ```
 
+   <div class="important">
    **📌 IMPORTANT NOTE:** The `DCGM_EXPORTER_JOB_NAME` value (`gpu-metrics`) must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected from the worker cluster and monitoring dashboards will not display GPU data. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md).
+   </div>
 
 ### 6. **Adding Additional Workers (Optional)**
 
@@ -768,8 +776,10 @@ After completing all configuration changes, run the installation script to deplo
 
 ### 🗑️ Uninstallation Steps
 
+<div class="warning">
 **⚠️ Important Note:**  
 The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources provisioned by egs**. Use this script with caution, as it performs a complete cleanup of the egs setup.
+</div>
 
 **Run the Cleanup Script**  
 - Execute the uninstallation script using the following command:  
