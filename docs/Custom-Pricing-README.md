@@ -1,3 +1,10 @@
+---
+layout: page
+title: Custom Pricing Upload Script
+description: Instructions for setting up custom pricing in EGS
+permalink: /docs/custom-pricing/
+---
+
 # Custom Pricing Upload Script
 
 ## 🔑 Key Features

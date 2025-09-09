@@ -1,3 +1,10 @@
+---
+layout: page
+title: EGS Worker Prerequisites
+description: Prerequisites and requirements for EGS Worker installation
+permalink: /docs/worker-prerequisites/
+---
+
 # EGS Worker Prerequisites
 
 This document outlines the prerequisites required for installing and operating the EGS (Elastic GPU Service) Worker in your Kubernetes cluster.

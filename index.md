@@ -1,5 +1,5 @@
 ---
-layout: home
+layout: page
 title: EGS Installer Script
 description: A comprehensive guide for installing, upgrading, and configuring EGS components in Kubernetes clusters
 ---
@@ -16,14 +16,14 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
 - 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
-- 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup) 🗝️  
-- ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README) 🔍  
-- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](docs/Slice-Admin-Token-README) 🔒  
-- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](docs/Namespace-Creation-README) 🗂️  
-- 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites) 📋  
-- ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites) 🔧  
-- 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README) 📋  
-- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README) 💰  
+- 🔑 For EGS License setup, please refer to the [EGS License Setup Guide]({{ site.baseurl }}/docs/license-setup/) 🗝️  
+- ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation]({{ site.baseurl }}/docs/preflight-check/) 🔍  
+- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation]({{ site.baseurl }}/docs/token-retrieval/) 🔒  
+- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation]({{ site.baseurl }}/docs/namespace-creation/) 🗂️  
+- 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites]({{ site.baseurl }}/docs/controller-prerequisites/) 📋  
+- ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites]({{ site.baseurl }}/docs/worker-prerequisites/) 🔧  
+- 🛠️ For configuration details, please refer to the [Configuration Documentation]({{ site.baseurl }}/docs/configuration/) 📋  
+- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation]({{ site.baseurl }}/docs/custom-pricing/) 💰  
 - 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
 
 ---
@@ -36,7 +36,7 @@ Before you begin, ensure the following steps are completed:
 
 1. **📝 Registration:**
    - Complete the registration process at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive the required access credentials and product license for running the script.
-   - For detailed license setup instructions, refer to **[📋 EGS License Setup](docs/EGS-License-Setup)**.
+   - For detailed license setup instructions, refer to **[📋 EGS License Setup]({{ site.baseurl }}/docs/license-setup/)**.
 
 2. **🔧 Required Binaries:**
    - Verify that the following binaries are installed and available in your system's `PATH`:
@@ -57,9 +57,9 @@ Before you begin, ensure the following steps are completed:
 
 5. **✅ Run EGS Preflight Check Script (Optional):**
    - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
-     - Refer to the [EGS Preflight Check Guide](docs/EGS-Preflight-Check-README) for detailed instructions.
+     - Refer to the [EGS Preflight Check Guide]({{ site.baseurl }}/docs/preflight-check/) for detailed instructions.
 
-For complete installation instructions, please refer to the [full README documentation](README).
+For complete installation instructions, please refer to the [full README documentation]({{ site.baseurl }}/readme/).
 
 ---
 
@@ -75,19 +75,19 @@ For complete installation instructions, please refer to the [full README documen
   <div class="grid-item">
     <h3>📋 Prerequisites</h3>
     <p>Check system requirements and prepare your environment.</p>
-    <a href="docs/EGS-Controller-Prerequisites" class="btn">View Prerequisites</a>
+    <a href="{{ site.baseurl }}/docs/controller-prerequisites/" class="btn">View Prerequisites</a>
   </div>
   
   <div class="grid-item">
     <h3>🔧 Configuration</h3>
     <p>Configure EGS components for your specific needs.</p>
-    <a href="docs/Configuration-README" class="btn">Configure EGS</a>
+    <a href="{{ site.baseurl }}/docs/configuration/" class="btn">Configure EGS</a>
   </div>
   
   <div class="grid-item">
     <h3>✅ Preflight Check</h3>
     <p>Validate your environment before installation.</p>
-    <a href="docs/EGS-Preflight-Check-README" class="btn">Run Checks</a>
+    <a href="{{ site.baseurl }}/docs/preflight-check/" class="btn">Run Checks</a>
   </div>
 </div>
 

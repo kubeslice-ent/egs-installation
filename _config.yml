@@ -13,7 +13,7 @@ theme: minima
 
 # Minima theme settings
 minima:
-  skin: dark
+  skin: auto
 
 # Plugin settings
 plugins:
@@ -23,12 +23,8 @@ plugins:
 
 # Navigation structure
 header_pages:
+  - index.md
   - README.md
-  - docs/Configuration-README.md
-  - docs/EGS-License-Setup.md
-  - docs/EGS-Preflight-Check-README.md
-  - docs/EGS-Controller-Prerequisites.md
-  - docs/EGS-Worker-Prerequisites.md
 
 # SEO settings
 author: Avesha Systems
@@ -50,12 +46,6 @@ exclude:
 include:
   - docs/
 
-# Collections for better organization
-collections:
-  docs:
-    output: true
-    permalink: /:collection/:name/
-
 # Default layouts
 defaults:
   - scope:
@@ -66,12 +56,6 @@ defaults:
   - scope:
       path: "docs"
       type: "pages"  
-    values:
-      layout: "page"
-      permalink: /:basename/
-  - scope:
-      path: ""
-      type: "docs"
     values:
       layout: "page"
 

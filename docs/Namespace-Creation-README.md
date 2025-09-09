@@ -1,3 +1,10 @@
+---
+layout: page
+title: Namespace Creation Script
+description: Script for pre-creating required namespaces in Kubernetes
+permalink: /docs/namespace-creation/
+---
+
 # Namespace Creation Script
 
 This script automates the creation of Kubernetes namespaces with specified annotations and labels based on a YAML configuration file. It dynamically supports multiple Kubernetes contexts and provides detailed success/failure logs with a final summary.

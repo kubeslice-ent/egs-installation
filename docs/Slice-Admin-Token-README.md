@@ -1,3 +1,10 @@
+---
+layout: page
+title: Slice & Admin Token Retrieval Script
+description: Script for retrieving tokens for Kubernetes slices and admin users
+permalink: /docs/token-retrieval/
+---
+
 # 🔑 Slice & Admin Token Retrieval Script - `fetch_egs_slice_token.sh`
 
 `fetch_egs_slice_token.sh` is a Bash script designed to retrieve tokens for Kubernetes slices and admin users within a specified project/namespace. This script can fetch read-only, read-write, and admin tokens based on the provided arguments, making it flexible for various Kubernetes authentication requirements.

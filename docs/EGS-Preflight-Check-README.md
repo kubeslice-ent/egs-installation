@@ -1,3 +1,10 @@
+---
+layout: page
+title: EGS Preflight Check Script
+description: Robust preflight checks for EGS setup on Kubernetes
+permalink: /docs/preflight-check/
+---
+
 # EGS Preflight Check Script
 
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-✔️-blue?logo=kubernetes) ![Bash](https://img.shields.io/badge/Shell_Script-Bash-121011?logo=gnu-bash) ![License](https://img.shields.io/badge/License-@Avesha-orange)
