@@ -109,28 +109,28 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 Before you begin, ensure the following steps are completed:
 
-1. **📝 Registration:** {#registration}
+1. <a id="registration"></a>**📝 Registration:**
    - Complete the registration process at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive the required access credentials and product license for running the script.
    - For detailed license setup instructions, refer to **[📋 EGS License Setup](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md)**.
 
-2. **🔧 Required Binaries:** {#required-binaries}
+2. <a id="required-binaries"></a>**🔧 Required Binaries:**
    - Verify that the following binaries are installed and available in your system's `PATH`:
      - **yq** 📄 (minimum version: 4.44.2)
      - **helm** 🛠️ (minimum version: 3.15.0)
      - **kubectl** ⚙️ (minimum version: 1.23.6)
      - **jq** 📦 (minimum version: 1.6.0)
 
-3. **🌐 Kubernetes Access:** {#kubernetes-access}
+3. <a id="kubernetes-access"></a>**🌐 Kubernetes Access:**
    - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
 
-4. **📂 Clone the Repository:** {#clone-repository}
+4. <a id="clone-repository"></a>**📂 Clone the Repository:**
    - Start by cloning the EGS installation Git repository:
      ```bash
      git clone https://github.com/kubeslice-ent/egs-installation
      cd egs-installation
      ```
 
-5. **✅ Run EGS Preflight Check Script (Optional):** {#preflight-checks}
+5. <a id="preflight-checks"></a>**✅ Run EGS Preflight Check Script (Optional):**
    - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
      - Refer to the [EGS Preflight Check Guide](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Preflight-Check-README.md) for detailed instructions.
      - Example command:
@@ -141,7 +141,7 @@ Before you begin, ensure the following steps are completed:
        ```
      - This step validates namespaces, permissions, PVCs, and services, helping to identify and resolve potential issues before installation.
 
-6. **🗂️ Pre-create Required Namespaces (Optional):** {#namespace-creation}
+6. <a id="namespace-creation"></a>**🗂️ Pre-create Required Namespaces (Optional):**
    - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
      - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
        - Refer to the [Namespace Creation Guide](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Namespace-Creation-README.md) for details.
@@ -154,7 +154,7 @@ Before you begin, ensure the following steps are completed:
        ```
      - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
 
-7. **⚙️ Configure EGS Installer for Prerequisites Installation:** {#configure-installer}
+7. <a id="configure-installer"></a>**⚙️ Configure EGS Installer for Prerequisites Installation:**
 
    **⚠️ IMPORTANT: Choose ONE approach - do NOT use both simultaneously**
 
@@ -322,7 +322,7 @@ Before you begin, ensure the following steps are completed:
    - **Verify that your existing components** are properly configured to scrape EGS metrics
    - **Ensure proper RBAC permissions** and network policies are in place
 
-8. **🚀 Install Prerequisites (After Configuration):** {#install-prerequisites}
+8. <a id="install-prerequisites"></a>**🚀 Install Prerequisites (After Configuration):**
    - After configuring the YAML file (refer to [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml) for examples), run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
    ```bash
    ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
