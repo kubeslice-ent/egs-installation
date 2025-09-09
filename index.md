@@ -1,6 +1,5 @@
 ---
 layout: page
-title: Home
 ---
 
 <script src="{{ "/assets/js/copy-code.js" | relative_url }}" defer></script>
