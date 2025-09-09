@@ -1,6 +1,7 @@
 # Site settings
 title: EGS Installation Guide
 description: The EGS Installer Script - streamline installation, upgrade, and configuration of EGS components in Kubernetes clusters.
+
 baseurl: ""
 url: "https://repo.egs.avesha.io"
 
@@ -18,58 +19,13 @@ plugins:
 header_pages:
   - index.md
 
-# Repository settings for linking to main branch
-repository: kubeslice-ent/egs-installation
-github:
-  repository_url: "https://github.com/kubeslice-ent/egs-installation"
-
-# Main header navigation menu
-header_menu:
-  docs:
-    - title: "🔑 License Setup"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md"
-    - title: "✅ Preflight Checks"  
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Preflight-Check-README.md"
-    - title: "🚀 Controller Prerequisites"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Controller-Prerequisites.md"
-    - title: "⚙️ Worker Prerequisites"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md"
-    - title: "🛠️ Configuration Guide"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md"
-    - title: "📊 Custom Pricing"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Custom-Pricing-README.md"
-    - title: "🔒 Token Retrieval"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Slice-Admin-Token-README.md"
-    - title: "🗂️ Namespace Creation"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Namespace-Creation-README.md"
-  scripts:
-    - title: "🔍 Preflight Check"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/egs-preflight-check.sh"
-    - title: "🗂️ Create Namespaces"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/create-namespaces.sh"
-    - title: "⚙️ Install Prerequisites"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/egs-install-prerequisites.sh"
-    - title: "🚀 Main Installer"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer.sh"
-    - title: "🗑️ Uninstall"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/egs-uninstall.sh"
-  configs:
-    - title: "⚙️ Main Config Template"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml"
-    - title: "🌐 Multi-Cluster Example"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml"
-    - title: "🗂️ Namespace Config"
-      url: "https://github.com/kubeslice-ent/egs-installation/blob/main/namespace-input.yaml"
-  external:
-    - title: "👤 User Guide"
-      url: "https://docs.avesha.io/documentation/enterprise-egs"
-
-# Exclude from processing
+# Exclude files from processing
 exclude:
   - Gemfile
   - Gemfile.lock
   - vendor/
+  - main-readme.md
 
-# Include docs directory
+# Include docs directory  
 include:
   - docs/
