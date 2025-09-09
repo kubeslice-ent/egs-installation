@@ -1,320 +1,147 @@
 ---
-layout: page
+layout: default
 title: EGS Installation Guide
 ---
 
-<div class="site-header">
-  <div class="header-brand">
-    <h1 class="brand-title">EGS AI SRE Agent Platform</h1>
-    <p class="brand-subtitle">Enterprise-Grade Site Reliability Engineering</p>
-  </div>
-</div>
+# 🌐 EGS Installer Script
 
-<nav class="top-nav">
-  <div class="nav-container">
-    <div class="nav-links">
-      <a href="#home" class="nav-link">Home</a>
-      <a href="#documentation" class="nav-link">Documentation</a>
-      <a href="#parameters-reference" class="nav-link">Parameters Reference</a>
-      <a href="#prerequisites" class="nav-link">Prerequisites</a>
-      <a href="#services-configuration" class="nav-link">Services Configuration</a>
-      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md" target="_blank" class="nav-link">License Setup Guide</a>
-      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md" target="_blank" class="nav-link">Configuration Guide</a>
-    </div>
-  </div>
-</nav>
+## 🚀 Overview
 
-<div id="home" class="hero-section">
-  <div class="hero-content">
-    <div class="hero-icon">🌐</div>
-    <h1 class="hero-title">EGS Installer Script</h1>
-    <p class="hero-description">
-      A comprehensive AI-powered Site Reliability Engineering platform deployed via automated Bash scripts.
-      Streamline your Kubernetes cluster management with intelligent automation.
-    </p>
-    
-    <div class="hero-badges">
-      <span class="badge badge-primary">
-        <span class="badge-icon">⚡</span>
-        Bash Script
-      </span>
-      <span class="badge badge-secondary">
-        <span class="badge-icon">☸️</span>
-        Kubernetes
-      </span>
-      <span class="badge badge-accent">
-        <span class="badge-icon">🤖</span>
-        AI/SRE
-      </span>
-      <span class="badge badge-success">
-        <span class="badge-icon">🛠️</span>
-        Support
-      </span>
-    </div>
-
-    <div class="hero-buttons">
-      <a href="#quick-install" class="btn btn-primary">
-        <span class="btn-icon">🚀</span>
-        Get Started Now
-      </a>
-      <a href="https://github.com/kubeslice-ent/egs-installation" target="_blank" class="btn btn-secondary">
-        <span class="btn-icon">📚</span>
-        View on GitHub
-      </a>
-    </div>
-    
-    <div class="hero-stats">
-      <div class="stat">
-        <div class="stat-number">5+</div>
-        <div class="stat-label">Installation Scripts</div>
-      </div>
-      <div class="stat">
-        <div class="stat-number">100%</div>
-        <div class="stat-label">Automated</div>
-      </div>
-      <div class="stat">
-        <div class="stat-number">24/7</div>
-        <div class="stat-label">Support</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="documentation" class="section">
-  <div class="section-header">
-    <h2 class="section-title">📖 Documentation</h2>
-    <p class="section-subtitle">Everything you need to get started with EGS</p>
-  </div>
-  
-  <div class="doc-grid">
-    <div class="doc-card">
-      <div class="doc-icon">🚀</div>
-      <h3 class="doc-title">Getting Started</h3>
-      <p class="doc-description">Complete installation guide and setup instructions</p>
-      <a href="#quick-install" class="doc-link">Learn more →</a>
-    </div>
-    
-    <div class="doc-card">
-      <div class="doc-icon">⚙️</div>
-      <h3 class="doc-title">Services Configuration</h3>
-      <p class="doc-description">Enable/disable services and integrations</p>
-      <a href="#services-configuration" class="doc-link">Learn more →</a>
-    </div>
-    
-    <div class="doc-card">
-      <div class="doc-icon">📋</div>
-      <h3 class="doc-title">Parameters Reference</h3>
-      <p class="doc-description">Complete configuration options and examples</p>
-      <a href="#parameters-reference" class="doc-link">Learn more →</a>
-    </div>
-    
-    <div class="doc-card">
-      <div class="doc-icon">🔐</div>
-      <h3 class="doc-title">License Setup</h3>
-      <p class="doc-description">EGS license and credentials management</p>
-      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md" target="_blank" class="doc-link">Learn more →</a>
-    </div>
-    
-    <div class="doc-card">
-      <div class="doc-icon">📋</div>
-      <h3 class="doc-title">Prerequisites</h3>
-      <p class="doc-description">System requirements and integrations</p>
-      <a href="#prerequisites" class="doc-link">Learn more →</a>
-    </div>
-    
-    <div class="doc-card">
-      <div class="doc-icon">🛠️</div>
-      <h3 class="doc-title">Configuration Guide</h3>
-      <p class="doc-description">Advanced configuration and customization</p>
-      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md" target="_blank" class="doc-link">Learn more →</a>
-    </div>
-  </div>
-</div>
-
-<div id="quick-install" class="section">
-
-## ⚡ Quick Install
-
-### Prerequisites
-
-* **Kubernetes cluster** (v1.19+)
-* **Helm** (v3.8+)
-* **Required Binaries** - yq, helm, kubectl, jq
-* **EGS License** - Get your license from [Avesha EGS Registration](https://avesha.io/egs-registration)
-* **kubeconfig** file for cluster access
-
-📚 **Important Setup Guides**:
-
-* **[License Setup](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md)** - EGS license configuration and setup
-* **[Prerequisites Details](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Preflight-Check-README.md)** - Comprehensive system requirements and integrations
-
-💡 **For local development**: Run `./egs-preflight-check.sh` to ensure all prerequisites are met before installation.
-
-📋 **Note**: The configuration file `egs-installer-config.yaml` expects proper setup. Make sure to:
-
-* Configure your license credentials in the configuration file, OR
-* Update the configuration to match your environment setup
-
-### 1. Clone Repository
-
-```bash
-# Clone the EGS installation repository
-git clone https://github.com/kubeslice-ent/egs-installation
-cd egs-installation
-```
-
-### 2. License Configuration
-
-```bash
-# Configure your EGS license (get from registration)
-# Edit the configuration file with your license details
-cp egs-installer-config.yaml.example egs-installer-config.yaml
-# Update license_info section with your credentials
-```
-
-📚 **For advanced license management:** Visit the [License Setup Guide](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md)
-
-### 3. Installation Options
-
-💡 **Optional: For easier environment variable management, see configuration examples.**
-
-📋 **Note:** If you need to check prerequisites, run the preflight check script first.
-
-#### Minimal (Core EGS Services)
-
-```bash
-# Run preflight checks
-./egs-preflight-check.sh --input-yaml egs-installer-config.yaml
-
-# Install prerequisites
-./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
-
-# Install EGS components
-./egs-installer.sh --input-yaml egs-installer-config.yaml
-```
-
-#### Multi-Cluster Setup
-
-📋 **Prerequisites**: Before running multi-cluster setup, ensure you have:
-
-* **Multiple Kubernetes clusters** - Controller and worker clusters configured
-* **Network connectivity** - Clusters can communicate with each other
-* **Valid kubeconfig files** - For each cluster in your setup
-
-```bash
-# Configure multi-cluster setup
-# Edit egs-installer-config.yaml for multiple clusters
-# See multi-cluster-example.yaml for reference
-
-# Run installation with multi-cluster configuration
-./egs-installer.sh --input-yaml egs-installer-config.yaml
-```
-
-📋 **For full integration with all services:** See [Configuration Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md)
-
-⚠️ **Important**: Full integration requires additional setup:
-
-* **[Controller Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Controller-Prerequisites.md)** - Required controller cluster setup
-* **[Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md)** - Worker cluster configuration and requirements
-* **Secret Management** - Advanced credential and secret handling
-
-### 4. Verify Installation
-
-```bash
-# Check pod status (all should be Running)
-kubectl get pods -n kubeslice-controller
-kubectl get pods -n kubeslice-system
-
-# Check services
-kubectl get svc -n kubeslice-controller
-
-# Verify installation logs
-kubectl logs -n kubeslice-controller deployment/kubeslice-controller
-```
-
-### 5. Access the UI
-
-```bash
-# Get the service endpoint
-kubectl get service -n kubeslice-controller
-
-# Access the EGS UI through the service endpoint
-# Default access through port-forward if needed:
-kubectl port-forward -n kubeslice-controller service/kubeslice-ui 8080:80
-```
-
-🔐 **Access Information:**
-
-* **UI Access**: Through configured service endpoint
-* **Configuration**: Via egs-installer-config.yaml
-* **Logs**: Available through kubectl logs commands
-
-**Alternative access methods:**
-
-* **Port Forward**: `kubectl port-forward -n kubeslice-controller service/kubeslice-ui 8080:80`
-* **Ingress**: Configure ingress controller for external access
-
-</div>
-
-<div id="uninstall" class="section">
-
-## 🗑️ Uninstall
-
-```bash
-# Uninstall EGS components
-./egs-uninstall.sh --input-yaml egs-installer-config.yaml
-
-# Clean up namespaces (optional)
-kubectl delete namespace kubeslice-controller
-kubectl delete namespace kubeslice-system
-```
-
-📋 **For complete configuration options:** Visit the [Configuration Reference](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md)
-
-</div>
-
-<div id="troubleshooting" class="section">
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-* **Prerequisites not met**: Run `./egs-preflight-check.sh` to validate requirements
-* **Pod failures**: Check logs with `kubectl logs -n kubeslice-controller <pod-name>`
-* **License issues**: Verify license configuration in egs-installer-config.yaml
-
-### Basic Debugging
-
-```bash
-# Check pod status
-kubectl get pods -n kubeslice-controller
-kubectl get pods -n kubeslice-system
-
-# View logs
-kubectl logs -n kubeslice-controller deployment/kubeslice-controller -f
-
-# Check events
-kubectl get events -n kubeslice-controller --sort-by='.lastTimestamp'
-```
-
-</div>
-
-<div id="support" class="section">
-
-## 📞 Support
-
-* **Documentation**: [Avesha EGS Documentation](https://docs.avesha.io/documentation/enterprise-egs)
-* **GitHub**: [EGS Installation Repository](https://github.com/kubeslice-ent/egs-installation)
-* **Issues**: Include pod logs and configuration details
+The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
 
 ---
 
-📊 **For detailed service configuration:** Visit the [Services Guide](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md)
+## 📄 EGS Documents
 
-## EGS Installer Script
+- 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
+- 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
+- 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md) 🗝️  
+- ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Preflight-Check-README.md) 🔍  
+- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Slice-Admin-Token-README.md) 🔒  
+- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Namespace-Creation-README.md) 🗂️  
+- 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Controller-Prerequisites.md) 📋  
+- ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md) 🔧  
+- 🛠️ For configuration details, please refer to the [Configuration Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md) 📋  
+- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Custom-Pricing-README.md) 💰  
+- 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml) 🔗
 
-* **Avesha Systems** - support@aveshasystems.com
+---
 
-A comprehensive AI-powered Site Reliability Engineering platform deployed via automated installation scripts.
+## Getting Started
 
-</div>
+### Prerequisites
+
+Before you begin, ensure the following steps are completed:
+
+1. **📝 Registration:**
+   - Complete the registration process at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive the required access credentials and product license for running the script.
+   - For detailed license setup instructions, refer to **[📋 EGS License Setup](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md)**.
+
+2. **🔧 Required Binaries:**
+   - Verify that the following binaries are installed and available in your system's `PATH`:
+     - **yq** 📄 (minimum version: 4.44.2)
+     - **helm** 🛠️ (minimum version: 3.15.0)
+     - **kubectl** ⚙️ (minimum version: 1.23.6)
+     - **jq** 📦 (minimum version: 1.6.0)
+
+3. **🌐 Kubernetes Access:**
+   - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
+
+4. **📂 Clone the Repository:**
+   - Start by cloning the EGS installation Git repository:
+     ```bash
+     git clone https://github.com/kubeslice-ent/egs-installation
+     cd egs-installation
+     ```
+
+5. **🔍 Run Preflight Checks (Recommended):**
+   - Before proceeding with the installation, run the preflight check script to validate your environment:
+     ```bash
+     ./egs-preflight-check.sh \
+       --input-yaml egs-installer-config.yaml \
+       --validate-all
+     ```
+   - Refer to the [EGS Preflight Check Guide](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Preflight-Check-README.md) for detailed instructions.
+
+6. **🗂️ Namespace Pre-creation (If Required):**
+   - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
+     - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
+       ```bash
+       ./create-namespaces.sh \
+         --input-yaml namespace-input.yaml \
+         --validate-manifests
+       ```
+       - Refer to the [Namespace Creation Guide](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Namespace-Creation-README.md) for details.
+
+7. **⚙️ Enable Additional Applications (Optional):**
+   - Configure the `egs-installer-config.yaml` file to enable additional applications installation. **For complete configuration examples, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml)**:
+
+8. **🚀 Install Prerequisites (After Configuration):**
+   - After configuring the YAML file (refer to [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml) for examples), run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
+   ```bash
+   ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+   ```
+   **📌 Note:** This step installs the required infrastructure components before the main EGS installation.
+
+---
+
+## 🛠️ Installation Steps
+
+### 1. **📂 Clone the Repository:**
+   - Start by cloning the EGS installation Git repository:
+     ```bash
+     git clone https://github.com/kubeslice-ent/egs-installation
+     cd egs-installation
+     ```
+
+### 2. **📝 Modify the Configuration File (Mandatory):**
+   - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`. **For the complete configuration template, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml)**.
+
+   **📋 Multi-Cluster Configuration Reference:** For a complete multi-cluster installation example with detailed YAML configuration, see [Multi-Cluster Installation Example](https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml).
+
+### 3. **Kubeslice Controller Installation Settings (Mandatory)**
+
+   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.** **For the complete controller configuration example, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L75-L113)**.
+
+### 4. **Kubeslice UI Installation Settings (Optional)**
+
+   **Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
+
+   The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required. **For the complete UI configuration example, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L117-L178)**.
+
+### 5. **Worker Clusters: Update the Inline Values**
+
+   This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
+
+### 6. **Adding Additional Workers (Optional)**
+
+   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. **For complete worker configuration examples, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L181-L240)**. **For a comprehensive multi-cluster example with multiple workers, see [Multi-Cluster Installation Example](https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml)**.
+
+### 7. **🚀 Run the Installation Script**
+
+After completing all configuration changes, run the installation script to deploy EGS:
+
+```bash
+./egs-installer.sh --input-yaml egs-installer-config.yaml
+```
+
+**📌 IMPORTANT NOTES:**
+
+- **🔄 Configuration Changes:** If you make any changes to the configuration file after the initial installation, you must re-run the installation script to apply the changes.
+- **⬆️ Upgrades:** For EGS upgrades or configuration modifications, update your `egs-installer-config.yaml` file and re-run the installation script. The installer will handle upgrades automatically.
+- **✅ Verification:** Always verify the installation after making configuration changes to ensure all components are properly deployed.
+
+---
+
+### 🗑️ Uninstallation Steps
+
+**⚠️ Important Note:**  
+The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources provisioned by egs**. Use this script with caution, as it performs a complete cleanup of the egs setup.
+
+**Run the Cleanup Script**  
+- Execute the uninstallation script using the following command:  
+```bash
+  ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
+  ```
+
+---
