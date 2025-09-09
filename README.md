@@ -1,8 +1,6 @@
 ---
 layout: page
 title: Complete Installation Guide
-description: Comprehensive installation and configuration guide for EGS components
-permalink: /readme/
 ---
 
 # 🌐 EGS Installer Script

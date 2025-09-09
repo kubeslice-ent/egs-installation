@@ -3,47 +3,9 @@
 
 @import "{{ site.theme }}";
 
-/* Custom styles for EGS documentation */
-.grid-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin: 30px 0;
-}
-
-.grid-item {
-  border: 1px solid #e1e4e8;
-  border-radius: 8px;
-  padding: 20px;
-  background: #f6f8fa;
-  transition: box-shadow 0.2s ease;
-}
-
-.grid-item:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.grid-item h3 {
-  margin-top: 0;
-  color: #24292e;
-}
-
-.btn {
-  display: inline-block;
-  padding: 8px 16px;
-  background-color: #0366d6;
-  color: white;
-  text-decoration: none;
-  border-radius: 6px;
-  font-size: 14px;
+/* Simple improvements for EGS documentation */
+.site-title {
   font-weight: 600;
-  transition: background-color 0.2s ease;
-}
-
-.btn:hover {
-  background-color: #0256cc;
-  color: white;
-  text-decoration: none;
 }
 
 /* Code block improvements */
@@ -54,15 +16,6 @@
 
 pre {
   border-radius: 6px;
-  background-color: #f6f8fa;
-  border: 1px solid #e1e4e8;
-}
-
-/* Emoji improvements */
-h1, h2, h3, h4, h5, h6 {
-  .emoji {
-    margin-right: 8px;
-  }
 }
 
 /* Table improvements */
@@ -82,53 +35,4 @@ table td {
 table th {
   background-color: #f6f8fa;
   font-weight: 600;
-}
-
-/* Navigation improvements */
-.site-header {
-  border-bottom: 1px solid #e1e4e8;
-}
-
-.site-title {
-  font-weight: 600;
-}
-
-/* Footer improvements */
-.site-footer {
-  border-top: 1px solid #e1e4e8;
-  background-color: #f6f8fa;
-}
-
-/* Alert boxes */
-.alert {
-  padding: 16px;
-  margin: 16px 0;
-  border-left: 4px solid;
-  border-radius: 4px;
-}
-
-.alert-info {
-  border-color: #0366d6;
-  background-color: #e6f3ff;
-}
-
-.alert-warning {
-  border-color: #f66a0a;
-  background-color: #fff5b4;
-}
-
-.alert-danger {
-  border-color: #d73a49;
-  background-color: #ffeaea;
-}
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .grid-container {
-    grid-template-columns: 1fr;
-  }
-  
-  .grid-item {
-    margin: 10px 0;
-  }
 }
