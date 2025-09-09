@@ -114,7 +114,12 @@ p:has(strong:contains("📌")) {
   background-color: #f0fff4;
 }
 
-/* Code styling */
+/* Code styling with copy functionality */
+.code-container {
+  position: relative;
+  margin-bottom: 1em;
+}
+
 pre {
   background-color: #f6f8fa;
   border-radius: 6px;
@@ -123,6 +128,8 @@ pre {
   line-height: 1.45;
   border: 1px solid #e1e4e8;
   font-size: 14px;
+  margin: 0;
+  position: relative;
 }
 
 code {
@@ -138,6 +145,57 @@ pre code {
   border: none;
   background: transparent;
   padding: 0;
+}
+
+/* Copy button styling */
+.copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #24292e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease, background-color 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+  z-index: 10;
+}
+
+.code-container:hover .copy-button,
+.copy-button:focus {
+  opacity: 1;
+}
+
+/* Always show copy button on mobile */
+@media (max-width: 768px) {
+  .copy-button {
+    opacity: 0.7;
+  }
+}
+
+.copy-button:hover {
+  background: #0366d6;
+}
+
+.copy-button.copied {
+  background: #28a745;
+}
+
+.copy-button:active {
+  transform: scale(0.95);
+}
+
+/* Copy button icons */
+.copy-button::before {
+  content: "📋 Copy";
+}
+
+.copy-button.copied::before {
+  content: "✅ Copied!";
 }
 
 /* Table styling */
