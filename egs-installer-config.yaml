@@ -379,6 +379,97 @@ additional_apps:
     verify_install_timeout: 600                # Timeout for verification (in seconds)
     skip_on_verify_fail: false                 # Do not skip if verification fails
 
+  - name: "soperator"                          # Name of the application
+    skip_installation: true                   # Enable the installation of soperator
+    use_global_kubeconfig: true                # Use global kubeconfig for soperator
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "soperator-system"              # Namespace where soperator will be installed
+    release: "soperator"                       # Helm release name for soperator
+    chart: "soperator"                         # Helm chart name for soperator (picks from local charts directory)
+    repo_url: ""                               # Empty for local charts
+    version: "1.21.13"                         # Version of the soperator chart
+    specific_use_local_charts: true            # Use local charts for this application
+    values_file: ""                            # Path to an external values file, if any
+    #### Inline Helm Values for soperator ####
+    inline_values: {}                          # Default values, can be customized as needed
+    helm_flags: "--wait --timeout 10m --debug" # Additional Helm flags for this application's installation
+    verify_install: false                      # Verify the installation of soperator
+    verify_install_timeout: 300                # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                  # Skip if verification fails
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+
+  
+  - name: "slurm-cluster"                      # Name of the application (REQUIRES slurm-cluster-storage)
+    skip_installation: true                   # Enable the installation of slurm-cluster
+    use_global_kubeconfig: true                # Use global kubeconfig for slurm-cluster
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "slurm-cluster"                 # Namespace where slurm-cluster will be installed
+    release: "slurm-cluster"                   # Helm release name for slurm-cluster
+    chart: "slurm-cluster"                     # Helm chart name for slurm-cluster (picks from local charts directory)
+    repo_url: ""                               # Empty for local charts
+    version: "1.21.13"                         # Version of the slurm-cluster chart
+    specific_use_local_charts: true            # Use local charts for this application
+    values_file: ""                            # Path to an external values file, if any
+    #### Inline Helm Values for slurm-cluster ####
+    inline_values:
+      # Skip populate jail step to avoid private registry images
+      # maintenance: "skipPopulateJail"
+      # Or alternatively, try to use publicly available images
+      clusterName: "avesha-slurm-kubernetes"
+
+      k8sNodeFilters:
+      - name: gpu
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: "nebius.com/node-group-id"
+                      operator: In
+                      values:
+                        - "" # change to your gpu node group id
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+      - name: no-gpu
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: "nebius.com/node-group-id" 
+                      operator: In
+                      values:
+                        - "" # change to your non-gpu node group id
+
+      volumeSources:
+      - name: controller-spool
+        createPVC: true
+        storageClassName: "linode-block-storage" # please change to your storage class
+        size: "1Gi"
+        persistentVolumeClaim:
+          claimName: "controller-spool-pvc"
+          readOnly: false
+      - name: jail
+        createPVC: true
+        storageClassName: "linode-block-storage" # please change to your storage class
+        size: "1Gi"
+        persistentVolumeClaim:
+          claimName: "jail-pvc"
+          readOnly: false
+
+      images:
+        populateJail: "busybox:latest"  # Use public busybox as alternative
+
+    helm_flags: "--wait --timeout 10m --debug" # Additional Helm flags for this application's installation
+    verify_install: false                      # Verify the installation of slurm-cluster
+    verify_install_timeout: 300                # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                  # Skip if verification fails
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+
 
 #### Define Custom Applications and Associated Manifests ####
 manifests:
