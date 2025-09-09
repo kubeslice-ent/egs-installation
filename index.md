@@ -95,7 +95,7 @@ Before you begin, ensure the following steps are completed:
      ```
 
    **Configuration File Setup:**
-   - Configure the `https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml` file to enable additional applications installation. **For complete configuration examples, see [https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml)**:
+   - Configure the `egs-installer-config.yaml` file to enable additional applications installation. **For complete configuration examples, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml)**:
      ```yaml
      # Enable or disable specific stages of the installation
      enable_install_controller: true               # Enable the installation of the Kubeslice controller
@@ -238,7 +238,7 @@ Before you begin, ensure the following steps are completed:
    
    If you already have Prometheus, GPU Operator, or PostgreSQL running in your cluster:
    
-   - **Set `enable_install_additional_apps: false`** in your `https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml`
+   - **Set `enable_install_additional_apps: false`** in your `egs-installer-config.yaml`
    - **Refer to the prerequisite documentation** to ensure proper configuration for metrics scraping:
      - **[EGS Controller Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Controller-Prerequisites.md)** - For Prometheus and PostgreSQL configuration
      - **[EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md)** - For GPU Operator and monitoring configuration
@@ -247,7 +247,7 @@ Before you begin, ensure the following steps are completed:
    - **Ensure proper RBAC permissions** and network policies are in place
 
 8. **🚀 Install Prerequisites (After Configuration):**
-   - After configuring the YAML file (refer to [https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml) for examples), run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
+   - After configuring the YAML file (refer to [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml) for examples), run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
    ```bash
    ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
    ```
@@ -266,7 +266,7 @@ Before you begin, ensure the following steps are completed:
      ```
 
 ### 2. **📝 Modify the Configuration File (Mandatory):**
-   - Navigate to the cloned repository and locate the input configuration YAML file `https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml`. **For the complete configuration template, see [https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml)**.
+   - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`. **For the complete configuration template, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml)**.
    - Choose your installation approach:
 
    **🔄 Option A: Single Cluster Installation (Simplified)**
@@ -324,7 +324,7 @@ Before you begin, ensure the following steps are completed:
 
 ### 3. **Kubeslice Controller Installation Settings (Mandatory)**
 
-   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.** **For the complete controller configuration example, see [https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L75-L113)**.
+   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.** **For the complete controller configuration example, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L75-L113)**.
    
    ```yaml
    # Kubeslice Controller Installation Settings
@@ -428,7 +428,7 @@ Before you begin, ensure the following steps are completed:
 
    **Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
 
-   The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required. **For the complete UI configuration example, see [https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L117-L178)**.
+   The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required. **For the complete UI configuration example, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L117-L178)**.
 
    ```yaml
    # Kubeslice UI Installation Settings
@@ -521,7 +521,7 @@ Before you begin, ensure the following steps are completed:
       kubectl get svc prometheus-kube-prometheus-prometheus -n monitoring
       ```
    
-   2. **✏ Update the `https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml`**  
+   2. **✏ Update the `egs-installer-config.yaml`**  
       Replace `<grafana-lb>` and <prometheus-lb> with the Grafana and prometheus **LoadBalancer External IP or NodePort** in the `inline_values` section:  
    
       ```yaml
@@ -558,7 +558,7 @@ Before you begin, ensure the following steps are completed:
 
 ### 6. **Adding Additional Workers (Optional)**
 
-   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml` file. **For complete worker configuration examples, see [https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L181-L240)**. **For a comprehensive multi-cluster example with multiple workers, see [Multi-Cluster Installation Example](https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml)**. Follow these steps:
+   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. **For complete worker configuration examples, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L181-L240)**. **For a comprehensive multi-cluster example with multiple workers, see [Multi-Cluster Installation Example](https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml)**. Follow these steps:
 
    **Step 1: Add Worker Configuration**
    
@@ -609,7 +609,7 @@ Before you begin, ensure the following steps are completed:
 
    **Step 2: Add Cluster Registration**
    
-   Add corresponding entries in the `cluster_registration` section for each new worker. **For cluster registration examples, see [https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L240-L270)**:
+   Add corresponding entries in the `cluster_registration` section for each new worker. **For cluster registration examples, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L240-L270)**:
 
    ```yaml
 cluster_registration:
@@ -634,7 +634,7 @@ cluster_registration:
 
    **📌 Note - Multiple Worker Configuration:**
    
-   When configuring multiple workers, you can use an array structure in your `https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml`. Here's a sample snippet showing how to efficiently handle multiple workers:
+   When configuring multiple workers, you can use an array structure in your `egs-installer-config.yaml`. Here's a sample snippet showing how to efficiently handle multiple workers:
    
    ```yaml
    kubeslice_worker_egs:
@@ -763,13 +763,13 @@ cluster_registration:
 After completing all configuration changes, run the installation script to deploy EGS:
 
 ```bash
-./egs-installer.sh --input-yaml https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml
+./egs-installer.sh --input-yaml egs-installer-config.yaml
 ```
 
 **📌 IMPORTANT NOTES:**
 
 - **🔄 Configuration Changes:** If you make any changes to the configuration file after the initial installation, you must re-run the installation script to apply the changes.
-- **⬆️ Upgrades:** For EGS upgrades or configuration modifications, update your `https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml` file and re-run the installation script. The installer will handle upgrades automatically.
+- **⬆️ Upgrades:** For EGS upgrades or configuration modifications, update your `egs-installer-config.yaml` file and re-run the installation script. The installer will handle upgrades automatically.
 - **✅ Verification:** Always verify the installation after making configuration changes to ensure all components are properly deployed.
 
 ---
@@ -784,7 +784,7 @@ The uninstallation script will delete **all resources** associated with EGS, inc
 **Run the Cleanup Script**  
 - Execute the uninstallation script using the following command:  
 ```bash
-  ./egs-uninstall.sh --input-yaml https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml
+  ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
   ```
 
 ---
