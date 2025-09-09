@@ -118,18 +118,22 @@ Before you begin, ensure the following steps are completed:
      ```
    
    **Critical Configuration Steps:**
-     1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
-     2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes
-     3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
+   
+   1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
+   2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes  
+   3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
 
    **Additional Apps Configuration for Each Worker:**
+   
    - **📌 IMPORTANT:** For different worker clusters, you need to add additional apps array for each component in the `kubeslice_worker_egs` section
    - Each worker cluster requires its own instances of GPU Operator and Prometheus if `enable_install_additional_apps: true`
-   - **For complete additional apps configuration examples, see [https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L255-L380)**
+   - **For complete additional apps configuration examples, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L255-L380)**
    - **📋 For comprehensive multi-cluster prerequisites setup with complete examples, see [Multi-Cluster Installation Example](https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml)**
-   - Example structure for multiple workers with additional apps:
-     ```yaml
-     additional_apps:
+   
+   Example structure for multiple workers with additional apps:
+   
+   ```yaml
+   additional_apps:
        - name: "gpu-operator-worker-1"              # Name of the application
          skip_installation: false                   # Do not skip the installation of the GPU operator
          use_global_kubeconfig: false               # Use specific kubeconfig for this worker
