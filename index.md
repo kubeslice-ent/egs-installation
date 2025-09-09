@@ -3,58 +3,57 @@ layout: page
 title: EGS Installation Guide
 ---
 
-# 🌐 EGS Installer Script
-
-<div class="nav-docs">
-<h3>📚 Quick Navigation</h3>
-<ul>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md">🔑 License Setup Guide</a></li>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Preflight-Check-README.md">✅ Preflight Checks</a></li>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Controller-Prerequisites.md">🚀 Controller Prerequisites</a></li>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md">⚙️ Worker Prerequisites</a></li>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md">🛠️ Configuration Guide</a></li>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Custom-Pricing-README.md">📊 Custom Pricing</a></li>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Slice-Admin-Token-README.md">🔒 Token Retrieval</a></li>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Namespace-Creation-README.md">🗂️ Namespace Creation</a></li>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml">🌐 Multi-Cluster Examples</a></li>
-<li><a href="https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml">⚙️ Configuration Examples</a></li>
-</ul>
+<div class="header-menu">
+  <div class="header-menu-section">
+    <div class="header-menu-title">📚 Documentation</div>
+    <div class="header-menu-grid">
+      {% for item in site.header_menu.docs %}
+      <div class="header-menu-item">
+        <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <div class="header-menu-section">
+    <div class="header-menu-title">🔧 Installation Scripts</div>
+    <div class="header-menu-grid">
+      {% for item in site.header_menu.scripts %}
+      <div class="header-menu-item">
+        <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <div class="header-menu-section">
+    <div class="header-menu-title">⚙️ Configuration Files</div>
+    <div class="header-menu-grid">
+      {% for item in site.header_menu.configs %}
+      <div class="header-menu-item">
+        <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  
+  <div class="header-menu-section">
+    <div class="header-menu-title">🌐 External Resources</div>
+    <div class="header-menu-grid">
+      {% for item in site.header_menu.external %}
+      <div class="header-menu-item">
+        <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 </div>
+
+# 🌐 EGS Installer Script
 
 ## 🚀 Overview
 
 The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
-
-### 📦 Main Installation Scripts
-
-| Script | Purpose | GitHub Link |
-|--------|---------|-------------|
-| 🔍 `egs-preflight-check.sh` | Pre-installation validation and cluster readiness checks | [View Script](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-preflight-check.sh) |
-| 🗂️ `create-namespaces.sh` | Create required namespaces before installation | [View Script](https://github.com/kubeslice-ent/egs-installation/blob/main/create-namespaces.sh) |
-| ⚙️ `egs-install-prerequisites.sh` | Install prerequisites (GPU Operator, Prometheus, PostgreSQL) | [View Script](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-install-prerequisites.sh) |
-| 🚀 `egs-installer.sh` | Main EGS installation script | [View Script](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer.sh) |
-| 🗑️ `egs-uninstall.sh` | Uninstall EGS components and cleanup | [View Script](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-uninstall.sh) |
-
-**📁 Configuration Files:**
-- [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml) - Main configuration template
-- [multi-cluster-example.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml) - Multi-cluster configuration example
-- [namespace-input.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/namespace-input.yaml) - Namespace creation configuration
-
----
-
-## 📄 EGS Documents
-
-- 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
-- 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
-- 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md) 🗝️  
-- ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Preflight-Check-README.md) 🔍  
-- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Slice-Admin-Token-README.md) 🔒  
-- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Namespace-Creation-README.md) 🗂️  
-- 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Controller-Prerequisites.md) 📋  
-- ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md) 🔧  
-- 🛠️ For configuration details, please refer to the [Configuration Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md) 📋  
-- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Custom-Pricing-README.md) 💰  
-- 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](https://github.com/kubeslice-ent/egs-installation/blob/main/multi-cluster-example.yaml) 🔗
 
 ---
 
@@ -281,7 +280,7 @@ Before you begin, ensure the following steps are completed:
    ```bash
    ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
    ```
-   - **Note:** This step installs the required infrastructure components before the main EGS installation.
+   <div class="note">**📌 Note:** This step installs the required infrastructure components before the main EGS installation.</div>
 ---
 
 ## 🛠️ Installation Steps
@@ -352,7 +351,7 @@ Before you begin, ensure the following steps are completed:
 
 ### 3. **Kubeslice Controller Installation Settings (Mandatory)**
 
-   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.** **For the complete controller configuration example, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L75-L113)**.
+   <div class="note">**📌 Note:** This section is MANDATORY for EGS installation. Configure the controller settings according to your environment. **For the complete controller configuration example, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L75-L113)**.</div>
    
    ```yaml
    # Kubeslice Controller Installation Settings
@@ -403,7 +402,7 @@ Before you begin, ensure the following steps are completed:
 
    **⚙️ PostgreSQL Connection Configuration (Mandatory - KubeTally is enabled by default)**
 
-   **📌 Note:** Since KubeTally is enabled by default, PostgreSQL configuration is now mandatory for EGS installation. The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
+   <div class="note">**📌 Note:** Since KubeTally is enabled by default, PostgreSQL configuration is now mandatory for EGS installation. The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.</div>
 
    **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
 
@@ -452,7 +451,7 @@ Before you begin, ensure the following steps are completed:
 
 ### 4. **Kubeslice UI Installation Settings (Optional)**
 
-   **Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
+   <div class="note">**📌 Note:** This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.</div>
 
    The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required. **For the complete UI configuration example, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L117-L178)**.
 
@@ -525,13 +524,13 @@ Before you begin, ensure the following steps are completed:
      specific_use_local_charts: true              # Override to use local charts for the UI
    ```
 
-   **📌 IMPORTANT NOTE:** The `DCGM_METRIC_JOB_VALUE` must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected and UI visualization will not work. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md).
+   <div class="note">**📌 IMPORTANT NOTE:** The `DCGM_METRIC_JOB_VALUE` must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected and UI visualization will not work. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md).</div>
 
 ### 5. **Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
-   **📝 Note:** Global monitoring endpoint settings are configured in the [Modify the Configuration File](https://github.com/kubeslice-ent/egs-installation/tree/main?tab=readme-ov-file#2--modify-the-configuration-file-mandatory) section above, including `global_auto_fetch_endpoint` and related Grafana/Prometheus settings.
+   <div class="note">**📝 Note:** Global monitoring endpoint settings are configured in the [Modify the Configuration File](https://github.com/kubeslice-ent/egs-installation/tree/main?tab=readme-ov-file#2--modify-the-configuration-file-mandatory) section above, including `global_auto_fetch_endpoint` and related Grafana/Prometheus settings.</div>
    
    **⚠️ Multi-Cluster Setup Configuration**
    
@@ -576,7 +575,7 @@ Before you begin, ensure the following steps are completed:
                   className: "nginx"            # Ingress class name for the KServe gateway
       ```
 
-   **📌 IMPORTANT NOTE:** The `DCGM_EXPORTER_JOB_NAME` value (`gpu-metrics`) must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected from the worker cluster and monitoring dashboards will not display GPU data. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md).
+   <div class="note">**📌 IMPORTANT NOTE:** The `DCGM_EXPORTER_JOB_NAME` value (`gpu-metrics`) must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected from the worker cluster and monitoring dashboards will not display GPU data. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md).</div>
 
 ### 6. **Adding Additional Workers (Optional)**
 
@@ -798,7 +797,7 @@ After completing all configuration changes, run the installation script to deplo
 
 ### 🗑️ Uninstallation Steps
 
-**⚠️ Important Note:**  
+<div class="note">**⚠️ Important Note:**</div>  
 The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources provisioned by egs**. Use this script with caution, as it performs a complete cleanup of the egs setup.
 
 **Run the Cleanup Script**  
