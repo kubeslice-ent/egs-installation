@@ -3,7 +3,7 @@ layout: page
 ---
 
 <script>
-// Simple, reliable copy functionality
+// Modern copy functionality with sleek SVG icons
 function copyCode(button) {
     const codeBlock = button.previousElementSibling;
     const code = codeBlock.querySelector('code') || codeBlock;
@@ -11,10 +11,10 @@ function copyCode(button) {
     
     // Copy to clipboard
     navigator.clipboard.writeText(text).then(() => {
-        button.textContent = '✅ COPIED!';
+        button.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>COPIED</span>';
         button.style.background = 'linear-gradient(135deg, #007bff, #6610f2)';
         setTimeout(() => {
-            button.textContent = '📋 COPY';
+            button.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>COPY</span>';
             button.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
         }, 2000);
     }).catch(() => {
@@ -26,10 +26,10 @@ function copyCode(button) {
         document.execCommand('copy');
         document.body.removeChild(textArea);
         
-        button.textContent = '✅ COPIED!';
+        button.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>COPIED</span>';
         button.style.background = 'linear-gradient(135deg, #007bff, #6610f2)';
         setTimeout(() => {
-            button.textContent = '📋 COPY';
+            button.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>COPY</span>';
             button.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
         }, 2000);
     });
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const codeBlocks = document.querySelectorAll('pre');
     codeBlocks.forEach(function(pre) {
         const button = document.createElement('button');
-        button.textContent = '📋 COPY';
+        button.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>COPY</span>';
         button.className = 'copy-btn-simple';
         button.onclick = function() { copyCode(this); };
         pre.parentNode.insertBefore(button, pre.nextSibling);

@@ -153,7 +153,7 @@ pre code {
   padding: 0;
 }
 
-/* Simple, reliable copy button */
+/* Modern copy button with SVG icons */
 .copy-btn-simple {
   display: block;
   background: linear-gradient(135deg, #28a745, #20c997);
@@ -172,6 +172,19 @@ pre code {
   min-width: 120px;
   text-align: center;
   margin: 8px 0;
+}
+
+/* Ensure SVG icons are properly aligned */
+.copy-btn-simple svg {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.copy-btn-simple span {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .copy-btn-simple:hover {
