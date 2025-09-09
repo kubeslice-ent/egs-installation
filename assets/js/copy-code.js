@@ -91,9 +91,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Add keyboard support for copy buttons
+// Add keyboard support for copy buttons (remove problematic enter handling)
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === ' ') { // Only space key, not Enter
         if (e.target.classList.contains('copy-button')) {
             e.preventDefault();
             e.target.click();
