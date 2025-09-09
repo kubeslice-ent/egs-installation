@@ -1,6 +1,6 @@
 ---
 layout: page
-title: EGS Installation Guide
+title: Home
 ---
 
 # 🌐 EGS Installer Script
