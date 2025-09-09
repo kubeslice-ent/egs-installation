@@ -3,41 +3,18 @@ layout: page
 title: EGS Installation Guide
 ---
 
-<nav class="horizontal-nav">
-  <ul class="nav-menu">
-    <li class="nav-item dropdown">
-      <span class="nav-link">📚 Documentation</span>
-      <ul class="dropdown-menu">
-        {% for item in site.header_menu.docs %}
-        <li><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></li>
-        {% endfor %}
-      </ul>
-    </li>
-    <li class="nav-item dropdown">
-      <span class="nav-link">🔧 Installation Scripts</span>
-      <ul class="dropdown-menu">
-        {% for item in site.header_menu.scripts %}
-        <li><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></li>
-        {% endfor %}
-      </ul>
-    </li>
-    <li class="nav-item dropdown">
-      <span class="nav-link">⚙️ Configuration Files</span>
-      <ul class="dropdown-menu">
-        {% for item in site.header_menu.configs %}
-        <li><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></li>
-        {% endfor %}
-      </ul>
-    </li>
-    <li class="nav-item dropdown">
-      <span class="nav-link">🌐 External Resources</span>
-      <ul class="dropdown-menu">
-        {% for item in site.header_menu.external %}
-        <li><a href="{{ item.url }}" target="_blank">{{ item.title }}</a></li>
-        {% endfor %}
-      </ul>
-    </li>
-  </ul>
+<nav class="top-nav">
+  <div class="nav-container">
+    <div class="nav-links">
+      <a href="#documentation" class="nav-link">Documentation</a>
+      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md" target="_blank" class="nav-link">Parameters Reference</a>
+      <a href="#getting-started" class="nav-link">Prerequisites</a>
+      <a href="#configuration" class="nav-link">Services Configuration</a>
+      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Controller-Prerequisites.md" target="_blank" class="nav-link">AWS IAM Policies and Roles Guide</a>
+      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md" target="_blank" class="nav-link">Kubernetes Permissions Guide</a>
+      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md" target="_blank" class="nav-link">Secret Management Guide</a>
+    </div>
+  </div>
 </nav>
 
 # 🌐 EGS Installer Script
@@ -45,6 +22,8 @@ title: EGS Installation Guide
 ## 🚀 Overview
 
 The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
+
+<div id="documentation" class="section-anchor"></div>
 
 <div class="toc">
 <h3>📖 Quick Navigation</h3>
