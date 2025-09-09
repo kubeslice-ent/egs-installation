@@ -46,8 +46,25 @@ title: EGS Installation Guide
 
 The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
 
+<div class="toc">
+<h3>📖 Quick Navigation</h3>
+<div class="toc-grid">
+<div class="toc-item"><a href="#getting-started">🚀 Getting Started</a></div>
+<div class="toc-item"><a href="#installation-steps">🛠️ Installation Steps</a></div>
+<div class="toc-item"><a href="#configuration">⚙️ Configuration</a></div>
+<div class="toc-item"><a href="#controller-setup">🎛️ Controller Setup</a></div>
+<div class="toc-item"><a href="#worker-setup">👷 Worker Setup</a></div>
+<div class="toc-item"><a href="#installation-execution">▶️ Installation Execution</a></div>
+<div class="toc-item"><a href="#verification">✅ Verification</a></div>
+<div class="toc-item"><a href="#uninstallation">🗑️ Uninstallation</a></div>
+<div class="toc-item"><a href="#troubleshooting">🔧 Troubleshooting</a></div>
+<div class="toc-item"><a href="#support">🆘 Support</a></div>
+</div>
+</div>
+
 ---
 
+<div id="getting-started" class="section-anchor"></div>
 ## Getting Started
 
 ### Prerequisites
@@ -274,7 +291,10 @@ Before you begin, ensure the following steps are completed:
    <div class="note">**📌 Note:** This step installs the required infrastructure components before the main EGS installation.</div>
 ---
 
-## 🛠️ Installation Steps
+<div id="installation-steps" class="section-anchor"></div>
+<div class="section-highlight">
+
+## <span class="step-number">Step 1</span>🛠️ Installation Steps
 
 ### 1. **📂 Clone the Repository:**
    - Start by cloning the EGS installation Git repository:
@@ -283,7 +303,12 @@ Before you begin, ensure the following steps are completed:
      cd egs-installation
      ```
 
-### 2. **📝 Modify the Configuration File (Mandatory):**
+</div>
+
+<div id="configuration" class="section-anchor"></div>
+<div class="section-highlight">
+
+### <span class="step-number">Step 2</span>**📝 Modify the Configuration File (Mandatory):**
    - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`. **For the complete configuration template, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml)**.
    - Choose your installation approach:
 
@@ -340,7 +365,12 @@ Before you begin, ensure the following steps are completed:
    
    **Continue with the following sections for detailed configuration (Option B users only):**
 
-### 3. **Kubeslice Controller Installation Settings (Mandatory)**
+</div>
+
+<div id="controller-setup" class="section-anchor"></div>
+<div class="section-highlight">
+
+### <span class="step-number">Step 3</span>**Kubeslice Controller Installation Settings (Mandatory)**
 
    <div class="note">**📌 Note:** This section is MANDATORY for EGS installation. Configure the controller settings according to your environment. **For the complete controller configuration example, see [egs-installer-config.yaml](https://github.com/kubeslice-ent/egs-installation/blob/main/egs-installer-config.yaml#L75-L113)**.</div>
    
@@ -517,7 +547,12 @@ Before you begin, ensure the following steps are completed:
 
    <div class="note">**📌 IMPORTANT NOTE:** The `DCGM_METRIC_JOB_VALUE` must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected and UI visualization will not work. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md).</div>
 
-### 5. **Worker Clusters: Update the Inline Values**
+</div>
+
+<div id="worker-setup" class="section-anchor"></div>
+<div class="section-highlight">
+
+### <span class="step-number">Step 5</span>**Worker Clusters: Update the Inline Values**
 
    This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
    
@@ -770,7 +805,12 @@ cluster_registration:
 
 ---
 
-### 7. **🚀 Run the Installation Script**
+</div>
+
+<div id="installation-execution" class="section-anchor"></div>
+<div class="section-highlight">
+
+### <span class="step-number">Step 7</span>**🚀 Run the Installation Script**
 
 After completing all configuration changes, run the installation script to deploy EGS:
 
@@ -786,7 +826,12 @@ After completing all configuration changes, run the installation script to deplo
 
 ---
 
-### 🗑️ Uninstallation Steps
+</div>
+
+<div id="uninstallation" class="section-anchor"></div>
+<div class="section-highlight">
+
+### <span class="step-number">🗑️</span>**Uninstallation Steps**
 
 <div class="note">**⚠️ Important Note:**</div>  
 The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources provisioned by egs**. Use this script with caution, as it performs a complete cleanup of the egs setup.
@@ -796,5 +841,79 @@ The uninstallation script will delete **all resources** associated with EGS, inc
 ```bash
   ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
   ```
+
+</div>
+
+---
+
+<div id="verification" class="section-anchor"></div>
+<div class="section-highlight">
+
+### <span class="step-number">✅</span>**Verification**
+
+After installation, verify that all components are running correctly:
+
+1. **Check Pod Status:**
+   ```bash
+   kubectl get pods -n kubeslice-controller
+   kubectl get pods -n kubeslice-system
+   ```
+
+2. **Verify Services:**
+   ```bash
+   kubectl get svc -n kubeslice-controller
+   kubectl get svc -n kubeslice-system
+   ```
+
+3. **Check Installation Logs:**
+   - Review the installation script output for any errors
+   - Check individual pod logs if needed:
+   ```bash
+   kubectl logs -n kubeslice-controller deployment/kubeslice-controller
+   ```
+
+</div>
+
+---
+
+<div id="troubleshooting" class="section-anchor"></div>
+<div class="section-highlight">
+
+### <span class="step-number">🔧</span>**Troubleshooting**
+
+**Common Issues:**
+
+1. **Installation Fails:**
+   - Verify prerequisites are met
+   - Check cluster connectivity
+   - Ensure proper RBAC permissions
+
+2. **Configuration Errors:**
+   - Validate YAML syntax
+   - Verify all required fields are filled
+   - Check credential formats
+
+3. **Network Issues:**
+   - Verify DNS resolution
+   - Check network policies
+   - Ensure proper ingress configuration
+
+</div>
+
+---
+
+<div id="support" class="section-anchor"></div>
+<div class="section-highlight">
+
+### <span class="step-number">🆘</span>**Support**
+
+For additional support and documentation:
+
+- **📚 Complete Documentation:** [Avesha EGS Documentation](https://docs.avesha.io/documentation/enterprise-egs)
+- **🐛 Issues & Bug Reports:** [GitHub Issues](https://github.com/kubeslice-ent/egs-installation/issues)
+- **💬 Community Support:** Contact Avesha support team
+- **📧 Enterprise Support:** Available for enterprise customers
+
+</div>
 
 ---
