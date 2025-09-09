@@ -74,6 +74,37 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 ## Getting Started
 
+<div class="quick-navigation">
+<h4>📋 Quick Navigation</h4>
+<div class="nav-grid">
+<div class="nav-section">
+<h5>🔧 Prerequisites</h5>
+<ul>
+<li><a href="#prerequisites">📝 Registration & Setup</a></li>
+<li><a href="#required-binaries">🛠️ Required Binaries</a></li>
+<li><a href="#kubernetes-access">🌐 Kubernetes Access</a></li>
+<li><a href="#clone-repository">📂 Clone Repository</a></li>
+<li><a href="#preflight-checks">✅ Preflight Checks</a></li>
+<li><a href="#namespace-creation">🗂️ Namespace Creation</a></li>
+<li><a href="#configure-installer">⚙️ Configure Installer</a></li>
+<li><a href="#install-prerequisites">🚀 Install Prerequisites</a></li>
+</ul>
+</div>
+<div class="nav-section">
+<h5>🛠️ Main Installation</h5>
+<ul>
+<li><a href="#installation-steps">📋 Installation Overview</a></li>
+<li><a href="#controller-installation">🎛️ Controller Setup</a></li>
+<li><a href="#ui-installation">🖥️ UI Setup</a></li>
+<li><a href="#worker-configuration">⚙️ Worker Configuration</a></li>
+<li><a href="#additional-workers">➕ Additional Workers</a></li>
+<li><a href="#run-installation">🚀 Run Installation</a></li>
+<li><a href="#uninstallation-steps">🗑️ Uninstallation</a></li>
+</ul>
+</div>
+</div>
+</div>
+
 ### Prerequisites
 
 Before you begin, ensure the following steps are completed:

@@ -197,12 +197,96 @@ pre code {
   transform: translateY(0) scale(0.95);
 }
 
+/* Quick Navigation Styling */
+.quick-navigation {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 2px solid #0366d6;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 24px 0;
+  box-shadow: 0 4px 12px rgba(3, 102, 214, 0.1);
+}
+
+.quick-navigation h4 {
+  color: #0366d6;
+  margin: 0 0 16px 0;
+  font-size: 1.2em;
+  font-weight: 700;
+  text-align: center;
+  border-bottom: 2px solid #0366d6;
+  padding-bottom: 8px;
+}
+
+.nav-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.nav-section h5 {
+  color: #24292e;
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  padding: 8px 12px;
+  background: rgba(3, 102, 214, 0.1);
+  border-radius: 6px;
+  border-left: 4px solid #0366d6;
+}
+
+.nav-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-section li {
+  margin: 6px 0;
+}
+
+.nav-section a {
+  display: block;
+  padding: 8px 12px;
+  color: #0366d6;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.nav-section a:hover {
+  background: rgba(3, 102, 214, 0.1);
+  color: #0256cc;
+  transform: translateX(4px);
+  text-decoration: none;
+}
+
+.nav-section a:active {
+  transform: translateX(2px);
+}
+
 /* Better mobile experience */
 @media (max-width: 768px) {
   .copy-btn-simple {
     padding: 10px 16px;
     font-size: 12px;
     min-width: 100px;
+  }
+  
+  .nav-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .quick-navigation {
+    padding: 16px;
+    margin: 16px 0;
+  }
+  
+  .nav-section a {
+    font-size: 13px;
+    padding: 6px 10px;
   }
 }
 
