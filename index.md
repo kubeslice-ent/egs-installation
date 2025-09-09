@@ -2,7 +2,51 @@
 layout: page
 ---
 
-<script src="{{ "/assets/js/copy-code.js" | relative_url }}" defer></script>
+<script>
+// Simple, reliable copy functionality
+function copyCode(button) {
+    const codeBlock = button.previousElementSibling;
+    const code = codeBlock.querySelector('code') || codeBlock;
+    const text = code.textContent;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(text).then(() => {
+        button.textContent = '✅ COPIED!';
+        button.style.background = 'linear-gradient(135deg, #007bff, #6610f2)';
+        setTimeout(() => {
+            button.textContent = '📋 COPY';
+            button.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+        }, 2000);
+    }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        button.textContent = '✅ COPIED!';
+        button.style.background = 'linear-gradient(135deg, #007bff, #6610f2)';
+        setTimeout(() => {
+            button.textContent = '📋 COPY';
+            button.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+        }, 2000);
+    });
+}
+
+// Add copy buttons when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const codeBlocks = document.querySelectorAll('pre');
+    codeBlocks.forEach(function(pre) {
+        const button = document.createElement('button');
+        button.textContent = '📋 COPY';
+        button.className = 'copy-btn-simple';
+        button.onclick = function() { copyCode(this); };
+        pre.parentNode.insertBefore(button, pre.nextSibling);
+    });
+});
+</script>
 
 # 🌐 EGS Installer Script
 
