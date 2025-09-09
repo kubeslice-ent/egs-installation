@@ -3,36 +3,222 @@
 
 @import "{{ site.theme }}";
 
-/* Simple improvements for EGS documentation */
+/* Enhanced typography and styling for EGS documentation */
+
+/* Site title and branding */
 .site-title {
+  font-weight: 700;
+  font-size: 1.75rem;
+  color: #2563eb;
+}
+
+/* Enhanced heading styles with better typography */
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 2rem 0 1.5rem 0;
+  color: #1e40af;
+  border-bottom: 3px solid #3b82f6;
+  padding-bottom: 0.5rem;
+}
+
+h2 {
+  font-size: 2rem;
   font-weight: 600;
+  margin: 2rem 0 1rem 0;
+  color: #1e40af;
+  border-bottom: 2px solid #60a5fa;
+  padding-bottom: 0.25rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem 0;
+  color: #1d4ed8;
+}
+
+h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem 0;
+  color: #2563eb;
+}
+
+h5 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem 0;
+  color: #3730a3;
+}
+
+h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem 0;
+  color: #4338ca;
+}
+
+/* Navigation links styling */
+.nav-docs {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+
+.nav-docs h3 {
+  margin-top: 0;
+  color: #1e293b;
+  border-bottom: 2px solid #3b82f6;
+  padding-bottom: 0.5rem;
+}
+
+.nav-docs ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.nav-docs li {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.nav-docs li:hover {
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.nav-docs a {
+  text-decoration: none;
+  color: #1e293b;
+  font-weight: 500;
+  display: block;
+}
+
+.nav-docs a:hover {
+  color: #3b82f6;
 }
 
 /* Code block improvements */
 .highlight {
-  border-radius: 6px;
-  margin: 16px 0;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
 }
 
 pre {
-  border-radius: 6px;
+  border-radius: 8px;
+  background: #f8fafc !important;
+  border: 1px solid #e5e7eb;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+code {
+  background: #f1f5f9;
+  padding: 0.25rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #e11d48;
+  border: 1px solid #e2e8f0;
 }
 
 /* Table improvements */
 table {
   border-collapse: collapse;
   width: 100%;
-  margin: 16px 0;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 table th,
 table td {
-  border: 1px solid #d0d7de;
-  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem 1rem;
   text-align: left;
 }
 
 table th {
-  background-color: #f6f8fa;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
   font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+}
+
+table tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+table tbody tr:hover {
+  background-color: #eff6ff;
+}
+
+/* Content spacing and readability */
+.page-content {
+  line-height: 1.7;
+}
+
+p {
+  margin: 1rem 0;
+  color: #374151;
+}
+
+/* List improvements */
+ul, ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+li {
+  margin: 0.5rem 0;
+  color: #374151;
+}
+
+/* Link styling */
+a {
+  color: #2563eb;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Emoji spacing */
+li:before {
+  content: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  .nav-docs ul {
+    grid-template-columns: 1fr;
+  }
 }

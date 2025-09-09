@@ -18,6 +18,26 @@ plugins:
 header_pages:
   - index.md
 
+# Repository settings for linking to main branch
+repository: kubeslice-ent/egs-installation
+github:
+  repository_url: "https://github.com/kubeslice-ent/egs-installation"
+
+# Site navigation structure for docs
+nav_links:
+  - title: "🔑 License Setup"
+    url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md"
+  - title: "✅ Preflight Checks"
+    url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Preflight-Check-README.md"
+  - title: "🚀 Controller Prerequisites"
+    url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Controller-Prerequisites.md"
+  - title: "⚙️ Worker Prerequisites"
+    url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-Worker-Prerequisites.md"
+  - title: "🛠️ Configuration"
+    url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md"
+  - title: "📊 Custom Pricing"
+    url: "https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Custom-Pricing-README.md"
+
 # Exclude from processing
 exclude:
   - Gemfile
