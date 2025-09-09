@@ -3,7 +3,12 @@ layout: page
 title: EGS Installation Guide
 ---
 
-EGS AI SRE Agent Platform
+<div class="site-header">
+  <div class="header-brand">
+    <h1 class="brand-title">EGS AI SRE Agent Platform</h1>
+    <p class="brand-subtitle">Enterprise-Grade Site Reliability Engineering</p>
+  </div>
+</div>
 
 <nav class="top-nav">
   <div class="nav-container">
@@ -20,35 +25,110 @@ EGS AI SRE Agent Platform
 </nav>
 
 <div id="home" class="hero-section">
+  <div class="hero-content">
+    <div class="hero-icon">🌐</div>
+    <h1 class="hero-title">EGS Installer Script</h1>
+    <p class="hero-description">
+      A comprehensive AI-powered Site Reliability Engineering platform deployed via automated Bash scripts.
+      Streamline your Kubernetes cluster management with intelligent automation.
+    </p>
+    
+    <div class="hero-badges">
+      <span class="badge badge-primary">
+        <span class="badge-icon">⚡</span>
+        Bash Script
+      </span>
+      <span class="badge badge-secondary">
+        <span class="badge-icon">☸️</span>
+        Kubernetes
+      </span>
+      <span class="badge badge-accent">
+        <span class="badge-icon">🤖</span>
+        AI/SRE
+      </span>
+      <span class="badge badge-success">
+        <span class="badge-icon">🛠️</span>
+        Support
+      </span>
+    </div>
 
-# EGS Installer Script
-
-A comprehensive AI-powered Site Reliability Engineering platform deployed via automated Bash scripts.
-
-<div class="hero-badges">
-  <span class="badge">Bash Script</span>
-  <span class="badge">Kubernetes</span>
-  <span class="badge">AI/SRE</span>
-  <span class="badge">Support</span>
-</div>
-
-<div class="hero-buttons">
-  <a href="#quick-install" class="btn btn-primary">Get Started Now</a>
-  <a href="https://github.com/kubeslice-ent/egs-installation" target="_blank" class="btn btn-secondary">View on GitHub</a>
-</div>
-
+    <div class="hero-buttons">
+      <a href="#quick-install" class="btn btn-primary">
+        <span class="btn-icon">🚀</span>
+        Get Started Now
+      </a>
+      <a href="https://github.com/kubeslice-ent/egs-installation" target="_blank" class="btn btn-secondary">
+        <span class="btn-icon">📚</span>
+        View on GitHub
+      </a>
+    </div>
+    
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-number">5+</div>
+        <div class="stat-label">Installation Scripts</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">Automated</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">24/7</div>
+        <div class="stat-label">Support</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="documentation" class="section">
-
-## 📖 Documentation
-
-* **🚀 Getting Started** - Installation guide
-* **⚙️ Services Configuration** - Enable/disable services and integrations  
-* **📋 Parameters Reference** - Complete configuration options and examples
-* **🔐 License Setup** - EGS license and credentials management
-* **📋 Prerequisites** - System requirements and integrations
-
+  <div class="section-header">
+    <h2 class="section-title">📖 Documentation</h2>
+    <p class="section-subtitle">Everything you need to get started with EGS</p>
+  </div>
+  
+  <div class="doc-grid">
+    <div class="doc-card">
+      <div class="doc-icon">🚀</div>
+      <h3 class="doc-title">Getting Started</h3>
+      <p class="doc-description">Complete installation guide and setup instructions</p>
+      <a href="#quick-install" class="doc-link">Learn more →</a>
+    </div>
+    
+    <div class="doc-card">
+      <div class="doc-icon">⚙️</div>
+      <h3 class="doc-title">Services Configuration</h3>
+      <p class="doc-description">Enable/disable services and integrations</p>
+      <a href="#services-configuration" class="doc-link">Learn more →</a>
+    </div>
+    
+    <div class="doc-card">
+      <div class="doc-icon">📋</div>
+      <h3 class="doc-title">Parameters Reference</h3>
+      <p class="doc-description">Complete configuration options and examples</p>
+      <a href="#parameters-reference" class="doc-link">Learn more →</a>
+    </div>
+    
+    <div class="doc-card">
+      <div class="doc-icon">🔐</div>
+      <h3 class="doc-title">License Setup</h3>
+      <p class="doc-description">EGS license and credentials management</p>
+      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md" target="_blank" class="doc-link">Learn more →</a>
+    </div>
+    
+    <div class="doc-card">
+      <div class="doc-icon">📋</div>
+      <h3 class="doc-title">Prerequisites</h3>
+      <p class="doc-description">System requirements and integrations</p>
+      <a href="#prerequisites" class="doc-link">Learn more →</a>
+    </div>
+    
+    <div class="doc-card">
+      <div class="doc-icon">🛠️</div>
+      <h3 class="doc-title">Configuration Guide</h3>
+      <p class="doc-description">Advanced configuration and customization</p>
+      <a href="https://github.com/kubeslice-ent/egs-installation/blob/main/docs/Configuration-README.md" target="_blank" class="doc-link">Learn more →</a>
+    </div>
+  </div>
 </div>
 
 <div id="quick-install" class="section">
