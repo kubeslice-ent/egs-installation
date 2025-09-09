@@ -4,47 +4,61 @@ title: EGS Installation Guide
 ---
 
 <div class="header-menu">
-  <div class="header-menu-section">
-    <div class="header-menu-title">📚 Documentation</div>
-    <div class="header-menu-grid">
-      {% for item in site.header_menu.docs %}
-      <div class="header-menu-item">
-        <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+  <div class="header-nav-container">
+    <div class="header-nav-bar">
+      
+      <div class="header-menu-section">
+        <div class="header-menu-title">📚 Documentation</div>
+        <div class="header-menu-dropdown">
+          <div class="header-menu-grid">
+            {% for item in site.header_menu.docs %}
+            <div class="header-menu-item">
+              <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
       </div>
-      {% endfor %}
-    </div>
-  </div>
-  
-  <div class="header-menu-section">
-    <div class="header-menu-title">🔧 Installation Scripts</div>
-    <div class="header-menu-grid">
-      {% for item in site.header_menu.scripts %}
-      <div class="header-menu-item">
-        <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+      
+      <div class="header-menu-section">
+        <div class="header-menu-title">🔧 Installation Scripts</div>
+        <div class="header-menu-dropdown">
+          <div class="header-menu-grid">
+            {% for item in site.header_menu.scripts %}
+            <div class="header-menu-item">
+              <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
       </div>
-      {% endfor %}
-    </div>
-  </div>
-  
-  <div class="header-menu-section">
-    <div class="header-menu-title">⚙️ Configuration Files</div>
-    <div class="header-menu-grid">
-      {% for item in site.header_menu.configs %}
-      <div class="header-menu-item">
-        <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+      
+      <div class="header-menu-section">
+        <div class="header-menu-title">⚙️ Configuration Files</div>
+        <div class="header-menu-dropdown">
+          <div class="header-menu-grid">
+            {% for item in site.header_menu.configs %}
+            <div class="header-menu-item">
+              <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
       </div>
-      {% endfor %}
-    </div>
-  </div>
-  
-  <div class="header-menu-section">
-    <div class="header-menu-title">🌐 External Resources</div>
-    <div class="header-menu-grid">
-      {% for item in site.header_menu.external %}
-      <div class="header-menu-item">
-        <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+      
+      <div class="header-menu-section">
+        <div class="header-menu-title">🌐 External Resources</div>
+        <div class="header-menu-dropdown">
+          <div class="header-menu-grid">
+            {% for item in site.header_menu.external %}
+            <div class="header-menu-item">
+              <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
       </div>
-      {% endfor %}
+      
     </div>
   </div>
 </div>
