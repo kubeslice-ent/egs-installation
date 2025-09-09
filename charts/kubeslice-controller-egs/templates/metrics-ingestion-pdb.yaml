@@ -1,0 +1,18 @@
+{{- if and .Values.egs.metricsIngestion.enabled .Values.egs.metricsIngestion.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.egs.metricsIngestion.service.name }}-pdb
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.egs.metricsIngestion.labels }}
+  labels:
+  {{ toYaml .Values.egs.metricsIngestion.labels | nindent 4 }}
+  {{- end }}
+spec:
+  minAvailable: {{ .Values.egs.metricsIngestion.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+    {{- if .Values.egs.metricsIngestion.labels }}
+    {{ toYaml .Values.egs.metricsIngestion.labels | nindent 6 }}
+    {{- end }}
+{{- end }}

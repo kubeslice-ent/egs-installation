@@ -9,21 +9,21 @@ global:
     annotations: {}
   # Profile settings (e.g., for OpenShift)
   profile:
-# if you're installing in openshift cluster make this variable true
+    # if you're installing in openshift cluster make this variable true
     openshift: false
   kubeTally:
     # Enable or disable KubeTally
     enabled: false
 
-    postgresSecretName: kubetally-db-credentials   # Default value, secret name can be overridden
+    postgresSecretName: kubetally-db-credentials # Default value, secret name can be overridden
 
     # Ensure to configure the mandatory PostgreSQL database settings when 'kubetally enable' is true.
-    postgresAddr:                         # Optional, can be specified here or retrieved from the secret
-    postgresPort:                          # Optional, can be specified here or retrieved from the secret
-    postgresUser:                        # Optional, can be specified here or retrieved from the secret
-    postgresPassword:                     # Optional, can be specified here or retrieved from the secret
-    postgresDB:                          # Optional, can be specified here or retrieved from the secret
-    postgresSslmode: require            # optional, default: require other values: disable
+    postgresAddr: # Optional, can be specified here or retrieved from the secret
+    postgresPort: # Optional, can be specified here or retrieved from the secret
+    postgresUser: # Optional, can be specified here or retrieved from the secret
+    postgresPassword: # Optional, can be specified here or retrieved from the secret
+    postgresDB: # Optional, can be specified here or retrieved from the secret
+    postgresSslmode: require # optional, default: require other values: disable
 
     # Service type for price Service Type
     priceServiceType: ClusterIP
@@ -39,7 +39,7 @@ global:
 
     # Schedule for the pricing updater (cron expression)
     pricingUpdaterSchedule: 0 0 1 * *
-    
+
     # updates price for listed cloud providers
     pricingUpdaterCloudProviders: "aws,linode"
 
@@ -87,9 +87,9 @@ kubeslice:
     labels:
       control-plane: controller-manager
     annotations:
-        kubectl.kubernetes.io/default-container: manager
-        prometheus.io/port: "18080"
-        prometheus.io/scrape: "true"
+      kubectl.kubernetes.io/default-container: manager
+      prometheus.io/port: "18080"
+      prometheus.io/scrape: "true"
     containerSecurityContext:
       runAsUser: 65536
       runAsGroup: 65536
@@ -101,10 +101,10 @@ kubeslice:
         drop:
           - ALL
       readOnlyRootFilesystem: true
-    podSecurityContext: 
-      runAsUser: 65536               # Non-root user
-      runAsGroup: 65536              # Non-root group
-      runAsNonRoot: true             # Ensure the container does not run as root
+    podSecurityContext:
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
     resources:
@@ -115,16 +115,15 @@ kubeslice:
         cpu: 250m
         memory: 256Mi
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
     affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
-
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
 
   # Configuration for events
   events:
@@ -148,7 +147,7 @@ egs:
       control-plane: gpr-controller-manager
     annotations:
       kubectl.kubernetes.io/default-container: manager
-    containerSecurityContext: 
+    containerSecurityContext:
       runAsUser: 65536
       runAsGroup: 65536
       runAsNonRoot: true
@@ -159,10 +158,10 @@ egs:
         drop:
           - ALL
       readOnlyRootFilesystem: true
-    podSecurityContext: 
-      runAsUser: 65536               # Non-root user
-      runAsGroup: 65536              # Non-root group
-      runAsNonRoot: true             # Ensure the container does not run as root
+    podSecurityContext:
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
     resources:
@@ -173,15 +172,15 @@ egs:
         cpu: 10m
         memory: 64Mi
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
     affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
 
   queueManager:
     # Image name for the queue-manager
@@ -197,7 +196,7 @@ egs:
     labels:
       app: "queue-manager"
     annotations: {}
-    containerSecurityContext: 
+    containerSecurityContext:
       runAsUser: 65536
       runAsGroup: 65536
       runAsNonRoot: true
@@ -209,22 +208,22 @@ egs:
           - ALL
       readOnlyRootFilesystem: true
     podSecurityContext:
-      runAsUser: 65536               # Non-root user
-      runAsGroup: 65536              # Non-root group
-      runAsNonRoot: true             # Ensure the container does not run as root
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
     resources: {}
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
     affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
 
   inventory:
     # Image name for inventory-manager
@@ -251,10 +250,10 @@ egs:
         drop:
           - ALL
       readOnlyRootFilesystem: true
-    podSecurityContext: 
-      runAsUser: 65536               # Non-root user
-      runAsGroup: 65536              # Non-root group
-      runAsNonRoot: true             # Ensure the container does not run as root
+    podSecurityContext:
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
     resources:
@@ -265,16 +264,67 @@ egs:
         cpu: 10m
         memory: 64Mi
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
     affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
 
+  metricsIngestion:
+    imageRegistry: docker.io/gourishbiradar #*defaultRegistry
+    # Image name for saas-metrics-ingestion
+    image: testing #saas-metrics-ingestion
+    # Image tag for saas-metrics-ingestion
+    tag: ingestion
+    imagePullPolicy: Always
+    logLevel: INFO
+    service:
+      name: egs-metrics-ingestion
+      port: 8080
+    labels:
+      control-plane: metrics-ingestion-manager
+    annotations:
+      kubectl.kubernetes.io/default-container: manager
+      prometheus.io/port: "8080"
+      prometheus.io/scrape: "true"
+    containerSecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+    podSecurityContext:
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi
+    tolerations:
+      - operator: "Exists"
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
 
 imagePullSecretsName: "kubeslice-image-pull-secret"
 # leave the below fields empty if secrets are managed externally.

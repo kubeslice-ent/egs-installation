@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: egs-metrics-ingestion
+  namespace: kubeslice-controller
+  labels:
+    app: egs-metrics-ingestion
+    component: monitoring
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: egs-metrics-ingestion
+      component: monitoring
+  endpoints:
+    - port: http
+      path: /default/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - kubeslice-controller

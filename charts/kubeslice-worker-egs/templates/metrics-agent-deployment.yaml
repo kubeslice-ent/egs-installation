@@ -1,0 +1,204 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+{{- if .Values.metricsAgent.labels }}
+  labels:
+{{ toYaml .Values.metricsAgent.labels | nindent 4 }}
+{{- end }}
+{{- if .Values.metricsAgent.annotations }}
+  annotations:
+{{ toYaml .Values.metricsAgent.annotations | nindent 4 }}
+{{- end }}
+  name: metrics-agent
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+{{- if .Values.metricsAgent.labels }}
+{{ toYaml .Values.metricsAgent.labels | nindent 6 }}
+{{- end }}
+  template:
+    metadata:
+      annotations:
+{{- if .Values.metricsAgent.annotations }}
+{{ toYaml .Values.metricsAgent.annotations | nindent 8 }}
+{{- end }}
+{{- if .Values.metricsAgent.labels }}
+      labels:
+{{ toYaml .Values.metricsAgent.labels | nindent 8 }}
+{{- end }}
+    spec:
+{{- if .Values.metricsAgent.affinity }}
+      affinity:
+{{ toYaml .Values.metricsAgent.affinity | nindent 8 }}
+{{- end }}
+      serviceAccountName: metrics-agent-sa
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: metrics-agent-config
+      containers:
+      - image: '{{ .Values.metricsAgent.imageRegistry }}/{{ .Values.metricsAgent.image }}:{{ .Values.metricsAgent.tag }}'                                                                                                           
+        volumeMounts:
+          - name: tmp-volume
+            mountPath: /tmp
+          - name: config
+            mountPath: /etc/metrics-agent
+        securityContext: 
+{{- if .Values.metricsAgent.containerSecurityContext }}
+{{ toYaml .Values.metricsAgent.containerSecurityContext | nindent 10 }}
+{{- end }}
+        imagePullPolicy: "{{ .Values.metricsAgent.pullPolicy }}"
+        env:
+          - name: LOG_LEVEL
+            value: "{{ .Values.metricsAgent.logLevel }}"
+          - name: DEV_MODE
+            value: "false"
+          - name: CLUSTER_NAME
+            value: {{ .Values.cluster.name }}
+          - name: AMDMetricsFieldPrefix
+            value: {{ .Values.metricsAgent.amd.metricsPrefix | default "" | quote }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        name: main
+        ports:
+          - containerPort: {{ .Values.metricsAgent.service.port | default 8080 }}
+            name: health
+            protocol: TCP
+{{- if .Values.metricsAgent.resources }}
+        resources: {{ toYaml .Values.metricsAgent.resources | nindent 10 }}
+{{- end }}
+      securityContext:
+{{- if .Values.metricsAgent.podSecurityContext }} 
+{{ toYaml .Values.metricsAgent.podSecurityContext | nindent 8 }}
+{{- end }}
+      terminationGracePeriodSeconds: 10
+      imagePullSecrets:
+        - name: kubeslice-image-pull-secret
+{{- if .Values.metricsAgent.tolerations }}
+      tolerations: 
+{{ toYaml .Values.metricsAgent.tolerations | nindent 8 }}
+{{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-agent-service
+  namespace: {{ .Release.Namespace }}
+{{- if .Values.metricsAgent.labels }}
+  labels:
+{{ toYaml .Values.metricsAgent.labels | nindent 4 }}
+{{- end }}
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.metricsAgent.service.port | default 8080 }}
+      targetPort: {{ .Values.metricsAgent.service.port | default 8080 }}
+  selector:
+{{- if .Values.metricsAgent.labels }}
+{{ toYaml .Values.metricsAgent.labels | nindent 4 }}
+{{- end }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-agent-config
+  namespace: {{ .Release.Namespace }}
+data:
+  config.yaml: |
+    prometheus:
+      endpoint: "{{ .Values.metricsAgent.prometheus.endpoint | default "http://prometheus-operated.monitoring.svc.cluster.local:9090" }}"                                                                                           
+      timeout: {{ .Values.metricsAgent.prometheus.timeout | default "30s" }}
+      interval: {{ .Values.metricsAgent.prometheus.interval | default "60s" }}
+    
+    ingestion:
+      endpoint: "{{ .Values.metricsAgent.ingestion.endpoint }}"
+      timeout: {{ .Values.metricsAgent.ingestion.timeout | default "60s" }}
+      batchSize: {{ .Values.metricsAgent.ingestion.batchSize | default 1000 }}
+      interval: {{ .Values.metricsAgent.ingestion.interval | default "10s" }}
+      maxQueueSize: {{ .Values.metricsAgent.ingestion.maxQueueSize | default 10000 }}
+      key: {{ .Values.metricsAgent.ingestion.key | default "" | quote }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metrics-agent-sa
+  namespace: {{ .Release.Namespace }}
+{{- if .Values.metricsAgent.labels }}
+  labels:
+{{ toYaml .Values.metricsAgent.labels | nindent 4 }}
+{{- end }}
+---
+# permissions for metrics collection
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metrics-agent-role
+{{- if .Values.metricsAgent.labels }}
+  labels:
+{{ toYaml .Values.metricsAgent.labels | nindent 4 }}
+{{- end }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - pods
+      - nodes
+      - namespaces
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - "metrics.k8s.io"
+    resources:
+      - pods
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "apps"
+    resources:
+      - deployments
+      - statefulsets
+      - daemonsets
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metrics-agent-rolebinding
+{{- if .Values.metricsAgent.labels }}
+  labels:
+{{ toYaml .Values.metricsAgent.labels | nindent 4 }}
+{{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metrics-agent-role
+subjects:
+  - kind: ServiceAccount
+    name: metrics-agent-sa
+    namespace: {{ .Release.Namespace }}
