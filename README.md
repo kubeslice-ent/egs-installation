@@ -1,6 +1,13 @@
 ---
 # 🌐 EGS Installer Script
 
+> ## 🚀 **📚 Complete Documentation Available Online!**
+> ### 🌐 **Visit the official EGS Installer Documentation website for the most comprehensive and up-to-date guide:**
+> ### **[🚀 EGS Installer Documentation](https://repo.egs.avesha.io/) 🚀**
+> *The online documentation provides enhanced navigation, better formatting, and the latest updates.*
+
+---
+
 ## 🚀 Overview
 
 The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
@@ -9,6 +16,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 ## 📄 EGS Documents
 
+- 🌐 **📚 For the complete EGS Installer documentation website, visit:** [**🚀 EGS Installer Documentation**](https://repo.egs.avesha.io/) **🚀**  
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
 - 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
 - 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
