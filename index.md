@@ -58,6 +58,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 ## 📄 EGS Documents
 
+- 🌐 **For the main EGS Installer documentation website, visit:** [**EGS Installer Documentation**](https://repo.egs.avesha.io/) 🚀  
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
 - 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
 - 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](https://github.com/kubeslice-ent/egs-installation/blob/main/docs/EGS-License-Setup.md) 🗝️  
@@ -72,13 +73,12 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 ---
 
-## Getting Started
+## 📋 Quick Navigation
 
 <div class="quick-navigation">
-<h4>📋 Quick Navigation</h4>
 <div class="nav-grid">
 <div class="nav-section">
-<h5>🔧 Prerequisites</h5>
+<h4>🔧 Prerequisites</h4>
 <ul>
 <li><a href="#registration">📝 Registration & Setup</a></li>
 <li><a href="#required-binaries">🛠️ Required Binaries</a></li>
@@ -91,7 +91,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 </ul>
 </div>
 <div class="nav-section">
-<h5>🛠️ Main Installation</h5>
+<h4>🛠️ Main Installation</h4>
 <ul>
 <li><a href="#️-installation-steps">📋 Installation Overview</a></li>
 <li><a href="#3-kubeslice-controller-installation-settings-mandatory">🎛️ Controller Setup</a></li>
@@ -104,6 +104,10 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 </div>
 </div>
 </div>
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
