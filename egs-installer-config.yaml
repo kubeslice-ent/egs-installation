@@ -485,6 +485,6 @@ required_binaries:
   - kubectl                                  # Kubernetes command-line tool
 
 #### Node Labeling Settings ####
-add_node_label: false                        # Enable node labeling during installation
+add_node_label: true                        # Enable node labeling during installation
 # Version of the input configuration file
 version: "1.15.1"
