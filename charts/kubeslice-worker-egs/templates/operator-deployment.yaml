@@ -115,7 +115,7 @@ spec:
           - name: AVESHA_OPENVPN_CLIENT_PULLPOLICY
             value: '{{ .Values.openvpn.client.pullPolicy }}'
           - name: WIREGUARD_SERVER_IMAGE
-            value: '{{ .Values.dev.imageRegistry }}/{{ .Values.wireguard.server.image }}:{  { .Values.wireguard.server.tag }}'
+            value: '{{ .Values.dev.imageRegistry }}/{{ .Values.wireguard.server.image }}:{{ .Values.wireguard.server.tag }}'
           - name: WIREGUARD_SERVER_PULLPOLICY
             value: '{{ .Values.wireguard.server.pullPolicy }}'
           - name: WIREGUARD_CLIENT_IMAGE
