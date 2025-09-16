@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-webhook-svc
+  namespace: {{ .Values.nsmNs }}
+  {{- if .Values.admissionWebhook.labels }}
+  labels:
+    {{ toYaml .Values.admissionWebhook.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.admissionWebhook.annotations }}
+  annotations:
+    {{ toYaml .Values.admissionWebhook.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - port: 443
+      targetPort: 443
+  selector:
+    {{- if .Values.admissionWebhook.labels }}
+    {{ toYaml .Values.admissionWebhook.labels | nindent 4 }}
+    {{- end }}

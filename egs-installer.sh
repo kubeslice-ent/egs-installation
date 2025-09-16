@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the script version
-SCRIPT_VERSION="1.15.1"
+SCRIPT_VERSION="1.15.2"
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then

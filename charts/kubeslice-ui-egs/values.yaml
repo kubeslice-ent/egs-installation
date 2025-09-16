@@ -1,6 +1,6 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Declare variables to be passed into your templates. 
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   profile:
@@ -69,7 +69,7 @@ kubeslice:
                     operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.15.1
+    tag: 1.16.0-RELEASE-7344ae8e
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP

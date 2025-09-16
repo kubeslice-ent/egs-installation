@@ -33,5 +33,13 @@ dependencies:
     repository: file://./charts/kserve
     version: v0.14.0
     condition: kserve.enabled
-version: 1.15.1
-appVersion: 1.15.1
+  - name: nsm
+    repository: file://./charts/nsm
+    version: 0.6.4
+    condition: kubesliceNetworking.enabled
+  - name: netop
+    repository: file://./charts/netop
+    version: 0.2.0
+    condition: kubesliceNetworking.enabled
+version: 1.15.2
+appVersion: 1.15.2

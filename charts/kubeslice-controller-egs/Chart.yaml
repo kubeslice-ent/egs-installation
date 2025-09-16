@@ -34,5 +34,5 @@ dependencies:
     repository: file://./charts/kubetally
     version: 1.*.*
     condition: global.kubeTally.enabled
-version: 1.15.1
-appVersion: 1.15.1
+version: 1.15.2
+appVersion: 1.15.2

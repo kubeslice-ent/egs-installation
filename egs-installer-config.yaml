@@ -192,6 +192,8 @@ kubeslice_worker_egs:
     inline_values:
       global:
         imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
+      kubesliceNetworking:
+        enabled: true        # enable/disable network component installation
       operator:
         env:
           - name: DCGM_EXPORTER_JOB_NAME
@@ -487,4 +489,4 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: true                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.15.1"
+version: "1.15.2"

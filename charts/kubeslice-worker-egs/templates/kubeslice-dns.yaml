@@ -1,0 +1,97 @@
+{{- if .Values.kubesliceNetworking.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  {{- if .Values.dns.labels }}
+  labels:
+  {{ toYaml .Values.dns.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.dns.annotations }}
+  annotations:
+  {{ toYaml .Values.dns.annotations | nindent 4 }}
+  {{- end }}
+  name: kubeslice-dns
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: {{ .Values.dns.service.type }}
+  selector:
+  {{- if .Values.dns.labels }}
+  {{ toYaml .Values.dns.labels | nindent 4 }}
+  {{- end }}
+  ports:
+  - port: 53
+    protocol: UDP
+    name: udp-53
+    targetPort: 1053
+  - port: 53
+    protocol: TCP
+    name: tcp-53
+    targetPort: 1053
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  {{- if .Values.dns.labels }}
+  labels:
+  {{ toYaml .Values.dns.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.dns.annotations }}
+  annotations:
+  {{ toYaml .Values.dns.annotations | nindent 4 }}
+  {{- end }}
+  name: kubeslice-dns
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+    {{- if .Values.dns.labels }}
+    {{ toYaml .Values.dns.labels | nindent 6 }}
+    {{- end }}
+  template:
+    metadata:
+      annotations:
+      {{- if .Values.dns.annotations }}
+      {{ toYaml .Values.dns.annotations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.dns.labels }}
+      labels:
+      {{ toYaml .Values.dns.labels | nindent 8 }}
+      {{- end }}
+        kubeslice.io/pod-type: dns
+    spec:
+      serviceAccount: kubeslice-dns
+      {{- if .Values.dns.affinity }}
+      affinity:
+      {{ toYaml .Values.dns.affinity | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: Default
+      {{- if .Values.imagePullSecretsName }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecretsName }}
+      {{- end }}
+      containers:
+      - name: "dns"
+        image: '{{ .Values.global.imageRegistry }}/{{ .Values.dns.image }}:{{ .Values.dns.tag }}'
+        imagePullPolicy: {{ .Values.dns.pullPolicy }}
+        {{- if .Values.dns.resources }}
+        resources: 
+        {{ toYaml .Values.dns.resources | nindent 10 }}
+        {{- end }}
+        ports:
+        - containerPort: 1053
+          protocol: UDP
+          name: udp-53
+        - containerPort: 1053
+          protocol: TCP
+          name: tcp-53
+      {{- if .Values.dns.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.dns.tolerations | nindent 8 }}
+      {{- end }}
+      securityContext:
+      {{- if .Values.dns.podSecurityContext }}
+      {{ toYaml .Values.dns.podSecurityContext | nindent 8 }}
+      {{- end }}
+{{- end }}

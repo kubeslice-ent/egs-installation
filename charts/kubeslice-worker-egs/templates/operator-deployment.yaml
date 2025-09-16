@@ -61,7 +61,7 @@ spec:
         - --num-of-app-services-per-cr=50
         command:
         - /manager
-        image: '{{ .Values.global.imageRegistry }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
+        image: 'aveshadev/{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
         imagePullPolicy: '{{ .Values.operator.pullPolicy }}'
         env:
           - name: PROMETHEUS_SERVICE_ENDPOINT
@@ -92,6 +92,44 @@ spec:
             value: "true"
           - name: EXCLUDED_NS
             value: '{{ .Values.operator.excludeNamespaces | join "," }}'
+          - name: AVESHA_VL3_ROUTER_IMAGE
+            value: "{{ .Values.global.imageRegistry }}/{{ .Values.router.image }}:{{ .Values.router.tag }}"
+          - name: AVESHA_VL3_ROUTER_PULLPOLICY
+            value: {{ .Values.router.pullPolicy }}
+          - name: AVESHA_VL3_SIDECAR_IMAGE
+            value: "{{ .Values.global.imageRegistry }}/{{ .Values.routerSidecar.image }}:{{ .Values.routerSidecar.tag }}"
+          - name: AVESHA_VL3_SIDECAR_IMAGE_PULLPOLICY
+            value: {{ .Values.routerSidecar.pullPolicy }}
+          - name: CLUSTER_ENDPOINT
+            value: "{{ .Values.cluster.endpoint }}"
+          - name: AVESHA_GW_SIDECAR_IMAGE
+            value: 'aveshadev/{{ .Values.gateway.image }}:{{ .Values.gateway.tag }}'
+          - name: AVESHA_GW_SIDECAR_IMAGE_PULLPOLICY
+            value: '{{ .Values.gateway.pullPolicy }}'
+          - name: AVESHA_OPENVPN_SERVER_IMAGE
+            value: '{{ .Values.global.imageRegistry }}/{{ .Values.openvpn.server.image }}:{{ .Values.openvpn.server.tag }}'
+          - name: AVESHA_OPENVPN_SERVER_PULLPOLICY
+            value: '{{ .Values.openvpn.server.pullPolicy }}'
+          - name: AVESHA_OPENVPN_CLIENT_IMAGE
+            value: '{{ .Values.global.imageRegistry }}/{{ .Values.openvpn.client.image }}:{{ .Values.openvpn.client.tag }}'
+          - name: AVESHA_OPENVPN_CLIENT_PULLPOLICY
+            value: '{{ .Values.openvpn.client.pullPolicy }}'
+          - name: WIREGUARD_SERVER_IMAGE
+            value: 'aveshadev/{{ .Values.wireguard.server.image }}:{  { .Values.wireguard.server.tag }}'
+          - name: WIREGUARD_SERVER_PULLPOLICY
+            value: '{{ .Values.wireguard.server.pullPolicy }}'
+          - name: WIREGUARD_CLIENT_IMAGE
+            value: 'aveshadev/{{ .Values.wireguard.client.image }}:{{ .Values.wireguard.client.tag }}'
+          - name: WIREGUARD_CLIENT_PULLPOLICY
+            value: '{{ .Values.wireguard.client.pullPolicy }}'
+          - name: AVESHA_SLICE_GW_EDGE_IMAGE
+            value: "{{ .Values.global.imageRegistry }}/{{ .Values.gatewayEdge.image }}:{{ .Values.gatewayEdge.tag }}"
+          - name: AVESHA_ENVOY_PROXY_IMAGE
+            value: "{{ .Values.global.imageRegistry }}/{{ .Values.envoy.proxy.image }}:{{ .Values.envoy.proxy.tag }}"
+          - name: AVESHA_ENVOY_GW_IMAGE
+            value: "{{ .Values.global.imageRegistry }}/{{ .Values.envoy.gateway.image }}:{{ .Values.envoy.gateway.tag }}"
+          - name: AVESHA_ISTIO_PROXY_IMAGE
+            value: "{{ .Values.global.imageRegistry }}/{{ .Values.istio.proxy.image }}:{{ .Values.istio.proxy.tag }}"
           {{- if .Values.operator.env }}
           {{- range .Values.operator.env }}
           - name: {{ .name }}

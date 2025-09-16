@@ -1,0 +1,75 @@
+---
+# Default values for admission-webhook.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  nsmw_docker_existingImagePullSecret: "kubeslice-image-pull-secret"
+  # IF You dont have existing secret then pass all below values it will create new secret "avesha-docker-ips"
+  ## MANDOTORY FIELDS IF EXISTING SECRET NOT PRESENT ##
+  nsmw_docker_imagePullSecrets:
+    repository: 
+    username: ''
+    password: ''
+    email: ''
+  imageRegistry: docker.io/aveshasystems
+
+admissionWebhook:
+  webhookImageRegistry: cmd-admission-webhook-k8s
+  webhookImageTag: 1.7.3
+  labels:
+    app: kubeslice-nsm-webhook
+  annotations: {}
+  containerSecurityContext: {}
+    # runAsUser: 65536
+    # runAsGroup: 65536
+    # runAsNonRoot: true
+    # seccompProfile:
+    #   type: RuntimeDefault
+    # allowPrivilegeEscalation: false
+    # capabilities:
+    #   drop:
+    #     - ALL
+    # readOnlyRootFilesystem: true
+  podSecurityContext: {}
+    # runAsUser: 65536               # Non-root user
+    # runAsGroup: 65536              # Non-root group
+    # runAsNonRoot: true             # Ensure the container does not run as root
+    # seccompProfile:
+    #   type: RuntimeDefault
+  resources: {}
+    # requests:
+    #   cpu: 200m
+    #   memory: 100Mi
+    # limits:
+    #   memory: 200Mi
+    #   cpu: 500m
+  tolerations: {}
+    # - key: "kubernetes.io/arch"
+    #   operator: "Equal"
+    #   value: "amd64"
+    #   effect: "NoSchedule"
+    # - key: "kubernetes.io/arch"
+    #   operator: "Equal"
+    #   value: "arm64"
+    #   effect: "NoSchedule"
+  affinity: {}
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubernetes.io/arch
+    #         operator: In
+    #         values:
+    #         - amd64
+    #         - arm64
+
+nsmInjectContainerImageRegistry: cmd-nsc
+nsmInjectContainerImageTag: 1.5.9-RELEASE-719c1241
+
+nsmInjectInitContainerImageRegistry: cmd-nsc-init
+nsmInjectInitContainerImageTag: 1.5.9
+nsmInitContainerUpdateDNSConfig: true
+
+# nsm admission webhook ns
+nsmNs: kubeslice-nsm-webhook-system
