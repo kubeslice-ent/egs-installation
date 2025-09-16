@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 global:
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
 
 # Variables added
 spireAgent:
@@ -20,7 +20,7 @@ spireAgent:
 replicaCount: 1
 
 image:
-  repository: docker.io/aveshasystems/nginx
+  repository: harbor.saas1.smart-scaler.io/avesha/aveshasystems/nginx
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""

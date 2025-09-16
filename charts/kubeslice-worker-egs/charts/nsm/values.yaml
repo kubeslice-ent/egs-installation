@@ -13,7 +13,7 @@ global:
     username: ''
     password: ''
     email: ''
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   # set to true to enable Jaeger tracing for NSM components
   JaegerTracing: true
 

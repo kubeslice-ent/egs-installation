@@ -86,7 +86,7 @@ spec:
             - name: NSM_ANNOTATION
               value: networkservicemesh.io
             - name: NSM_CONTAINER_IMAGES
-              value: "aveshadev/{{ .Values.nsmInjectContainerImageRegistry }}:{{ .Values.nsmInjectContainerImageTag }}"
+              value: "{{ .Values.dev.imageRegistry }}/{{ .Values.nsmInjectContainerImageRegistry }}:{{ .Values.nsmInjectContainerImageTag }}"
             - name: NSM_INIT_CONTAINER_IMAGES
               value: "{{ .Values.global.imageRegistry }}/{{ .Values.nsmInjectInitContainerImageRegistry }}:{{ .Values.nsmInjectInitContainerImageTag }}"
             - name: NSM_LABELS

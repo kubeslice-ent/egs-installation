@@ -1,3 +1,7 @@
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
+
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   profile:

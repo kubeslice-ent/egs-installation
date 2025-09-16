@@ -3,6 +3,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
 global:
   nsmw_docker_existingImagePullSecret: "kubeslice-image-pull-secret"
   # IF You dont have existing secret then pass all below values it will create new secret "avesha-docker-ips"
@@ -12,7 +15,7 @@ global:
     username: ''
     password: ''
     email: ''
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
 
 admissionWebhook:
   webhookImageRegistry: cmd-admission-webhook-k8s

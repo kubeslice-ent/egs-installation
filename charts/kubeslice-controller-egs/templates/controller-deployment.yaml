@@ -79,7 +79,7 @@ spec:
             - --controller-end-point={{ required "A valid value is required!" .Values.kubeslice.controller.endpoint }}
             - --prometheus-service-endpoint={{ required "A valid value is required!" .Values.global.kubeTally.prometheusUrl }}
             - --metrics-cleanup-interval={{ .Values.kubeslice.controller.kubeTally.metricsCleanupInterval }}
-            - --ovpn-job-image=aveshadev/{{ .Values.kubeslice.ovpnJob.image }}:{{ .Values.kubeslice.ovpnJob.tag }}          
+            - --ovpn-job-image={{ .Values.dev.imageRegistry }}/{{ .Values.kubeslice.ovpnJob.image }}:{{ .Values.kubeslice.ovpnJob.tag }}          
           command:
             - /manager
           env:
@@ -91,7 +91,7 @@ spec:
               value: {{ .Values.kubeslice.controller.invmgrGrpcAddress }}
             - name: WEBHOOK_CA_BUNDLE
               value: {{ $ca.Cert | b64enc }}
-          image: 'aveshadev/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
+          image: '{{ .Values.dev.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.controller.pullPolicy }}'
           livenessProbe:
             httpGet:

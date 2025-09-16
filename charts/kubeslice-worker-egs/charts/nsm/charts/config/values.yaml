@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 global:
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   nsmcfg_docker_existingImagePullSecret: "kubeslice-image-pull-secret"
   # IF You dont have existing secret then pass all below values it will create new secret "avesha-docker-ips"
   ## MANDOTORY FIELDS IF EXISTING SECRET NOT PRESENT ##

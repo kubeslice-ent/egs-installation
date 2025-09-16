@@ -61,7 +61,7 @@ spec:
         - --num-of-app-services-per-cr=50
         command:
         - /manager
-        image: 'aveshadev/{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
+        image: '{{ .Values.dev.imageRegistry }}/{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
         imagePullPolicy: '{{ .Values.operator.pullPolicy }}'
         env:
           - name: PROMETHEUS_SERVICE_ENDPOINT
@@ -103,7 +103,7 @@ spec:
           - name: CLUSTER_ENDPOINT
             value: "{{ .Values.cluster.endpoint }}"
           - name: AVESHA_GW_SIDECAR_IMAGE
-            value: 'aveshadev/{{ .Values.gateway.image }}:{{ .Values.gateway.tag }}'
+            value: '{{ .Values.dev.imageRegistry }}/{{ .Values.gateway.image }}:{{ .Values.gateway.tag }}'
           - name: AVESHA_GW_SIDECAR_IMAGE_PULLPOLICY
             value: '{{ .Values.gateway.pullPolicy }}'
           - name: AVESHA_OPENVPN_SERVER_IMAGE
@@ -115,11 +115,11 @@ spec:
           - name: AVESHA_OPENVPN_CLIENT_PULLPOLICY
             value: '{{ .Values.openvpn.client.pullPolicy }}'
           - name: WIREGUARD_SERVER_IMAGE
-            value: 'aveshadev/{{ .Values.wireguard.server.image }}:{  { .Values.wireguard.server.tag }}'
+            value: '{{ .Values.dev.imageRegistry }}/{{ .Values.wireguard.server.image }}:{  { .Values.wireguard.server.tag }}'
           - name: WIREGUARD_SERVER_PULLPOLICY
             value: '{{ .Values.wireguard.server.pullPolicy }}'
           - name: WIREGUARD_CLIENT_IMAGE
-            value: 'aveshadev/{{ .Values.wireguard.client.image }}:{{ .Values.wireguard.client.tag }}'
+            value: '{{ .Values.dev.imageRegistry }}/{{ .Values.wireguard.client.image }}:{{ .Values.wireguard.client.tag }}'
           - name: WIREGUARD_CLIENT_PULLPOLICY
             value: '{{ .Values.wireguard.client.pullPolicy }}'
           - name: AVESHA_SLICE_GW_EDGE_IMAGE

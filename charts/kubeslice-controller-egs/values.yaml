@@ -1,6 +1,9 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates. 
+# Declare variables to be passed into your templates.
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+ 
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   # user can configure labels or annotations that EGS Controller namespaces should have

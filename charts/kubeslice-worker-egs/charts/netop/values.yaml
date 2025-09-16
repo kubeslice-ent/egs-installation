@@ -7,7 +7,7 @@ global:
     username: ''
     password: ''
     email: ''
-  imageRegistry: docker.io/aveshasystems
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
 netop:
   networkInterface: eth0
   image: netops
