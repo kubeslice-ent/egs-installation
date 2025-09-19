@@ -58,7 +58,7 @@ spec:
       {{ toYaml .Values.kubeslice.apigw.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
+        - image: 'aveshadev/kubeslice-api-gw-ent-egs:1.16.0-SNAPSHOT-f411795b'
           imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
           env:
             {{- if .Values.kubeslice.apigw.env }}

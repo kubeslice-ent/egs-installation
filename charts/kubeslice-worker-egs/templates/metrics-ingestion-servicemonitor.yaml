@@ -12,6 +12,7 @@ spec:
     matchLabels:
       app: egs-metrics-ingestion
       component: monitoring
+      control-plane: metrics-ingestion-manager
   endpoints:
     - port: http
       path: /default/metrics

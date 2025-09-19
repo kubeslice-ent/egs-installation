@@ -1,8 +1,8 @@
 ########################### MANDATORY PARAMETERS ####################################################################
 
 # Kubeconfig settings
-global_kubeconfig: "" # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
-global_kubecontext: "" # Global kubecontext to use - Mandatory
+global_kubeconfig: "devkubeconfig" # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
+global_kubecontext: "context-cs24taiewqa" # Global kubecontext to use - Mandatory
 use_global_context: true # If true, use the global kubecontext for all operations by default
 
 # Enable or disable specific stages of the installation
@@ -31,8 +31,8 @@ run_commands: false
 # Global image pull secret settings for AirGap Installations
 global_image_pull_secret:
   repository: "https://index.docker.io/v1/" # Docker registry URL
-  username: "" # Global Docker registry username
-  password: "" # Global Docker registry password
+  username: "aveshadev" # Global Docker registry username
+  password: "dckr_pat_DNb47hbfsqNH4sUcrrQM-C8DMOE" # Global Docker registry password
 
 # Project and cluster registration settings
 enable_project_creation: true # Enable project creation in Kubeslice
@@ -103,10 +103,10 @@ kubeslice_controller_egs:
     egs:
       metricsIngestion:
         enabled: true # Enable metrics ingestion service
-        imageRegistry: docker.io/gourishbiradar # Docker registry for metrics ingestion image
-        image: testing #egs-metrics-ingestion          # Metrics ingestion image name
-        tag: "ingestion" # Metrics ingestion image tag
-        imagePullPolicy: Always # Image pull policy
+        imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev # Docker registry for metrics ingestion image
+        image: saas-metrics-ingestion #egs-metrics-ingestion          # Metrics ingestion image name
+        tag: "0.3.0-SNAPSHOT-1cef8335" # Metrics ingestion image tag
+        imagePullPolicy: IfNotPresent # Image pull policy
         logLevel: "debug" # Log level for metrics ingestion
         replicas: 1 # Number of replicas for high availability
         service:
@@ -114,6 +114,7 @@ kubeslice_controller_egs:
           port: 8080 # Service port for metrics ingestion
         env:
           SAAS_METRICS_INGESTION_TENANT_NAME: "default" # Tenant name for metrics ingestion
+          SAAS_METRICS_INGESTION_HEADLESS_SERVICE: "egs-metrics-ingestion.kubeslice-controller.svc.cluster.local" # Service endpoint (using regular service instead of headless)
           SAAS_METRICS_INGESTION_TRANSFORMATION_CONFIG_PATH: "/etc/saas-metrics-ingestion/metrics-transformation.yaml" # Transformation config path
           SAAS_METRICS_INGESTION_USE_BASIC_AUTH: "false" # Disable basic auth
           SAAS_METRICS_INGESTION_DROP_METRICS_NO_HEARTBEAT_SECONDS: "3600" # Drop metrics after 1 hour of no heartbeat
@@ -143,7 +144,6 @@ kubeslice_controller_egs:
           prometheus.io/scrape: "true"
           prometheus.io/path: "/default/metrics"
           prometheus.io/port: "8080"
-        tolerations: [] # Tolerations for metrics ingestion pods
         affinity: {} # Affinity rules for metrics ingestion pods
         containerSecurityContext: {} # Container security context
         podSecurityContext: {} # Pod security context
@@ -157,7 +157,449 @@ kubeslice_controller_egs:
         transformationConfig: # Metrics transformation configuration
           enabled: true
           configMapName: "saas-metrics-ingestion-transformation-config"
-          configData: "metrics:\n  # NVIDIA Jetson/DCGM GPU Metrics Transformations\n  - receiveName: \"DCGM_FI_DEV_GPU_UTIL\"\n    publishName: \"EGS_GPU_UTILIZATION\"\n    description: \"NVIDIA GPU utilization percentage\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n  \n  - receiveName: \"DCGM_FI_DEV_MEM_COPY_UTIL\"\n    publishName: \"EGS_GPU_MEMORY_USAGE_PERCENTAGE\"\n    description: \"NVIDIA GPU memory copy utilization percentage\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n  \n  - receiveName: \"DCGM_FI_DEV_GPU_TEMP\"\n    publishName: \"EGS_GPU_TEMPERATURE\"\n    description: \"NVIDIA GPU temperature in Celsius\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n  \n  - receiveName: \"DCGM_FI_DEV_MEMORY_TEMP\"\n    publishName: \"EGS_GPU_MEMORY_TEMPERATURE\"\n    description: \"NVIDIA GPU memory temperature in Celsius\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n  \n  - receiveName: \"DCGM_FI_DEV_POWER_USAGE\"\n    publishName: \"EGS_GPU_POWER_USAGE\"\n    description: \"NVIDIA GPU power usage in watts\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n  \n  - receiveName: \"DCGM_FI_DEV_FB_USED\"\n    publishName: \"EGS_GPU_USED_VRAM\"\n    description: \"NVIDIA GPU used frame buffer memory in MB\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n\n  - receiveName: \"DCGM_FI_DEV_FB_FREE\"\n    publishName: \"EGS_GPU_FREE_VRAM\"\n    description: \"NVIDIA GPU free frame buffer memory in MB\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n\n  # Additional Jetson-specific metrics\n  - receiveName: \"DCGM_FI_DEV_GPU_CLOCK\"\n    publishName: \"EGS_GPU_CLOCK\"\n    description: \"NVIDIA GPU clock speed in MHz\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n\n  - receiveName: \"DCGM_FI_DEV_MEM_CLOCK\"\n    publishName: \"EGS_GPU_MEMORY_CLOCK\"\n    description: \"NVIDIA GPU memory clock speed in MHz\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n\n  - receiveName: \"DCGM_FI_DEV_GPU_NVLINK_BANDWIDTH_TOTAL\"\n    publishName: \"EGS_GPU_NVLINK_BANDWIDTH\"\n    description: \"NVIDIA GPU NVLink bandwidth in MB/s\"\n    type: \"gauge\"\n    unitMultiplier: 1\n    labelTransformer:\n      - publishName: egs_cluster_name\n        receiveName: cluster_name\n      - publishName: egs_gpu_id\n        receiveName: gpu_id\n      - publishName: egs_gpu_uuid\n        receiveName: gpu_uuid\n      - publishName: egs_hostname\n        receiveName: hostname\n      - publishName: egs_pod\n        receiveName: pod\n      - publishName: egs_namespace\n        receiveName: namespace\n"
+          configData: |
+  metrics:
+    # Jetson GPU Metrics Transformations (optimized with all required EGS labels)
+    - receiveName: "gpu_utilization_percentage_Hz"
+      publishName: "EGS_GPU_UTILIZATION"
+      description: "Jetson GPU utilization frequency in Hz"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_gpu_id
+          receiveName: nvidia_gpu
+          defaultValue: "0"
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+          defaultValue: "jetson-gpu-${egs_hostname}-${egs_gpu_id}"
+        - publishName: egs_device_id
+          receiveName: device_id
+          defaultValue: "0"
+        - publishName: egs_model_name
+          receiveName: model_name
+        - publishName: egs_hostname
+          receiveName: kubernetes_node
+        - publishName: egs_pod_name
+          receiveName: pod_name
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+        - publishName: egs_statistic
+          receiveName: statistic
+
+    - receiveName: "temperature_C"
+      publishName: "EGS_GPU_TEMPERATURE"
+      description: "Jetson GPU temperature in Celsius"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_gpu_id
+          receiveName: nvidia_gpu
+          defaultValue: "0"
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device_id
+          defaultValue: "0"
+        - publishName: egs_model_name
+          receiveName: model_name
+        - publishName: egs_hostname
+          receiveName: kubernetes_node
+        - publishName: egs_pod_name
+          receiveName: pod_name
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+        - publishName: egs_statistic
+          receiveName: statistic
+
+    - receiveName: "integrated_power_mW"
+      publishName: "EGS_GPU_POWER_USAGE"
+      description: "Jetson integrated power usage in milliwatts"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_gpu_id
+          receiveName: nvidia_gpu
+          defaultValue: "0"
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device_id
+          defaultValue: "0"
+        - publishName: egs_model_name
+          receiveName: model_name
+        - publishName: egs_hostname
+          receiveName: kubernetes_node
+        - publishName: egs_pod_name
+          receiveName: pod_name
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+        - publishName: egs_statistic
+          receiveName: statistic
+
+    - receiveName: "gpuram_kB"
+      publishName: "EGS_GPU_USED_VRAM"
+      description: "Jetson GPU RAM usage in KB"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_gpu_id
+          receiveName: nvidia_gpu
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device_id
+          defaultValue: "0"
+        - publishName: egs_model_name
+          receiveName: model_name
+        - publishName: egs_hostname
+          receiveName: kubernetes_node
+        - publishName: egs_pod_name
+          receiveName: pod_name
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+        - publishName: egs_statistic
+          receiveName: statistic
+
+    - receiveName: "ram_kB"
+      publishName: "EGS_GPU_FREE_VRAM"
+      description: "Jetson system RAM usage in KB"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_gpu_id
+          receiveName: nvidia_gpu
+          defaultValue: "0"
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device_id
+          defaultValue: "0"
+        - publishName: egs_model_name
+          receiveName: model_name
+        - publishName: egs_hostname
+          receiveName: kubernetes_node
+        - publishName: egs_pod_name
+          receiveName: pod_name
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+        - publishName: egs_statistic
+          receiveName: statistic
+
+    # Additional Jetson metrics
+    - receiveName: "memory_used_MB"
+      publishName: "EGS_GPU_MEMORY_USAGE_PERCENTAGE"
+      description: "Jetson memory usage percentage"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_gpu_id
+          receiveName: nvidia_gpu
+          defaultValue: "0"
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device_id
+          defaultValue: "0"
+        - publishName: egs_model_name
+          receiveName: model_name
+        - publishName: egs_hostname
+          receiveName: kubernetes_node
+        - publishName: egs_pod_name
+          receiveName: pod_name
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+
+    - receiveName: "gpu_frequency_MHz"
+      publishName: "EGS_GPU_MEMORY_TEMPERATURE"
+      description: "Jetson GPU frequency (used as memory temperature placeholder)"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_gpu_id
+          receiveName: nvidia_gpu
+          defaultValue: "0"
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device_id
+          defaultValue: "0"
+        - publishName: egs_model_name
+          receiveName: model_name
+        - publishName: egs_hostname
+          receiveName: kubernetes_node
+        - publishName: egs_pod_name
+          receiveName: pod_name
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+
+    # DCGM transformations (updated with proper EGS labels)
+    - receiveName: "DCGM_FI_DEV_GPU_UTIL"
+      publishName: "EGS_GPU_UTILIZATION"
+      description: "NVIDIA GPU utilization percentage"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_cluster_name
+          receiveName: cluster_name
+        - publishName: egs_gpu_id
+          receiveName: gpu_id
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device
+        - publishName: egs_model_name
+          receiveName: modelName
+        - publishName: egs_hostname
+          receiveName: hostname
+        - publishName: egs_pod_name
+          receiveName: pod
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+
+    - receiveName: "DCGM_FI_DEV_GPU_TEMP"
+      publishName: "EGS_GPU_TEMPERATURE"
+      description: "NVIDIA GPU temperature in Celsius"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_cluster_name
+          receiveName: cluster_name
+        - publishName: egs_gpu_id
+          receiveName: gpu_id
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device
+        - publishName: egs_model_name
+          receiveName: modelName
+        - publishName: egs_hostname
+          receiveName: hostname
+        - publishName: egs_pod_name
+          receiveName: pod
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+
+    - receiveName: "DCGM_FI_DEV_POWER_USAGE"
+      publishName: "EGS_GPU_POWER_USAGE"
+      description: "NVIDIA GPU power usage in watts"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_cluster_name
+          receiveName: cluster_name
+        - publishName: egs_gpu_id
+          receiveName: gpu_id
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device
+        - publishName: egs_model_name
+          receiveName: modelName
+        - publishName: egs_hostname
+          receiveName: hostname
+        - publishName: egs_pod_name
+          receiveName: pod
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+
+    - receiveName: "DCGM_FI_DEV_FB_USED"
+      publishName: "EGS_GPU_USED_VRAM"
+      description: "NVIDIA GPU used frame buffer memory in MB"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_cluster_name
+          receiveName: cluster_name
+        - publishName: egs_gpu_id
+          receiveName: gpu_id
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device
+        - publishName: egs_model_name
+          receiveName: modelName
+        - publishName: egs_hostname
+          receiveName: hostname
+        - publishName: egs_pod_name
+          receiveName: pod
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+
+    - receiveName: "DCGM_FI_DEV_FB_FREE"
+      publishName: "EGS_GPU_FREE_VRAM"
+      description: "NVIDIA GPU free frame buffer memory in MB"
+      type: "gauge"
+      unitMultiplier: 1
+      labelTransformer:
+        - publishName: egs_job_name
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: job
+          defaultValue: "egs-metrics-ingestion"
+        - publishName: egs_cluster_name
+          receiveName: cluster_name
+        - publishName: egs_gpu_id
+          receiveName: gpu_id
+        - publishName: egs_gpu_uuid
+          receiveName: gpu_uuid
+        - publishName: egs_device_id
+          receiveName: device
+        - publishName: egs_model_name
+          receiveName: modelName
+        - publishName: egs_hostname
+          receiveName: hostname
+        - publishName: egs_pod_name
+          receiveName: pod
+        - publishName: egs_namespace
+          receiveName: namespace
+        - publishName: egs_slice_name
+          receiveName: slice_name
+        - publishName: egs_instance
+          receiveName: instance
+        - publishName: egs_container
+          receiveName: container
+
+    # GPU Utilization Ratio Calculation (AMD/NVIDIA Support)
+    - publishName: "EGS_GPU_UTILIZATION_RATIO"
+      receiveName: "gpu_utilization_percentage_Hz"
+      description: "GPU utilization ratio calculated from frequency metrics"
+      type: "gpu_utilization"
+      unitMultiplier: 1.0
+      gpuUtilization:
+        # The metric name that contains the frequency values
+        metricName: "gpu_utilization_percentage_Hz"
+        # The label key that distinguishes between different frequency types
+        frequencyTypeLabel: "nvidia_gpu"
+        # The label value for current frequency
+        currentFreqValue: "freq"
+        # The label value for minimum frequency
+        minFreqValue: "min_freq"
+        # The label value for maximum frequency
+        maxFreqValue: "max_freq"
+        # Labels that should match for grouping related metrics
+        # Metrics with the same values for these labels will be grouped together
+        groupByLabels:
+          - "instance"
+          - "job"
+          - "kubernetes_node"
+      # Labels to include in the final metric
+      fallbackLabels:
+        egs_job_name: "egs-metrics-ingestion"
+        job: "egs-metrics-ingestion"
+        statistic: "gpu_utilization_ratio"
+      # Override any labels if needed
+      metricLabels:
+        unit: "ratio"
+
     kubeslice:
       controller:
         endpoint: "" # Endpoint of the controller API server; auto-fetched if left empty
@@ -196,7 +638,6 @@ kubeslice_ui_egs:
         labels:
           app: kubeslice-ui-proxy
         annotations: {}
-
         ingress:
           ## If true, ui‑proxy Ingress will be created
           enabled: false
@@ -266,10 +707,10 @@ kubeslice_worker_egs:
         insecure: true # Allow insecure connections for metrics
       metricsAgent:
         enabled: true # Enable metrics agent
-        imageRegistry: docker.io/gourishbiradar # Docker registry for metrics agent image
-        image: testing #metrics-agent                  # Metrics agent image name
-        tag: "agent29" # Metrics agent image tag
-        pullPolicy: Always # Image pull policy
+        imageRegistry: aveshadev # Docker registry for metrics agent image
+        image: metrics-agent #metrics-agent                  # Metrics agent image name
+        tag: "1.0.0-SNAPSHOT-64d77ab8" # Metrics agent image tag
+        pullPolicy: IfNotPresent # Image pull policy
         logLevel: "debug" # Log level for metrics agent
         service:
           port: 8080 # Service port for metrics agent
@@ -300,7 +741,7 @@ kubeslice_worker_egs:
           component: "monitoring"
         annotations: {} # Annotations for metrics agent resources
       kserve:
-        enabled: true # Enable KServe for the worker
+        enabled: false # Enable KServe for the worker
         kserve: # KServe chart options
           controller:
             gateway:

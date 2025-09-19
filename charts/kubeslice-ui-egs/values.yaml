@@ -40,7 +40,7 @@ kubeslice:
     labels:
       app: kubeslice-ui
     annotations: {}
-    containerSecurityContext: 
+    containerSecurityContext:
       runAsUser: 65536
       runAsGroup: 65536
       runAsNonRoot: true
@@ -51,22 +51,22 @@ kubeslice:
         drop:
           - ALL
       readOnlyRootFilesystem: false
-    podSecurityContext: 
-      runAsUser: 65536               # Non-root user
-      runAsGroup: 65536              # Non-root group
-      runAsNonRoot: true             # Ensure the container does not run as root
+    podSecurityContext:
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
     affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
     tag: 1.15.1
@@ -76,7 +76,7 @@ kubeslice:
     labels:
       app: kubeslice-ui-v2
     annotations: {}
-    containerSecurityContext: 
+    containerSecurityContext:
       runAsUser: 65536
       runAsGroup: 65536
       runAsNonRoot: true
@@ -87,22 +87,22 @@ kubeslice:
         drop:
           - ALL
       readOnlyRootFilesystem: false
-    podSecurityContext: 
-      runAsUser: 65536               # Non-root user
-      runAsGroup: 65536              # Non-root group
-      runAsNonRoot: true             # Ensure the container does not run as root
+    podSecurityContext:
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
     affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
   dashboard:
     enabled: false
     pullPolicy: IfNotPresent
@@ -137,7 +137,6 @@ kubeslice:
     labels:
       app: kubeslice-ui-proxy
     annotations: {}
-
     ingress:
       ## If true, ui‑proxy Ingress will be created
       enabled: false
@@ -161,10 +160,10 @@ kubeslice:
       ## UI‑Proxy Ingress hostnames with paths
       ## Must be provided if Ingress is enabled
       hosts:
-        - host: ui.kubeslice.com     # ← replace with your FQDN
+        - host: ui.kubeslice.com # ← replace with your FQDN
           paths:
-            - path: /             # ← base path
-              pathType: Prefix    # ← Prefix | Exact
+            - path: / # ← base path
+              pathType: Prefix # ← Prefix | Exact
 
       ## Extra paths to prepend to every host (e.g. for redirects)
       extraPaths: []
@@ -174,12 +173,13 @@ kubeslice:
       #     servicePort: use-annotation
 
       ## TLS configuration (you must create these Secrets ahead of time)
-      tls: []
+      tls:
+        []
         # - hosts:
         #     - ui.kubeslice.com
         #   secretName: uitlssecret
-    
-    containerSecurityContext: 
+
+    containerSecurityContext:
       runAsUser: 65536
       runAsGroup: 65536
       runAsNonRoot: true
@@ -190,22 +190,22 @@ kubeslice:
         drop:
           - ALL
       readOnlyRootFilesystem: false
-    podSecurityContext: 
-      runAsUser: 65536               # Non-root user
-      runAsGroup: 65536              # Non-root group
-      runAsNonRoot: true             # Ensure the container does not run as root
+    podSecurityContext:
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
     affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
 
   apigw:
     image: kubeslice-api-gw-ent-egs
@@ -219,7 +219,7 @@ kubeslice:
     labels:
       app: kubeslice-api-gw
     annotations: {}
-    containerSecurityContext: 
+    containerSecurityContext:
       runAsUser: 65536
       runAsGroup: 65536
       runAsNonRoot: true
@@ -230,10 +230,10 @@ kubeslice:
         drop:
           - ALL
       readOnlyRootFilesystem: false
-    podSecurityContext: 
-      runAsUser: 65536               # Non-root user
-      runAsGroup: 65536              # Non-root group
-      runAsNonRoot: true             # Ensure the container does not run as root
+    podSecurityContext:
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
     resources:
@@ -246,13 +246,13 @@ kubeslice:
     tolerations:
       - operator: "Exists"
     affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
 
   egsCoreApis:
     enabled: true
@@ -283,20 +283,20 @@ kubeslice:
         drop:
           - ALL
       readOnlyRootFilesystem: false
-    podSecurityContext: 
-      runAsUser: 65536               # Non-root user
-      runAsGroup: 65536              # Non-root group
-      runAsNonRoot: true             # Ensure the container does not run as root
+    podSecurityContext:
+      runAsUser: 65536 # Non-root user
+      runAsGroup: 65536 # Non-root group
+      runAsNonRoot: true # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
     affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+                - key: "node.kubernetes.io/gpu"
+                  operator: "DoesNotExist"
 
   workerinstaller:
     image: worker-installer
