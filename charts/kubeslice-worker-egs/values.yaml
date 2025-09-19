@@ -10,7 +10,7 @@ operator:
   logLevel: INFO
   env:
     - name: DCGM_EXPORTER_JOB_NAME
-      value: gpu-metrics   
+      value: gpu-metrics
   labels:
     control-plane: controller-manager
   annotations:
@@ -28,10 +28,10 @@ operator:
       drop:
         - ALL
     readOnlyRootFilesystem: true
-  podSecurityContext: 
-    runAsUser: 65536               # Non-root user
-    runAsGroup: 65536              # Non-root group
-    runAsNonRoot: true             # Ensure the container does not run as root
+  podSecurityContext:
+    runAsUser: 65536 # Non-root user
+    runAsGroup: 65536 # Non-root group
+    runAsNonRoot: true # Ensure the container does not run as root
     seccompProfile:
       type: RuntimeDefault
   resources:
@@ -44,21 +44,21 @@ operator:
   tolerations:
     - operator: "Exists"
   affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: "node.kubernetes.io/gpu"
+                operator: "DoesNotExist"
   excludeNamespaces:
-  - "kube-system"
-  - "default"
-  - "kubeslice-controller"
-  - "kubeslice-system"
-  - "kube-node-lease"
-  - "kube-public"
-  - "istio-system"
+    - "kube-system"
+    - "default"
+    - "kubeslice-controller"
+    - "kubeslice-system"
+    - "kube-node-lease"
+    - "kube-public"
+    - "istio-system"
 
 controllerSecretName: kubeslice-hub #default name used if not specify any name
 ## Base64 encoded secret values from controller cluster
@@ -102,22 +102,22 @@ aiops:
       drop:
         - ALL
     readOnlyRootFilesystem: true
-  podSecurityContext: 
-    runAsUser: 65536               # Non-root user
-    runAsGroup: 65536              # Non-root group
-    runAsNonRoot: true             # Ensure the container does not run as root
+  podSecurityContext:
+    runAsUser: 65536 # Non-root user
+    runAsGroup: 65536 # Non-root group
+    runAsNonRoot: true # Ensure the container does not run as root
     seccompProfile:
       type: RuntimeDefault
   tolerations:
     - operator: "Exists"
   affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: "node.kubernetes.io/gpu"
+                operator: "DoesNotExist"
 
 egsAgent:
   image: egs-agent
@@ -142,10 +142,10 @@ egsAgent:
       drop:
         - ALL
     readOnlyRootFilesystem: true
-  podSecurityContext: 
-    runAsUser: 65536               # Non-root user
-    runAsGroup: 65536              # Non-root group
-    runAsNonRoot: true             # Ensure the container does not run as root
+  podSecurityContext:
+    runAsUser: 65536 # Non-root user
+    runAsGroup: 65536 # Non-root group
+    runAsNonRoot: true # Ensure the container does not run as root
     seccompProfile:
       type: RuntimeDefault
   resources:
@@ -158,22 +158,22 @@ egsAgent:
   tolerations:
     - operator: "Exists"
   affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: "node.kubernetes.io/gpu"
+                operator: "DoesNotExist"
 
 egs:
   prometheusEndpoint: ""
   grafanaDashboardBaseUrl: ""
 
 metricsAgent:
-  imageRegistry: *defaultRegistry
+  imageRegistry: docker.io/aveshadev #*defaultRegistry
   image: metrics-agent
-  tag: 1.0.0
+  tag: 1.0.0-SNAPSHOT-64d77ab8
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -192,10 +192,10 @@ metricsAgent:
       drop:
         - ALL
     readOnlyRootFilesystem: true
-  podSecurityContext: 
-    runAsUser: 65536               # Non-root user
-    runAsGroup: 65536              # Non-root group
-    runAsNonRoot: true             # Ensure the container does not run as root
+  podSecurityContext:
+    runAsUser: 65536 # Non-root user
+    runAsGroup: 65536 # Non-root group
+    runAsNonRoot: true # Ensure the container does not run as root
     seccompProfile:
       type: RuntimeDefault
   resources:
@@ -208,13 +208,13 @@ metricsAgent:
   tolerations:
     - operator: "Exists"
   affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: "node.kubernetes.io/gpu"
+                operator: "DoesNotExist"
   # Service configuration
   service:
     port: 8080

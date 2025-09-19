@@ -66,7 +66,7 @@ spec:
           {{- if .Values.kubeslice.uiproxy.containerSecurityContext }}
           {{ toYaml .Values.kubeslice.uiproxy.containerSecurityContext | nindent 12 }}
           {{- end }}
-          image: 'aveshadev/kubeslice-ui-proxy-egs:0.9.0-SNAPSHOT-69b986a1'
+          image: 'aveshadev/kubeslice-ui-proxy-egs:0.9.0-SNAPSHOT-3ea7e4c2'
           imagePullPolicy: '{{ .Values.kubeslice.uiproxy.pullPolicy }}'
           env:
           - name: KUBESLICE-CONTROLLER-PROMETHEUS
