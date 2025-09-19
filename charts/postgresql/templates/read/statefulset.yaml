@@ -396,7 +396,7 @@ spec:
             - name: empty-dir
               mountPath: /opt/bitnami/postgresql/tmp
               subPath: app-tmp-dir
-            {{- if .Values.auth.usePasswordFiles }}
+            {{- if and .Values.auth.usePasswordFiles (or .Values.auth.enablePostgresUser $customUser) }}
             - name: postgresql-password
               mountPath: /opt/bitnami/postgresql/secrets/
             {{- end }}
@@ -446,13 +446,13 @@ spec:
               value: {{ printf "127.0.0.1:%d/postgres?sslmode=disable" (int (include "postgresql.v1.service.port" .)) }}
             {{- if .Values.auth.usePasswordFiles }}
             - name: DATA_SOURCE_PASS_FILE
-              value: {{ printf "/opt/bitnami/postgresql/secrets/%s" (include "postgresql.v1.userPasswordKey" .) }}
+              value: {{ printf "/opt/bitnami/postgresql/secrets/%s" (include (ternary "postgresql.v1.adminPasswordKey" "postgresql.v1.userPasswordKey" (empty $customUser)) .) }}
             {{- else }}
             - name: DATA_SOURCE_PASS
               valueFrom:
                 secretKeyRef:
                   name: {{ include "postgresql.v1.secretName" . }}
-                  key: {{ include "postgresql.v1.userPasswordKey" . }}
+                  key: {{ include (ternary "postgresql.v1.adminPasswordKey" "postgresql.v1.userPasswordKey" (empty $customUser)) . }}
             {{- end }}
             - name: DATA_SOURCE_USER
               value: {{ default "postgres" $customUser | quote }}
@@ -491,7 +491,7 @@ spec:
             - name: empty-dir
               mountPath: /tmp
               subPath: tmp-dir
-            {{- if .Values.auth.usePasswordFiles }}
+            {{- if and .Values.auth.usePasswordFiles (or .Values.auth.enablePostgresUser $customUser) }}
             - name: postgresql-password
               mountPath: /opt/bitnami/postgresql/secrets/
             {{- end }}
@@ -515,7 +515,7 @@ spec:
           configMap:
             name: {{ include "postgresql.v1.readReplicas.extendedConfigmapName" . }}
         {{- end }}
-        {{- if .Values.auth.usePasswordFiles }}
+        {{- if and .Values.auth.usePasswordFiles (or .Values.auth.enablePostgresUser $customUser) }}
         - name: postgresql-password
           secret:
             secretName: {{ include "postgresql.v1.secretName" . }}
