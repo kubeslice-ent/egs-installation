@@ -56,7 +56,7 @@ nsmgr:
   waitForItImageRegistry: wait-for-it
   waitForItImageTag: 1.0.2
   excludePrefixesImageRegistry: cmd-exclude-prefixes-k8s
-  excludePrefixesImageTag: 1.5.4
+  excludePrefixesImageTag: 1.5.5
   labels:
     app: nsmgr
     "spiffe.io/spiffe-id": "true"

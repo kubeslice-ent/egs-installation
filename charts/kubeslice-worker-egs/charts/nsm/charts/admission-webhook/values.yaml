@@ -2,10 +2,6 @@
 # Default values for admission-webhook.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-
-dev:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
-
 global:
   nsmw_docker_existingImagePullSecret: "kubeslice-image-pull-secret"
   # IF You dont have existing secret then pass all below values it will create new secret "avesha-docker-ips"
@@ -68,7 +64,7 @@ admissionWebhook:
     #         - arm64
 
 nsmInjectContainerImageRegistry: cmd-nsc
-nsmInjectContainerImageTag: 1.5.9-RELEASE-719c1241
+nsmInjectContainerImageTag: 1.5.14
 
 nsmInjectInitContainerImageRegistry: cmd-nsc-init
 nsmInjectInitContainerImageTag: 1.5.9

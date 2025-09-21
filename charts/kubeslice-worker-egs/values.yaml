@@ -1,7 +1,3 @@
-dev:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
-
-
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   profile:
@@ -10,7 +6,7 @@ global:
 
 operator:
   image: worker-operator-ent-egs
-  tag: 1.16.0-RELEASE-3303e527
+  tag: 1.15.2
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -90,7 +86,7 @@ routerSidecar:
 
 gateway:
   image: gw-sidecar
-  tag: 1.1.1-RELEASE-65aff970
+  tag: 1.0.5
   pullPolicy: IfNotPresent
   logLevel: INFO
 
@@ -111,11 +107,11 @@ openvpn:
 wireguard:
   server:
     image: wireguard-server.alpine
-    tag: 1.0.0-RELEASE-e03f5d8d
+    tag: 1.0.0
     pullPolicy: IfNotPresent
   client:
     image: wireguard-client.alpine
-    tag: 1.0.0-RELEASE-e03f5d8d
+    tag: 1.0.0
     pullPolicy: IfNotPresent
 
 dns:

@@ -1,9 +1,6 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-dev:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
- 
+# Declare variables to be passed into your templates. 
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   # user can configure labels or annotations that EGS Controller namespaces should have
@@ -70,7 +67,7 @@ kubeslice:
     # Image name for the gateway certificates generator
     image: gateway-certs-generator
     # Image tag for the gateway certificates generator
-    tag: 0.8.1-RELEASE-37b1e1dc
+    tag: 0.8.0
 
   # Configuration for the KubeSlice controller
   controller:
@@ -87,7 +84,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.16.0-RELEASE-01556c08
+    tag: 1.15.2
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
