@@ -3,6 +3,10 @@ CHART NAME: {{ .Chart.Name }}
 CHART VERSION: {{ .Chart.Version }}
 APP VERSION: {{ .Chart.AppVersion }}
 
+⚠ WARNING: Since August 28th, 2025, only a limited subset of images/charts are available for free.
+    Subscribe to Bitnami Secure Images to receive continued support and security updates.
+    More info at https://bitnami.com and https://github.com/bitnami/containers/issues/83267
+
 ** Please be patient while the chart is being deployed **
 
 {{- if .Values.diagnosticMode.enabled }}
@@ -26,7 +30,7 @@ In order to replicate the container startup scripts execute this command:
 {{- else }}
 
 {{- $customUser := include "postgresql.v1.username" . }}
-{{- $postgresPassword := include "common.secrets.lookup" (dict "secret" (include "common.names.fullname" .) "key" .Values.auth.secretKeys.adminPasswordKey "defaultValue" (ternary .Values.auth.postgresPassword .Values.auth.password  (eq $customUser "postgres")) "context" $) -}}
+{{- $postgresPassword := include "common.secrets.lookup" (dict "secret" (include "postgresql.v1.chart.fullname" .) "key" .Values.auth.secretKeys.adminPasswordKey "defaultValue" (ternary .Values.auth.postgresPassword .Values.auth.password  (eq $customUser "postgres")) "context" $) -}}
 {{- $authEnabled := and (not (or .Values.global.postgresql.auth.existingSecret .Values.auth.existingSecret)) (or $postgresPassword .Values.auth.enablePostgresUser (and (not (empty $customUser)) (ne $customUser "postgres"))) }}
 {{- if not $authEnabled }}
 
@@ -66,11 +70,11 @@ To get the password for "{{ default "postgres" $customUser }}" run:
 To connect to your database run the following command:
     {{- if $authEnabled }}
 
-    kubectl run {{ include "common.names.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ $releaseNamespace }} --image {{ include "postgresql.v1.image" . }} --env="PGPASSWORD=$POSTGRES_PASSWORD" \
+    kubectl run {{ include "postgresql.v1.chart.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ $releaseNamespace }} --image {{ include "postgresql.v1.image" . }} --env="PGPASSWORD=$POSTGRES_PASSWORD" \
       --command -- psql --host {{ include "postgresql.v1.primary.fullname" . }} -U {{ default "postgres" $customUser }} -d {{- if include "postgresql.v1.database" . }} {{ include "postgresql.v1.database" . }}{{- else }} postgres{{- end }} -p {{ include "postgresql.v1.service.port" . }}
     {{- else }}
 
-    kubectl run {{ include "common.names.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ $releaseNamespace }} --image {{ include "postgresql.v1.image" . }} \
+    kubectl run {{ include "postgresql.v1.chart.fullname" . }}-client --rm --tty -i --restart='Never' --namespace {{ $releaseNamespace }} --image {{ include "postgresql.v1.image" . }} \
       --command -- psql --host {{ include "postgresql.v1.primary.fullname" . }} -d {{- if include "postgresql.v1.database" . }} {{ include "postgresql.v1.database" . }}{{- else }} postgres{{- end }} -p {{ include "postgresql.v1.service.port" . }}
     {{- end }}
 
@@ -116,3 +120,4 @@ WARNING: The configured password will be ignored on new installation in case whe
 {{- include "common.warnings.rollingTag" .Values.volumePermissions.image }}
 {{- include "common.warnings.resources" (dict "sections" (list "metrics" "primary" "readReplicas" "volumePermissions") "context" $) }}
 {{- include "common.warnings.modifiedImages" (dict "images" (list .Values.image .Values.volumePermissions.image .Values.metrics.image) "context" $) }}
+{{- include "common.errors.insecureImages" (dict "images" (list .Values.image .Values.volumePermissions.image .Values.metrics.image) "context" $) }}

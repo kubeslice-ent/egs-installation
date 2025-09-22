@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  {{- if .Values.netop.labels }}
+  labels:
+  {{ toYaml .Values.netop.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.netop.annotations }}
+  annotations:
+  {{ toYaml .Values.netop.annotations | nindent 4 }}
+  {{- end }}
+  name: kubeslice-netop
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      {{- if .Values.netop.labels }}
+      {{ toYaml .Values.netop.labels | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      annotations:
+      {{- if .Values.netop.annotations }}
+      {{ toYaml .Values.netop.annotations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.netop.labels }}
+      labels:
+      {{ toYaml .Values.netop.labels | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.netop.affinity }}
+      affinity:
+      {{ toYaml .Values.netop.affinity | nindent 8 }}
+      {{- end }}
+      hostNetwork: true
+      serviceAccount: kubeslice-netop
+      containers:
+      - env:
+        - name: POD_TYPE
+          value: NETOP_POD
+        - name: NETWORK_INTERFACE
+          value: {{ .Values.netop.networkInterface }}
+        image: '{{ .Values.global.imageRegistry }}/{{ .Values.netop.image }}:{{ .Values.netop.tag }}'
+        imagePullPolicy: {{ .Values.netop.pullPolicy }}
+        name: avesha-sidecar
+        securityContext: 
+        {{- if .Values.netop.containerSecurityContext }}
+        {{ toYaml .Values.netop.containerSecurityContext | nindent 10 }}
+        {{- end }}
+      imagePullSecrets:
+      - name: {{ template "imagePullSecrets.secretName" . }}
+      {{- if .Values.netop.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.netop.tolerations | nindent 8 }}
+      {{- end }}
+      securityContext:
+      {{- if .Values.netop.podSecurityContext }}
+      {{ toYaml .Values.netop.podSecurityContext | nindent 8 }}
+      {{- end }}

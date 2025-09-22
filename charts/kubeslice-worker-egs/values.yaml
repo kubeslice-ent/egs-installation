@@ -3,9 +3,10 @@ global:
   profile:
     openshift: false
 
+
 operator:
   image: worker-operator-ent-egs
-  tag: 1.15.1
+  tag: 1.15.2
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -72,6 +73,111 @@ cluster:
   name:
   nodeIp: # This field is deprecated. You can set nodeIPs through cluster spec.
   endpoint:
+
+router:
+  image: cmd-nse-vl3
+  tag: 1.0.6
+  pullPolicy: IfNotPresent                                                                                     
+
+routerSidecar:
+  image: kubeslice-router-sidecar
+  tag: 1.4.6
+  pullPolicy: IfNotPresent
+
+gateway:
+  image: gw-sidecar
+  tag: 1.0.5
+  pullPolicy: IfNotPresent
+  logLevel: INFO
+
+gatewayEdge:
+  image: slicegw-edge
+  tag: 1.0.6
+
+openvpn:
+  server:
+    image: openvpn-server.alpine
+    tag: 1.0.4
+    pullPolicy: IfNotPresent
+  client:
+    image: openvpn-client.alpine
+    tag: 1.0.4 
+    pullPolicy: IfNotPresent
+
+wireguard:
+  server:
+    image: wireguard-server.alpine
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+  client:
+    image: wireguard-client.alpine
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+
+dns:
+  image: dns
+  tag: 0.1.4
+  pullPolicy: IfNotPresent
+  service: 
+    type: ClusterIP
+  labels:
+    app: kubeslice-dns
+  annotations: {}
+  containerSecurityContext: {}
+    # runAsUser: 65536
+    # runAsGroup: 65536
+    # runAsNonRoot: true
+    # seccompProfile:
+    #   type: RuntimeDefault
+    # allowPrivilegeEscalation: false
+    # capabilities:
+    #   drop:
+    #     - ALL
+    # readOnlyRootFilesystem: true
+  podSecurityContext: {}
+    # runAsUser: 65536               # Non-root user
+    # runAsGroup: 65536              # Non-root group
+    # runAsNonRoot: true             # Ensure the container does not run as root
+    # seccompProfile:
+    #   type: RuntimeDefault
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 50m
+      memory: 128Mi
+  tolerations:
+    - key: "kubeslice.io/node-type"
+      operator: "Equal"
+      value: "gateway"
+      effect: "NoSchedule"
+    - key: "kubeslice.io/node-type"
+      operator: "Equal"
+      value: "gateway"
+      effect: "NoExecute"
+  affinity:
+    nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubeslice.io/node-type
+                operator: In
+                values:
+                - gateway
+
+envoy:
+  gateway:
+    image: envoygateway
+    tag: v1.0.3
+  proxy:
+    image: envoyproxy-distroless
+    tag: 1.30.4
+
+istio:
+  proxy:
+    image: proxyv2
+    tag: 1.16.1
 
 aiops:
   image: kube-aiops-operator
@@ -228,3 +334,15 @@ imagePullSecrets:
   dockerconfigjson: ## Value to be used if using external secret managers
 
 controllerNamespace: kubeslice-controller
+
+# enable/disable network component installation
+kubesliceNetworking:
+  enabled: true
+
+nsm:
+  spire:
+    priorityClassName: ""
+    spire-server:
+      priorityClassName: ""
+    spiffe-csi-driver:
+      priorityClassName: ""

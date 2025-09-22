@@ -1,0 +1,108 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  {{- if .Values.forwardingPlane.labels }}
+  labels:
+    {{ toYaml .Values.forwardingPlane.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.forwardingPlane.annotations }}
+  annotations:
+  {{ toYaml .Values.forwardingPlane.annotations | nindent 4 }}
+  {{- end }}
+  name: forwarder-kernel
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+    {{- if .Values.forwardingPlane.labels }}
+    {{ toYaml .Values.forwardingPlane.labels | nindent 6 }}
+    {{- end }}
+  template:
+    metadata:
+      annotations:
+      {{- if .Values.forwardingPlane.annotations }}
+      {{ toYaml .Values.forwardingPlane.annotations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.forwardingPlane.labels }}
+      labels:
+      {{ toYaml .Values.forwardingPlane.labels | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.forwardingPlane.affinity }}
+      affinity:
+      {{ toYaml .Values.forwardingPlane.affinity | nindent 8 }}
+      {{- end }}
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+      - name: {{ template "imagePullSecrets.secretName" . }}
+      containers:
+        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.forwardingPlane.kernelImageRegistry }}:{{ .Values.forwardingPlane.kernelImageTag }}'
+          imagePullPolicy: IfNotPresent
+          securityContext: 
+          {{- if .Values.forwardingPlane.containerSecurityContext }}
+          {{ toYaml .Values.forwardingPlane.containerSecurityContext | nindent 12 }}
+          {{- end }}
+          name: forwarder-kernel
+          securityContext:
+            privileged: true
+          env:
+            - name: SPIFFE_ENDPOINT_SOCKET
+              value: unix:///run/spire/sockets/agent.sock
+            - name: NSM_LOG_LEVEL
+              value: TRACE
+            - name: NSM_TUNNEL_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NSM_CONNECT_TO
+              value: unix:///var/lib/networkservicemesh/nsm.io.sock
+            - name: NSM_LISTEN_ON
+              value: unix:///listen.on.sock
+            - name: NSM_DIAL_TIMEOUT
+              value: "5000ms"
+            - name: NSM_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: spire-agent-socket
+              mountPath: /run/spire/sockets
+              readOnly: true
+            - name: nsm-socket
+              mountPath: /var/lib/networkservicemesh
+            - name: kubelet-socket
+              mountPath: /var/lib/kubelet
+            - name: cgroup
+              mountPath: /host/sys/fs/cgroup
+          {{- if .Values.forwardingPlane.resources }}
+          resources: 
+          {{ toYaml .Values.forwardingPlane.resources | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: Directory
+        - name: nsm-socket
+          hostPath:
+            path: /var/lib/networkservicemesh
+            type: DirectoryOrCreate
+        - name: kubelet-socket
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
+      {{- if .Values.forwardingPlane.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.forwardingPlane.tolerations | nindent 8 }}
+      {{- end }}
+      securityContext:
+      {{- if .Values.forwardingPlane.podSecurityContext }}
+      {{ toYaml .Values.forwardingPlane.podSecurityContext | nindent 8 }}
+      {{- end }}

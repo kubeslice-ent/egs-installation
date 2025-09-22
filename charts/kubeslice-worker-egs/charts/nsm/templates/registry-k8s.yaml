@@ -1,0 +1,85 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  {{- if .Values.registryK8s.labels }}
+  labels:
+    {{ toYaml .Values.registryK8s.labels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.registryK8s.annotations }}
+  annotations:
+  {{ toYaml .Values.registryK8s.annotations | nindent 4 }}
+  {{- end }}
+  name: registry-k8s
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+    {{- if .Values.registryK8s.labels }}
+    {{ toYaml .Values.registryK8s.labels | nindent 6 }}
+    {{- end }}
+  template:
+    metadata:
+      annotations:
+      {{- if .Values.registryK8s.annotations }}
+      {{ toYaml .Values.registryK8s.annotations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.registryK8s.labels }}
+      labels:
+      {{ toYaml .Values.registryK8s.labels | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.registryK8s.affinity }}
+      affinity:
+      {{ toYaml .Values.registryK8s.affinity | nindent 8 }}
+      {{- end }}
+      serviceAccountName: nsmgr-acc
+      imagePullSecrets:
+      - name: {{ template "imagePullSecrets.secretName" . }}
+      containers:
+        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.registryK8s.registryK8sImageRegistry }}:{{ .Values.registryK8s.registryK8sImageTag }}'
+          env:
+            - name: SPIFFE_ENDPOINT_SOCKET
+              value: unix:///run/spire/sockets/agent.sock
+            - name: REGISTRY_K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: REGISTRY_K8S_LISTEN_ON
+              value: tcp://:5002
+            - name: REGISTRY_K8S_PROXY_REGISTRY_URL
+              value: nsmgr-proxy:5004
+            - name: REGISTRY_K8S_KUBELET_QPS
+              value: "500"
+          imagePullPolicy: IfNotPresent
+          securityContext: 
+          {{- if .Values.registryK8s.containerSecurityContext }}
+          {{ toYaml .Values.registryK8s.containerSecurityContext | nindent 12 }}
+          {{- end }}
+          name: registry
+          ports:
+            - containerPort: 5002
+          volumeMounts:
+            - name: spire-agent-socket
+              mountPath: /run/spire/sockets
+          {{- if .Values.registryK8s.resources }}
+          resources: 
+          {{ toYaml .Values.registryK8s.resources | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: spire-agent-socket
+          hostPath:
+            path: /run/spire/sockets
+            type: DirectoryOrCreate
+        - name: nsm-socket
+          hostPath:
+            path: /var/lib/networkservicemesh
+            type: DirectoryOrCreate
+      {{- if .Values.registryK8s.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.registryK8s.tolerations | nindent 8 }}
+      {{- end }}
+      securityContext:
+      {{- if .Values.registryK8s.podSecurityContext }}
+      {{ toYaml .Values.registryK8s.podSecurityContext | nindent 8 }}
+      {{- end }}

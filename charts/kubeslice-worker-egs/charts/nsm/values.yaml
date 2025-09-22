@@ -1,0 +1,154 @@
+---
+# Default values for nsm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+  
+insecure: true
+global:
+  nsm_docker_existingImagePullSecret: "kubeslice-image-pull-secret"
+  # IF You dont have existing secret then pass all below values it will create new secret "avesha-docker-ips"
+  ## MANDOTORY FIELDS IF EXISTING SECRET NOT PRESENT ##
+  nsm_docker_imagePullSecrets:
+    repository: 
+    username: ''
+    password: ''
+    email: ''
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+  # set to true to enable Jaeger tracing for NSM components
+  JaegerTracing: true
+
+forwardingPlane:
+  kernelImageRegistry: cmd-forwarder-kernel
+  kernelImageTag: 1.0.9
+  labels:
+    app: forwarder-kernel
+    "spiffe.io/spiffe-id": "true"
+  annotations: {}
+  containerSecurityContext: {}
+    # runAsUser: 65536
+    # runAsGroup: 65536
+    # runAsNonRoot: true
+    # seccompProfile:
+    #   type: RuntimeDefault
+    # allowPrivilegeEscalation: false
+    # capabilities:
+    #   drop:
+    #     - ALL
+    # readOnlyRootFilesystem: true
+  podSecurityContext: {}
+    # runAsUser: 65536               # Non-root user
+    # runAsGroup: 65536              # Non-root group
+    # runAsNonRoot: true             # Ensure the container does not run as root
+    # seccompProfile:
+    #   type: RuntimeDefault
+  resources: 
+    requests:
+      cpu: 150m
+    limits:
+      memory: 500Mi
+      cpu: 525m
+  tolerations:
+    - operator: "Exists"
+
+nsmgr:
+  imageRegistry: cmd-nsmgr
+  imageTag: 1.5.7
+  waitForItImageRegistry: wait-for-it
+  waitForItImageTag: 1.0.2
+  excludePrefixesImageRegistry: cmd-exclude-prefixes-k8s
+  excludePrefixesImageTag: 1.5.5
+  labels:
+    app: nsmgr
+    "spiffe.io/spiffe-id": "true"
+  annotations: {}
+  containerSecurityContext: {}
+    # runAsUser: 65536
+    # runAsGroup: 65536
+    # runAsNonRoot: true
+    # seccompProfile:
+    #   type: RuntimeDefault
+    # allowPrivilegeEscalation: false
+    # capabilities:
+    #   drop:
+    #     - ALL
+    # readOnlyRootFilesystem: true
+  podSecurityContext: {}
+    # runAsUser: 65536               # Non-root user
+    # runAsGroup: 65536              # Non-root group
+    # runAsNonRoot: true             # Ensure the container does not run as root
+    # seccompProfile:
+    #   type: RuntimeDefault
+  resources:
+    requests:
+      cpu: 200m
+      memory: 100Mi
+    limits:
+      memory: 200Mi
+      cpu: 500m
+  tolerations: {}
+    # - key: "kubernetes.io/arch"
+    #   operator: "Equal"
+    #   value: "amd64"
+    #   effect: "NoSchedule"
+    # - key: "kubernetes.io/arch"
+    #   operator: "Equal"
+    #   value: "arm64"
+    #   effect: "NoSchedule"
+  affinity: {}
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubeslice.io/node-type
+    #         operator: In
+    #         values:
+    #         - gateway
+
+registryK8s:
+  registryK8sImageRegistry: cmd-registry-k8s
+  registryK8sImageTag: 1.5.6
+  labels:
+    app: registry
+    "spiffe.io/spiffe-id": "true"
+  annotations: {}
+  containerSecurityContext: {}
+    # runAsUser: 65536
+    # runAsGroup: 65536
+    # runAsNonRoot: true
+    # seccompProfile:
+    #   type: RuntimeDefault
+    # allowPrivilegeEscalation: false
+    # capabilities:
+    #   drop:
+    #     - ALL
+    # readOnlyRootFilesystem: true
+  podSecurityContext: {}
+    # runAsUser: 65536               # Non-root user
+    # runAsGroup: 65536              # Non-root group
+    # runAsNonRoot: true             # Ensure the container does not run as root
+    # seccompProfile:
+    #   type: RuntimeDefault
+  resources:
+    requests:
+      cpu: 200m
+    limits:
+      memory: 100Mi
+      cpu: 600m
+  tolerations: {}
+    # - key: "kubernetes.io/arch"
+    #   operator: "Equal"
+    #   value: "amd64"
+    #   effect: "NoSchedule"
+    # - key: "kubernetes.io/arch"
+    #   operator: "Equal"
+    #   value: "arm64"
+    #   effect: "NoSchedule"
+  affinity: {}
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubeslice.io/node-type
+    #         operator: In
+    #         values:
+    #         - gateway
