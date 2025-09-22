@@ -131,6 +131,8 @@ kubeslice_worker_egs:
     inline_values:
       global:
         imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
+      kubesliceNetworking:
+        enabled: true        # enable/disable network component installation
       operator:
         env:
           - name: DCGM_EXPORTER_JOB_NAME
