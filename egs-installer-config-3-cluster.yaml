@@ -286,7 +286,7 @@ kubeslice_worker_egs:
     # local_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus
     # local_prometheus_service_type: ClusterIP # Service type for Prometheus (accessible only within the cluster)
 
-  - name: "worker-2"                           # Worker name
+  - name: "worker-3"                           # Worker name
     use_global_kubeconfig: false                # Use global kubeconfig for this worker
     kubeconfig: "worker-3"                             # Path to the kubeconfig file specific to the worker, if empty, uses the global kubeconfig
     kubecontext: "$WORKER3_CONTEXT"                            # Kubecontext specific to the worker; if empty, uses the global context
