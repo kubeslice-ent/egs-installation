@@ -286,6 +286,60 @@ kubeslice_worker_egs:
     # local_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus
     # local_prometheus_service_type: ClusterIP # Service type for Prometheus (accessible only within the cluster)
 
+  - name: "worker-2"                           # Worker name
+    use_global_kubeconfig: false                # Use global kubeconfig for this worker
+    kubeconfig: "worker-3"                             # Path to the kubeconfig file specific to the worker, if empty, uses the global kubeconfig
+    kubecontext: "$WORKER3_CONTEXT"                            # Kubecontext specific to the worker; if empty, uses the global context
+    skip_installation: false                   # Do not skip the installation of the worker
+    specific_use_local_charts: true            # Override to use local charts for this worker
+    namespace: "kubeslice-system"              # Kubernetes namespace for this worker
+    release: "egs-worker"                      # Helm release name for the worker
+    chart: "kubeslice-worker-egs"              # Helm chart name for the worker
+#### Inline Helm Values for the Worker Chart ####
+    inline_values:
+      global:
+        imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
+      kubesliceNetworking:
+        enabled: true        # enable/disable network component installation
+      operator:
+        env:
+          - name: DCGM_EXPORTER_JOB_NAME
+            value: gpu-metrics
+      egs:
+        prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
+        grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
+      egsAgent:
+        secretName: egs-agent-access
+        agentSecret:
+          endpoint: ""
+          key: ""
+      metrics:
+        insecure: true                        # Allow insecure connections for metrics
+      kserve:
+        enabled: true                         # Enable KServe for the worker
+        kserve:                               # KServe chart options
+          controller:
+            gateway:
+              domain: kubeslice.com
+              ingressGateway:
+                className: "nginx"            # Ingress class name for the KServe gateway
+#### Helm Flags and Verification Settings ####
+    helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
+    verify_install: true                       # Verify the installation of the worker
+    verify_install_timeout: 60                 # Timeout for the worker installation verification (in seconds)
+    skip_on_verify_fail: false                 # Do not skip if worker verification fails
+#### Troubleshooting Settings ####
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+#### Local Monitoring Endpoint Settings (Optional) ####
+    # local_auto_fetch_endpoint: true          # Enable automatic fetching of monitoring endpoints
+    # local_grafana_namespace: egs-monitoring  # Namespace where Grafana is deployed
+    # local_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana
+    # local_grafana_service_type: ClusterIP    # Service type for Grafana (accessible only within the cluster)
+    # local_prometheus_namespace: egs-monitoring  # Namespace where Prometheus is deployed
+    # local_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus
+    # local_prometheus_service_type: ClusterIP # Service type for Prometheus (accessible only within the cluster)
+
+
 
 
 #### Define Projects ####
@@ -307,6 +361,17 @@ cluster_registration:
       cloudProvider: ""              # Cloud provider for this cluster (e.g., GCP)
       cloudRegion: ""                # Cloud region for this cluster (e.g., us-central1)
   - cluster_name: "worker-2"                    # Name of the cluster to be registered
+    project_name: "avesha"                      # Name of the project to associate with the cluster
+    #### Telemetry Settings ####
+    telemetry:
+      enabled: true                             # Enable telemetry for this cluster
+      endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090" # Telemetry endpoint
+      telemetryProvider: "prometheus"           # Telemetry provider (Prometheus in this case)
+    #### Geo-Location Settings ####
+    geoLocation:
+      cloudProvider: ""              # Cloud provider for this cluster (e.g., GCP)
+      cloudRegion: ""                # Cloud region for this cluster (e.g., us-central1)
+  - cluster_name: "worker-3"                    # Name of the cluster to be registered
     project_name: "avesha"                      # Name of the project to associate with the cluster
     #### Telemetry Settings ####
     telemetry:
@@ -359,6 +424,40 @@ additional_apps:
     use_global_kubeconfig: false                # Use global kubeconfig for this application
     kubeconfig: "worker-2"                             # Path to the kubeconfig file specific to this application
     kubecontext: "$WORKER2_CONTEXT"                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "egs-gpu-operator"              # Namespace where the GPU operator will be installed
+    release: "gpu-operator"                    # Helm release name for the GPU operator
+    chart: "gpu-operator"                      # Helm chart name for the GPU operator
+    repo_url: "https://helm.ngc.nvidia.com/nvidia" # Helm repository URL for the GPU operator
+    version: "v24.9.1"                         # Version of the GPU operator to install
+    specific_use_local_charts: true            # Use local charts for this application
+    #### Inline Helm Values for GPU Operator ####
+    inline_values:
+      hostPaths:
+        driverInstallDir: "/home/kubernetes/bin/nvidia"
+      toolkit:
+        installDir: "/home/kubernetes/bin/nvidia"
+      cdi:
+        enabled: true
+        default: true
+      # mig:
+      #   strategy: "mixed"
+      # migManager:                             # Enable to ensure that the node reboots and can apply the MIG configuration.
+      #   env:
+      #     - name: WITH_REBOOT
+      #       value: "true"
+      driver:
+        enabled: false
+    helm_flags: "--debug"                              # Additional Helm flags for this application's installation
+    verify_install: false                       # Verify the installation of the GPU operator
+    verify_install_timeout: 600                 # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                   # Skip the step if verification fails
+    enable_troubleshoot: false                  # Enable troubleshooting mode for additional logs and checks
+  
+  - name: "gpu-operator"                       # Name of the application
+    skip_installation: false                   # Do not skip the installation of the GPU operator
+    use_global_kubeconfig: false                # Use global kubeconfig for this application
+    kubeconfig: "worker-3"                             # Path to the kubeconfig file specific to this application
+    kubecontext: "$WORKER3_CONTEXT"                            # Kubecontext specific to this application; uses global context if empty
     namespace: "egs-gpu-operator"              # Namespace where the GPU operator will be installed
     release: "gpu-operator"                    # Helm release name for the GPU operator
     chart: "gpu-operator"                      # Helm chart name for the GPU operator
@@ -457,6 +556,70 @@ additional_apps:
     use_global_kubeconfig: false                # Use global kubeconfig for Prometheus
     kubeconfig: "worker-2"                             # Path to the kubeconfig file specific to this application
     kubecontext: "$WORKER2_CONTEXT"                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "egs-monitoring"                # Namespace where Prometheus will be installed
+    release: "prometheus"                      # Helm release name for Prometheus
+    chart: "kube-prometheus-stack"             # Helm chart name for Prometheus
+    repo_url: "https://prometheus-community.github.io/helm-charts" # Helm repository URL for Prometheus
+    version: "v45.0.0"                         # Version of the Prometheus stack to install
+    specific_use_local_charts: true            # Use local charts for this application
+    values_file: ""                             # Path to an external values file, if any
+    #### Inline Helm Values for Prometheus ####
+    inline_values:
+      prometheus:
+        service:
+          type: ClusterIP                     # Service type for Prometheus
+        prometheusSpec:
+          storageSpec: {}                     # Placeholder for storage configuration
+          additionalScrapeConfigs:
+          - job_name: nvidia-dcgm-exporter
+            kubernetes_sd_configs:
+            - role: endpoints
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod_name
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              target_label: container_name
+          - job_name: gpu-metrics
+            scrape_interval: 1s
+            metrics_path: /metrics
+            scheme: http
+            kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names:
+                - egs-gpu-operator
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_endpoints_name]
+              action: drop
+              regex: .*-node-feature-discovery-master
+            - source_labels: [__meta_kubernetes_pod_node_name]
+              action: replace
+              target_label: kubernetes_node
+      grafana:
+        enabled: true                         # Enable Grafana
+        grafana.ini:
+          auth:
+            disable_login_form: true
+            disable_signout_menu: true
+          auth.anonymous:
+            enabled: true
+            org_role: Viewer
+        service:
+          type: ClusterIP                  # Service type for Grafana
+        persistence:
+          enabled: false                      # Disable persistence
+          size: 1Gi                           # Default persistence size
+    helm_flags: "--debug"                             # Additional Helm flags for this application's installation
+    verify_install: false                      # Verify the installation of Prometheus
+    verify_install_timeout: 600                # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                  # Skip the step if verification fails
+    enable_troubleshoot: false
+
+  - name: "prometheus"                         # Name of the application
+    skip_installation: false                   # Do not skip the installation of Prometheus
+    use_global_kubeconfig: false                # Use global kubeconfig for Prometheus
+    kubeconfig: "worker-3"                             # Path to the kubeconfig file specific to this application
+    kubecontext: "$WORKER3_CONTEXT"                            # Kubecontext specific to this application; uses global context if empty
     namespace: "egs-monitoring"                # Namespace where Prometheus will be installed
     release: "prometheus"                      # Helm release name for Prometheus
     chart: "kube-prometheus-stack"             # Helm chart name for Prometheus
