@@ -234,7 +234,7 @@ kubeslice_worker_egs:
     # local_prometheus_service_type: ClusterIP # Service type for Prometheus (accessible only within the cluster)
   
   - name: "worker-2"                           # Worker name
-    use_global_kubeconfig: true                # Use global kubeconfig for this worker
+    use_global_kubeconfig: false                # Use global kubeconfig for this worker
     kubeconfig: "worker-2"                             # Path to the kubeconfig file specific to the worker, if empty, uses the global kubeconfig
     kubecontext: "$WORKER2_CONTEXT"                            # Kubecontext specific to the worker; if empty, uses the global context
     skip_installation: false                   # Do not skip the installation of the worker
@@ -356,7 +356,7 @@ additional_apps:
 
   - name: "gpu-operator"                       # Name of the application
     skip_installation: false                   # Do not skip the installation of the GPU operator
-    use_global_kubeconfig: true                # Use global kubeconfig for this application
+    use_global_kubeconfig: false                # Use global kubeconfig for this application
     kubeconfig: "worker-2"                             # Path to the kubeconfig file specific to this application
     kubecontext: "$WORKER2_CONTEXT"                            # Kubecontext specific to this application; uses global context if empty
     namespace: "egs-gpu-operator"              # Namespace where the GPU operator will be installed
@@ -454,7 +454,7 @@ additional_apps:
 
   - name: "prometheus"                         # Name of the application
     skip_installation: false                   # Do not skip the installation of Prometheus
-    use_global_kubeconfig: true                # Use global kubeconfig for Prometheus
+    use_global_kubeconfig: false                # Use global kubeconfig for Prometheus
     kubeconfig: "worker-2"                             # Path to the kubeconfig file specific to this application
     kubecontext: "$WORKER2_CONTEXT"                            # Kubecontext specific to this application; uses global context if empty
     namespace: "egs-monitoring"                # Namespace where Prometheus will be installed
