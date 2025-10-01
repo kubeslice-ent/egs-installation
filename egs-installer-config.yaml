@@ -170,11 +170,11 @@ kubeslice_ui_egs:
         service:
           type: ClusterIP                  # Service type for the EGS core APIs
 
-      egs:
-        ControllerPrometheusTlsEnabled: "false"
-        ControllerPrometheusTlsCert: ""
-        ControllerPrometheusTlsKey: ""
-        ControllerPrometheusTlsCa: ""
+    egs:
+      ControllerPrometheusTlsEnabled: "false"
+      ControllerPrometheusTlsCert: ""
+      ControllerPrometheusTlsKey: ""
+      ControllerPrometheusTlsCa: ""
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
   verify_install: false                        # Verify the installation of the UI
