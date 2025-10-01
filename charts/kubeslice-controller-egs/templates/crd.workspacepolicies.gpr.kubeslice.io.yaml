@@ -1,0 +1,134 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: workspacepolicies.gpr.kubeslice.io
+spec:
+  group: gpr.kubeslice.io
+  names:
+    kind: WorkspacePolicy
+    listKind: WorkspacePolicyList
+    plural: workspacepolicies
+    shortNames:
+    - wsp
+    singular: workspacepolicy
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: WorkspacePolicy is the Schema for the workspacepolicies API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: WorkspacePolicySpec defines the desired state of WorkspacePolicy.
+            properties:
+              clusterGPUConstraints:
+                description: Cluster-specific GPU constraints
+                items:
+                  description: ClusterGPUConstraints defines GPU constraints for a
+                    specific cluster
+                  properties:
+                    clusterName:
+                      description: Name of the cluster
+                      type: string
+                    gpuShapes:
+                      description: List of GPU shapes allowed for this cluster
+                      items:
+                        type: string
+                      type: array
+                    maxGPUPerGpr:
+                      description: Max Number of gpu per gpr
+                      format: int32
+                      type: integer
+                    maxMemoryPerGpr:
+                      description: max memory per GPR in GB
+                      format: int32
+                      type: integer
+                  type: object
+                type: array
+              enableAutoEviction:
+                default: true
+                type: boolean
+              globalGPUConstraints:
+                description: Global GPU constraints applied to all clusters of the
+                  slice
+                properties:
+                  gpuShapes:
+                    description: List of GPU shapes allowed
+                    items:
+                      type: string
+                    type: array
+                  maxGPUPerGpr:
+                    description: Max Number of gpu per gpr
+                    format: int32
+                    type: integer
+                  maxMemoryPerGpr:
+                    description: max memory per GPR in GB
+                    format: int32
+                    type: integer
+                type: object
+              maxExitDurationPerGPR:
+                default: 1W
+                description: |-
+                  Maximum exit duration that can be set in GPRs (in seconds)
+                  Examples: "1M", "2W", "10M"
+                pattern: ^([0-9]+)([MW])$
+                type: string
+              maxGPRs:
+                default: 3
+                description: Maximum number of GPRs that can be created under the
+                  workspace
+                format: int32
+                type: integer
+              priorityRange:
+                default: low
+                description: Priority range of priority values that GPRs can use for
+                  this workspace
+                type: string
+              requeueOnFailure:
+                default: true
+                description: |-
+                  Maximum number of inference endpoints that can be created for the workspace
+                  MaxInferenceEndpoints int32 `json:"maxInferenceEndpoints,omitempty"`
+                type: boolean
+              sliceRef:
+                description: Reference to the sliceconfig CR that this policy should
+                  be applied to
+                properties:
+                  name:
+                    description: Name of the sliceconfig CR that this policy should
+                      be applied to
+                    type: string
+                type: object
+            required:
+            - enableAutoEviction
+            - requeueOnFailure
+            - sliceRef
+            type: object
+          status:
+            description: WorkspacePolicyStatus defines the observed state of WorkspacePolicy.
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

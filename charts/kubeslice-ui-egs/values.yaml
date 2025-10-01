@@ -1,6 +1,10 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
+  
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   profile:
@@ -69,7 +73,7 @@ kubeslice:
                     operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.15.2
+    tag: 1.16.0-RELEASE-c33c88fd
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -209,7 +213,7 @@ kubeslice:
 
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 1.15.2
+    tag: 1.16.0-RELEASE-b41980a6
     pullPolicy: IfNotPresent
     env:
       - name: DCGM_METRIC_JOB_VALUE
@@ -257,7 +261,7 @@ kubeslice:
   egsCoreApis:
     enabled: true
     image: egs-core-apis
-    tag: 1.14.2
+    tag: 1.15.0-RELEASE-44d02ce7
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -310,6 +314,10 @@ egs:
   InventoryManagerAddress: egs-inventory-manager:80
   QueueManagerAddress: egs-queue-manager:80
   CoreApisUrl: http://egs-core-apis:8080
+  ControllerPrometheusTlsEnabled: "false"
+  ControllerPrometheusTlsCert: ""
+  ControllerPrometheusTlsKey: ""
+  ControllerPrometheusTlsCa: ""
 
 imagePullSecretsName: "kubeslice-ui-image-pull-secret"
 # leave the below fields empty if secrets are managed externally.

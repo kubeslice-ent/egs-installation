@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: egs-gpu-agent
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: egs-gpu-agent
+  template:
+    metadata:
+      labels:
+        app: egs-gpu-agent
+        egs.kubeslice.io/gpu-agent: "true"
+        {{- with .Values.egsGpuAgent.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.egsGpuAgent.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: egs-gpu-agent-access
+      {{- with .Values.egsGpuAgent.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      # Main egs-gpu-agent container
+      - name: egs-gpu-agent
+        image: "{{ .Values.dev.imageRegistry }}/{{ .Values.egsGpuAgent.image }}:{{ .Values.egsGpuAgent.tag }}"
+        imagePullPolicy: {{ .Values.egsGpuAgent.pullPolicy }}
+        {{- with .Values.egsGpuAgent.containerSecurityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.egsGpuAgent.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        env:
+        {{- range .Values.egsGpuAgent.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        - name: SERVER_ADDRESS
+          value: ":8083"
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+
+      {{- with .Values.egsGpuAgent.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.egsGpuAgent.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+# Service Account for GPU Agent
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: egs-gpu-agent-access
+  namespace: {{ .Release.Namespace }}
+---
+# Cluster Role for GPU Agent
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: egs-gpu-agent
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch", "update"]
+---
+# Cluster Role Binding for GPU Agent
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: egs-gpu-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: egs-gpu-agent
+subjects:
+- kind: ServiceAccount
+  name: egs-gpu-agent-access
+  namespace: {{ .Release.Namespace }}

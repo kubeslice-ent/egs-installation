@@ -58,7 +58,7 @@ spec:
       {{ toYaml .Values.kubeslice.apigw.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
+        - image: '{{ .Values.dev.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
           imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
           env:
             {{- if .Values.kubeslice.apigw.env }}
@@ -93,6 +93,16 @@ spec:
               value: {{ .Values.egs.QueueManagerAddress }}
             - name: CORE_APIS_ENDPOINT
               value: {{ .Values.egs.CoreApisUrl }}
+            - name: CONTROLLER_PROMETHEUS_TLS_ENABLED
+              value: {{ .Values.egs.ControllerPrometheusTlsEnabled }}
+          {{- if eq .Values.egs.ControllerPrometheusTlsEnabled "true" }}
+            - name: CONTROLLER_PROMETHEUS_TLS_CERT
+              value: {{ .Values.egs.ControllerPrometheusTlsCert }}
+            - name: CONTROLLER_PROMETHEUS_TLS_KEY
+              value: {{ .Values.egs.ControllerPrometheusTlsKey }}
+            - name: CONTROLLER_PROMETHEUS_TLS_CA
+              value: {{ .Values.egs.ControllerPrometheusTlsCa }}
+          {{- end }}
           {{- if .Values.global.gpr.enableLimits }}
             - name: API_GATEWAY_REQUEST_LIMITS_CONFIG_PATH
               value: /app/config/request-limits/request-limits.json

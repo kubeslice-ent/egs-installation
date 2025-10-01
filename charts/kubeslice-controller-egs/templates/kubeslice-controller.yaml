@@ -354,6 +354,8 @@ spec:
                 - ignorePrechecks
                 - stopOnPrecheck
                 - reRunPrecheck
+                - prechecksInProgress
+                - prechecksCompleted
                 type: string
               pvDataOnly:
                 description: PVDataOnly is a flag to indicate if only PV data should
@@ -1506,6 +1508,7 @@ spec:
                 - warning
                 - not_compatible
                 - fixable
+                - in_progress
                 type: string
               restore:
                 description: RestoreStatus captures the current status of a Velero
@@ -3432,12 +3435,15 @@ spec:
                 - warning
                 - not_compatible
                 - fixable
+                - in_progress
                 type: string
               preCheckFlag:
                 enum:
                 - ignorePrechecks
                 - stopOnPrecheck
                 - reRunPrecheck
+                - prechecksInProgress
+                - prechecksCompleted
                 type: string
               rawSpec:
                 description: RawSpec contains the Velero backup and restore specs
@@ -6194,6 +6200,18 @@ rules:
       - ""
     resources:
       - serviceaccounts
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
     verbs:
       - create
       - delete

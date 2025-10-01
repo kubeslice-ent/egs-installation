@@ -101,6 +101,10 @@ spec:
                 type: string
               requeueOnFailure:
                 type: boolean
+              runPrecheck:
+                default: true
+                description: RunPrecheck is a flag to enable running prechecks
+                type: boolean
               sliceName:
                 type: string
               workloadSelector:
@@ -206,6 +210,33 @@ spec:
               nodeList:
                 items:
                   type: string
+                type: array
+              nodeListPreCheckReports:
+                items:
+                  properties:
+                    gpuNodePrechecks:
+                      properties:
+                        gpuTestResult:
+                          items:
+                            properties:
+                              errorMessage:
+                                type: string
+                              gpuId:
+                                type: string
+                              testName:
+                                type: string
+                              testResult:
+                                type: string
+                            type: object
+                          type: array
+                        preCheckResult:
+                          type: string
+                        preCheckRunComplete:
+                          type: boolean
+                      type: object
+                    nodeName:
+                      type: string
+                  type: object
                 type: array
               numGPUsAllocated:
                 type: integer
