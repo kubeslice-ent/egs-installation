@@ -169,6 +169,12 @@ kubeslice_ui_egs:
         enabled: true                         # Enable EGS core APIs for the UI
         service:
           type: ClusterIP                  # Service type for the EGS core APIs
+
+      egs:
+        ControllerPrometheusTlsEnabled: "false"
+        ControllerPrometheusTlsCert: ""
+        ControllerPrometheusTlsKey: ""
+        ControllerPrometheusTlsCa: ""
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
   verify_install: false                        # Verify the installation of the UI
@@ -216,6 +222,12 @@ kubeslice_worker_egs:
               domain: kubeslice.com
               ingressGateway:
                 className: "nginx"            # Ingress class name for the KServe gateway
+      egsGpuAgent:
+        env:
+          - name: REMOTE_HE_INFO
+            value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
+          - name: HEALTH_CHECK_INTERVAL
+            value: "15m"
 #### Helm Flags and Verification Settings ####
     helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
     verify_install: true                       # Verify the installation of the worker
@@ -362,7 +374,7 @@ additional_apps:
     release: "kt-postgresql"                  # Helm release name for PostgreSQL
     chart: "postgresql"                       # Helm chart name for PostgreSQL
     repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql" # Helm repository URL for PostgreSQL
-    version: "16.2.1"                         # Version of the PostgreSQL chart to install
+    version: "16.7.27"                         # Version of the PostgreSQL chart to install
     specific_use_local_charts: true           # Use local charts for this application
     values_file: ""                            # Path to an external values file, if any
     #### Inline Helm Values for PostgreSQL ####

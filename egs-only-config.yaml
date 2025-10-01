@@ -108,6 +108,11 @@ kubeslice_ui_egs:
         enabled: true                         # Enable EGS core APIs for the UI
         service:
           type: ClusterIP                  # Service type for the EGS core APIs
+      egs:
+        ControllerPrometheusTlsEnabled: "false"
+        ControllerPrometheusTlsCert: ""
+        ControllerPrometheusTlsKey: ""
+        ControllerPrometheusTlsCa: ""
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
   verify_install: false                        # Verify the installation of the UI
@@ -155,6 +160,12 @@ kubeslice_worker_egs:
               domain: kubeslice.com
               ingressGateway:
                 className: "nginx"            # Ingress class name for the KServe gateway
+      egsGpuAgent:
+        env:
+          - name: REMOTE_HE_INFO
+            value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
+          - name: HEALTH_CHECK_INTERVAL
+            value: "15m"
 #### Helm Flags and Verification Settings ####
     helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
     verify_install: true                       # Verify the installation of the worker
