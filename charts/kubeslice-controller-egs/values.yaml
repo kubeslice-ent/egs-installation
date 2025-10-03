@@ -99,7 +99,7 @@ kubeslice:
       # Image name for MinIO
       image: minio
       # Image tag for MinIO
-      tag: RELEASE.2024-07-16T23-46-41Z
+      tag: RELEASE.2025-09-07T16-13-09Z-cpuv1
       # Configuration for MinIO
       minio:
         # Whether to install MinIO
