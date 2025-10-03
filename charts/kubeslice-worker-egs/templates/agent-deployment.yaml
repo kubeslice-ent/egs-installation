@@ -38,7 +38,7 @@ spec:
         - name: tmp-volume
           emptyDir: {} # Creates a temporary, writable directory
       containers:
-      - image: '{{ .Values.global.imageRegistry }}/{{ .Values.egsAgent.image }}:{{ .Values.egsAgent.tag }}'
+      - image: '{{ .Values.dev.imageRegistry }}/{{ .Values.egsAgent.image }}:{{ .Values.egsAgent.tag }}'
         volumeMounts: # Add this section
           - name: tmp-volume
             mountPath: /tmp # Mounts the writable volume at /tmp      
