@@ -94,7 +94,7 @@ spec:
             - name: CORE_APIS_ENDPOINT
               value: {{ .Values.egs.CoreApisUrl }}
             - name: CONTROLLER_PROMETHEUS_TLS_ENABLED
-              value: {{ .Values.egs.ControllerPrometheusTlsEnabled }}
+              value: {{ .Values.egs.ControllerPrometheusTlsEnabled | quote   }}
           {{- if eq .Values.egs.ControllerPrometheusTlsEnabled "true" }}
             - name: CONTROLLER_PROMETHEUS_TLS_CERT
               value: {{ .Values.egs.ControllerPrometheusTlsCert }}
