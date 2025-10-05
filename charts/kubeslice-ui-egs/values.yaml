@@ -304,7 +304,7 @@ kubeslice:
 
   workerinstaller:
     image: worker-installer
-    tag: 1.8.0
+    tag: 1.6.1-RELEASE-4a44a402
     pullPolicy: IfNotPresent
 
   prometheus:

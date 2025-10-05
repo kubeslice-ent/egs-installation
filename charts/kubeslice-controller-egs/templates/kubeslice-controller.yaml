@@ -6414,6 +6414,7 @@ rules:
       - gpuprovisioningrequests
       - gprtemplates
       - gprtemplatebindings
+      - workspacepolicies
     verbs:
       - create
       - delete
