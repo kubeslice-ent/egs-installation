@@ -10,7 +10,7 @@ global:
 
 operator:
   image: worker-operator-ent-egs
-  tag: 1.15.2
+  tag: 1.15.3-RELEASE-bf087113
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
