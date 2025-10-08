@@ -102,7 +102,6 @@ spec:
               requeueOnFailure:
                 type: boolean
               runPrecheck:
-                default: true
                 description: RunPrecheck is a flag to enable running prechecks
                 type: boolean
               sliceName:
