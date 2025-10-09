@@ -670,3 +670,17 @@ This section provides detailed explanations of all configuration fields availabl
 | `manifests[].kubeconfig`        | Path to a specific Kubernetes configuration file to be used instead of the global kubeconfig.                           | `string`          | No           | `/path/to/specific/kubeconfig`                                                                                      |
 | `manifests[].kubecontext`       | The context name in the specific Kubernetes configuration file to be used for this manifest.                            | `string`          | No           | `specific-context`                                                                                                  |
 | `
+
+## Accessing Grafana Dashboard
+
+After successful installation, you can access the Grafana dashboard:
+
+```bash
+# Port forward to Grafana
+kubectl port-forward svc/prometheus-grafana 3000:80 -n egs-monitoring
+
+# Access Grafana at http://localhost:3000
+# Default credentials: admin / prom-operator
+```
+
+**Note:** The default credentials are set by the kube-prometheus-stack Helm chart. For production deployments, consider changing these credentials for security.

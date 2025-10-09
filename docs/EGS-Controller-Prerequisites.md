@@ -565,6 +565,16 @@ kubectl port-forward svc/kubeslice-controller-manager-service 18080:18080 -n kub
 # Visit http://localhost:18080/metrics
 ```
 
+### 4.4 Access Grafana Dashboard
+
+```bash
+# Port forward to Grafana
+kubectl port-forward svc/prometheus-grafana 3000:80 -n egs-monitoring
+
+# Access Grafana at http://localhost:3000
+# Default credentials: admin / prom-operator
+```
+
 ## 5. Troubleshooting
 
 ### 5.1 Prometheus Issues

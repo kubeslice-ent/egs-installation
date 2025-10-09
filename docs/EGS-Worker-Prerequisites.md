@@ -580,7 +580,8 @@ Import a GPU monitoring dashboard into Grafana:
 kubectl port-forward svc/prometheus-grafana 3000:80 -n egs-monitoring
 
 # Access Grafana at http://localhost:3000
-# Import dashboard ID: 14574 (NVIDIA GPU Exporter Dashboard)
+# Default credentials: admin / prom-operator
+# Import dashboard ID: 12239 (NVIDIA GPU Exporter Dashboard)
 ```
 
 ## 4. Verification Steps
