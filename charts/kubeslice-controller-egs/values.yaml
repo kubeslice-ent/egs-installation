@@ -17,9 +17,8 @@ global:
   kubeTally:
     # Enable or disable KubeTally
     enabled: false
-
     postgresSecretName: kubetally-db-credentials   # Default value, secret name can be overridden
-
+    existingSecret: false                # Set to true if secret is pre-created externally
     # Ensure to configure the mandatory PostgreSQL database settings when 'kubetally enable' is true.
     postgresAddr:                         # Optional, can be specified here or retrieved from the secret
     postgresPort:                          # Optional, can be specified here or retrieved from the secret
