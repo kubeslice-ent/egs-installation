@@ -185,7 +185,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.15.0-RELEASE-3ffb8bae
+  tag: 1.15.0-RELEASE-e98a0aa4
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
