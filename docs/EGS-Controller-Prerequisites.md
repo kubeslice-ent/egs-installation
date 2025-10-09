@@ -371,6 +371,7 @@ kubeslice_controller_egs:
       kubeTally:
         enabled: true
         postgresSecretName: kubetally-db-credentials
+        existingSecret: false
         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"
         postgresPort: 5432
         postgresUser: "postgres"
@@ -420,6 +421,7 @@ kubeslice_controller_egs:
       kubeTally:
         enabled: true
         postgresSecretName: kubetally-db-credentials
+        existingSecret: true
         # Leave these empty if using external secret
         postgresAddr: ""
         postgresPort: 5432
