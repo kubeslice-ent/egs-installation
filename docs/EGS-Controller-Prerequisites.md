@@ -338,21 +338,20 @@ The EGS Controller uses PostgreSQL for KubeTally functionality, which handles ch
 
 ```bash
 # Add Bitnami repository
-helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add kubeslice-egs-helm-ent-prod https://kubeslice.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod/
 helm repo update
 
 # Create namespace for PostgreSQL
 kubectl create namespace kt-postgresql
 
 # Install PostgreSQL using the latest configuration
-helm install kt-postgresql oci://registry-1.docker.io/bitnamicharts/postgresql \
-  --namespace kt-postgresql \
-  --version 16.2.1 \
-  --set auth.postgresPassword=postgres \
-  --set auth.username=postgres \
-  --set auth.database=postgres \
-  --set primary.persistence.enabled=false \
-  --set primary.persistence.size=10Gi
+helm install kt-postgresql kubeslice-egs-helm-ent-prod/postgresql \
+--namespace kt-postgresql \
+--set auth.postgresPassword=postgres \
+--set auth.username=postgres \
+--set auth.database=postgres \
+--set primary.persistence.enabled=true \
+--set primary.persistence.size=10Gi
 ```
 
 #### 3.2 Configure EGS Controller for Internal PostgreSQL
