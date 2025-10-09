@@ -636,8 +636,6 @@ kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 # Check if EGS Worker can access GPU resources
 kubectl get nodes --show-labels | grep nvidia.com/gpu
 
-# Verify GPU operator tolerations are working
-kubectl get pods -n egs-gpu-operator -o wide
 ```
 
 ## 5. Troubleshooting
