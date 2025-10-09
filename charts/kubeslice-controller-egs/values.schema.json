@@ -126,6 +126,13 @@
             "enabled": {
               "type": "boolean"
             },
+            "existingSecret": {
+              "type": "boolean",
+              "default": false
+            },
+            "postgresSecretName": {
+              "type": "string"
+            },
             "postgresAddr": {
               "type": ["string", "null"]
             },
@@ -165,6 +172,20 @@
                     "enabled": {
                       "enum": [true]
                     },
+                    "existingSecret": {
+                      "enum": [true]
+                    }
+                  },
+                  "required": ["postgresSecretName"]
+                },
+                {
+                  "properties": {
+                    "enabled": {
+                      "enum": [true]
+                    },
+                    "existingSecret": {
+                      "enum": [false]
+                    },
                     "postgresAddr": {
                       "type": "string"
                     },
@@ -189,13 +210,14 @@
           "errorMessage": {
             "required": {
               "enabled": "The 'enabled' field must be specified as true or false.",
-              "postgresAddr": "The 'postgresAddr' field is required when kubetally is enabled.",
-              "postgresUser": "The 'postgresUser' field is required when kubetally is enabled.",
-              "postgresPassword": "The 'postgresPassword' field is required when kubetally is enabled.",
-              "postgresDB": "The 'postgresDB' field is required when kubetally is enabled."
+              "postgresSecretName": "The 'postgresSecretName' field is required when kubetally is enabled.",
+              "postgresAddr": "The 'postgresAddr' field is required when kubetally is enabled and existingSecret is false.",
+              "postgresUser": "The 'postgresUser' field is required when kubetally is enabled and existingSecret is false.",
+              "postgresPassword": "The 'postgresPassword' field is required when kubetally is enabled and existingSecret is false.",
+              "postgresDB": "The 'postgresDB' field is required when kubetally is enabled and existingSecret is false."
             },
             "dependencies": {
-              "enabled": "If kubetally is enabled, all related PostgreSQL fields must be provided."
+              "enabled": "If kubetally is enabled, either provide connection details (existingSecret: false) or use pre-created secret (existingSecret: true)."
             },
             "oneOf": "You must choose either enabled or disabled for kubetally."
           }
