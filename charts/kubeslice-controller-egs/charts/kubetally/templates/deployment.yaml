@@ -35,7 +35,7 @@ spec:
       {{ toYaml .Values.kubetally.pricingService.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image:  '{{ .Values.global.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
+        - image:  '{{ .Values.dev.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
           imagePullPolicy: {{.Values.kubetally.pricingService.imagePullPolicy}}
           name: pricing-service
           securityContext:
@@ -127,7 +127,7 @@ spec:
               {{ toYaml .Values.kubetally.chargeUpdater.containerSecurityContext | nindent 16 }}
               {{- end }}
               imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
-              image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+              image: '{{ .Values.dev.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
               env:
                 - name: APP_ENV
                   value: Production
@@ -225,7 +225,7 @@ spec:
           {{ toYaml .Values.kubetally.kubeTallyReport.containerSecurityContext | nindent 12 }}
           {{- end }}
           imagePullPolicy: {{ .Values.kubetally.kubeTallyReport.imagePullPolicy }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
+          image: '{{ .Values.dev.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
           env:
             - name: APP_ENV
               value: production
@@ -318,14 +318,14 @@ spec:
           {{ toYaml .Values.kubetally.chargeUpdater.containerSecurityContext | nindent 12 }}
           {{- end }}
           imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+          image: '{{ .Values.dev.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
           env:
             - name: APP_ENV
               value: Production
             - name: PRICE_DATABASE_ADDR
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  name: {{ .Values.dev.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
                   key: postgresAddr
             - name: PRICE_DATABASE_PORT
               valueFrom:

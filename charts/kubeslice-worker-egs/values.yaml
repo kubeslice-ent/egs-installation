@@ -10,7 +10,7 @@ global:
 
 operator:
   image: worker-operator-ent-egs
-  tag: 1.15.3-RELEASE-f6db7cea 
+  tag: 1.15.3-RELEASE-1974e088
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -231,7 +231,7 @@ aiops:
 
 egsAgent:
   image: egs-agent
-  tag: 1.0.2-RELEASE-6b1f2b38
+  tag: 1.0.2-RELEASE-62494aaf
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-agent-access
