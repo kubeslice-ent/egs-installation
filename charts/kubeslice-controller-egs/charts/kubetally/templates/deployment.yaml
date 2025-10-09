@@ -325,7 +325,7 @@ spec:
             - name: PRICE_DATABASE_ADDR
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.dev.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}  # Uses the provided or default secret name
                   key: postgresAddr
             - name: PRICE_DATABASE_PORT
               valueFrom:
