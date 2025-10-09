@@ -485,8 +485,28 @@ Then run the prerequisites installer:
 ```bash
 # Check if ServiceMonitor are created
 kubectl get servicemonitor -n egs-monitoring
+```
 
+**Expected Output:**
+```
+NAME                         AGE
+kubeslice-controller-manager-monitor         38m
+prometheus-grafana                  40m
+prometheus-kube-prometheus-alertmanager       40m
+prometheus-kube-prometheus-apiserver         40m
+prometheus-kube-prometheus-coredns          40m
+prometheus-kube-prometheus-kube-controller-manager  40m
+prometheus-kube-prometheus-kube-etcd         40m
+prometheus-kube-prometheus-kube-proxy        40m
+prometheus-kube-prometheus-kube-scheduler      40m
+prometheus-kube-prometheus-kubelet          40m
+prometheus-kube-prometheus-operator         40m
+prometheus-kube-prometheus-prometheus        40m
+prometheus-kube-state-metrics            40m
+prometheus-prometheus-node-exporter         40m
+```
 
+```bash
 # Check Prometheus targets
 kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 # Visit http://localhost:9090/targets
@@ -501,7 +521,26 @@ kubectl run postgresql-client --rm --tty -i --restart='Never' \
   --image docker.io/bitnami/postgresql:latest \
   --env="PGPASSWORD=$POSTGRES_PASSWORD" \
   --command -- psql --host kt-postgresql -U postgres -d postgres -p 5432
+```
 
+**Expected Output:**
+```
+If you don't see a command prompt, try pressing enter.
+postgres=#                                      
+postgres=# 
+postgres=# \l  
+                           List of databases
+  Name  | Owner  | Encoding | Locale Provider |  Collate  |  Ctype  | Locale | ICU Rules |  Access privileges  
+-----------+----------+----------+-----------------+-------------+-------------+--------+-----------+-----------------------
+ postgres | postgres | UTF8   | libc      | en_US.UTF-8 | en_US.UTF-8 |    |      | 
+ template0 | postgres | UTF8   | libc      | en_US.UTF-8 | en_US.UTF-8 |    |      | =c/postgres     +
+      |     |     |         |       |       |    |      | postgres=CTc/postgres
+ template1 | postgres | UTF8   | libc      | en_US.UTF-8 | en_US.UTF-8 |    |      | =c/postgres     +
+      |     |     |         |       |       |    |      | postgres=CTc/postgres
+(3 rows)
+```
+
+```bash
 # Test external PostgreSQL connection (if applicable)
 kubectl run postgresql-client --rm --tty -i --restart='Never' \
   --image docker.io/bitnami/postgresql:latest \
