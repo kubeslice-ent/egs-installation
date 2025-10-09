@@ -105,7 +105,13 @@ additional_apps:
         service:
           type: ClusterIP
         prometheusSpec:
-          storageSpec: {}
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 50Gi
           additionalScrapeConfigs:
           - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
@@ -143,7 +149,7 @@ additional_apps:
         service:
           type: ClusterIP
         persistence:
-          enabled: false
+          enabled: true
           size: 1Gi
     helm_flags: "--debug"
     verify_install: false
@@ -379,7 +385,13 @@ inline_values:
     service:
       type: ClusterIP                     # Service type for Prometheus
     prometheusSpec:
-      storageSpec: {}                     # Placeholder for storage configuration
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 50Gi
       additionalScrapeConfigs:
       - job_name: nvidia-dcgm-exporter
         kubernetes_sd_configs:
@@ -417,7 +429,7 @@ inline_values:
     service:
       type: ClusterIP                  # Service type for Grafana
     persistence:
-      enabled: false                      # Disable persistence
+      enabled: true                       # Enable persistence
       size: 1Gi                           # Default persistence size
 ```
 

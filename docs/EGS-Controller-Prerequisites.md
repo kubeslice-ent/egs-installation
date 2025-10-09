@@ -78,7 +78,13 @@ additional_apps:
         service:
           type: ClusterIP
         prometheusSpec:
-          storageSpec: {}
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 50Gi
           additionalScrapeConfigs:
           - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
@@ -116,7 +122,7 @@ additional_apps:
         service:
           type: ClusterIP
         persistence:
-          enabled: false
+          enabled: true
           size: 1Gi
     helm_flags: "--debug"
     verify_install: false
@@ -141,7 +147,7 @@ additional_apps:
         database: "postgres"
       primary:
         persistence:
-          enabled: false
+          enabled: true
           size: 10Gi
     helm_flags: "--wait --debug"
     verify_install: true
@@ -464,7 +470,7 @@ additional_apps:
         database: "postgres"
       primary:
         persistence:
-          enabled: false
+          enabled: true
           size: 10Gi
     helm_flags: "--wait --debug"
     verify_install: true

@@ -308,7 +308,13 @@ additional_apps:
         service:
           type: ClusterIP                     # Service type for Prometheus
         prometheusSpec:
-          storageSpec: {}                     # Placeholder for storage configuration
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 50Gi
           additionalScrapeConfigs:
           - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
@@ -346,7 +352,7 @@ additional_apps:
         service:
           type: ClusterIP                  # Service type for Grafana
         persistence:
-          enabled: false                      # Disable persistence
+          enabled: true                       # Enable persistence
           size: 1Gi                           # Default persistence size
     helm_flags: "--debug"                             # Additional Helm flags for this application's installation
     verify_install: false                      # Verify the installation of Prometheus
@@ -375,7 +381,7 @@ additional_apps:
         database: "postgres"                  # Default database to create
       primary:
         persistence:
-          enabled: false                      # Disable persistent storage for PostgreSQL
+          enabled: true                       # Enable persistent storage for PostgreSQL
           size: 10Gi                          # Size of the Persistent Volume Claim
     helm_flags: "--wait --debug"                       # Additional Helm flags for this application's installation
     verify_install: true                       # Verify the installation of PostgreSQL
