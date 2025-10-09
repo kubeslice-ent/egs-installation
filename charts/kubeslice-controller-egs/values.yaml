@@ -264,7 +264,7 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.13.2-RELEASE-5f65c0a9
+    tag: 1.13.2-RELEASE-8e2e647d
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
