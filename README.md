@@ -23,6 +23,8 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](docs/Namespace-Creation-README.md) 🗂️  
 - 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
 - ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
+- 🌐 **⚠️ IMPORTANT:** For networking in worker clusters, ensure at least some nodes are labeled as gateway nodes: `kubectl get no -l kubeslice.io/node-type=gateway` 🏷️
+- 🔗 **KubeSlice Networking Configuration:** KubeSlice networking is disabled by default in the EGS worker configuration (`kubesliceNetworking: enabled: false`). If enabled, ensure proper node labeling for gateway functionality. 🌐
 - 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README.md) 📋  
 - 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰  
 - 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
@@ -591,6 +593,8 @@ Before you begin, ensure the following steps are completed:
                  domain: kubeslice.com
                  ingressGateway:
                    className: "nginx"            # Ingress class name for the KServe gateway
+         kubesliceNetworking:
+           enabled: false                        # KubeSlice networking is disabled by default
        helm_flags: "--wait --timeout 5m --debug" # Additional Helm flags for the worker installation
        verify_install: true                      # Verify the installation of the worker
        verify_install_timeout: 60                # Timeout for the worker installation verification (in seconds)
@@ -622,6 +626,7 @@ cluster_registration:
    - **🔧 Kubeconfig:** If the new worker is in a different cluster, provide the appropriate `kubeconfig` and `kubecontext` values.
    - **📊 Monitoring:** Ensure the monitoring endpoints (Prometheus/Grafana) are accessible from the controller cluster for proper telemetry.
    - **🔗 Prometheus Accessibility:** **Critical:** Make sure Prometheus endpoints are accessible from the controller cluster. The controller needs to reach the Prometheus service in each worker cluster to collect metrics and telemetry data. If the worker clusters are in different networks, ensure proper network connectivity or use LoadBalancer/NodePort services for Prometheus.
+   - **🌐 KubeSlice Networking:** If you enable `kubesliceNetworking: enabled: true`, ensure at least some nodes are labeled as gateway nodes: `kubectl label node <node-name> kubeslice.io/node-type=gateway`. Verify with: `kubectl get no -l kubeslice.io/node-type=gateway`.
 
    **📌 Note - Multiple Worker Configuration:**
    
