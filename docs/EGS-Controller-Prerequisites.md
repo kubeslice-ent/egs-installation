@@ -392,12 +392,12 @@ export POSTGRES_DB="postgres"
 
 # Create secret for EGS Controller
 kubectl create secret generic kubetally-db-credentials \
-  --from-literal=postgres-addr=$POSTGRES_HOST \
-  --from-literal=postgres-port=$POSTGRES_PORT \
-  --from-literal=postgres-user=postgres \
-  --from-literal=postgres-password=$POSTGRES_PASSWORD \
-  --from-literal=postgres-db=$POSTGRES_DB \
-  --from-literal=postgres-sslmode=disable \
+  --from-literal=postgresAddr=$POSTGRES_HOST \
+  --from-literal=postgresPort=$POSTGRES_PORT \
+  --from-literal=postgresUser=postgres \
+  --from-literal=postgresPassword=$POSTGRES_PASSWORD \
+  --from-literal=postgresDB=$POSTGRES_DB \
+  --from-literal=postgresSslmode=disable \
   -n kubeslice-controller
 ```
 
@@ -436,12 +436,12 @@ kubeslice_controller_egs:
 
 ```bash
 kubectl create secret generic kubetally-db-credentials \
-  --from-literal=postgres-addr=your-external-postgres-host \
-  --from-literal=postgres-port=5432 \
-  --from-literal=postgres-user=your-username \
-  --from-literal=postgres-password=your-password \
-  --from-literal=postgres-db=your-database-name \
-  --from-literal=postgres-sslmode=require \
+  --from-literal=postgresAddr=your-external-postgres-host \
+  --from-literal=postgresPort=5432 \
+  --from-literal=postgresUser=your-username \
+  --from-literal=postgresPassword=your-password \
+  --from-literal=postgresDB=your-database-name \
+  --from-literal=postgresSslmode=require \
   -n kubeslice-controller
 ```
 
