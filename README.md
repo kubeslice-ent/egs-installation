@@ -24,7 +24,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
 - ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
 - 🌐 **⚠️ IMPORTANT:** For networking in worker clusters, ensure at least some nodes are labeled as gateway nodes: `kubectl get no -l kubeslice.io/node-type=gateway` 🏷️
-- 🔗 **KubeSlice Networking Configuration:** KubeSlice networking is disabled by default in the EGS worker configuration (`kubesliceNetworking: enabled: false`). If enabled, ensure proper node labeling for gateway functionality. 🌐
+- 🔗 **KubeSlice Networking Configuration:** KubeSlice networking is disabled by default in the EGS worker configuration (`kubesliceNetworking: enabled: false`). If enabled, ensure proper node labeling for gateway functionality. The installer script can automatically label nodes when `add_node_label: true` is set. 🌐
 - 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README.md) 📋  
 - 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰  
 - 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
@@ -119,12 +119,19 @@ Before you begin, ensure the following steps are completed:
      # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
      # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
      run_commands: false
+
+     # Node labeling automation for KubeSlice networking
+     # Set this to true to automatically label nodes with 'kubeslice.io/node-type=gateway'
+     # Priority: 1) Nodes with external IPs, 2) Any available nodes (up to 2 nodes)
+     # This is required when kubesliceNetworking is enabled in worker clusters
+     add_node_label: true
      ```
    
    **Critical Configuration Steps:**
      1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
      2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes
      3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
+     4. **Set `add_node_label: true`** - Enable automatic node labeling for KubeSlice networking
 
    **Additional Apps Configuration for Each Worker:**
    - **📌 IMPORTANT:** For different worker clusters, you need to add additional apps array for each component in the `kubeslice_worker_egs` section
