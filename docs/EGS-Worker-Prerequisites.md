@@ -380,57 +380,56 @@ Create a custom values file for GPU metrics monitoring:
 
 ```yaml
 # gpu-monitoring-values.yaml
-inline_values:
-  prometheus:
-    service:
-      type: ClusterIP                     # Service type for Prometheus
-    prometheusSpec:
-      storageSpec:
-        volumeClaimTemplate:
-          spec:
-            accessModes: ["ReadWriteOnce"]
-            resources:
-              requests:
-                storage: 50Gi
-      additionalScrapeConfigs:
-      - job_name: nvidia-dcgm-exporter
-        kubernetes_sd_configs:
-        - role: endpoints
-        relabel_configs:
-        - source_labels: [__meta_kubernetes_pod_name]
-          target_label: pod_name
-        - source_labels: [__meta_kubernetes_pod_container_name]
-          target_label: container_name
-      - job_name: gpu-metrics
-        scrape_interval: 1s
-        metrics_path: /metrics
-        scheme: http
-        kubernetes_sd_configs:
-        - role: endpoints
-          namespaces:
-            names:
-            - egs-gpu-operator
-        relabel_configs:
-        - source_labels: [__meta_kubernetes_endpoints_name]
-          action: drop
-          regex: .*-node-feature-discovery-master
-        - source_labels: [__meta_kubernetes_pod_node_name]
-          action: replace
-          target_label: kubernetes_node
-  grafana:
-    enabled: true                         # Enable Grafana
-    grafana.ini:
-      auth:
-        disable_login_form: true
-        disable_signout_menu: true
-      auth.anonymous:
-        enabled: true
-        org_role: Viewer
-    service:
-      type: ClusterIP                  # Service type for Grafana
-    persistence:
-      enabled: true                       # Enable persistence
-      size: 1Gi                           # Default persistence size
+prometheus:
+  service:
+    type: ClusterIP                     # Service type for Prometheus
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+    additionalScrapeConfigs:
+    - job_name: nvidia-dcgm-exporter
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod_name
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        target_label: container_name
+    - job_name: gpu-metrics
+      scrape_interval: 1s
+      metrics_path: /metrics
+      scheme: http
+      kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names:
+          - egs-gpu-operator
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_endpoints_name]
+        action: drop
+        regex: .*-node-feature-discovery-master
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        action: replace
+        target_label: kubernetes_node
+grafana:
+  enabled: true                         # Enable Grafana
+  grafana.ini:
+    auth:
+      disable_login_form: true
+      disable_signout_menu: true
+    auth.anonymous:
+      enabled: true
+      org_role: Viewer
+  service:
+    type: ClusterIP                  # Service type for Grafana
+  persistence:
+    enabled: true                       # Enable persistence
+    size: 1Gi                           # Default persistence size
 ```
 
 ### 2.3 Install with Custom Configuration
