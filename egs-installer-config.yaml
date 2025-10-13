@@ -217,6 +217,12 @@ kubeslice_worker_egs:
               domain: kubeslice.com
               ingressGateway:
                 className: "nginx"            # Ingress class name for the KServe gateway
+      egsGpuAgent:
+        env:
+          - name: REMOTE_HE_INFO
+            value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
+          - name: HEALTH_CHECK_INTERVAL
+            value: "15m"
 #### Helm Flags and Verification Settings ####
     helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
     verify_install: true                       # Verify the installation of the worker
@@ -490,4 +496,4 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: true                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.15.2"
+version: "1.15.3"

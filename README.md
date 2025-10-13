@@ -28,6 +28,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README.md) 📋  
 - 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰  
 - 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
+- 🔐 For Prometheus TLS based authentication, please refer to the [Prometheus-TLS-Authentication] (docs/Prometheus-TLS-Authentication.md) 🔒
 
 ---
 

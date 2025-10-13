@@ -116,6 +116,7 @@ spec:
                       enum:
                       - Healthy
                       - Unhealthy
+                      - Unschedulable
                       type: string
                     nodeName:
                       type: string

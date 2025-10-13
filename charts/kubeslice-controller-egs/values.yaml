@@ -1,6 +1,6 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates. 
+# Declare variables to be passed into your templates.
 global:
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
   # user can configure labels or annotations that EGS Controller namespaces should have
@@ -14,10 +14,8 @@ global:
   kubeTally:
     # Enable or disable KubeTally
     enabled: false
-
     postgresSecretName: kubetally-db-credentials   # Default value, secret name can be overridden
     existingSecret: false                # Set to true if secret is pre-created externally
-
     # Ensure to configure the mandatory PostgreSQL database settings when 'kubetally enable' is true.
     postgresAddr:                         # Optional, can be specified here or retrieved from the secret
     postgresPort:                          # Optional, can be specified here or retrieved from the secret
@@ -85,13 +83,37 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.15.2
+    tag: 1.15.3
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
     kubeTally:
       # Interval for cleaning up metrics when a worker cluster stops communicating
       metricsCleanupInterval: 15m
+    # Configuration for replication using MinIO
+    replication:
+      # Image name for MinIO
+      image: minio
+      # Image tag for MinIO
+      tag: RELEASE.2025-09-07T16-13-09Z-cpuv1
+      # Configuration for MinIO
+      minio:
+        # Whether to install MinIO
+        install: "true"
+        # Storage size for MinIO
+        storage: 1Gi
+        # Username for MinIO
+        username: minioadmin
+        # Password for MinIO
+        password: minioadmin
+        # service options
+        service:
+          # minio service type
+          type: "LoadBalancer"
+          # minio service annotations
+          annotations: { }
+        labels:
+          app: minio
     labels:
       control-plane: controller-manager
     annotations:
@@ -144,7 +166,7 @@ egs:
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: 1.14.1
+    tag: 1.14.2
     imagePullPolicy: IfNotPresent
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60
@@ -195,7 +217,7 @@ egs:
     # Image name for the queue-manager
     image: queue-manager
     # Image tag for the queue-manager
-    tag: 1.13.1
+    tag: 1.13.2
     imagePullPolicy: IfNotPresent
     service:
       name: egs-queue-manager
@@ -238,7 +260,7 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.14.1
+    tag: 1.14.2
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
