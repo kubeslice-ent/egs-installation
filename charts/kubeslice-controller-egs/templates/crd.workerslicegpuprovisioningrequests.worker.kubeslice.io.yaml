@@ -78,6 +78,9 @@ spec:
                 type: integer
               requeueOnFailure:
                 type: boolean
+              runPrecheck:
+                description: RunPrecheck is a flag to enable running prechecks
+                type: boolean
               sliceName:
                 type: string
               workloadSelector:
@@ -171,12 +174,38 @@ spec:
               lastTransitionTime:
                 format: date-time
                 type: string
+              nodeListPreCheckReports:
+                items:
+                  properties:
+                    gpuNodePrechecks:
+                      properties:
+                        gpuTestResult:
+                          items:
+                            properties:
+                              errorMessage:
+                                type: string
+                              gpuId:
+                                type: string
+                              testName:
+                                type: string
+                              testResult:
+                                type: string
+                            type: object
+                          type: array
+                        preCheckResult:
+                          type: string
+                        preCheckRunComplete:
+                          type: boolean
+                      type: object
+                    nodeName:
+                      type: string
+                  required:
+                  - gpuNodePrechecks
+                  type: object
+                type: array
               numGPUsAllocated:
                 type: integer
               provisioningStatus:
-                description: |-
-                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-                  Important: Run "make" to regenerate code after modifying this file
                 type: string
               remainingDuration:
                 type: string

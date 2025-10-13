@@ -6,7 +6,7 @@ global:
 
 operator:
   image: worker-operator-ent-egs
-  tag: 1.15.2
+  tag: 1.15.3
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -181,7 +181,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.15.1
+  tag: 1.15.2
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -227,7 +227,7 @@ aiops:
 
 egsAgent:
   image: egs-agent
-  tag: 1.0.1
+  tag: 1.0.2
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-agent-access
@@ -272,13 +272,55 @@ egsAgent:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
 
+egsGpuAgent:
+  image: egs-gpu-agent
+  tag: 1.0.0
+  pullPolicy: IfNotPresent
+  logLevel: INFO
+  secretName: egs-gpu-agent-access
+  labels:
+    control-plane: egs-gpu-agent
+  annotations: {}
+  containerSecurityContext:
+    privileged: true
+  podSecurityContext: {}
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 10m
+      memory: 10Mi
+  env:
+    - name: REMOTE_HE_INFO
+      value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
+    - name: HEALTH_CHECK_INTERVAL
+      value: "15m"
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "kubeslice.io/egs"
+      effect: "NoSchedule"
+      value: "dedicated-node"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: nvidia.com/gpu.product
+            operator: Exists
+          - key: kubeslice.io/managed-by-egs
+            operator: NotIn
+            values: ["false"]
+
 egs:
   prometheusEndpoint: ""
   grafanaDashboardBaseUrl: ""
 
 workerInstaller:
   image: worker-installer
-  tag: 1.8.0
+  tag: 1.9.0
 
 jaeger:
   enabled: false

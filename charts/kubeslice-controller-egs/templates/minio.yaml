@@ -1,0 +1,133 @@
+{{- if eq $.Values.kubeslice.controller.replication.minio.install "true" }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio
+  labels:
+    name: minio
+---
+{{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+apiVersion: v1
+data:
+  .dockerconfigjson: {{
+                        printf "{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\",\"email\":\"%s\",\"auth\":\"%s\"}}}"
+                        .Values.imagePullSecrets.repository
+                        .Values.imagePullSecrets.username
+                        .Values.imagePullSecrets.password
+                        .Values.imagePullSecrets.email
+                        (printf "%s:%s" .Values.imagePullSecrets.username .Values.imagePullSecrets.password | b64enc)
+                         | b64enc
+                     }}
+kind: Secret
+metadata:
+  name: {{ .Values.imagePullSecretsName }}
+  namespace: minio
+type: kubernetes.io/dockerconfigjson
+{{- end }}
+---
+{{- if and .Values.imagePullSecrets .Values.imagePullSecrets.dockerconfigjson }}
+apiVersion: v1
+data:
+  .dockerconfigjson: {{ .Values.imagePullSecrets.dockerconfigjson }}
+kind: Secret
+metadata:
+  name: {{ .Values.imagePullSecretsName }}
+  namespace: minio
+type: kubernetes.io/dockerconfigjson
+{{- end }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-storage
+  namespace: minio
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $.Values.kubeslice.controller.replication.minio.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  {{- if .Values.kubeslice.controller.replication.minio.labels }}
+  labels:
+  {{ toYaml .Values.kubeslice.controller.replication.minio.labels | nindent 4 }}
+  {{- end }}
+  name: minio
+  namespace: minio
+spec:
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      {{- if .Values.kubeslice.controller.replication.minio.labels }}
+      labels:
+      {{ toYaml .Values.kubeslice.controller.replication.minio.labels | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: minio
+          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.controller.replication.image }}:{{ .Values.kubeslice.controller.replication.tag }}'
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - minio server /data --console-address :9090
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: minio-credentials
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: minio-credentials
+          volumeMounts:
+            - mountPath: /data
+              name: minio-storage
+      volumes:
+        - name: minio-storage
+          persistentVolumeClaim:
+            claimName: minio-storage
+      {{- if .Values.imagePullSecretsName }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecretsName }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: minio
+  name: minio
+  {{- if $.Values.kubeslice.controller.replication.minio.service.annotations }}
+  annotations: {{- toYaml .Values.kubeslice.controller.replication.minio.service.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    app: minio
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+      name: minio
+  type: "{{ $.Values.kubeslice.controller.replication.minio.service.type }}"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-credentials
+  namespace: minio
+type: Opaque
+stringData:
+  username: "{{ $.Values.kubeslice.controller.replication.minio.username }}"
+  password: "{{ $.Values.kubeslice.controller.replication.minio.password }}"
+  credentialsFile: |-
+    [default]
+    aws_access_key_id={{ $.Values.kubeslice.controller.replication.minio.username }}
+    aws_secret_access_key={{ $.Values.kubeslice.controller.replication.minio.password }}
+{{- end }}
