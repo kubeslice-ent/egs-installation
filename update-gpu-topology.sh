@@ -1,14 +1,11 @@
 #!/bin/bash
 
 # Script to update fake-gpu-operator topology configuration
-# This script handles the complete update process including fixing stale per-node topology ConfigMaps
-
-# Don't exit on error - we'll handle errors explicitly
 set -o pipefail
 
-# Configuration
+# Use KUBECONFIG environment variable if set, otherwise use controller file
+KUBECONFIG_FILE="${KUBECONFIG:-controller}"
 NAMESPACE="${NAMESPACE:-egs-gpu-operator}"
-KUBECONFIG_FILE="${KUBECONFIG_FILE:-controller}"
 CHART_DIR="${CHART_DIR:-charts/fake-gpu-operator/}"
 VALUES_FILE="${VALUES_FILE:-fake-gpu-operator-values.yaml}"
 WAIT_TIMEOUT="${WAIT_TIMEOUT:-60}"
@@ -22,13 +19,18 @@ echo "Chart: $CHART_DIR"
 echo "Values: $VALUES_FILE"
 echo "=========================================="
 
-# Step 1: Validate values.yaml exists
+# Validate values.yaml exists
 if [ ! -f "$VALUES_FILE" ]; then
     echo "❌ Error: Values file '$VALUES_FILE' not found!"
     exit 1
 fi
 
-# Step 2: Helm upgrade
+# Validate kubeconfig file exists
+if [ ! -f "$KUBECONFIG_FILE" ]; then
+    echo "❌ Error: Kubeconfig file '$KUBECONFIG_FILE' not found!"
+    exit 1
+fi
+
 echo ""
 echo "📦 Step 1: Running Helm upgrade..."
 helm upgrade -i gpu-operator "$CHART_DIR" \
@@ -43,7 +45,7 @@ else
     exit 1
 fi
 
-# Step 3: Delete stale per-node topology ConfigMaps
+# Delete stale per-node topology ConfigMaps
 echo ""
 echo "🗑️  Step 2: Deleting per-node topology ConfigMaps..."
 PER_NODE_CMS=$(kubectl get configmap -n "$NAMESPACE" \
@@ -60,7 +62,7 @@ else
     echo "ℹ️  No per-node topology ConfigMaps found (may be first run or already deleted)"
 fi
 
-# Step 4: Ensure status-updater is running
+# Ensure status-updater is running
 echo ""
 echo "🔄 Step 3: Ensuring status-updater is running..."
 
@@ -94,7 +96,7 @@ fi
 echo ""
 echo "⏳ Step 4: Waiting for status-updater to be ready..."
 WAIT_COUNT=0
-MAX_WAIT=12  # 12 * 5 = 60 seconds
+MAX_WAIT=12
 
 while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
     READY_PODS=$(kubectl get pods -n "$NAMESPACE" \
@@ -115,10 +117,9 @@ done
 
 if [ $WAIT_COUNT -ge $MAX_WAIT ]; then
     echo "⚠️  Warning: status-updater did not become ready in time"
-    echo "   Continuing anyway, but per-node topology ConfigMaps may not be created"
 fi
 
-# Wait additional time for topology ConfigMaps to be created
+# Wait for topology ConfigMaps to be created
 echo ""
 echo "⏳ Waiting for topology ConfigMaps to be recreated (10s)..."
 sleep 10
@@ -133,21 +134,15 @@ if [ "$TOPOLOGY_CMS" -gt 0 ]; then
     echo "✅ Topology ConfigMaps recreated ($TOPOLOGY_CMS found)"
 else
     echo "❌ Warning: No per-node topology ConfigMaps found!"
-    echo "   This may be because:"
-    echo "   - status-updater is not running (check for node taints/tolerations)"
-    echo "   - status-updater hasn't processed nodes yet (wait longer)"
-    echo "   - No nodes match the node pool label"
-    echo ""
     echo "   Checking status-updater pods..."
     kubectl get pods -n "$NAMESPACE" -l app=status-updater --kubeconfig "$KUBECONFIG_FILE"
 fi
 
-# Step 5: Restart device-plugin DaemonSet (only if topology ConfigMaps exist)
+# Restart device-plugin DaemonSet
 echo ""
 if [ "$TOPOLOGY_CMS" -gt 0 ]; then
     echo "🔄 Step 5: Restarting device-plugin pods..."
     
-    # Clean up any crash-looping or failed device-plugin pods
     FAILED_PODS=$(kubectl get pods -n "$NAMESPACE" \
         -l app=device-plugin \
         --kubeconfig "$KUBECONFIG_FILE" \
@@ -158,30 +153,25 @@ if [ "$TOPOLOGY_CMS" -gt 0 ]; then
         echo "$FAILED_PODS" | xargs -r kubectl delete pod -n "$NAMESPACE" --kubeconfig "$KUBECONFIG_FILE" || true
     fi
     
-    # Delete all device-plugin pods to restart with new topology
     kubectl delete pod -n "$NAMESPACE" \
         -l app=device-plugin \
         --kubeconfig "$KUBECONFIG_FILE" || true
     
     echo "✅ Device-plugin pods deleted, waiting for recreation..."
-    
-    # Wait for device-plugin pods to stabilize
     echo ""
     echo "⏳ Step 6: Waiting for device-plugin pods to start (15s)..."
     sleep 15
 else
     echo "⚠️  Step 5: Skipping device-plugin restart (no topology ConfigMaps exist)"
-    echo "   Fix the topology ConfigMap issue first, then restart device-plugin manually:"
-    echo "   kubectl delete pod -n $NAMESPACE -l app=device-plugin --kubeconfig $KUBECONFIG_FILE"
 fi
 
-# Step 6: Verify all pods are running
+# Verify pod status
 echo ""
 echo "🔍 Step 7: Verifying pod status..."
 echo ""
 kubectl get pods -n "$NAMESPACE" --kubeconfig "$KUBECONFIG_FILE"
 
-# Step 7: Show updated node labels
+# Show node labels
 echo ""
 echo "🏷️  Step 8: Checking updated node GPU labels..."
 echo ""
@@ -222,14 +212,10 @@ STATUS_UPDATER_READY=$(kubectl get pods -n "$NAMESPACE" \
 
 if [ "$STATUS_UPDATER_READY" -eq 0 ]; then
     echo "⚠️  WARNING: status-updater is NOT running!"
-    echo "   This may be due to node taints. Check with:"
-    echo "   kubectl describe pod -n $NAMESPACE -l app=status-updater --kubeconfig $KUBECONFIG_FILE"
 fi
 
 if [ "$DEVICE_PLUGIN_READY" -eq 0 ]; then
     echo "⚠️  WARNING: No device-plugin pods are ready!"
-    echo "   Check logs with:"
-    echo "   kubectl logs -n $NAMESPACE -l app=device-plugin --kubeconfig $KUBECONFIG_FILE"
 fi
 
 if [ "$STATUS_UPDATER_READY" -gt 0 ] && [ "$DEVICE_PLUGIN_READY" -gt 0 ]; then
@@ -241,6 +227,3 @@ echo "💡 Tips:"
 echo "  - Check logs: kubectl logs -n $NAMESPACE <pod-name> --kubeconfig $KUBECONFIG_FILE"
 echo "  - View GPU labels: kubectl get nodes --show-labels --kubeconfig $KUBECONFIG_FILE | grep gpu.count"
 echo "  - If labels haven't updated, wait 30s and run this script again"
-echo "  - To manually restart: kubectl delete pod -n $NAMESPACE -l app=device-plugin --kubeconfig $KUBECONFIG_FILE"
-
-
