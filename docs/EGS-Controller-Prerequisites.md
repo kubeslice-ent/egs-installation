@@ -78,7 +78,13 @@ additional_apps:
         service:
           type: ClusterIP
         prometheusSpec:
-          storageSpec: {}
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 50Gi
           additionalScrapeConfigs:
           - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
@@ -116,7 +122,7 @@ additional_apps:
         service:
           type: ClusterIP
         persistence:
-          enabled: false
+          enabled: true
           size: 1Gi
     helm_flags: "--debug"
     verify_install: false
@@ -141,7 +147,7 @@ additional_apps:
         database: "postgres"
       primary:
         persistence:
-          enabled: false
+          enabled: true
           size: 10Gi
     helm_flags: "--wait --debug"
     verify_install: true
@@ -338,21 +344,20 @@ The EGS Controller uses PostgreSQL for KubeTally functionality, which handles ch
 
 ```bash
 # Add Bitnami repository
-helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add kubeslice-egs-helm-ent-prod https://kubeslice.aveshalabs.io/repository/kubeslice-egs-helm-ent-prod/
 helm repo update
 
 # Create namespace for PostgreSQL
 kubectl create namespace kt-postgresql
 
 # Install PostgreSQL using the latest configuration
-helm install kt-postgresql oci://registry-1.docker.io/bitnamicharts/postgresql \
-  --namespace kt-postgresql \
-  --version 16.2.1 \
-  --set auth.postgresPassword=postgres \
-  --set auth.username=postgres \
-  --set auth.database=postgres \
-  --set primary.persistence.enabled=false \
-  --set primary.persistence.size=10Gi
+helm install kt-postgresql kubeslice-egs-helm-ent-prod/postgresql \
+--namespace kt-postgresql \
+--set auth.postgresPassword=postgres \
+--set auth.username=postgres \
+--set auth.database=postgres \
+--set primary.persistence.enabled=true \
+--set primary.persistence.size=10Gi
 ```
 
 #### 3.2 Configure EGS Controller for Internal PostgreSQL
@@ -366,6 +371,7 @@ kubeslice_controller_egs:
       kubeTally:
         enabled: true
         postgresSecretName: kubetally-db-credentials
+        existingSecret: false
         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"
         postgresPort: 5432
         postgresUser: "postgres"
@@ -386,12 +392,12 @@ export POSTGRES_DB="postgres"
 
 # Create secret for EGS Controller
 kubectl create secret generic kubetally-db-credentials \
-  --from-literal=postgres-addr=$POSTGRES_HOST \
-  --from-literal=postgres-port=$POSTGRES_PORT \
-  --from-literal=postgres-user=postgres \
-  --from-literal=postgres-password=$POSTGRES_PASSWORD \
-  --from-literal=postgres-db=$POSTGRES_DB \
-  --from-literal=postgres-sslmode=disable \
+  --from-literal=postgresAddr=$POSTGRES_HOST \
+  --from-literal=postgresPort=$POSTGRES_PORT \
+  --from-literal=postgresUser=postgres \
+  --from-literal=postgresPassword=$POSTGRES_PASSWORD \
+  --from-literal=postgresDB=$POSTGRES_DB \
+  --from-literal=postgresSslmode=disable \
   -n kubeslice-controller
 ```
 
@@ -415,6 +421,7 @@ kubeslice_controller_egs:
       kubeTally:
         enabled: true
         postgresSecretName: kubetally-db-credentials
+        existingSecret: true
         # Leave these empty if using external secret
         postgresAddr: ""
         postgresPort: 5432
@@ -429,12 +436,12 @@ kubeslice_controller_egs:
 
 ```bash
 kubectl create secret generic kubetally-db-credentials \
-  --from-literal=postgres-addr=your-external-postgres-host \
-  --from-literal=postgres-port=5432 \
-  --from-literal=postgres-user=your-username \
-  --from-literal=postgres-password=your-password \
-  --from-literal=postgres-db=your-database-name \
-  --from-literal=postgres-sslmode=require \
+  --from-literal=postgresAddr=your-external-postgres-host \
+  --from-literal=postgresPort=5432 \
+  --from-literal=postgresUser=your-username \
+  --from-literal=postgresPassword=your-password \
+  --from-literal=postgresDB=your-database-name \
+  --from-literal=postgresSslmode=require \
   -n kubeslice-controller
 ```
 
@@ -465,7 +472,7 @@ additional_apps:
         database: "postgres"
       primary:
         persistence:
-          enabled: false
+          enabled: true
           size: 10Gi
     helm_flags: "--wait --debug"
     verify_install: true
@@ -486,8 +493,28 @@ Then run the prerequisites installer:
 ```bash
 # Check if ServiceMonitor are created
 kubectl get servicemonitor -n egs-monitoring
+```
 
+**Expected Output:**
+```
+NAME                         AGE
+kubeslice-controller-manager-monitor         38m
+prometheus-grafana                  40m
+prometheus-kube-prometheus-alertmanager       40m
+prometheus-kube-prometheus-apiserver         40m
+prometheus-kube-prometheus-coredns          40m
+prometheus-kube-prometheus-kube-controller-manager  40m
+prometheus-kube-prometheus-kube-etcd         40m
+prometheus-kube-prometheus-kube-proxy        40m
+prometheus-kube-prometheus-kube-scheduler      40m
+prometheus-kube-prometheus-kubelet          40m
+prometheus-kube-prometheus-operator         40m
+prometheus-kube-prometheus-prometheus        40m
+prometheus-kube-state-metrics            40m
+prometheus-prometheus-node-exporter         40m
+```
 
+```bash
 # Check Prometheus targets
 kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 # Visit http://localhost:9090/targets
@@ -502,7 +529,26 @@ kubectl run postgresql-client --rm --tty -i --restart='Never' \
   --image docker.io/bitnami/postgresql:latest \
   --env="PGPASSWORD=$POSTGRES_PASSWORD" \
   --command -- psql --host kt-postgresql -U postgres -d postgres -p 5432
+```
 
+**Expected Output:**
+```
+If you don't see a command prompt, try pressing enter.
+postgres=#                                      
+postgres=# 
+postgres=# \l  
+                           List of databases
+  Name  | Owner  | Encoding | Locale Provider |  Collate  |  Ctype  | Locale | ICU Rules |  Access privileges  
+-----------+----------+----------+-----------------+-------------+-------------+--------+-----------+-----------------------
+ postgres | postgres | UTF8   | libc      | en_US.UTF-8 | en_US.UTF-8 |    |      | 
+ template0 | postgres | UTF8   | libc      | en_US.UTF-8 | en_US.UTF-8 |    |      | =c/postgres     +
+      |     |     |         |       |       |    |      | postgres=CTc/postgres
+ template1 | postgres | UTF8   | libc      | en_US.UTF-8 | en_US.UTF-8 |    |      | =c/postgres     +
+      |     |     |         |       |       |    |      | postgres=CTc/postgres
+(3 rows)
+```
+
+```bash
 # Test external PostgreSQL connection (if applicable)
 kubectl run postgresql-client --rm --tty -i --restart='Never' \
   --image docker.io/bitnami/postgresql:latest \
@@ -519,6 +565,16 @@ kubectl get pods -n kubeslice-controller
 # Test metrics endpoint
 kubectl port-forward svc/kubeslice-controller-manager-service 18080:18080 -n kubeslice-controller
 # Visit http://localhost:18080/metrics
+```
+
+### 4.4 Access Grafana Dashboard
+
+```bash
+# Port forward to Grafana
+kubectl port-forward svc/prometheus-grafana 3000:80 -n egs-monitoring
+
+# Access Grafana at http://localhost:3000
+# Default credentials: admin / prom-operator
 ```
 
 ## 5. Troubleshooting

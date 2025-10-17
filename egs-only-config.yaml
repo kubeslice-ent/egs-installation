@@ -31,6 +31,8 @@ kubeslice_controller_egs:
       kubeTally:
         enabled: true                          # Enable KubeTally in the controller
 #### Postgresql Connection Configuration for Kubetally  ####
+        existingSecret: false # Set to true if secret is pre-created externally
+#### Postgresql Connection Configuration for Kubetally  ####
         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
                                                        # then a secret will be created with specified name. 
                                                        # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
@@ -155,6 +157,12 @@ kubeslice_worker_egs:
               domain: kubeslice.com
               ingressGateway:
                 className: "nginx"            # Ingress class name for the KServe gateway
+      egsGpuAgent:
+        env:
+          - name: REMOTE_HE_INFO
+            value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
+          - name: HEALTH_CHECK_INTERVAL
+            value: "15m"
 #### Helm Flags and Verification Settings ####
     helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
     verify_install: true                       # Verify the installation of the worker
@@ -196,7 +204,7 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: true                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.15.2"
+version: "1.15.3"
 
 # Enable or disable specific stages of the installation
 enable_install_controller: true               # Enable the installation of the Kubeslice controller

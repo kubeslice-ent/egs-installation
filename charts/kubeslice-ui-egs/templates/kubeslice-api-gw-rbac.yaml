@@ -77,6 +77,15 @@ rules:
       - apps
     resources:
       - deployments
+  - verbs:
+      - list
+      - get
+      - update
+      - watch
+    apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

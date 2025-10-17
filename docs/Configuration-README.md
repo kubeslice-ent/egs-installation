@@ -100,6 +100,7 @@ kubeslice_controller_egs:
         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
                                                        # then a secret will be created with specified name. 
                                                        # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
+        existingSecret: false                 # Set to true if secret is pre-created externally
         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
         postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
         postgresUser: "postgres"               # Change this PostgreSQL username to your values
@@ -308,7 +309,13 @@ additional_apps:
         service:
           type: ClusterIP                     # Service type for Prometheus
         prometheusSpec:
-          storageSpec: {}                     # Placeholder for storage configuration
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 50Gi
           additionalScrapeConfigs:
           - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
@@ -346,7 +353,7 @@ additional_apps:
         service:
           type: ClusterIP                  # Service type for Grafana
         persistence:
-          enabled: false                      # Disable persistence
+          enabled: true                       # Enable persistence
           size: 1Gi                           # Default persistence size
     helm_flags: "--debug"                             # Additional Helm flags for this application's installation
     verify_install: false                      # Verify the installation of Prometheus
@@ -375,7 +382,7 @@ additional_apps:
         database: "postgres"                  # Default database to create
       primary:
         persistence:
-          enabled: false                      # Disable persistent storage for PostgreSQL
+          enabled: true                       # Enable persistent storage for PostgreSQL
           size: 10Gi                          # Size of the Persistent Volume Claim
     helm_flags: "--wait --debug"                       # Additional Helm flags for this application's installation
     verify_install: true                       # Verify the installation of PostgreSQL
@@ -664,3 +671,17 @@ This section provides detailed explanations of all configuration fields availabl
 | `manifests[].kubeconfig`        | Path to a specific Kubernetes configuration file to be used instead of the global kubeconfig.                           | `string`          | No           | `/path/to/specific/kubeconfig`                                                                                      |
 | `manifests[].kubecontext`       | The context name in the specific Kubernetes configuration file to be used for this manifest.                            | `string`          | No           | `specific-context`                                                                                                  |
 | `
+
+## Accessing Grafana Dashboard
+
+After successful installation, you can access the Grafana dashboard:
+
+```bash
+# Port forward to Grafana
+kubectl port-forward svc/prometheus-grafana 3000:80 -n egs-monitoring
+
+# Access Grafana at http://localhost:3000
+# Default credentials: admin / prom-operator
+```
+
+**Note:** The default credentials are set by the kube-prometheus-stack Helm chart. For production deployments, consider changing these credentials for security.

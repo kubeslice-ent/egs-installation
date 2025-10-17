@@ -23,9 +23,12 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](docs/Namespace-Creation-README.md) 🗂️  
 - 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
 - ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
+- 🌐 **⚠️ IMPORTANT:** For networking in worker clusters, ensure at least some nodes are labeled as gateway nodes: `kubectl get no -l kubeslice.io/node-type=gateway` 🏷️
+- 🔗 **KubeSlice Networking Configuration:** KubeSlice networking is disabled by default in the EGS worker configuration (`kubesliceNetworking: enabled: false`). If enabled, ensure proper node labeling for gateway functionality. The installer script can automatically label nodes when `add_node_label: true` is set. 🌐
 - 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README.md) 📋  
 - 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰  
 - 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
+- 🔐 For Prometheus TLS based authentication, please refer to the [Prometheus-TLS-Authentication] (docs/Prometheus-TLS-Authentication.md) 🔒
 
 ---
 
@@ -117,12 +120,19 @@ Before you begin, ensure the following steps are completed:
      # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
      # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
      run_commands: false
+
+     # Node labeling automation for KubeSlice networking
+     # Set this to true to automatically label nodes with 'kubeslice.io/node-type=gateway'
+     # Priority: 1) Nodes with external IPs, 2) Any available nodes (up to 2 nodes)
+     # This is required when kubesliceNetworking is enabled in worker clusters
+     add_node_label: true
      ```
    
    **Critical Configuration Steps:**
      1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
      2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes
      3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
+     4. **Set `add_node_label: true`** - Enable automatic node labeling for KubeSlice networking
 
    **Additional Apps Configuration for Each Worker:**
    - **📌 IMPORTANT:** For different worker clusters, you need to add additional apps array for each component in the `kubeslice_worker_egs` section
@@ -348,6 +358,7 @@ Before you begin, ensure the following steps are completed:
          postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
                                                         # then a secret will be created with specified name. 
                                                         # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
+         existingSecret: false                 # Set to true if secret is pre-created externally
          postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
          postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
          postgresUser: "postgres"               # Change this PostgreSQL username to your values
@@ -590,6 +601,8 @@ Before you begin, ensure the following steps are completed:
                  domain: kubeslice.com
                  ingressGateway:
                    className: "nginx"            # Ingress class name for the KServe gateway
+         kubesliceNetworking:
+           enabled: false                        # KubeSlice networking is disabled by default
        helm_flags: "--wait --timeout 5m --debug" # Additional Helm flags for the worker installation
        verify_install: true                      # Verify the installation of the worker
        verify_install_timeout: 60                # Timeout for the worker installation verification (in seconds)
@@ -621,6 +634,7 @@ cluster_registration:
    - **🔧 Kubeconfig:** If the new worker is in a different cluster, provide the appropriate `kubeconfig` and `kubecontext` values.
    - **📊 Monitoring:** Ensure the monitoring endpoints (Prometheus/Grafana) are accessible from the controller cluster for proper telemetry.
    - **🔗 Prometheus Accessibility:** **Critical:** Make sure Prometheus endpoints are accessible from the controller cluster. The controller needs to reach the Prometheus service in each worker cluster to collect metrics and telemetry data. If the worker clusters are in different networks, ensure proper network connectivity or use LoadBalancer/NodePort services for Prometheus.
+   - **🌐 KubeSlice Networking:** If you enable `kubesliceNetworking: enabled: true`, ensure at least some nodes are labeled as gateway nodes: `kubectl label node <node-name> kubeslice.io/node-type=gateway`. Verify with: `kubectl get no -l kubeslice.io/node-type=gateway`.
 
    **📌 Note - Multiple Worker Configuration:**
    

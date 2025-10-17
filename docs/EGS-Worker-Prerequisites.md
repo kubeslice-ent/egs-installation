@@ -105,7 +105,13 @@ additional_apps:
         service:
           type: ClusterIP
         prometheusSpec:
-          storageSpec: {}
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 50Gi
           additionalScrapeConfigs:
           - job_name: nvidia-dcgm-exporter
             kubernetes_sd_configs:
@@ -143,7 +149,7 @@ additional_apps:
         service:
           type: ClusterIP
         persistence:
-          enabled: false
+          enabled: true
           size: 1Gi
     helm_flags: "--debug"
     verify_install: false
@@ -184,23 +190,63 @@ This will automatically install:
 
 The NVIDIA GPU Operator is essential for managing GPU resources and exposing GPU metrics that EGS Worker needs for GPU slicing operations.
 
-### 1.1 Add NVIDIA Helm Repository
+#### Prerequisites for GPU Installation
+
+Before installing the GPU Operator, ensure your cluster meets the following requirements:
+
+1. **Container Runtime**: Nodes must be configured with a container engine such as CRI-O or containerd
+2. **Operating System**: All worker nodes running GPU workloads must run the same OS version
+3. **Pod Security**: If using Pod Security Admission (PSA), label the namespace for privileged access:
+   ```bash
+   kubectl create ns egs-gpu-operator
+   kubectl label --overwrite ns egs-gpu-operator pod-security.kubernetes.io/enforce=privileged
+   ```
+4. **Node Feature Discovery**: Check if NFD is already running:
+   ```bash
+   kubectl get nodes -o json | jq '.items[].metadata.labels | keys | any(startswith("feature.node.kubernetes.io"))'
+   ```
+   If output is `true`, NFD is already running and should be disabled during GPU Operator installation.
+
+5. **GPU Node Labeling**: Label GPU nodes to enable GPU Operator operands:
+   ```bash
+   kubectl label node <gpu-node-name> nvidia.com/gpu.deploy.operands=true
+   ```
+   Replace `<gpu-node-name>` with the actual name of your GPU-enabled node.
+
+6. **NVIDIA Driver Installation**: 
+   **⚠️ Important:** It is strongly recommended to follow the [official NVIDIA driver installation documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html) for your specific platform and operating system. The GPU Operator can manage drivers, but pre-installing drivers following NVIDIA's official guidelines ensures optimal compatibility and performance.
+
+#### 1.1 Add NVIDIA Helm Repository
 
 ```bash
 helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
 helm repo update
 ```
 
-### 1.2 Install GPU Operator
+#### 1.2 Install GPU Operator
 
+**⚠️ Important:** Always refer to the [official NVIDIA GPU Operator documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html) for the most up-to-date installation instructions and platform-specific configurations.
+
+**Basic Installation:**
 ```bash
 # Create namespace for GPU Operator
 kubectl create namespace egs-gpu-operator
 
-# Install GPU Operator with EGS-specific configuration (simplified)
-helm install gpu-operator nvidia/gpu-operator \
-  --namespace egs-gpu-operator \
-  --version v24.9.1 \
+helm install --wait --generate-name \
+  -n egs-gpu-operator \
+  nvidia/gpu-operator \
+  --version=v25.3.4
+```
+
+**Custom Configuration (EGS-specific):**
+```bash
+# Create namespace for GPU Operator
+kubectl create namespace egs-gpu-operator
+
+helm install --wait --generate-name \
+  -n egs-gpu-operator \
+  nvidia/gpu-operator \
+  --version=v25.3.4 \
   --set hostPaths.driverInstallDir="/home/kubernetes/bin/nvidia" \
   --set toolkit.installDir="/home/kubernetes/bin/nvidia" \
   --set cdi.enabled=true \
@@ -208,31 +254,104 @@ helm install gpu-operator nvidia/gpu-operator \
   --set driver.enabled=false
 ```
 
-**📋 Configuration Details:**
-- **Version:** v24.9.1 (matches installer config)
-- **Installation Paths:** Custom paths for NVIDIA tools and drivers
-- **CDI:** Enabled for container device interface
-- **Driver Management:** Disabled (managed separately if needed)
-- **Namespace:** egs-gpu-operator
+#### 1.3 Platform-Specific Configurations
 
-### 1.3 Verify GPU Operator Installation
+For specific Kubernetes platforms, refer to the [official documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html) for:
+
+- **Red Hat OpenShift**: [Installation and Upgrade Overview on OpenShift](https://docs.nvidia.com/datacenter/cloud-native/openshift/latest/index.html)
+- **Amazon EKS**: CSP-specific configurations
+- **Azure AKS**: CSP-specific configurations  
+- **Google GKE**: CSP-specific configurations
+- **VMware vSphere with Tanzu**: [NVIDIA AI Enterprise VMware vSphere Deployment Guide](https://docs.nvidia.com/ai-enterprise/deployment-guide-vmware/0.1.0/index.html)
+
+#### 1.4 GPU Operator Verification
+
+After installation, verify that all GPU Operator components are running correctly:
 
 ```bash
-# Check if all GPU Operator pods are running
+# Check all GPU Operator pods
 kubectl get pods -n egs-gpu-operator
-
-# Check GPU Operator components
-kubectl get daemonset -n egs-gpu-operator
-kubectl get deployment -n egs-gpu-operator
-
-# Verify GPU nodes are labeled
-kubectl get nodes --show-labels | grep nvidia.com/gpu
-
-# Check if NVIDIA drivers are installed
-kubectl get pods -n egs-gpu-operator -l app=nvidia-driver-daemonset
 ```
 
-### 1.4 GPU Operator Components
+**Expected Output:**
+```
+NAME                                                      READY   STATUS      RESTARTS   AGE
+gpu-feature-discovery-xkbx7                               1/1     Running     0          69m
+gpu-operator-669c87dd9-cxpfb                              1/1     Running     0          69m
+gpu-operator-node-feature-discovery-gc-6f9bcf88fb-sw59w   1/1     Running     0          68m
+gpu-operator-node-feature-discovery-master-57d9fbd8b8-2wlc8 1/1     Running     0          68m
+gpu-operator-node-feature-discovery-worker-mgn25          1/1     Running     0          68m
+nvidia-container-toolkit-daemonset-tm7zp                  1/1     Running     0          68m
+nvidia-cuda-validator-z5cnd                               0/1     Completed   0          67m
+nvidia-dcgm-exporter-cc62g                                1/1     Running     0          68m
+nvidia-dcgm-vxrk8                                         1/1     Running     0          68m
+nvidia-device-plugin-daemonset-ckpt2                      1/1     Running     0          68m
+nvidia-operator-validator-ggj7g                           1/1     Running     0          68m
+```
+
+#### 1.5 Key Components Verification
+
+Verify that essential components are running:
+
+```bash
+# Check GPU device plugin
+kubectl get daemonset -n egs-gpu-operator nvidia-device-plugin-daemonset
+
+# Check DCGM exporter (for metrics)
+kubectl get daemonset -n egs-gpu-operator nvidia-dcgm-exporter
+
+# Check container toolkit
+kubectl get daemonset -n egs-gpu-operator nvidia-container-toolkit-daemonset
+
+# Check GPU feature discovery
+kubectl get daemonset -n egs-gpu-operator gpu-feature-discovery
+
+# Verify GPU node labeling
+kubectl get nodes --show-labels | grep nvidia.com/gpu
+
+# Check if GPU operands are enabled on nodes
+kubectl get nodes --show-labels | grep nvidia.com/gpu.deploy.operands
+```
+
+#### 1.6 GPU Workload Testing
+
+Test GPU functionality with a sample workload:
+
+```bash
+# Create a test GPU workload
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cuda-vectoradd
+spec:
+  restartPolicy: OnFailure
+  containers:
+  - name: cuda-vectoradd
+    image: "nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda11.7.1-ubuntu20.04"
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+EOF
+
+# Check pod logs
+kubectl logs pod/cuda-vectoradd
+
+# Clean up
+kubectl delete pod cuda-vectoradd
+```
+
+**Expected Output:**
+```
+[Vector addition of 50000 elements]
+Copy input data from the host memory to the CUDA device
+CUDA kernel launch with 196 blocks of 256 threads
+Copy output data from the CUDA device to the host memory
+Test PASSED
+Done
+```
+
+#### 1.7 GPU Operator Components
 
 The GPU Operator installs several components that expose metrics:
 
@@ -261,51 +380,56 @@ Create a custom values file for GPU metrics monitoring:
 
 ```yaml
 # gpu-monitoring-values.yaml
-inline_values:
-  prometheus:
-    service:
-      type: ClusterIP                     # Service type for Prometheus
-    prometheusSpec:
-      storageSpec: {}                     # Placeholder for storage configuration
-      additionalScrapeConfigs:
-      - job_name: nvidia-dcgm-exporter
-        kubernetes_sd_configs:
-        - role: endpoints
-        relabel_configs:
-        - source_labels: [__meta_kubernetes_pod_name]
-          target_label: pod_name
-        - source_labels: [__meta_kubernetes_pod_container_name]
-          target_label: container_name
-      - job_name: gpu-metrics
-        scrape_interval: 1s
-        metrics_path: /metrics
-        scheme: http
-        kubernetes_sd_configs:
-        - role: endpoints
-          namespaces:
-            names:
-            - egs-gpu-operator
-        relabel_configs:
-        - source_labels: [__meta_kubernetes_endpoints_name]
-          action: drop
-          regex: .*-node-feature-discovery-master
-        - source_labels: [__meta_kubernetes_pod_node_name]
-          action: replace
-          target_label: kubernetes_node
-  grafana:
-    enabled: true                         # Enable Grafana
-    grafana.ini:
-      auth:
-        disable_login_form: true
-        disable_signout_menu: true
-      auth.anonymous:
-        enabled: true
-        org_role: Viewer
-    service:
-      type: ClusterIP                  # Service type for Grafana
-    persistence:
-      enabled: false                      # Disable persistence
-      size: 1Gi                           # Default persistence size
+prometheus:
+  service:
+    type: ClusterIP                     # Service type for Prometheus
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+    additionalScrapeConfigs:
+    - job_name: nvidia-dcgm-exporter
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod_name
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        target_label: container_name
+    - job_name: gpu-metrics
+      scrape_interval: 1s
+      metrics_path: /metrics
+      scheme: http
+      kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names:
+          - egs-gpu-operator
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_endpoints_name]
+        action: drop
+        regex: .*-node-feature-discovery-master
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        action: replace
+        target_label: kubernetes_node
+grafana:
+  enabled: true                         # Enable Grafana
+  grafana.ini:
+    auth:
+      disable_login_form: true
+      disable_signout_menu: true
+    auth.anonymous:
+      enabled: true
+      org_role: Viewer
+  service:
+    type: ClusterIP                  # Service type for Grafana
+  persistence:
+    enabled: true                       # Enable persistence
+    size: 1Gi                           # Default persistence size
 ```
 
 ### 2.3 Install with Custom Configuration
@@ -455,7 +579,8 @@ Import a GPU monitoring dashboard into Grafana:
 kubectl port-forward svc/prometheus-grafana 3000:80 -n egs-monitoring
 
 # Access Grafana at http://localhost:3000
-# Import dashboard ID: 14574 (NVIDIA GPU Exporter Dashboard)
+# Default credentials: admin / prom-operator
+# Import dashboard ID: 12239 (NVIDIA GPU Exporter Dashboard)
 ```
 
 ## 4. Verification Steps
@@ -511,8 +636,6 @@ kubectl port-forward svc/prometheus-operated 9090:9090 -n egs-monitoring
 # Check if EGS Worker can access GPU resources
 kubectl get nodes --show-labels | grep nvidia.com/gpu
 
-# Verify GPU operator tolerations are working
-kubectl get pods -n egs-gpu-operator -o wide
 ```
 
 ## 5. Troubleshooting
@@ -520,22 +643,38 @@ kubectl get pods -n egs-gpu-operator -o wide
 ### 5.1 GPU Operator Issues
 
 **Problem**: GPU Operator pods not starting
-**Solution**: 
-- Check node labels: `kubectl get nodes --show-labels`
+**Solution**:
+- Check node labels for GPU detection: `kubectl get nodes -o json | jq '.items[].metadata.labels | select(keys[] | startswith("nvidia.com/gpu"))'`
+- Verify container runtime compatibility (CRI-O or containerd)
+- Check pod security policies and RBAC permissions
+- Refer to [official NVIDIA GPU Operator troubleshooting](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/troubleshooting.html)
+
+**Problem**: GPU resources not available
+**Solution**:
 - Verify NVIDIA drivers are installed on nodes
-- Check GPU operator logs: `kubectl logs -f deployment/gpu-operator-controller-manager -n egs-gpu-operator`
+- Check GPU device plugin logs: `kubectl logs -n egs-gpu-operator <nvidia-device-plugin-pod>`
+- Ensure nodes have GPU hardware and proper drivers
+- Check node feature discovery labels
 
-**Problem**: GPU resources not visible to Kubernetes
+**Problem**: DCGM exporter not collecting metrics
 **Solution**:
-- Verify device plugin is running: `kubectl get pods -n egs-gpu-operator -l app=nvidia-device-plugin-daemonset`
-- Check device plugin logs for errors
-- Verify GPU nodes have proper labels
+- Verify DCGM exporter daemonset is running: `kubectl get daemonset -n egs-gpu-operator nvidia-dcgm-exporter`
+- Check DCGM exporter logs: `kubectl logs -n egs-gpu-operator <nvidia-dcgm-exporter-pod>`
+- Verify GPU hardware is accessible to the container
 
-**Problem**: GPU metrics not exposed
+**Problem**: GPU workload testing fails
 **Solution**:
-- Check if DCGM exporter is enabled and running
-- Verify metrics endpoint is accessible: `kubectl port-forward svc/nvidia-dcgm-exporter 9400:9400 -n egs-gpu-operator`
-- Check DCGM exporter logs for errors
+- Check if GPU resources are available: `kubectl describe nodes | grep -A 5 "nvidia.com/gpu"`
+- Verify container runtime configuration for NVIDIA
+- Check GPU operator logs for validation errors
+- Ensure proper GPU driver installation on nodes
+
+**Problem**: GPU operands not deploying on nodes
+**Solution**:
+- Verify node labeling: `kubectl get nodes --show-labels | grep nvidia.com/gpu.deploy.operands`
+- Apply the required label: `kubectl label node <gpu-node-name> nvidia.com/gpu.deploy.operands=true`
+- Check if nodes have GPU hardware detected: `kubectl get nodes -o json | jq '.items[].metadata.labels | select(keys[] | startswith("nvidia.com/gpu"))'`
+- Ensure NVIDIA drivers are properly installed following [official documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html)
 
 ### 5.2 Prometheus Issues
 
@@ -623,7 +762,8 @@ prometheus:
 
 ## Additional Resources
 
-- [NVIDIA GPU Operator Documentation](https://docs.ngc.nvidia.com/kubernetes/gpu-operator/)
+- [NVIDIA GPU Operator Documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html)
+- [NVIDIA GPU Operator Troubleshooting](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/troubleshooting.html)
 - [Kube-Prometheus-Stack Documentation](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)
 - [DCGM Exporter Metrics Reference](https://github.com/NVIDIA/dcgm-exporter)
 - [EGS Worker Values Reference](charts/kubeslice-worker-egs/values.yaml)

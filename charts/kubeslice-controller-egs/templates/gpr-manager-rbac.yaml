@@ -51,6 +51,7 @@ rules:
   - gpr.kubeslice.io
   resources:
   - gpuprovisioningrequests
+  - workspacepolicies
   - gprautoevictions
   - gprtemplates
   - gprtemplatebindings
