@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fake-gpu-operator.status-exporter.common.metadata.name" . }}
+  labels:
+    {{- include "fake-gpu-operator.status-exporter.common.metadata.labels" . | nindent 4 }}
+    run.ai/fake-node-deployment-template: "true"
+spec:
+  replicas: 0
+  selector:
+    {{- include "fake-gpu-operator.status-exporter.common.podSelector" . | nindent 4 }}
+  template:
+    metadata:
+      {{- include "fake-gpu-operator.status-exporter.common.podTemplate.metadata" . | nindent 6 }}
+    spec:
+      {{- include "fake-gpu-operator.status-exporter.common.podTemplate.spec" . | nindent 6 }}

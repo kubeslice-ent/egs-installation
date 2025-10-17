@@ -1,0 +1,624 @@
+apiVersion: v1
+entries:
+  fake-gpu-operator:
+  - apiVersion: v2
+    appVersion: 0.0.58
+    created: "2024-11-28T12:22:29.739154731Z"
+    description: A Helm chart for Kubernetes
+    digest: 3abadfa439ea821baf3ae4c89f8a7b602259fca2f5e47adc01443c4c6922c206
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.58.tgz
+    version: 0.0.58
+  - apiVersion: v2
+    appVersion: 0.0.57
+    created: "2024-11-27T08:06:12.854705929Z"
+    description: A Helm chart for Kubernetes
+    digest: d3baab8e29aa6b60612b5a4109c1369fa2551e90ded913d2a5e73f9e70a2428e
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.57.tgz
+    version: 0.0.57
+  - apiVersion: v2
+    appVersion: 0.0.56
+    created: "2024-11-06T14:01:33.388597564Z"
+    description: A Helm chart for Kubernetes
+    digest: ce119ffd384a7a997f80197d77010574bf9e469528d3534b6e3e10e705a0fd75
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.56.tgz
+    version: 0.0.56
+  - apiVersion: v2
+    appVersion: 0.0.55
+    created: "2024-08-25T07:08:02.231919624Z"
+    description: A Helm chart for Kubernetes
+    digest: cfb68ff3a628ad8a85790d075257d8a140945c11bdeba270a14280f6dc786220
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.55.tgz
+    version: 0.0.55
+  - apiVersion: v2
+    appVersion: 0.0.54
+    created: "2024-08-21T13:00:01.225399225Z"
+    description: A Helm chart for Kubernetes
+    digest: 4523470bfb755ee301ebdd4de3f920055d12f35d260a7c943cb7b219bb473e25
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.54.tgz
+    version: 0.0.54
+  - apiVersion: v2
+    appVersion: 0.0.54-kwok-test
+    created: "2024-08-20T16:28:08.984412045+03:00"
+    description: A Helm chart for Kubernetes
+    digest: 95dcb08d254a631808bcf538863dd783a9f45e7ac733724cd6d44016bbe4ab9f
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.54-kwok-test.tgz
+    version: 0.0.54-kwok-test
+  - apiVersion: v2
+    appVersion: 0.0.53
+    created: "2024-07-17T06:33:17.365775022Z"
+    description: A Helm chart for Kubernetes
+    digest: 3836537a92e6a42f4ae0373ae73ab671037fcaf89a3a45ea889546b04f55f9b6
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.53.tgz
+    version: 0.0.53
+  - apiVersion: v2
+    appVersion: 0.0.53-alpha.2
+    created: "2024-07-16T11:28:53.145738607Z"
+    description: A Helm chart for Kubernetes
+    digest: 6454cf0d2b6d428ff2bbd44f7580fb5cf50b63176273f2e6a9c706b49becd482
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.53-alpha.2.tgz
+    version: 0.0.53-alpha.2
+  - apiVersion: v2
+    appVersion: 0.0.53-alpha.1
+    created: "2024-07-16T10:08:43.531404324Z"
+    description: A Helm chart for Kubernetes
+    digest: fdaa541b0238bfdb9b7c96de732a98d6192886cdf56f0f20a3036fe6d20d05e5
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.53-alpha.1.tgz
+    version: 0.0.53-alpha.1
+  - apiVersion: v2
+    appVersion: 0.0.53-alpha.0
+    created: "2024-07-16T09:48:23.305345666Z"
+    description: A Helm chart for Kubernetes
+    digest: 0b4d663d301994e818aadc4315b8b6d2aab8997cc3ea5d0bfcffd433d653e485
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.53-alpha.0.tgz
+    version: 0.0.53-alpha.0
+  - apiVersion: v2
+    appVersion: 0.0.51
+    created: "2024-05-22T11:29:43.209827715Z"
+    description: A Helm chart for Kubernetes
+    digest: 94eab9f74dea0dcfa6d96624a1d3ed498e92e8d755d674161f5d593de2ae8fed
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.51.tgz
+    version: 0.0.51
+  - apiVersion: v2
+    appVersion: 0.0.50
+    created: "2024-05-20T11:35:40.564618313Z"
+    description: A Helm chart for Kubernetes
+    digest: 491f63004e1b2db862dd89783f76a6d47654e815f6d1edd987e417852495e7b6
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.50.tgz
+    version: 0.0.50
+  - apiVersion: v2
+    appVersion: 0.0.49
+    created: "2024-05-09T11:47:11.367880177Z"
+    description: A Helm chart for Kubernetes
+    digest: 7f771c155fda7403ecf453ba51c1306163588af6a23347ca6b1b45ff8efda44a
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.49.tgz
+    version: 0.0.49
+  - apiVersion: v2
+    appVersion: 0.0.49-alpha.2
+    created: "2024-05-19T15:02:27.066120741Z"
+    description: A Helm chart for Kubernetes
+    digest: b8a62c526a3d1d878ad337f62ca6a1ebdeb112e62cccead0645fa2b8144ab3d6
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.49-alpha.2.tgz
+    version: 0.0.49-alpha.2
+  - apiVersion: v2
+    appVersion: 0.0.48
+    created: "2024-04-09T12:16:04.319831352Z"
+    description: A Helm chart for Kubernetes
+    digest: 903ecf96e22abf887d500dbc52a103074121ad4b9c586f3eb17892ccf5acec79
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.48.tgz
+    version: 0.0.48
+  - apiVersion: v2
+    appVersion: 0.0.47
+    created: "2024-04-04T07:12:53.529567565Z"
+    description: A Helm chart for Kubernetes
+    digest: e8c34b32addd3f211ee1cf4a02926e921ec7a5d0193602d2247e7aa5602879ac
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.47.tgz
+    version: 0.0.47
+  - apiVersion: v2
+    appVersion: 0.0.46
+    created: "2024-04-03T07:37:55.967862786Z"
+    description: A Helm chart for Kubernetes
+    digest: 9465c257877ea6ab0122603d4eeeaf168b495905315869e8c62477cb7fff9dde
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.46.tgz
+    version: 0.0.46
+  - apiVersion: v2
+    appVersion: 0.0.45
+    created: "2024-04-02T13:02:46.599898034Z"
+    description: A Helm chart for Kubernetes
+    digest: 87c5d9e170f4213dedf1358c921f452abf74d2eae0ac8e5fd88c63c202357447
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.45.tgz
+    version: 0.0.45
+  - apiVersion: v2
+    appVersion: 0.0.44
+    created: "2024-04-02T08:25:29.826912779Z"
+    description: A Helm chart for Kubernetes
+    digest: 079053fdb288f970b2df5fafee29292e635503a4c2f10c5a4ea8e529e48c2c41
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.44.tgz
+    version: 0.0.44
+  - apiVersion: v2
+    appVersion: 0.0.43
+    created: "2024-04-01T06:22:37.403308017Z"
+    description: A Helm chart for Kubernetes
+    digest: 6a5fa080042b16d72ad5d8105485681352c71fdb1e95c0b8956beffe9b5457e9
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.43.tgz
+    version: 0.0.43
+  - apiVersion: v2
+    appVersion: 0.0.42
+    created: "2024-02-28T15:25:06.755207464Z"
+    description: A Helm chart for Kubernetes
+    digest: 930278c61d5b0f62a3597a05142d15b1180e3766f8a0d196646d47b0653e55ff
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.42.tgz
+    version: 0.0.42
+  - apiVersion: v2
+    appVersion: 0.0.41
+    created: "2024-01-29T12:49:31.818174321Z"
+    description: A Helm chart for Kubernetes
+    digest: 0ffae03b900e82f015a078dc5e667c15c84c5066f8ba363289f6f5af2c4937b4
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.41.tgz
+    version: 0.0.41
+  - apiVersion: v2
+    appVersion: 0.0.38
+    created: "2023-11-07T16:53:01.339361203Z"
+    description: A Helm chart for Kubernetes
+    digest: 5f0474c72722b42a883c310bec578fae05198862322ad506eaa0ab8098bfc690
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.38.tgz
+    version: 0.0.38
+  - apiVersion: v2
+    appVersion: 0.0.37
+    created: "2023-10-01T11:01:09.782830402Z"
+    description: A Helm chart for Kubernetes
+    digest: 45fb54d0eaf00f50f3c8c756eca8f1c9a59154eb6610e5ac7deedc8d387885e1
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.37.tgz
+    version: 0.0.37
+  - apiVersion: v2
+    appVersion: 0.0.37-alpha.0
+    created: "2023-09-28T10:39:51.235337291Z"
+    description: A Helm chart for Kubernetes
+    digest: cde859ac9343b9436f07dd9303d45a029f5e580f3e65b9925cb46d472df6c096
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.37-alpha.0.tgz
+    version: 0.0.37-alpha.0
+  - apiVersion: v2
+    appVersion: 0.0.36
+    created: "2023-09-26T12:09:27.358123975Z"
+    description: A Helm chart for Kubernetes
+    digest: fa3e03559fcb46352a8d3ee41d6e37e6391eca5a1aba8d5650cc065d4a700a21
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.36.tgz
+    version: 0.0.36
+  - apiVersion: v2
+    appVersion: 0.0.35
+    created: "2023-09-26T12:25:16.727824466Z"
+    description: A Helm chart for Kubernetes
+    digest: 25148a528348f1a192f9946b5699ffc48bba9bc6643b928d7a4f840c7038cdc0
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.35.tgz
+    version: 0.0.35
+  - apiVersion: v2
+    appVersion: 0.0.34
+    created: "2023-07-03T13:03:28.430077687Z"
+    description: A Helm chart for Kubernetes
+    digest: b7e6a26c78e6c06c67a13e9c26ae4424712ad3cc20d3c90cfadc3dfd6b121fbb
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.34.tgz
+    version: 0.0.34
+  - apiVersion: v2
+    appVersion: 0.0.34-alpha.2
+    created: "2023-07-03T11:45:04.020492531Z"
+    description: A Helm chart for Kubernetes
+    digest: 8655a2f108d50e2803b3f9a1c2857ae8a0fd3ccfa019fcdaccac6b3bae89afe4
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.34-alpha.2.tgz
+    version: 0.0.34-alpha.2
+  - apiVersion: v2
+    appVersion: 0.0.34-alpha.1
+    created: "2023-07-03T08:14:19.156493238Z"
+    description: A Helm chart for Kubernetes
+    digest: 5d33302f174c30bca2726333006008a061e3100aa4d76a540f77a598a2e30e69
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.34-alpha.1.tgz
+    version: 0.0.34-alpha.1
+  - apiVersion: v2
+    appVersion: 0.0.34-alpha.0
+    created: "2023-06-22T07:47:59.898823209Z"
+    description: A Helm chart for Kubernetes
+    digest: f9e9714f34137f531d86961d7f88560fb357e60b0d85265f774b13c2bc0b03b0
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.34-alpha.0.tgz
+    version: 0.0.34-alpha.0
+  - apiVersion: v2
+    appVersion: 0.0.33
+    created: "2023-05-18T14:52:36.912672172Z"
+    description: A Helm chart for Kubernetes
+    digest: fbf3e69b0352ad3a9a1614e08652209405174aa734aff51a9e33f7696678316e
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.33.tgz
+    version: 0.0.33
+  - apiVersion: v2
+    appVersion: 0.0.32
+    created: "2023-05-10T10:44:44.506899105Z"
+    description: A Helm chart for Kubernetes
+    digest: bcdc191e6cd46541e02a74ed0918a37b7fef8ae35b03191a6a2cbd820ae295ef
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.32.tgz
+    version: 0.0.32
+  - apiVersion: v2
+    appVersion: 0.0.32-alpha.0
+    created: "2023-05-10T08:11:51.747902284Z"
+    description: A Helm chart for Kubernetes
+    digest: c49aa6924fec2810b8ecdd488c834ab5d751f0f55d37ef111858d00781b53a25
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.32-alpha.0.tgz
+    version: 0.0.32-alpha.0
+  - apiVersion: v2
+    appVersion: 0.0.31
+    created: "2023-03-29T09:40:09.491374256Z"
+    description: A Helm chart for Kubernetes
+    digest: fcdc4c0209e5781ca2bd26635558d8d1ae73651c6bf0771388a6eb71d2f0d7cb
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.31.tgz
+    version: 0.0.31
+  - apiVersion: v2
+    appVersion: 0.0.30
+    created: "2023-03-15T09:20:09.923407255Z"
+    description: A Helm chart for Kubernetes
+    digest: a48cc52efcb69ccf72b8850ae3122967e5c0f6192c68f26beba6488dc6f2f1a1
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.30.tgz
+    version: 0.0.30
+  - apiVersion: v2
+    appVersion: 0.0.29
+    created: "2023-03-14T12:21:20.625893619Z"
+    description: A Helm chart for Kubernetes
+    digest: c135b46fca184092c6ade84e19be7944a1c2de668effd52a1025ce0d277e717e
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.29.tgz
+    version: 0.0.29
+  - apiVersion: v2
+    appVersion: 0.0.26
+    created: "2023-03-13T13:56:50.124594278Z"
+    description: A Helm chart for Kubernetes
+    digest: 48a54d4f15313025db0beca86ae59c456a95b6334769fa292ae23e43d27685b5
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.26.tgz
+    version: 0.0.26
+  - apiVersion: v2
+    appVersion: 0.0.25
+    created: "2023-03-12T14:16:22.138798122Z"
+    description: A Helm chart for Kubernetes
+    digest: ca5fd15e86fdc591892b7a7578585ac5810196b4270604010153b07ba9f5d0b2
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.25.tgz
+    version: 0.0.25
+  - apiVersion: v2
+    appVersion: 0.0.24
+    created: "2023-03-12T14:17:11.952424441Z"
+    description: A Helm chart for Kubernetes
+    digest: 2b3a128e06fcb8d534774a2e656c0183b6c928835dfd08988399a4d4df33e5b4
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.24.tgz
+    version: 0.0.24
+  - apiVersion: v2
+    appVersion: 0.0.23
+    created: "2023-03-12T13:34:38.564569439Z"
+    description: A Helm chart for Kubernetes
+    digest: 5760d43c8f036b369839937149620213a2752f3517ce855c986878c0359663f5
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.23.tgz
+    version: 0.0.23
+  - apiVersion: v2
+    appVersion: 0.0.22
+    created: "2023-03-06T21:31:01.44912224Z"
+    description: A Helm chart for Kubernetes
+    digest: 9deb032856b282928fe663d5fbaccb7247cb6d89762e5ea4af22f9259b4eca6c
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.22.tgz
+    version: 0.0.22
+  - apiVersion: v2
+    appVersion: 0.0.20
+    created: "2023-02-20T11:53:24.290135885Z"
+    description: A Helm chart for Kubernetes
+    digest: 35e6600920373509f7b0110c1a87c07f8c6c2bfab645a757d049f8bcd79444b8
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.20.tgz
+    version: 0.0.20
+  - apiVersion: v2
+    appVersion: 0.0.19
+    created: "2023-01-15T07:48:49.954260182Z"
+    description: A Helm chart for Kubernetes
+    digest: 9ffe0fcc58d83884e15fadcfe41c0f7d9d8ebc8c2f8a1e77f58af83cdcd182d6
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.19.tgz
+    version: 0.0.19
+  - apiVersion: v2
+    appVersion: 0.0.18
+    created: "2023-01-12T15:42:35.402286265Z"
+    description: A Helm chart for Kubernetes
+    digest: e44164b8bfa11383b31578549105b6e5fd071904891732b4640e104286ed72bf
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.18.tgz
+    version: 0.0.18
+  - apiVersion: v2
+    appVersion: 0.0.16
+    created: "2022-11-06T19:26:49.464191697Z"
+    description: A Helm chart for Kubernetes
+    digest: dedc32b4248e7c922a04108a09be2ea805a67235edc6e3da2dd4c1f19388dcc2
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.16.tgz
+    version: 0.0.16
+  - apiVersion: v2
+    appVersion: 0.0.15
+    created: "2022-09-01T15:03:07.834196038Z"
+    description: A Helm chart for Kubernetes
+    digest: 99b6811cf531b60226b3e4835aeeee76c235d75a7c51f4d0e87bdd1f3af323d3
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.15.tgz
+    version: 0.0.15
+  - apiVersion: v2
+    appVersion: 0.0.14
+    created: "2022-08-31T11:46:23.752025828Z"
+    description: A Helm chart for Kubernetes
+    digest: a1bc976818184863eda0838512b82bef629120ac95e8e940354ddddd8392e4ba
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.14.tgz
+    version: 0.0.14
+  - apiVersion: v2
+    appVersion: 0.0.13
+    created: "2022-08-31T09:50:28.159044107Z"
+    description: A Helm chart for Kubernetes
+    digest: a7748a4ed397170ba76f47278825d8ee81a1a38cf1e7d19e528b7eb690da8923
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.13.tgz
+    version: 0.0.13
+  - apiVersion: v2
+    appVersion: 0.0.12
+    created: "2022-08-14T08:52:13.084886691Z"
+    description: A Helm chart for Kubernetes
+    digest: 2f90aa2d87eb6cbe6345c72a6e86d74d077e7b434f55f49b3aedd41e6b67f585
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.12.tgz
+    version: 0.0.12
+  - apiVersion: v2
+    appVersion: 0.0.11
+    created: "2022-07-28T14:24:59.030025373Z"
+    description: A Helm chart for Kubernetes
+    digest: eaa52241fba92e879c1bcf70f64e9a0b7ae082b9d792381d5d71164d5bb47436
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.11.tgz
+    version: 0.0.11
+  - apiVersion: v2
+    appVersion: 0.0.10
+    created: "2022-07-28T14:29:26.48426443Z"
+    description: A Helm chart for Kubernetes
+    digest: 2338e982f43e201d0d7d25d0906d1309508ad6f5bab4bb7946bdda6853561910
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.10.tgz
+    version: 0.0.10
+  - apiVersion: v2
+    appVersion: 0.0.10-beta
+    created: "2022-07-28T14:09:01.708451551Z"
+    description: A Helm chart for Kubernetes
+    digest: 91b4af7d271917cb10db7ed3e6df9f011902948c1e76648ddd7ec23dcf027c09
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.10-beta.tgz
+    version: 0.0.10-beta
+  - apiVersion: v2
+    appVersion: 0.0.10-alpha.1
+    created: "2022-07-20T07:16:49.733966417Z"
+    description: A Helm chart for Kubernetes
+    digest: 2428f83e629f659e4ccb841fd4a5bfd8ad1c7bac0c7ca8b9d08d12c605ba4ed9
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.10-alpha.1.tgz
+    version: 0.0.10-alpha.1
+  - apiVersion: v2
+    appVersion: 0.0.9
+    created: "2022-07-17T07:08:53.473801417Z"
+    description: A Helm chart for Kubernetes
+    digest: 449f2c6dd7fd98aaa66900a8282bbf221c8170c6df2fe585a45821aa90421bb5
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.9.tgz
+    version: 0.0.9
+  - apiVersion: v2
+    appVersion: 0.0.8
+    created: "2022-07-14T11:57:13.204393705Z"
+    description: A Helm chart for Kubernetes
+    digest: 53730a724027070c940b3b6ac4548bd4b7e075a56761dce470ef57e8fa6c2e26
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.8.tgz
+    version: 0.0.8
+  - apiVersion: v2
+    appVersion: 0.0.7
+    created: "2022-07-05T04:57:57.64989362Z"
+    description: A Helm chart for Kubernetes
+    digest: d193ddcdf89ebf54714ba0ff3124045867cfccc30a4df4e8a70eac204a675a87
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.7.tgz
+    version: 0.0.7
+  - apiVersion: v2
+    appVersion: 0.0.5
+    created: "2022-07-03T09:17:58.069563859Z"
+    description: A Helm chart for Kubernetes
+    digest: 49f52fcaa3dc2a6cd64ecf522a59391480f4579a099b151ce5f7bd2bca8b05a7
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.5.tgz
+    version: 0.0.5
+  - apiVersion: v2
+    appVersion: 0.0.4
+    created: "2022-06-09T09:38:51.430012275Z"
+    description: A Helm chart for Kubernetes
+    digest: 5ae137c88e3c03f3a2bfe55ffaad8d4c9933e7f9e755ae625fd73e07a4576656
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.4.tgz
+    version: 0.0.4
+  - apiVersion: v2
+    appVersion: 0.0.3
+    created: "2022-06-09T08:42:03.735863732Z"
+    description: A Helm chart for Kubernetes
+    digest: 80ea62a4f71617780d8507be41da0793bcace3e33320f809a8259c7c6e5c408e
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
+    appVersion: 0.0.2
+    created: "2024-08-15T19:15:35.122189516+03:00"
+    description: A Helm chart for Kubernetes
+    digest: 63bb82f557e304f46aa42ae1445e5540f87d147b21ace2f1a4ec4ae477ebbb91
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2022-05-23T17:25:36.021866+03:00"
+    description: A Helm chart for Kubernetes
+    digest: aaca3dced9107fe2ee9c8b15b3c97f330f92e39a04d49f4f6ef51edb363e2a5a
+    name: fake-gpu-operator
+    type: application
+    urls:
+    - https://fake-gpu-operator.storage.googleapis.com/fake-gpu-operator-0.0.1.tgz
+    version: 0.0.1
+generated: "2024-11-28T12:22:29.737589488Z"
