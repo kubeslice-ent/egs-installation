@@ -178,6 +178,5 @@ webhooks:
         values:
         - kube-system
         - spire
-        - kubeslice-system
         - kubeslice-controller
         - {{ .Values.nsmNs }}
