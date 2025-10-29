@@ -60,7 +60,7 @@ verify_install_timeout: 600                     # Timeout for global installatio
 skip_on_verify_fail: true                       # If set to true, skip steps where verification fails, otherwise exit on failure
 
 # Base path settings
-base_path: "/base/path/to/install
+base_path: "/base/path/to/install"
 
 # Helm repository settings
 use_local_charts: true                          # Use local Helm charts instead of fetching them from a repository
