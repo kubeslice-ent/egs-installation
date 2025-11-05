@@ -271,7 +271,7 @@ additional_apps:
     release: "gpu-operator"                    # Helm release name for the GPU operator
     chart: "gpu-operator"                      # Helm chart name for the GPU operator
     repo_url: "https://helm.ngc.nvidia.com/nvidia" # Helm repository URL for the GPU operator
-    version: "v24.9.1"                         # Version of the GPU operator to install
+    version: "v25.3.4"                         # Version of the GPU operator to install
     specific_use_local_charts: true            # Use local charts for this application
     #### Inline Helm Values for GPU Operator ####
     inline_values:
@@ -369,7 +369,7 @@ additional_apps:
     release: "kt-postgresql"                  # Helm release name for PostgreSQL
     chart: "postgresql"                       # Helm chart name for PostgreSQL
     repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql" # Helm repository URL for PostgreSQL
-    version: "16.2.1"                         # Version of the PostgreSQL chart to install
+    version: "16.7.27"                         # Version of the PostgreSQL chart to install
     specific_use_local_charts: true           # Use local charts for this application
     values_file: ""                            # Path to an external values file, if any
     #### Inline Helm Values for PostgreSQL ####
