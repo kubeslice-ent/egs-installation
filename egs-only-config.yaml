@@ -46,6 +46,20 @@ kubeslice_controller_egs:
     kubeslice:
       controller:
         endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
+        replication:
+          minio:
+            # Whether to install MinIO
+            install: "false"
+            # Storage size for MinIO
+            storage: 1Gi
+            # Username for MinIO
+            username: minioadmin
+            # Password for MinIO
+            password: minioadmin
+            # service options
+            service:
+              # minio service type
+              type: "LoadBalancer"
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
   verify_install: false                        # Verify the installation of the controller
