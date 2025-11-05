@@ -179,7 +179,7 @@ data:
         username: # [Optional] Required for dev-charts/dev-charts-ent
         password: # [Optional] Required for dev-charts/dev-charts-ent
       imagePullSecrets:
-        repository: # [Optional] Required for dev-charts-ent
+        registry: # [Optional] Required for dev-charts-ent
         username: # [Optional] Required for dev-charts-ent
         password: # [Optional] Required for dev-charts-ent
         email: # [Optional] Required for dev-charts-ent

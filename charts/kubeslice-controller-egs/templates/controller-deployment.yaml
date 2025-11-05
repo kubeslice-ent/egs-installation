@@ -82,7 +82,7 @@ spec:
             - --project-namespace-prefix={{ required "A valid value is required!" .Values.kubeslice.controller.projectnsPrefix }}
             - --controller-end-point={{ required "A valid value is required!" .Values.kubeslice.controller.endpoint }}
             - --prometheus-service-endpoint={{ required "A valid value is required!" .Values.global.kubeTally.prometheusUrl }}
-            - --precheckjob-image={{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.global.imageRegistry) }}
+            - --precheckjob-image={{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.dev.imageRegistry) }}
             - --metrics-cleanup-interval={{ .Values.kubeslice.controller.kubeTally.metricsCleanupInterval }}
             - --ovpn-job-image={{ include "kubeslice.image" (dict "image" .Values.kubeslice.ovpnJob.image "tag" .Values.kubeslice.ovpnJob.tag "registry" .Values.global.imageRegistry) }}          
           command:
