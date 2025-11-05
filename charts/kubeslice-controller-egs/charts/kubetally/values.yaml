@@ -1,5 +1,6 @@
-global:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+# Global values are automatically inherited from parent chart
+# No need to duplicate them here - they come from the main values.yaml
+# Only define global values here if you need subchart-specific overrides
 kubetally:
   pricingService:
     image: pricing-service
@@ -33,7 +34,11 @@ kubetally:
         memory: "512Mi"
         cpu: "500m"
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -50,6 +55,12 @@ kubetally:
     annotations:
       prometheus.io/port: '9999'
       prometheus.io/scrape: 'true'
+    tolerations:
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     containerSecurityContext:
       runAsUser: 65536
       runAsGroup: 65536
@@ -100,7 +111,11 @@ kubetally:
         memory: "512Mi"
         cpu: "500m"
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity: {}
         # nodeAffinity:
         #   preferredDuringSchedulingIgnoredDuringExecution:
@@ -109,4 +124,6 @@ kubetally:
         #         matchExpressions:
         #           - key: "node.kubernetes.io/gpu"
         #             operator: "DoesNotExist"
-  imagePullSecretName: kubeslice-image-pull-secret
+  # imagePullSecretName is automatically inherited from parent chart's global.imagePullSecrets.name
+  # Only specify this if you need a subchart-specific override
+  # imagePullSecretName: "custom-subchart-secret"

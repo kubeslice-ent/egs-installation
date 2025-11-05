@@ -4,7 +4,7 @@ metadata:
   name: spire-server
   namespace: spire
 data:
-    server.conf: |
+  server.conf: |
       server {
           bind_address = "0.0.0.0"
           bind_port = "8081"

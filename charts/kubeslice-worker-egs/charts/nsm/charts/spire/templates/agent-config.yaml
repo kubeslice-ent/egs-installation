@@ -5,7 +5,7 @@ metadata:
   namespace: spire
 
 data:
-    agent.conf: |
+  agent.conf: |
       agent {
           data_dir = "/run/spire"
           log_level = "DEBUG"

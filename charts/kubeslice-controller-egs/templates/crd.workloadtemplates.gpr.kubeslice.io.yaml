@@ -1,0 +1,264 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: workloadtemplates.gpr.kubeslice.io
+spec:
+  group: gpr.kubeslice.io
+  names:
+    kind: WorkloadTemplate
+    listKind: WorkloadTemplateList
+    plural: workloadtemplates
+    singular: workloadtemplate
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: WorkloadTemplate is the Schema for the workloadtemplates API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: WorkloadTemplateSpec defines the desired state of WorkloadTemplate
+            properties:
+              burstDuration:
+                description: BurstDuration is the duration for which the workload
+                  will be bursted
+                type: string
+              cmdExec:
+                description: CmdExec represents kubectl commands to be executed before
+                  helm installation
+                items:
+                  description: WorkloadStep is a single step workload order sequence.
+                  properties:
+                    cmd:
+                      description: Type determines what kind of work this step does.
+                      type: string
+                    name:
+                      description: Name is the mapping of cmd resource to workload
+                        step.
+                      type: string
+                  type: object
+                type: array
+              deletionPolicy:
+                default: Delete
+                description: |-
+                  DeletionPolicy represents the policy for deleting the workload
+                  Valid values are: "Delete", "Retain"
+                type: string
+              gprTemplates:
+                description: GPRTemplates is a list of GPR templates names
+                items:
+                  type: string
+                type: array
+              helmConfig:
+                description: HelmConfig represents a helm chart to be deployed on
+                  the managed cluster.
+                items:
+                  description: HelmConfig represents a helm chart to be deployed on
+                    the managed cluster
+                  properties:
+                    chart:
+                      description: Chart is the name of the Helm chart to be deployed
+                      type: string
+                    helmFlags:
+                      description: |-
+                        Additional Helm flags as a string (e.g., "--debug --dry-run --wait --atomic --timeout 5m")
+                        These flags will be appended to the helm command
+                      type: string
+                    name:
+                      description: name is the unique name of helm resource that maps
+                        to workload step
+                      type: string
+                    releaseName:
+                      description: Release name for the Helm chart
+                      type: string
+                    releaseNamespace:
+                      description: Namespace for the release
+                      type: string
+                    repoName:
+                      description: RepoURL is the URL of the Helm chart repository
+                      type: string
+                    repoURL:
+                      description: RepoURL is the URL of the Helm chart repository
+                      type: string
+                    secretRef:
+                      description: |-
+                        The name of the secret containing authentication credentials
+                        For HTTP/S basic auth the secret must contain 'username' and 'password'
+                        fields.
+                      properties:
+                        name:
+                          description: Name is the name of the secret
+                          type: string
+                      type: object
+                    values:
+                      description: Values for the Helm chart
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    version:
+                      description: Version is the version of the Helm chart to be
+                        deployed
+                      type: string
+                  required:
+                  - releaseName
+                  - releaseNamespace
+                  type: object
+                type: array
+              manifestResources:
+                description: ManifestResources represents a list of kuberenetes resources
+                  to be deployed on the managed cluster.
+                items:
+                  description: ManifestResource represents a resource to be deployed
+                    on managed cluster
+                  properties:
+                    manifest:
+                      description: Manifest represents a resource to be deployed on
+                        managed cluster
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    name:
+                      description: Name is the unique name of manifest resource that
+                        maps to workload step
+                      type: string
+                  required:
+                  - manifest
+                  type: object
+                type: array
+              namespaces:
+                description: Namespaces is a list of namespaces
+                items:
+                  type: string
+                type: array
+              serviceAccount:
+                description: ServiceAccount is the name of the service account to
+                  be used for the workload
+                type: string
+              steps:
+                description: Steps is an ordered list of things to execute.
+                items:
+                  description: WorkloadStep is a single step workload order sequence.
+                  properties:
+                    name:
+                      description: Name is the mapping of workload.
+                      type: string
+                    type:
+                      description: Type determines what kind of work this step does.
+                      type: string
+                  required:
+                  - name
+                  - type
+                  type: object
+                type: array
+              workspaceName:
+                description: WorkspaceName is the name of the workspace
+                type: string
+            type: object
+          status:
+            description: WorkloadTemplateStatus defines the observed state of WorkloadTemplate
+            properties:
+              currentStep:
+                type: integer
+              manifestConditions:
+                description: |-
+                  ManifestConditions represents the conditions of each resource in workloadtemplate deployed on
+                  managed cluster.
+                items:
+                  description: |-
+                    ManifestCondition represents the conditions of the resources deployed on
+                    managed cluster
+                  properties:
+                    identifier:
+                      description: resourceId represents the identity of a resource
+                        linking to manifests in spec.
+                      properties:
+                        group:
+                          description: Group is the group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the name of the resource
+                          type: string
+                        namespace:
+                          description: |-
+                            Namespace is the namespace of the resource, the resource is cluster scoped if the value
+                            is empty
+                          type: string
+                        ordinal:
+                          description: |-
+                            Ordinal represents an index in manifests list, so the condition can still be linked
+                            to a manifest even though manifest cannot be parsed successfully.
+                          type: integer
+                        resource:
+                          description: Resource is the resource type of the resource
+                          type: string
+                        version:
+                          description: Version is the version of the resource.
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              phase:
+                type: string
+              stepResults:
+                items:
+                  description: StepResult holds what happened when a step executed.
+                  properties:
+                    duration:
+                      description: Duration is how long this step took to execute.
+                      type: string
+                    message:
+                      description: Message provides details about what happened.
+                      type: string
+                    name:
+                      description: Name of the workload step mapping
+                      type: string
+                    success:
+                      description: Success indicates if the step completed successfully.
+                      type: boolean
+                    type:
+                      description: type of the workload
+                      type: string
+                  required:
+                  - name
+                  - success
+                  - type
+                  type: object
+                type: array
+              workloadSelector:
+                description: WorkloadSelector selects the workload to be associated
+                  with this template
+                properties:
+                  name:
+                    description: Name is the name of the workload
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of the workload
+                    type: string
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

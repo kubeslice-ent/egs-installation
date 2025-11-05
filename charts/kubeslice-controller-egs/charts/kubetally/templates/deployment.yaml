@@ -30,12 +30,16 @@ spec:
       {{ toYaml .Values.kubetally.pricingService.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.kubetally.pricingService.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.kubetally.pricingService.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.kubetally.pricingService.affinity }}
       affinity:
       {{ toYaml .Values.kubetally.pricingService.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image:  '{{ .Values.global.imageRegistry }}/{{.Values.kubetally.pricingService.image}}:{{.Values.kubetally.pricingService.tag}}'
+        - image: {{ include "kubetally.image" (dict "image" .Values.kubetally.pricingService.image "tag" .Values.kubetally.pricingService.tag "context" .) }}
           imagePullPolicy: {{.Values.kubetally.pricingService.imagePullPolicy}}
           name: pricing-service
           securityContext:
@@ -94,12 +98,7 @@ spec:
       {{- if .Values.kubetally.pricingService.podSecurityContext }}
       {{ toYaml .Values.kubetally.pricingService.podSecurityContext | nindent 8 }}
       {{- end }}
-      imagePullSecrets:
-        - name: {{ .Values.kubetally.imagePullSecretName }}
-      {{- if .Values.kubetally.pricingService.tolerations }}
-      tolerations: 
-      {{ toYaml .Values.kubetally.pricingService.tolerations | nindent 8 }}
-      {{- end }}
+      {{- include "kubetally.imagePullSecrets" . | nindent 6 }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -120,6 +119,10 @@ spec:
           {{ toYaml .Values.kubetally.chargeUpdater.annotations | nindent 12 }}
           {{- end }}
         spec:
+          {{- if .Values.kubetally.chargeUpdater.tolerations }}
+          tolerations: 
+          {{ toYaml .Values.kubetally.chargeUpdater.tolerations | nindent 10 }}
+          {{- end }}
           containers:
             - name: pricing-updater
               securityContext:
@@ -127,7 +130,7 @@ spec:
               {{ toYaml .Values.kubetally.chargeUpdater.containerSecurityContext | nindent 16 }}
               {{- end }}
               imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
-              image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+              image: {{ include "kubetally.image" (dict "image" .Values.kubetally.chargeUpdater.image "tag" .Values.kubetally.chargeUpdater.tag "context" .) }}
               env:
                 - name: APP_ENV
                   value: Production
@@ -178,8 +181,7 @@ spec:
           {{- if .Values.kubetally.chargeUpdater.podSecurityContext }}
           {{ toYaml .Values.kubetally.chargeUpdater.podSecurityContext | nindent 12 }}
           {{- end }}
-          imagePullSecrets:
-            - name: {{ .Values.kubetally.imagePullSecretName }}
+          {{- include "kubetally.imagePullSecrets" . | nindent 10 }}
           restartPolicy: Never
       backoffLimit: 4
       ttlSecondsAfterFinished: 86400
@@ -218,6 +220,10 @@ spec:
       {{ toYaml .Values.kubetally.kubeTallyReport.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.kubetally.kubeTallyReport.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.kubetally.kubeTallyReport.tolerations | nindent 8 }}
+      {{- end }}
       containers:
         - name: report-service
           securityContext:
@@ -225,7 +231,7 @@ spec:
           {{ toYaml .Values.kubetally.kubeTallyReport.containerSecurityContext | nindent 12 }}
           {{- end }}
           imagePullPolicy: {{ .Values.kubetally.kubeTallyReport.imagePullPolicy }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
+          image: {{ include "kubetally.image" (dict "image" .Values.kubetally.kubeTallyReport.image "tag" .Values.kubetally.kubeTallyReport.tag "context" .) }}
           env:
             - name: APP_ENV
               value: production
@@ -275,10 +281,7 @@ spec:
       {{- if .Values.kubetally.kubeTallyReport.podSecurityContext }}
       {{ toYaml .Values.kubetally.kubeTallyReport.podSecurityContext | nindent 8 }}
       {{- end }}
-      imagePullSecrets:
-        - name: {{ .Values.kubetally.imagePullSecretName }}
-      tolerations:
-        - operator: "Exists"
+      {{- include "kubetally.imagePullSecrets" . | nindent 6 }}
 
 ---
 apiVersion: v1
@@ -311,6 +314,10 @@ spec:
       {{ toYaml .Values.kubetally.chargeUpdater.annotations | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.kubetally.chargeUpdater.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.kubetally.chargeUpdater.tolerations | nindent 6 }}
+      {{- end }}
       containers:
         - name: pricing-updater
           securityContext:
@@ -318,7 +325,7 @@ spec:
           {{ toYaml .Values.kubetally.chargeUpdater.containerSecurityContext | nindent 12 }}
           {{- end }}
           imagePullPolicy: {{ .Values.kubetally.chargeUpdater.imagePullPolicy }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubetally.chargeUpdater.image}}:{{ .Values.kubetally.chargeUpdater.tag }}'
+          image: {{ include "kubetally.image" (dict "image" .Values.kubetally.chargeUpdater.image "tag" .Values.kubetally.chargeUpdater.tag "context" .) }}
           env:
             - name: APP_ENV
               value: Production
@@ -367,7 +374,6 @@ spec:
       {{- if .Values.kubetally.chargeUpdater.podSecurityContext }}
       {{ toYaml .Values.kubetally.chargeUpdater.podSecurityContext | nindent 8 }}
       {{- end }}
-      imagePullSecrets:
-        - name: {{ .Values.kubetally.imagePullSecretName }}
+      {{- include "kubetally.imagePullSecrets" . | nindent 6 }}
       restartPolicy: Never
   ttlSecondsAfterFinished: 86400

@@ -128,6 +128,9 @@ spec:
       name: kubeslice-postdelete-job
       namespace: {{ .Release.Namespace }}
     spec:
+      {{- if .Values.operator.tolerations }}
+      tolerations: {{ toYaml .Values.operator.tolerations | nindent 8 }}
+      {{- end }}
       serviceAccountName: kubeslice-postdelete-job
       containers:
         - name: kubectl
@@ -158,9 +161,3 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
       {{- end }}
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault

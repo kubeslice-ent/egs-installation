@@ -29,6 +29,9 @@ spec:
       {{ toYaml .Values.registryK8s.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.registryK8s.tolerations }}
+      tolerations: {{ toYaml .Values.registryK8s.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.registryK8s.affinity }}
       affinity:
       {{ toYaml .Values.registryK8s.affinity | nindent 8 }}
@@ -37,7 +40,7 @@ spec:
       imagePullSecrets:
       - name: {{ template "imagePullSecrets.secretName" . }}
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.registryK8s.registryK8sImageRegistry }}:{{ .Values.registryK8s.registryK8sImageTag }}'
+        - image: '{{ include "nsm.imageRegistry" . }}/{{ .Values.registryK8s.registryK8sImageRegistry }}:{{ .Values.registryK8s.registryK8sImageTag }}'
           env:
             - name: SPIFFE_ENDPOINT_SOCKET
               value: unix:///run/spire/sockets/agent.sock
@@ -75,10 +78,6 @@ spec:
           hostPath:
             path: /var/lib/networkservicemesh
             type: DirectoryOrCreate
-      {{- if .Values.registryK8s.tolerations }}
-      tolerations: 
-      {{ toYaml .Values.registryK8s.tolerations | nindent 8 }}
-      {{- end }}
       securityContext:
       {{- if .Values.registryK8s.podSecurityContext }}
       {{ toYaml .Values.registryK8s.podSecurityContext | nindent 8 }}

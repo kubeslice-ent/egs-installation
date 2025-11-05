@@ -132,6 +132,9 @@ spec:
       {{ toYaml .Values.egs.gprManager.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.egs.gprManager.tolerations }}
+      tolerations: {{ toYaml .Values.egs.gprManager.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.egs.gprManager.affinity }}
       affinity:
       {{ toYaml .Values.egs.gprManager.affinity | nindent 8 }}
@@ -158,8 +161,8 @@ spec:
           value: "{{ .Values.egs.gprManager.refreshWaitTimeInterval }}"
         - name: WEBHOOK_CA_BUNDLE
           value: {{ $ca.Cert | b64enc }}
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.egs.gprManager.image }}:{{ .Values.egs.gprManager.tag }}"
-        imagePullPolicy: "{{ .Values.egs.gprManager.pullPolicy }}"
+        image: {{ include "kubeslice.image" (dict "image" .Values.egs.gprManager.image "tag" .Values.egs.gprManager.tag "registry" .Values.dev.imageRegistry) }}
+        imagePullPolicy: "{{ .Values.egs.gprManager.imagePullPolicy }}"
         livenessProbe:
           httpGet:
             path: /healthz
@@ -195,10 +198,4 @@ spec:
           secret:
             defaultMode: 420
             secretName: gpr-admission-webhook-certs
-      {{- if .Values.imagePullSecretsName }}
-      imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
-      {{- end }}
-      {{- if .Values.egs.gprManager.tolerations }}
-      tolerations: {{ toYaml .Values.egs.gprManager.tolerations | nindent 8 }}
-      {{- end }}
+      {{- include "kubeslice.imagePullSecrets" . | nindent 6 }}

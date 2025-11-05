@@ -5,7 +5,9 @@
 # Variables added
 
 global:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+  # These values will be inherited from parent chart's global configuration
+  # imageRegistry: ""  # Inherited from parent
+  # imagePullSecrets: {}  # Inherited from parent
 
 spireServer:
   imageRegistry: spire-server
@@ -16,12 +18,11 @@ spireServer:
 replicaCount: 1
 
 image:
-  repository: harbor.saas1.smart-scaler.io/avesha/aveshasystems/nginx
+  repository: nginx  # Will use global registry prefix
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
-imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 

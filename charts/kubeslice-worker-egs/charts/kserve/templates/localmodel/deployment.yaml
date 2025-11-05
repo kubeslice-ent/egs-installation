@@ -23,6 +23,9 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: manager
     spec:
+      {{- if .Values.kserve.controller.tolerations }}
+      tolerations: {{ toYaml .Values.kserve.controller.tolerations | nindent 8 }}
+      {{- end }}
       serviceAccountName: kserve-localmodel-controller-manager
       securityContext:
         runAsNonRoot: true

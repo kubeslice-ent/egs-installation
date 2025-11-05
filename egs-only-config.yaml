@@ -2,7 +2,7 @@
 
 # Global image pull secret settings
 global_image_pull_secret:
-  repository: "https://index.docker.io/v1/"   # Docker registry URL
+  registry: "https://index.docker.io/v1/"   # Docker registry URL
   username: ""                                # Global Docker registry username
   password: ""                                # Global Docker registry password
 
@@ -204,7 +204,7 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: true                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.15.3"
+version: "1.15.4"
 
 # Enable or disable specific stages of the installation
 enable_install_controller: true               # Enable the installation of the Kubeslice controller

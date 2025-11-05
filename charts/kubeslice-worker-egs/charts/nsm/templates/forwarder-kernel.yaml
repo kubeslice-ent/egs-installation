@@ -39,15 +39,16 @@ spec:
       imagePullSecrets:
       - name: {{ template "imagePullSecrets.secretName" . }}
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.forwardingPlane.kernelImageRegistry }}:{{ .Values.forwardingPlane.kernelImageTag }}'
+        - image: '{{ include "nsm.imageRegistry" . }}/{{ .Values.forwardingPlane.kernelImageRegistry }}:{{ .Values.forwardingPlane.kernelImageTag }}'
           imagePullPolicy: IfNotPresent
-          securityContext: 
-          {{- if .Values.forwardingPlane.containerSecurityContext }}
-          {{ toYaml .Values.forwardingPlane.containerSecurityContext | nindent 12 }}
-          {{- end }}
           name: forwarder-kernel
           securityContext:
             privileged: true
+            {{- if .Values.forwardingPlane.containerSecurityContext }}
+            {{- with .Values.forwardingPlane.containerSecurityContext }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- end }}
           env:
             - name: SPIFFE_ENDPOINT_SOCKET
               value: unix:///run/spire/sockets/agent.sock

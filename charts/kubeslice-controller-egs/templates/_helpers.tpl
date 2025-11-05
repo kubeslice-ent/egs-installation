@@ -117,3 +117,39 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Global image helpers - Production-level image reference patterns
+*/}}
+
+{{/*
+Generate full image reference with global registry
+Usage: {{ include "kubeslice.image" (dict "image" .Values.component.image "tag" .Values.component.tag "registry" .Values.global.imageRegistry) }}
+*/}}
+{{- define "kubeslice.image" -}}
+{{- $registry := .registry -}}
+{{- if $registry -}}
+{{ $registry }}/{{ .image }}:{{ .tag }}
+{{- else -}}
+{{ .image }}:{{ .tag }}
+{{- end -}}
+{{- end }}
+
+{{/*
+Generate image pull secrets reference
+Usage: {{ include "kubeslice.imagePullSecrets" . }}
+*/}}
+{{- define "kubeslice.imagePullSecrets" -}}
+{{- if .Values.global.imagePullSecrets.name }}
+imagePullSecrets:
+  - name: {{ .Values.global.imagePullSecrets.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate image pull secrets name
+Usage: {{ include "kubeslice.imagePullSecretsName" . }}
+*/}}
+{{- define "kubeslice.imagePullSecretsName" -}}
+{{- .Values.global.imagePullSecrets.name | default "kubeslice-image-pull-secret" -}}
+{{- end }}

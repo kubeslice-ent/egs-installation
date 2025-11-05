@@ -53,13 +53,16 @@ spec:
       {{ toYaml .Values.kubeslice.apigw.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.kubeslice.apigw.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.apigw.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.kubeslice.apigw.affinity }}
       affinity:
       {{ toYaml .Values.kubeslice.apigw.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.apigw.image }}:{{ .Values.kubeslice.apigw.tag }}'
-          imagePullPolicy: '{{ .Values.kubeslice.apigw.pullPolicy }}'
+        - image: {{ include "component.image" (dict "component" .Values.kubeslice.apigw "global" .Values.dev "context" .) }}
+          imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" .Values.kubeslice.apigw "global" .Values.global "context" .) }}
           env:
             {{- if .Values.kubeslice.apigw.env }}
             {{- range .Values.kubeslice.apigw.env }}
@@ -80,7 +83,7 @@ spec:
             - name: KUBESLICE_CONTROLLER_PROMETHEUS
               value: {{ .Values.kubeslice.prometheus.url }}
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE
-              value: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.workerinstaller.image }}:{{ .Values.kubeslice.workerinstaller.tag }}'
+              value: {{ include "component.image" (dict "component" .Values.kubeslice.workerinstaller "global" .Values.global "context" .) }}
             - name: KUBESLICE_WORKER_INSTALLER_IMAGE_PULL_POLICY
               value: '{{ .Values.kubeslice.workerinstaller.pullPolicy}}'
             - name: COST_API_URI
@@ -128,9 +131,9 @@ spec:
             - mountPath: /app/config/request-limits
               name: kubeslice-api-gw-request-limits
           {{- end }}
-      {{- if .Values.imagePullSecretsName }}
+      {{- if include "global.imagePullSecretsWithFallback" . }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+{{ include "global.imagePullSecretsWithFallback" . | indent 8 }}
       {{- end }}
       restartPolicy: Always
       securityContext:
@@ -154,10 +157,6 @@ spec:
           configMap:
             name: kubeslice-api-gw-request-limits
             optional: true
-                  
-      {{- if .Values.kubeslice.apigw.tolerations }}
-      tolerations: {{ toYaml .Values.kubeslice.apigw.tolerations | nindent 8 }}
-      {{- end }}
 ---
 # create configmap called worker-chart-options
 apiVersion: v1

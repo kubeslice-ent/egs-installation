@@ -11,6 +11,10 @@ metadata:
 spec:
   template:
     spec:
+      {{- if .Values.kubeslice.controller.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.kubeslice.controller.tolerations | nindent 8 }}
+      {{- end }}
       serviceAccountName: kubeslice-controller-controller-manager
       containers:
         - name: cleanup
@@ -25,7 +29,7 @@ spec:
               drop:
                 - ALL
             readOnlyRootFilesystem: true
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
+          image: {{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.global.imageRegistry) }}
           imagePullPolicy: '{{ .Values.kubeslice.controller.pullPolicy }}'
           command:
             - /cleanup
@@ -34,8 +38,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-      imagePullSecrets:
-        - name: kubeslice-image-pull-secret
+      {{- include "kubeslice.imagePullSecrets" . | nindent 6 }}
       securityContext:
         runAsUser: 65536               # Non-root user
         runAsGroup: 65536              # Non-root group

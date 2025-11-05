@@ -3,15 +3,19 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
-  nsmw_docker_existingImagePullSecret: "kubeslice-image-pull-secret"
-  # IF You dont have existing secret then pass all below values it will create new secret "avesha-docker-ips"
-  ## MANDOTORY FIELDS IF EXISTING SECRET NOT PRESENT ##
+  # These values will be inherited from parent chart's global configuration
+  # imageRegistry: ""  # Inherited from parent
+  # imagePullSecrets: {}  # Inherited from parent
+  
+  # Admission-webhook-specific global configuration (will use parent's imagePullSecrets.secretName)
+  nsmw_docker_existingImagePullSecret: ""  # Will be set by parent chart
+  
+  # Legacy configuration - kept for backward compatibility but not used when parent global config is available
   nsmw_docker_imagePullSecrets:
     repository: 
     username: ''
     password: ''
     email: ''
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
 
 admissionWebhook:
   webhookImageRegistry: cmd-admission-webhook-k8s
@@ -43,15 +47,25 @@ admissionWebhook:
     # limits:
     #   memory: 200Mi
     #   cpu: 500m
-  tolerations: {}
-    # - key: "kubernetes.io/arch"
-    #   operator: "Equal"
-    #   value: "amd64"
-    #   effect: "NoSchedule"
-    # - key: "kubernetes.io/arch"
-    #   operator: "Equal"
-    #   value: "arm64"
-    #   effect: "NoSchedule"
+  tolerations:
+    - key: "kubeslice.io/egs"
+      operator: "Equal"
+      value: "dedicated-node"
+      effect: "NoSchedule"
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/memory-pressure"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
   affinity: {}
     # nodeAffinity:
     #   requiredDuringSchedulingIgnoredDuringExecution:

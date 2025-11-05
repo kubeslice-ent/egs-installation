@@ -5,15 +5,20 @@
   
 insecure: true
 global:
-  nsm_docker_existingImagePullSecret: "kubeslice-image-pull-secret"
-  # IF You dont have existing secret then pass all below values it will create new secret "avesha-docker-ips"
-  ## MANDOTORY FIELDS IF EXISTING SECRET NOT PRESENT ##
+  # These values will be inherited from parent chart's global configuration
+  # imageRegistry: ""  # Inherited from parent
+  # imagePullSecrets: {}  # Inherited from parent
+  
+  # NSM-specific global configuration (will use parent's imagePullSecrets.secretName)
+  nsm_docker_existingImagePullSecret: ""  # Will be set by parent chart
+  
+  # Legacy configuration - kept for backward compatibility but not used when parent global config is available
   nsm_docker_imagePullSecrets:
     repository: 
     username: ''
     password: ''
     email: ''
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+  
   # set to true to enable Jaeger tracing for NSM components
   JaegerTracing: true
 
@@ -49,6 +54,10 @@ forwardingPlane:
       cpu: 525m
   tolerations:
     - operator: "Exists"
+    - key: "kubeslice.io/egs"
+      operator: "Equal"
+      value: "dedicated-node"
+      effect: "NoSchedule"
 
 nsmgr:
   imageRegistry: cmd-nsmgr
@@ -85,15 +94,25 @@ nsmgr:
     limits:
       memory: 200Mi
       cpu: 500m
-  tolerations: {}
-    # - key: "kubernetes.io/arch"
-    #   operator: "Equal"
-    #   value: "amd64"
-    #   effect: "NoSchedule"
-    # - key: "kubernetes.io/arch"
-    #   operator: "Equal"
-    #   value: "arm64"
-    #   effect: "NoSchedule"
+  tolerations:
+    - key: "kubeslice.io/egs"
+      operator: "Equal"
+      value: "dedicated-node"
+      effect: "NoSchedule"
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/memory-pressure"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
   affinity: {}
     # nodeAffinity:
     #   requiredDuringSchedulingIgnoredDuringExecution:
@@ -134,15 +153,25 @@ registryK8s:
     limits:
       memory: 100Mi
       cpu: 600m
-  tolerations: {}
-    # - key: "kubernetes.io/arch"
-    #   operator: "Equal"
-    #   value: "amd64"
-    #   effect: "NoSchedule"
-    # - key: "kubernetes.io/arch"
-    #   operator: "Equal"
-    #   value: "arm64"
-    #   effect: "NoSchedule"
+  tolerations:
+    - key: "kubeslice.io/egs"
+      operator: "Equal"
+      value: "dedicated-node"
+      effect: "NoSchedule"
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/memory-pressure"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
   affinity: {}
     # nodeAffinity:
     #   requiredDuringSchedulingIgnoredDuringExecution:

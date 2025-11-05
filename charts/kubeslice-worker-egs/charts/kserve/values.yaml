@@ -184,7 +184,25 @@ kserve:
     #     operator: Equal
     #     value: master
     #     effect: NoSchedule
-    tolerations: []
+    tolerations:
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      - key: "node.kubernetes.io/memory-pressure"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
 
     # -- A list of Kubernetes TopologySpreadConstraints, if required. For more information, see [Topology spread constraint v1 core](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#topologyspreadconstraint-v1-core
     #
@@ -268,7 +286,25 @@ kserve:
         readOnlyRootFilesystem: true
         runAsNonRoot: true
       nodeSelector: {}
-      tolerations: []
+      tolerations:
+        - key: "kubeslice.io/egs"
+          operator: "Equal"
+          value: "dedicated-node"
+          effect: "NoSchedule"
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300
+        - key: "node.kubernetes.io/memory-pressure"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
       topologySpreadConstraints: []
       affinity:
         podAntiAffinity:
@@ -429,11 +465,8 @@ kserve:
         FSGroup: 1000
   security:
     autoMountServiceAccountToken: true
-imagePullSecretsName: "kubeslice-image-pull-secret"
-# leave the below fields empty if secrets are managed externally.
-imagePullSecrets:
-  repository: https://index.docker.io/v1/ ## Value to be used incase using the docker hub images-  https://index.docker.io/v1/
-  username:
-  password:
-  email:
-  dockerconfigjson: ## Value to be used if using external secret managers
+# Global configuration inherited from parent chart
+global:
+  # These values will be inherited from parent chart's global configuration
+  # imageRegistry: ""  # Inherited from parent
+  # imagePullSecrets: {}  # Inherited from parent

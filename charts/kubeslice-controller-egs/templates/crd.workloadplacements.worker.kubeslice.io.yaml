@@ -1,0 +1,419 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: workloadplacements.worker.kubeslice.io
+spec:
+  group: worker.kubeslice.io
+  names:
+    kind: WorkloadPlacement
+    listKind: WorkloadPlacementList
+    plural: workloadplacements
+    singular: workloadplacement
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: WorkloadPlacement is the Schema for the workloadplacements API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: WorkloadPlacementSpec defines the desired state of WorkloadPlacement
+            properties:
+              burstDuration:
+                description: BurstDuration is the duration for which the workload
+                  will be bursted
+                type: string
+              clusterName:
+                description: ClusterName is the name of the cluster to deploy the
+                  workload
+                type: string
+              cmdExec:
+                description: CmdExec represents kubectl commands to be executed before
+                  helm installation
+                items:
+                  description: WorkloadStep is a single step workload order sequence.
+                  properties:
+                    cmd:
+                      description: Type determines what kind of work this step does.
+                      type: string
+                    name:
+                      description: Name is the mapping of cmd resource to workload
+                        step.
+                      type: string
+                  type: object
+                type: array
+              deletionPolicy:
+                default: Delete
+                description: |-
+                  DeletionPolicy specifies what happens to helm releases when the WorkloadPlacement is deleted
+                  Valid values: "Delete" (default) - uninstall helm releases, "Retain" - keep helm releases
+                type: string
+              helmConfig:
+                description: HelmConfig represents a helm chart to be deployed on
+                  the managed cluster.
+                items:
+                  description: HelmConfig represents a helm chart to be deployed on
+                    the managed cluster
+                  properties:
+                    chart:
+                      description: Chart is the name of the Helm chart to be deployed
+                      type: string
+                    helmFlags:
+                      description: |-
+                        Additional Helm flags as a string (e.g., "--debug --dry-run --wait --atomic --timeout 5m")
+                        These flags will be appended to the helm command
+                      type: string
+                    name:
+                      description: name is the unique name of helm resource that maps
+                        to workload step
+                      type: string
+                    releaseName:
+                      description: Release name for the Helm chart
+                      type: string
+                    releaseNamespace:
+                      description: Namespace for the release
+                      type: string
+                    repoName:
+                      description: RepoName is the name of the Helm chart repository
+                      type: string
+                    repoURL:
+                      description: RepoURL is the URL of the Helm chart repository
+                      type: string
+                    secretRef:
+                      description: |-
+                        The name of the secret containing authentication credentials
+                        For HTTP/S basic auth the secret must contain 'username' and 'password'
+                        fields.
+                      properties:
+                        name:
+                          description: Name is the name of the secret
+                          type: string
+                      type: object
+                    values:
+                      description: Values for the Helm chart
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    version:
+                      description: Version is the version of the Helm chart to be
+                        deployed
+                      type: string
+                  required:
+                  - releaseName
+                  - releaseNamespace
+                  type: object
+                type: array
+              manifestResources:
+                description: Manifests represents a list of kuberenetes resources
+                  to be deployed on the managed cluster.
+                items:
+                  description: Manifest represents a resource to be deployed on managed
+                    cluster
+                  properties:
+                    manifest:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    name:
+                      description: Name is the unique name of manifest resource that
+                        maps to workload step
+                      type: string
+                  required:
+                  - manifest
+                  type: object
+                type: array
+              serviceAccount:
+                description: ServiceAccount is the name of the service account to
+                  be used for the workload
+                type: string
+              steps:
+                description: Steps is an ordered list of things to execute.
+                items:
+                  description: WorkloadStep is a single step workload order sequence.
+                  properties:
+                    name:
+                      description: |-
+                        Name is the mapping of workload to the config in spec.
+                        This name should match a config name in HelmConfig, Manifests, or CmdExec
+                      type: string
+                    preodicCheckTime:
+                      description: |-
+                        Todo: rollbakc or skip on failure fields
+                        periodic check time
+                      format: date-time
+                      type: string
+                    type:
+                      description: Type determines what kind of work this step does.
+                      type: string
+                  required:
+                  - name
+                  - type
+                  type: object
+                type: array
+            type: object
+          status:
+            description: WorkloadPlacementStatus defines the observed state of WorkloadPlacement
+            properties:
+              completionTime:
+                description: CompletionTime is when execution finished.
+                format: date-time
+                type: string
+              conditions:
+                description: |-
+                  Conditions contain the different condition statuses for this WorkloadTemplate
+                  Valid condition types are:
+                  1. Applied represents workload in Work is applied successfully on a managed cluster.
+                  2. Progressing represents workload in Work is being applied on a managed cluster.
+                  3. Available represents workload in Work exists on the managed cluster.
+                  4. Degraded represents the current state of workload does not match the desired
+                  state for a certain period.
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource.\n---\nThis struct is intended for
+                    direct use as an array at the field path .status.conditions.  For
+                    example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the
+                    observations of a foo's current state.\n\t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
+                    +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t
+                    \   // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\"
+                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
+                    \   // other fields\n\t}"
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        ---
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
+                        useful (see .node.status.conditions), the ability to deconflict is important.
+                        The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              currentStep:
+                type: integer
+              helmReleaseCondition:
+                description: HelmReleaseCondition represents the conditions of the
+                  Helm release
+                type: string
+              manifestConditions:
+                description: |-
+                  ManifestConditions represents the conditions of each resource in workloadtemplate deployed on
+                  managed cluster.
+                items:
+                  description: |-
+                    ManifestCondition represents the conditions of the resources deployed on
+                    managed cluster
+                  properties:
+                    conditions:
+                      description: Conditions represents the conditions of this resource
+                        on the managed cluster
+                      items:
+                        description: "Condition contains details for one aspect of
+                          the current state of this API Resource.\n---\nThis struct
+                          is intended for direct use as an array at the field path
+                          .status.conditions.  For example,\n\n\n\ttype FooStatus
+                          struct{\n\t    // Represents the observations of a foo's
+                          current state.\n\t    // Known .status.conditions.type are:
+                          \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
+                          +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    //
+                          +listType=map\n\t    // +listMapKey=type\n\t    Conditions
+                          []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\"
+                          patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
+                          \   // other fields\n\t}"
+                        properties:
+                          lastTransitionTime:
+                            description: |-
+                              lastTransitionTime is the last time the condition transitioned from one status to another.
+                              This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                            format: date-time
+                            type: string
+                          message:
+                            description: |-
+                              message is a human readable message indicating details about the transition.
+                              This may be an empty string.
+                            maxLength: 32768
+                            type: string
+                          observedGeneration:
+                            description: |-
+                              observedGeneration represents the .metadata.generation that the condition was set based upon.
+                              For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                              with respect to the current state of the instance.
+                            format: int64
+                            minimum: 0
+                            type: integer
+                          reason:
+                            description: |-
+                              reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                              Producers of specific condition types may define expected values and meanings for this field,
+                              and whether the values are considered a guaranteed API.
+                              The value should be a CamelCase string.
+                              This field may not be empty.
+                            maxLength: 1024
+                            minLength: 1
+                            pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                            type: string
+                          status:
+                            description: status of the condition, one of True, False,
+                              Unknown.
+                            enum:
+                            - "True"
+                            - "False"
+                            - Unknown
+                            type: string
+                          type:
+                            description: |-
+                              type of condition in CamelCase or in foo.example.com/CamelCase.
+                              ---
+                              Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
+                              useful (see .node.status.conditions), the ability to deconflict is important.
+                              The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                            maxLength: 316
+                            pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                            type: string
+                        required:
+                        - lastTransitionTime
+                        - message
+                        - reason
+                        - status
+                        - type
+                        type: object
+                      type: array
+                    identifier:
+                      description: resourceId represents the identity of a resource
+                        linking to manifests in spec.
+                      properties:
+                        group:
+                          description: Group is the group of the resource.
+                          type: string
+                        kind:
+                          description: Kind is the kind of the resource.
+                          type: string
+                        name:
+                          description: Name is the name of the resource
+                          type: string
+                        namespace:
+                          description: |-
+                            Namespace is the namespace of the resource, the resource is cluster scoped if the value
+                            is empty
+                          type: string
+                        ordinal:
+                          description: |-
+                            Ordinal represents an index in manifests list, so the condition can still be linked
+                            to a manifest even though manifest cannot be parsed successfully.
+                          type: integer
+                        resource:
+                          description: Resource is the resource type of the resource
+                          type: string
+                        version:
+                          description: Version is the version of the resource.
+                          type: string
+                      type: object
+                  required:
+                  - conditions
+                  type: object
+                type: array
+              message:
+                description: Message provides human-readable context about the current
+                  state.
+                type: string
+              phase:
+                type: string
+              startTime:
+                description: StartTime is when execution began.
+                format: date-time
+                type: string
+              stepResults:
+                items:
+                  description: StepResult holds what happened when a step executed.
+                  properties:
+                    duration:
+                      description: Duration is how long this step took to execute.
+                      type: string
+                    message:
+                      description: Message provides details about what happened.
+                      type: string
+                    name:
+                      description: Name of the workload step mapping
+                      type: string
+                    success:
+                      description: Success indicates if the step completed successfully.
+                      type: boolean
+                    type:
+                      description: type of the workload
+                      type: string
+                  required:
+                  - name
+                  - success
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

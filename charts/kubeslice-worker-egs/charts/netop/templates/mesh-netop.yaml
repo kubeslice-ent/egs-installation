@@ -40,11 +40,11 @@ spec:
           value: NETOP_POD
         - name: NETWORK_INTERFACE
           value: {{ .Values.netop.networkInterface }}
-        image: '{{ .Values.global.imageRegistry }}/{{ .Values.netop.image }}:{{ .Values.netop.tag }}'
+        image: '{{ include "netop.imageRegistry" . }}/{{ .Values.netop.image }}:{{ .Values.netop.tag }}'
         imagePullPolicy: {{ .Values.netop.pullPolicy }}
         name: avesha-sidecar
-        securityContext: 
         {{- if .Values.netop.containerSecurityContext }}
+        securityContext:
         {{ toYaml .Values.netop.containerSecurityContext | nindent 10 }}
         {{- end }}
       imagePullSecrets:
@@ -53,7 +53,7 @@ spec:
       tolerations: 
       {{ toYaml .Values.netop.tolerations | nindent 8 }}
       {{- end }}
-      securityContext:
       {{- if .Values.netop.podSecurityContext }}
+      securityContext:
       {{ toYaml .Values.netop.podSecurityContext | nindent 8 }}
       {{- end }}
