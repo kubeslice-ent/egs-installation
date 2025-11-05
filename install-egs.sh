@@ -1,26 +1,31 @@
 #!/bin/bash
 
-# EGS Simple Installer - One Command Installation
-# Version: 1.0.0
-# Description: Simplified installation script for single-cluster EGS deployments
+# EGS One-Line Installer (Curl-Friendly Bootstrap Script)
+# Usage: 
+#   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --kubeconfig ~/.kube/config --context my-context
+#   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --version v1.0.0
 
 set -e
 
-SCRIPT_VERSION="1.0.0"
-
-# Color codes for output
+# Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Banner
-echo "=============================================="
-echo "   🚀 EGS Simple Installer v${SCRIPT_VERSION}"
-echo "   Single Cluster Quick Setup"
-echo "=============================================="
-echo ""
+# Default values
+KUBECONFIG_PATH=""
+KUBE_CONTEXT=""
+EGS_VERSION=""
+AUTO_INSTALL="true"
+PROJECT_NAME="avesha"  # Fixed project name
+CLUSTER_NAME="worker-1"  # Default cluster name matching egs-installer-config.yaml
+IMAGE_REGISTRY="harbor.saas1.smart-scaler.io/avesha/aveshasystems"
+INSTALL_PROMETHEUS="true"
+INSTALL_GPU_OPERATOR="true"
+INSTALL_POSTGRESQL="true"
 
 # Function to print colored messages
 print_info() {
@@ -31,130 +36,264 @@ print_success() {
     echo -e "${GREEN}✅ $1${NC}"
 }
 
-print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
-}
-
 print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-# Function to check prerequisites
-check_prerequisites() {
-    print_info "Checking prerequisites..."
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+# Function to show help
+show_help() {
+    cat << EOF
+EGS One-Line Installer
+
+Usage:
+  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- [OPTIONS]
+
+Options:
+  --kubeconfig PATH          Path to kubeconfig file (default: auto-detect)
+  --context NAME             Kubernetes context to use (default: current-context)
+  --config-only              Only generate config, don't install
+  --help, -h                 Show this help message
+
+Examples:
+  # Simplest - Install everything with defaults (RECOMMENDED)
+  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash
+
+  # Review config before installing
+  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --config-only
+
+  # Specify kubeconfig and context
+  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \\
+    --kubeconfig ~/.kube/config \\
+    --context my-cluster
+
+Notes:
+  - Cluster name is always 'worker-1' for single cluster setup
+  - Project name is always 'avesha'
+  - Installs: Controller, UI, Worker, Prometheus, GPU Operator, PostgreSQL
+  - For multi-cluster setup, use the full egs-installer-config.yaml
+
+EOF
+    exit 0
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --kubeconfig)
+            KUBECONFIG_PATH="$2"
+            shift 2
+            ;;
+        --context)
+            KUBE_CONTEXT="$2"
+            shift 2
+            ;;
+        --version)
+            EGS_VERSION="$2"
+            shift 2
+            ;;
+        --cluster-name)
+            CLUSTER_NAME="$2"
+            shift 2
+            ;;
+        --image-registry)
+            IMAGE_REGISTRY="$2"
+            shift 2
+            ;;
+        --skip-prometheus)
+            INSTALL_PROMETHEUS="false"
+            shift
+            ;;
+        --skip-gpu-operator)
+            INSTALL_GPU_OPERATOR="false"
+            shift
+            ;;
+        --skip-postgresql)
+            INSTALL_POSTGRESQL="false"
+            shift
+            ;;
+        --config-only)
+            AUTO_INSTALL="false"
+            shift
+            ;;
+        --help|-h)
+            show_help
+            ;;
+        *)
+            print_error "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+# Banner
+echo "=============================================="
+echo "   🚀 EGS One-Line Installer"
+echo "   Enterprise GPU Scheduler"
+echo "=============================================="
+echo ""
+
+# Show configuration
+if [ -n "$KUBECONFIG_PATH" ]; then
+    print_info "Using kubeconfig: $KUBECONFIG_PATH"
+fi
+if [ -n "$KUBE_CONTEXT" ]; then
+    print_info "Using context: $KUBE_CONTEXT"
+fi
+if [ -n "$EGS_VERSION" ]; then
+    print_info "Installing version: $EGS_VERSION"
+fi
+
+# Check if git is installed
+if ! command -v git &> /dev/null; then
+    print_error "git is not installed. Please install git first."
+    exit 1
+fi
+
+# Check if kubectl is installed
+if ! command -v kubectl &> /dev/null; then
+    print_error "kubectl is not installed. Please install kubectl first."
+    exit 1
+fi
+
+# Set kubeconfig if provided
+if [ -n "$KUBECONFIG_PATH" ]; then
+    export KUBECONFIG="$KUBECONFIG_PATH"
+    print_info "Set KUBECONFIG to: $KUBECONFIG_PATH"
+fi
+
+# Set context if provided
+if [ -n "$KUBE_CONTEXT" ]; then
+    print_info "Switching to context: $KUBE_CONTEXT"
+    kubectl config use-context "$KUBE_CONTEXT" &>/dev/null || {
+        print_error "Failed to switch to context: $KUBE_CONTEXT"
+        exit 1
+    }
+fi
+
+# Check cluster connectivity
+print_info "Checking Kubernetes cluster connectivity..."
+if ! kubectl cluster-info &>/dev/null; then
+    print_error "Cannot connect to Kubernetes cluster."
+    print_info "Please ensure kubectl is configured correctly."
+    exit 1
+fi
+
+CURRENT_CONTEXT=$(kubectl config current-context 2>/dev/null || echo "")
+if [ -z "$CURRENT_CONTEXT" ]; then
+    print_error "No active Kubernetes context found!"
+    exit 1
+fi
+
+print_success "Connected to cluster: $CURRENT_CONTEXT"
+
+# Detect if running locally or via curl
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+
+# Check if we're already in the egs-installation directory (local mode)
+if [ -f "$SCRIPT_DIR/egs-installer.sh" ] && [ "$SCRIPT_NAME" = "install-egs.sh" ]; then
+    # Local mode - use current directory
+    print_info "Running in local mode (using current directory)"
+    WORK_DIR="$SCRIPT_DIR"
+    LOCAL_MODE=true
+    TEMP_DIR=""
+else
+    # Curl mode - download to temp directory
+    TEMP_DIR=$(mktemp -d)
+    print_info "Using temporary directory: $TEMP_DIR"
     
-    local missing_tools=()
+    # Cleanup function
+    cleanup() {
+        print_info "Cleaning up temporary files..."
+        rm -rf "$TEMP_DIR"
+    }
     
-    # Check for required tools
-    for tool in kubectl helm yq jq; do
-        if ! command -v $tool &> /dev/null; then
-            missing_tools+=($tool)
-        else
-            print_success "$tool is installed"
+    trap cleanup EXIT
+    
+    # Clone the repository
+    print_info "Downloading EGS installer..."
+    cd "$TEMP_DIR"
+    
+    # Use the feature branch for now (change to main after merge)
+    BRANCH="${EGS_BRANCH:-feature/single-command-installer}"
+    REPO="${EGS_REPO:-https://github.com/kubeslice-ent/egs-installation.git}"
+    
+    if ! git clone --depth 1 --branch "$BRANCH" "$REPO" egs-installation 2>/dev/null; then
+        print_error "Failed to download EGS installer from branch: $BRANCH"
+        print_info "Trying main branch..."
+        BRANCH="main"
+        if ! git clone --depth 1 --branch "$BRANCH" "$REPO" egs-installation; then
+            print_error "Failed to download EGS installer"
+            exit 1
         fi
-    done
-    
-    if [ ${#missing_tools[@]} -ne 0 ]; then
-        print_error "Missing required tools: ${missing_tools[*]}"
-        print_info "Please install the missing tools and try again."
-        exit 1
     fi
     
-    print_success "All prerequisites are met!"
-}
+    print_success "Downloaded EGS installer"
+    
+    # Enter the directory
+    cd egs-installation
+    WORK_DIR="$(pwd)"
+    LOCAL_MODE=false
+fi
 
-# Function to auto-detect kubeconfig and context
-auto_detect_kube_context() {
-    print_info "Auto-detecting Kubernetes configuration..."
-    
-    # Get current context
-    CURRENT_CONTEXT=$(kubectl config current-context 2>/dev/null || echo "")
-    
-    if [ -z "$CURRENT_CONTEXT" ]; then
-        print_error "No active Kubernetes context found!"
-        print_info "Please set your kubeconfig context using: kubectl config use-context <context-name>"
-        exit 1
-    fi
-    
-    # Get kubeconfig path
-    KUBECONFIG_PATH="${KUBECONFIG:-$HOME/.kube/config}"
-    
-    print_success "Detected Kubernetes context: $CURRENT_CONTEXT"
-    print_success "Using kubeconfig: $KUBECONFIG_PATH"
-    
-    # Test cluster connectivity
-    if kubectl cluster-info &>/dev/null; then
-        print_success "Successfully connected to Kubernetes cluster"
-    else
-        print_error "Cannot connect to Kubernetes cluster with current context"
-        exit 1
-    fi
-}
+# Change to work directory
+cd "$WORK_DIR"
 
-# Function to detect cluster capabilities
-detect_cluster_capabilities() {
-    print_info "Detecting cluster capabilities..."
-    
-    # Check for GPU nodes
-    GPU_NODES=$(kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l)
-    
-    if [ "$GPU_NODES" -gt 0 ]; then
-        print_success "Detected $GPU_NODES GPU node(s) in the cluster"
-        HAS_GPU="true"
-    else
-        print_warning "No GPU nodes detected. GPU Operator will still be installed but may not be active."
-        HAS_GPU="false"
-    fi
-    
-    # Check for LoadBalancer support
-    print_info "Checking for LoadBalancer support..."
-    LB_SUPPORT="true"
-    
-    # Detect cloud provider
-    CLOUD_PROVIDER=$(kubectl get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | cut -d: -f1 || echo "unknown")
-    
-    if [ "$CLOUD_PROVIDER" != "unknown" ]; then
-        print_success "Detected cloud provider: $CLOUD_PROVIDER"
-    else
-        print_warning "Could not detect cloud provider. Using default configuration."
-    fi
-}
+# Make scripts executable
+chmod +x egs-installer.sh 2>/dev/null || true
 
-# Function to generate full configuration
-generate_full_config() {
-    local OUTPUT_CONFIG="${1:-egs-installer-config.yaml}"
-    
-    print_info "Generating full EGS configuration with auto-detected settings..."
-    
-    # Use sensible defaults - all values auto-detected or defaulted
-    IMAGE_REGISTRY="harbor.saas1.smart-scaler.io/avesha/aveshasystems"
-    PROJECT_NAME="avesha"
-    CLUSTER_NAME="egs-cluster"
-    INSTALL_PROMETHEUS="true"
-    INSTALL_GPU_OPERATOR="true"
-    INSTALL_POSTGRESQL="true"
-    UI_SERVICE_TYPE="LoadBalancer"
-    # CLOUD_PROVIDER and CLOUD_REGION already set by detect_cluster_capabilities()
-    
-    # Get the base directory
-    BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    
-    # Copy kubeconfig to local directory for relative path usage
-    KUBECONFIG_BASENAME=$(basename "$KUBECONFIG_PATH")
-    if [ "$KUBECONFIG_PATH" != "$BASE_DIR/$KUBECONFIG_BASENAME" ]; then
-        cp "$KUBECONFIG_PATH" "$BASE_DIR/kubeconfig-temp"
-        KUBECONFIG_RELATIVE="kubeconfig-temp"
-    else
-        KUBECONFIG_RELATIVE="$KUBECONFIG_BASENAME"
-    fi
-    
-    # Generate the full configuration file
-    cat > "$OUTPUT_CONFIG" << EOF
+# Detect GPU nodes and cloud provider
+print_info "Detecting cluster capabilities..."
+GPU_NODES=$(kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l || echo "0")
+if [ "$GPU_NODES" -gt 0 ]; then
+    print_success "Detected $GPU_NODES GPU node(s)"
+else
+    print_warning "No GPU nodes detected. GPU Operator will still be installed."
+fi
+
+# Detect cloud provider
+CLOUD_PROVIDER_DETECTED=$(kubectl get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | cut -d: -f1 || echo "")
+
+# Set cloud provider in config (exclude Linode - keep it empty for Linode clusters)
+if [ "$CLOUD_PROVIDER_DETECTED" = "linode" ]; then
+    CLOUD_PROVIDER=""  # Keep empty for Linode
+    print_success "Detected cloud provider: linode (will be left empty in config)"
+elif [ -n "$CLOUD_PROVIDER_DETECTED" ]; then
+    CLOUD_PROVIDER="$CLOUD_PROVIDER_DETECTED"
+    print_success "Detected cloud provider: $CLOUD_PROVIDER"
+else
+    CLOUD_PROVIDER=""
+fi
+
+# Generate egs-installer-config.yaml
+print_info "Generating EGS configuration..."
+
+# Get kubeconfig details
+TEMP_KUBECONFIG="kubeconfig-temp"
+cp "$KUBECONFIG" "$TEMP_KUBECONFIG" 2>/dev/null || true
+
+# Show configuration being used
+if [ "$CLUSTER_NAME" != "worker-1" ] || [ "$INSTALL_PROMETHEUS" = "false" ] || [ "$INSTALL_GPU_OPERATOR" = "false" ] || [ "$INSTALL_POSTGRESQL" = "false" ]; then
+    print_info "Using custom configuration:"
+    [ "$CLUSTER_NAME" != "worker-1" ] && print_info "  Cluster: $CLUSTER_NAME"
+    [ "$INSTALL_PROMETHEUS" = "false" ] && print_warning "  Skipping Prometheus"
+    [ "$INSTALL_GPU_OPERATOR" = "false" ] && print_warning "  Skipping GPU Operator"
+    [ "$INSTALL_POSTGRESQL" = "false" ] && print_warning "  Skipping PostgreSQL"
+fi
+
+# Generate config file (using the existing template structure from egs-installer-config.yaml)
+cat > egs-installer-config.yaml << 'EOFCONFIG'
 ########################### MANDATORY PARAMETERS ####################################################################
 
 # Kubeconfig settings
-global_kubeconfig: "$KUBECONFIG_RELATIVE"                         # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
-global_kubecontext: "$CURRENT_CONTEXT"                        # Global kubecontext to use - Mandatory
+global_kubeconfig: "kubeconfig-temp"                         # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
+global_kubecontext: "CONTEXT_PLACEHOLDER"                        # Global kubecontext to use - Mandatory
 use_global_context: true                      # If true, use the global kubecontext for all operations by default
 
 # Enable or disable specific stages of the installation
@@ -163,12 +302,18 @@ enable_install_ui: true                       # Enable the installation of the K
 enable_install_worker: true                   # Enable the installation of Kubeslice workers
 
 # Enable or disable the installation of additional applications(prometheus, gpu-operator, postgresql)
+
 enable_install_additional_apps: true         # Set to true to enable additional apps installation
 
 # Enable custom applications
-enable_custom_apps: false
+# Set this to true if you want to allow custom applications to be deployed.
+# This is specifically useful for enabling NVIDIA driver installation on your nodes.
+enable_custom_apps: true
 
 # Command execution settings
+# Set this to true to allow the execution of commands for configuring NVIDIA MIG.
+# This includes modifications to the NVIDIA ClusterPolicy and applying node labels
+# based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
 run_commands: false
 
 #########################################################################################################################
@@ -189,11 +334,11 @@ enable_autofetch_egsagent_endpoint_and_token: true # if False then, skip update 
 # Global monitoring endpoint settings
 global_auto_fetch_endpoint: true               # Enable automatic fetching of monitoring endpoints globally
 global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
-global_grafana_service_type: LoadBalancer       # Service type for Grafana (accessible from outside)
+global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
 global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
 global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
 global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
-global_prometheus_service_type: LoadBalancer    # Service type for Prometheus (accessible from outside)
+global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
 
 # Precheck options
 precheck: true                                  # Run general prechecks before starting the installation
@@ -215,7 +360,6 @@ global_helm_username: ""                        # Username for accessing the glo
 global_helm_password: ""                        # Password for accessing the global Helm repository
 readd_helm_repos: true                          # Re-add Helm repositories even if they are already present
 
-
 #### Kubeslice Controller Installation Settings ####
 kubeslice_controller_egs:
   skip_installation: false                     # Do not skip the installation of the controller
@@ -229,7 +373,7 @@ kubeslice_controller_egs:
 #### Inline Helm Values for the Controller Chart ####
   inline_values:
     global:
-      imageRegistry: $IMAGE_REGISTRY   # Docker registry for the images
+      imageRegistry: IMAGE_REGISTRY_PLACEHOLDER   # Docker registry for the images
       namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
         labels: {}
         annotations: {}
@@ -271,28 +415,40 @@ kubeslice_ui_egs:
 #### Inline Helm Values for the UI Chart ####
   inline_values:
     global:
-      imageRegistry: $IMAGE_REGISTRY   # Docker registry for the UI images
+      imageRegistry: IMAGE_REGISTRY_PLACEHOLDER   # Docker registry for the UI images
     kubeslice:
       prometheus:
         url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
       uiproxy:
         service:
-          type: $UI_SERVICE_TYPE                  # Service type for the UI proxy
+          type: LoadBalancer                  # Service type for the UI proxy
+          ## if type selected to NodePort then set nodePort value if required
+          # nodePort:
+          # port: 443
+          # targetPort: 8443
         labels:
           app: kubeslice-ui-proxy
         annotations: {}
 
         ingress:
+          ## If true, ui‑proxy Ingress will be created
           enabled: false
+          ## Port on the Service to route to
           servicePort: 443
+          ## Ingress class name (e.g. "nginx"), if you're using a custom ingress controller
           className: ""
           hosts:
-            - host: ui.kubeslice.com
+            - host: ui.kubeslice.com     # replace with your FQDN
               paths:
-                - path: /
-                  pathType: Prefix
+                - path: /             # base path
+                  pathType: Prefix    # Prefix | Exact
+          ## TLS configuration (you must create these Secrets ahead of time)
           tls: []
+            # - hosts:
+            #     - ui.kubeslice.com
+            #   secretName: uitlssecret
           annotations: {}
+          ## Extra labels to add onto the Ingress object
           extraLabels: {}
       apigw:
         env:
@@ -313,7 +469,7 @@ kubeslice_ui_egs:
 
 #### Kubeslice Worker Installation Settings ####
 kubeslice_worker_egs:
-  - name: "$CLUSTER_NAME"                           # Worker name
+  - name: "CLUSTER_NAME_PLACEHOLDER"                           # Worker name
     use_global_kubeconfig: true                # Use global kubeconfig for this worker
     kubeconfig: ""                             # Path to the kubeconfig file specific to the worker, if empty, uses the global kubeconfig
     kubecontext: ""                            # Kubecontext specific to the worker; if empty, uses the global context
@@ -325,7 +481,7 @@ kubeslice_worker_egs:
 #### Inline Helm Values for the Worker Chart ####
     inline_values:
       global:
-        imageRegistry: $IMAGE_REGISTRY # Docker registry for worker images
+        imageRegistry: IMAGE_REGISTRY_PLACEHOLDER # Docker registry for worker images
       kubesliceNetworking:
         enabled: true        # enable/disable network component installation
       operator:
@@ -363,18 +519,26 @@ kubeslice_worker_egs:
     skip_on_verify_fail: false                 # Do not skip if worker verification fails
 #### Troubleshooting Settings ####
     enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+#### Local Monitoring Endpoint Settings (Optional) ####
+    # local_auto_fetch_endpoint: true          # Enable automatic fetching of monitoring endpoints
+    # local_grafana_namespace: egs-monitoring  # Namespace where Grafana is deployed
+    # local_grafana_service_name: prometheus-grafana  # Service name for accessing Grafana
+    # local_grafana_service_type: ClusterIP    # Service type for Grafana (accessible only within the cluster)
+    # local_prometheus_namespace: egs-monitoring  # Namespace where Prometheus is deployed
+    # local_prometheus_service_name: prometheus-kube-prometheus-prometheus  # Service name for accessing Prometheus
+    # local_prometheus_service_type: ClusterIP # Service type for Prometheus (accessible only within the cluster)
 
 
 
 #### Define Projects ####
 projects:
-  - name: "$PROJECT_NAME"                              # Name of the Kubeslice project
+  - name: "avesha"                              # Name of the Kubeslice project
     username: "admin"                           # Username for accessing the Kubeslice project
 
 #### Define Cluster Registration ####
 cluster_registration:
-  - cluster_name: "$CLUSTER_NAME"                    # Name of the cluster to be registered
-    project_name: "$PROJECT_NAME"                      # Name of the project to associate with the cluster
+  - cluster_name: "CLUSTER_NAME_PLACEHOLDER"                    # Name of the cluster to be registered
+    project_name: "avesha"                      # Name of the project to associate with the cluster
     #### Telemetry Settings ####
     telemetry:
       enabled: true                             # Enable telemetry for this cluster
@@ -382,13 +546,13 @@ cluster_registration:
       telemetryProvider: "prometheus"           # Telemetry provider (Prometheus in this case)
     #### Geo-Location Settings ####
     geoLocation:
-      cloudProvider: "$CLOUD_PROVIDER"              # Cloud provider for this cluster (e.g., GCP)
-      cloudRegion: "$CLOUD_REGION"                # Cloud region for this cluster (e.g., us-central1)
+      cloudProvider: "CLOUD_PROVIDER_PLACEHOLDER"              # Cloud provider for this cluster (e.g., GCP)
+      cloudRegion: ""                # Cloud region for this cluster (e.g., us-central1)
 
 #### Define Additional Applications to Install ####
 additional_apps:
   - name: "gpu-operator"                       # Name of the application
-    skip_installation: false                   # Do not skip the installation of the GPU operator
+    skip_installation: GPU_OPERATOR_SKIP_PLACEHOLDER                   # Do not skip the installation of the GPU operator
     use_global_kubeconfig: true                # Use global kubeconfig for this application
     kubeconfig: ""                             # Path to the kubeconfig file specific to this application
     kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
@@ -407,6 +571,12 @@ additional_apps:
       cdi:
         enabled: true
         default: true
+      # mig:
+      #   strategy: "mixed"
+      # migManager:                             # Enable to ensure that the node reboots and can apply the MIG configuration.
+      #   env:
+      #     - name: WITH_REBOOT
+      #       value: "true"
       driver:
         enabled: false
     helm_flags: "--debug"                              # Additional Helm flags for this application's installation
@@ -416,7 +586,7 @@ additional_apps:
     enable_troubleshoot: false                  # Enable troubleshooting mode for additional logs and checks
 
   - name: "prometheus"                         # Name of the application
-    skip_installation: false                   # Do not skip the installation of Prometheus
+    skip_installation: PROMETHEUS_SKIP_PLACEHOLDER                   # Do not skip the installation of Prometheus
     use_global_kubeconfig: true                # Use global kubeconfig for Prometheus
     kubeconfig: ""                             # Path to the kubeconfig file specific to this application
     kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
@@ -431,7 +601,7 @@ additional_apps:
     inline_values:
       prometheus:
         service:
-          type: LoadBalancer                     # Service type for Prometheus
+          type: ClusterIP                     # Service type for Prometheus
         prometheusSpec:
           storageSpec: {}                     # Placeholder for storage configuration
           additionalScrapeConfigs:
@@ -469,7 +639,7 @@ additional_apps:
             enabled: true
             org_role: Viewer
         service:
-          type: LoadBalancer                  # Service type for Grafana
+          type: ClusterIP                  # Service type for Grafana
         persistence:
           enabled: false                      # Disable persistence
           size: 1Gi                           # Default persistence size
@@ -480,7 +650,7 @@ additional_apps:
     enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
 
   - name: "postgresql"                         # Name of the application
-    skip_installation: false                   # Do not skip the installation of PostgreSQL
+    skip_installation: POSTGRESQL_SKIP_PLACEHOLDER                   # Do not skip the installation of PostgreSQL
     use_global_kubeconfig: true                # Use global kubeconfig for PostgreSQL
     kubeconfig: ""                             # Path to the kubeconfig file specific to this application
     kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
@@ -506,7 +676,6 @@ additional_apps:
     verify_install: true                       # Verify the installation of PostgreSQL
     verify_install_timeout: 600                # Timeout for verification (in seconds)
     skip_on_verify_fail: false                 # Do not skip if verification fails
-
 
 #### Define Custom Applications and Associated Manifests ####
 manifests:
@@ -536,6 +705,39 @@ manifests:
     namespace: egs-gpu-operator               # Namespace for this application
     kubeconfig: ""                            # Path to the kubeconfig file specific to this application
     kubecontext: ""                           # Kubecontext specific to this application; uses global context if empty
+
+  - appname: nvidia-driver-installer          # Name of the custom application
+    manifest: "https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/master/nvidia-driver-installer/cos/daemonset-preloaded.yaml"
+                                               # URL to the manifest file
+    overrides_yaml: ""                        # Path to an external YAML file with overrides, if any
+    inline_yaml: null                         # Inline YAML content for this application
+    use_global_kubeconfig: true               # Use global kubeconfig for this application
+    kubeconfig: ""                            # Path to the kubeconfig file specific to this application
+    kubecontext: ""                           # Kubecontext specific to this application; uses global context if empty
+    skip_installation: false                  # Do not skip the installation of this application
+    verify_install: false                     # Verify the installation of this application
+    verify_install_timeout: 200               # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                 # Skip if verification fails
+    namespace: kube-system                    # Namespace for this application
+
+    
+
+#### Define Commands to Execute ####
+commands:
+  - use_global_kubeconfig: true               # Use global kubeconfig for these commands
+    kubeconfig: ""                            # Path to the kubeconfig file specific to these commands
+    kubecontext: ""                           # Kubecontext specific to these commands; uses global context if empty
+    skip_installation: false                   # Do not skip the execution of these commands
+    verify_install: false                     # Verify the execution of these commands
+    verify_install_timeout: 200               # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                 # Skip if command verification fails
+    namespace: kube-system                    # Namespace context for these commands
+    command_stream: |                         # Commands to execute
+      kubectl create namespace egs-gpu-operator --dry-run=client -o yaml | kubectl apply -f - || true
+      kubectl get nodes || true
+      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true cloud.google.com/gke-accelerator=true --overwrite || true
+      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} sh -c "echo {}; kubectl get node {} -o=jsonpath='{.metadata.labels}' | jq ." || true
+      kubectl get clusterpolicies.nvidia.com/cluster-policy --no-headers || true
 
 #### Troubleshooting Mode Settings ####
 enable_troubleshoot:
@@ -582,102 +784,68 @@ required_binaries:
 add_node_label: true                        # Enable node labeling during installation
 # Version of the input configuration file
 version: "1.15.3"
-EOF
-    
-    print_success "Generated full configuration: $OUTPUT_CONFIG"
-}
+EOFCONFIG
 
-# Function to display next steps
-show_next_steps() {
-    echo ""
-    echo "=============================================="
-    echo "   📋 Next Steps"
-    echo "=============================================="
-    echo ""
-    print_info "1. Review the generated configuration file: egs-installer-config.yaml"
-    print_info "2. Run the installation:"
-    echo ""
-    echo "   ./egs-installer.sh --input-yaml egs-installer-config.yaml"
-    echo ""
-    print_info "3. After installation, access the UI:"
-    echo ""
-    echo "   kubectl get svc -n kubeslice-controller kubeslice-ui-proxy"
-    echo ""
-    print_warning "Note: Installation may take 10-15 minutes depending on your cluster."
-    echo ""
-}
+# Replace placeholders with actual values
+sed -i "s/CONTEXT_PLACEHOLDER/$CURRENT_CONTEXT/g" egs-installer-config.yaml
+sed -i "s|IMAGE_REGISTRY_PLACEHOLDER|$IMAGE_REGISTRY|g" egs-installer-config.yaml
+sed -i "s/CLUSTER_NAME_PLACEHOLDER/$CLUSTER_NAME/g" egs-installer-config.yaml
+sed -i "s/CLOUD_PROVIDER_PLACEHOLDER/$CLOUD_PROVIDER/g" egs-installer-config.yaml
+sed -i "s/GPU_OPERATOR_SKIP_PLACEHOLDER/$([ "$INSTALL_GPU_OPERATOR" = "false" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
+sed -i "s/PROMETHEUS_SKIP_PLACEHOLDER/$([ "$INSTALL_PROMETHEUS" = "false" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
+sed -i "s/POSTGRESQL_SKIP_PLACEHOLDER/$([ "$INSTALL_POSTGRESQL" = "false" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
 
-# Main execution flow
-main() {
-    local AUTO_INSTALL=false
-    
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --auto-install)
-                AUTO_INSTALL=true
-                shift
-                ;;
-            --help|-h)
-                echo "Usage: $0 [OPTIONS]"
-                echo ""
-                echo "Options:"
-                echo "  --auto-install       Automatically run the installer after generating config"
-                echo "  --help, -h           Show this help message"
-                echo ""
-                echo "Examples:"
-                echo "  $0                   # Generate config with auto-detection (review before install)"
-                echo "  $0 --auto-install    # Generate config and install immediately"
-                echo ""
-                echo "Zero-Config Installation:"
-                echo "  This script auto-detects your Kubernetes context and cluster settings."
-                echo "  No configuration file is needed!"
-                echo ""
-                exit 0
-                ;;
-            *)
-                print_error "Unknown option: $1"
-                print_info "Use --help for usage information"
-                exit 1
-                ;;
-        esac
-    done
-    
-    # Step 1: Check prerequisites
-    check_prerequisites
+print_success "Generated egs-installer-config.yaml"
+
+if [ "$AUTO_INSTALL" = "true" ]; then
+    print_info "Starting automated installation..."
     echo ""
     
-    # Step 2: Auto-detect Kubernetes context
-    auto_detect_kube_context
-    echo ""
+    # Disable cleanup trap during installation
+    trap - EXIT
     
-    # Step 3: Detect cluster capabilities
-    detect_cluster_capabilities
-    echo ""
-    
-    # Step 4: Generate full configuration
-    generate_full_config "egs-installer-config.yaml"
-    echo ""
-    
-    # Step 5: Show next steps or auto-install
-    if [ "$AUTO_INSTALL" = true ]; then
-        print_info "Auto-install mode enabled. Running EGS installer..."
+    # Run the installer
+    if ./egs-installer.sh --input-yaml egs-installer-config.yaml; then
+        print_success "EGS installation completed!"
+        echo ""
+        print_info "To access the UI, run:"
+        echo "  kubectl get svc -n kubeslice-controller kubeslice-ui-proxy"
         echo ""
         
-        if [ -f "./egs-installer.sh" ]; then
-            ./egs-installer.sh --input-yaml egs-installer-config.yaml
-        else
-            print_error "egs-installer.sh not found in current directory!"
-            print_info "Please download the full EGS installation package."
-            exit 1
+        # Clean up after successful installation (only for curl mode)
+        if [ "$LOCAL_MODE" = false ]; then
+            print_info "Cleaning up temporary files..."
+            cd /
+            rm -rf "$TEMP_DIR"
         fi
+        exit 0
     else
-        show_next_steps
+        if [ "$LOCAL_MODE" = false ]; then
+            print_error "Installation failed. Temporary files kept at: $TEMP_DIR"
+        else
+            print_error "Installation failed."
+        fi
+        exit 1
     fi
-    
-    print_success "EGS Simple Installer completed successfully!"
-}
-
-# Run main function
-main "$@"
+else
+    print_success "Configuration generated!"
+    echo ""
+    if [ "$LOCAL_MODE" = false ]; then
+        print_info "Configuration saved to: $TEMP_DIR/egs-installation/egs-installer-config.yaml"
+        print_info "To install, run:"
+        echo "  cd $TEMP_DIR/egs-installation"
+        echo "  ./egs-installer.sh --input-yaml egs-installer-config.yaml"
+        echo ""
+        print_info "Note: Keep this terminal open or copy the config before closing."
+        
+        # Disable auto-cleanup for config-only mode
+        trap - EXIT
+    else
+        print_info "Configuration saved to: $WORK_DIR/egs-installer-config.yaml"
+        print_info "To install, run:"
+        echo "  cd $WORK_DIR"
+        echo "  ./egs-installer.sh --input-yaml egs-installer-config.yaml"
+        echo ""
+    fi
+fi
 
