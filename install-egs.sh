@@ -226,6 +226,9 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 
+# Save original directory (where user ran curl from)
+ORIGINAL_DIR="$(pwd)"
+
 # Check if we're already in the egs-installation directory (local mode)
 if [ -f "$SCRIPT_DIR/egs-installer.sh" ] && [ "$SCRIPT_NAME" = "install-egs.sh" ]; then
     # Local mode - use current directory
@@ -234,20 +237,11 @@ if [ -f "$SCRIPT_DIR/egs-installer.sh" ] && [ "$SCRIPT_NAME" = "install-egs.sh" 
     LOCAL_MODE=true
     TEMP_DIR=""
 else
-    # Curl mode - download to temp directory
+    # Curl mode - work in original directory, download scripts to temp
     TEMP_DIR=$(mktemp -d)
-    print_info "Using temporary directory: $TEMP_DIR"
+    print_info "Downloading EGS installer to temporary location..."
     
-    # Cleanup function
-    cleanup() {
-        print_info "Cleaning up temporary files..."
-        rm -rf "$TEMP_DIR"
-    }
-    
-    trap cleanup EXIT
-    
-    # Clone the repository
-    print_info "Downloading EGS installer..."
+    # Clone the repository to temp
     cd "$TEMP_DIR"
     
     # Use the feature branch for now (change to main after merge)
@@ -266,21 +260,20 @@ else
     
     print_success "Downloaded EGS installer"
     
-    # Enter the directory
-    cd egs-installation
-    WORK_DIR="$(pwd)"
+    # Copy necessary files to original directory
+    print_info "Setting up installation in current directory..."
+    cp -r "$TEMP_DIR/egs-installation/charts" "$ORIGINAL_DIR/" 2>/dev/null || true
+    cp "$TEMP_DIR/egs-installation/egs-installer.sh" "$ORIGINAL_DIR/"
+    cp "$TEMP_DIR/egs-installation/egs-install-prerequisites.sh" "$ORIGINAL_DIR/"
+    cp "$TEMP_DIR/egs-installation/egs-uninstall.sh" "$ORIGINAL_DIR/" 2>/dev/null || true
+    
+    # Set work directory to original directory
+    WORK_DIR="$ORIGINAL_DIR"
     LOCAL_MODE=false
     
-    # Copy license file to work directory (curl mode only)
-    if [ -n "$LICENSE_FILE" ] && [ -f "$LICENSE_FILE" ]; then
-        if ! cp "$LICENSE_FILE" "$WORK_DIR/$(basename "$LICENSE_FILE")"; then
-            print_error "Failed to copy license file to work directory"
-            exit 1
-        fi
-        # Update LICENSE_FILE to point to the copied file
-        LICENSE_FILE="$WORK_DIR/$(basename "$LICENSE_FILE")"
-        print_success "Copied license file to work directory"
-    fi
+    # Cleanup temp directory
+    rm -rf "$TEMP_DIR"
+    print_success "Setup complete in: $WORK_DIR"
 fi
 
 # Change to work directory
@@ -913,9 +906,6 @@ if ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml; then
     echo ""
 else
     print_error "Prerequisites installation failed!"
-    if [ "$LOCAL_MODE" = false ]; then
-        print_info "Temporary files kept at: $TEMP_DIR"
-    fi
     exit 1
 fi
 
@@ -924,19 +914,9 @@ print_info "📦 Step 2/2: Installing EGS components (Controller, UI, Worker)...
 echo ""
 if ./egs-installer.sh --input-yaml egs-installer-config.yaml; then
     print_success "✅ EGS installation completed successfully!"
-    
-    # Clean up temp directory after success (curl mode only)
-    if [ "$LOCAL_MODE" = false ]; then
-        print_info "Cleaning up temporary files..."
-        cd /
-        rm -rf "$TEMP_DIR"
-    fi
     exit 0
 else
     print_error "EGS installation failed!"
-    if [ "$LOCAL_MODE" = false ]; then
-        print_info "Temporary files kept at: $TEMP_DIR for debugging"
-    fi
     exit 1
 fi
 
