@@ -270,6 +270,17 @@ else
     cd egs-installation
     WORK_DIR="$(pwd)"
     LOCAL_MODE=false
+    
+    # Copy license file to work directory (curl mode only)
+    if [ -n "$LICENSE_FILE" ] && [ -f "$LICENSE_FILE" ]; then
+        if ! cp "$LICENSE_FILE" "$WORK_DIR/$(basename "$LICENSE_FILE")"; then
+            print_error "Failed to copy license file to work directory"
+            exit 1
+        fi
+        # Update LICENSE_FILE to point to the copied file
+        LICENSE_FILE="$WORK_DIR/$(basename "$LICENSE_FILE")"
+        print_success "Copied license file to work directory"
+    fi
 fi
 
 # Change to work directory
@@ -307,7 +318,7 @@ fi
 print_info "Generating EGS configuration..."
 
 # Get kubeconfig details
-# Use the actual kubeconfig filename if in same directory, otherwise use basename
+# Use the actual kubeconfig filename if in same directory, otherwise copy to work directory
 if [ -f "$KUBECONFIG" ]; then
     KUBECONFIG_FULLPATH=$(realpath "$KUBECONFIG")
     WORK_DIR_FULLPATH=$(realpath "$WORK_DIR")
@@ -319,7 +330,11 @@ if [ -f "$KUBECONFIG" ]; then
     else
         # Kubeconfig is elsewhere, copy it to work directory
         KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
-        cp "$KUBECONFIG" "$WORK_DIR/$KUBECONFIG_RELATIVE" 2>/dev/null || true
+        if ! cp "$KUBECONFIG" "$WORK_DIR/$KUBECONFIG_RELATIVE"; then
+            print_error "Failed to copy kubeconfig to work directory"
+            exit 1
+        fi
+        print_success "Copied kubeconfig to work directory: $KUBECONFIG_RELATIVE"
     fi
 else
     # Fallback
