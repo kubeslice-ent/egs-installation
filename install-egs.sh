@@ -206,6 +206,22 @@ fi
 
 print_success "Connected to cluster: $CURRENT_CONTEXT"
 
+# Resolve license file to absolute path BEFORE changing directories
+if [ -n "$LICENSE_FILE" ]; then
+    # If relative path, convert to absolute path from current directory
+    if [[ "$LICENSE_FILE" != /* ]]; then
+        LICENSE_FILE="$(cd "$(dirname "$LICENSE_FILE")" 2>/dev/null && pwd)/$(basename "$LICENSE_FILE")"
+    fi
+    # Verify license file exists NOW (before changing directories)
+    if [ ! -f "$LICENSE_FILE" ]; then
+        print_error "❌ ERROR: License file not found at: $LICENSE_FILE"
+        print_error "Please ensure the EGS license file exists at the specified path."
+        print_error "Example: curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --license-file egs-license.yaml"
+        exit 1
+    fi
+    print_info "License file found: $LICENSE_FILE"
+fi
+
 # Detect if running locally or via curl
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
@@ -845,7 +861,7 @@ echo ""
 trap - EXIT
 
 # Step 0: Check for and apply EGS license
-print_info "📜 Step 0/3: Checking for EGS license file..."
+print_info "📜 Step 0/3: Applying EGS license..."
 
 # Check if license file parameter was provided
 if [ -z "$LICENSE_FILE" ]; then
@@ -856,20 +872,7 @@ if [ -z "$LICENSE_FILE" ]; then
     exit 1
 fi
 
-# Use absolute path if relative path provided
-if [[ "$LICENSE_FILE" != /* ]]; then
-    LICENSE_FILE="$(pwd)/$LICENSE_FILE"
-fi
-print_info "Using license file: $LICENSE_FILE"
-
-# Check if license file exists
-if [ ! -f "$LICENSE_FILE" ]; then
-    print_error "❌ ERROR: License file not found at: $LICENSE_FILE"
-    print_error "Please ensure the EGS license file exists at the specified path."
-    print_error "For license setup instructions, see: docs/EGS-License-Setup.md"
-    exit 1
-fi
-print_success "Found EGS license file: $LICENSE_FILE"
+print_success "Using license file: $LICENSE_FILE"
 
 print_info "Applying EGS license..."
 echo ""
