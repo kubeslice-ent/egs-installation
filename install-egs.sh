@@ -335,6 +335,8 @@ if [ -f "$KUBECONFIG" ]; then
             exit 1
         fi
         print_success "Copied kubeconfig to work directory: $KUBECONFIG_RELATIVE"
+        # Update KUBECONFIG environment variable to point to the copied file
+        export KUBECONFIG="$WORK_DIR/$KUBECONFIG_RELATIVE"
     fi
 else
     # Fallback
