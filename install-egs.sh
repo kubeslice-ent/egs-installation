@@ -1,10 +1,12 @@
 #!/bin/bash
 
-# EGS One-Line Installer (Curl-Friendly Bootstrap Script)
+# EGS Quick Installer (Curl-Friendly)
+# One-command installation for single-cluster EGS
+# Auto-installs: PostgreSQL, Prometheus, GPU Operator, Controller, UI, Worker
 # Usage: 
-#   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash
-#   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --kubeconfig ~/.kube/config --context my-context
-#   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --version v1.0.0
+#   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --license-file egs-license.yaml
+#   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --license-file egs-license.yaml --kubeconfig ~/.kube/config --context my-context
+#   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --license-file egs-license.yaml --cluster-name prod-cluster
 
 set -e
 
@@ -19,10 +21,10 @@ NC='\033[0m'
 KUBECONFIG_PATH=""
 KUBE_CONTEXT=""
 EGS_VERSION=""
-AUTO_INSTALL="true"
 PROJECT_NAME="avesha"  # Fixed project name
 CLUSTER_NAME="worker-1"  # Default cluster name matching egs-installer-config.yaml
 IMAGE_REGISTRY="harbor.saas1.smart-scaler.io/avesha/aveshasystems"
+LICENSE_FILE=""  # Path to license file (defaults to egs-license.yaml in work directory)
 INSTALL_PROMETHEUS="true"
 INSTALL_GPU_OPERATOR="true"
 INSTALL_POSTGRESQL="true"
@@ -47,35 +49,47 @@ print_warning() {
 # Function to show help
 show_help() {
     cat << EOF
-EGS One-Line Installer
+EGS Quick Installer
+
+Auto-generates config and installs EGS with one command
 
 Usage:
-  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash
-  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- [OPTIONS]
+  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --license-file <PATH> [OPTIONS]
 
 Options:
+  --license-file PATH        Path to EGS license file (REQUIRED)
   --kubeconfig PATH          Path to kubeconfig file (default: auto-detect)
   --context NAME             Kubernetes context to use (default: current-context)
-  --config-only              Only generate config, don't install
+  --cluster-name NAME        Cluster name (default: worker-1)
   --help, -h                 Show this help message
 
 Examples:
-  # Simplest - Install everything with defaults (RECOMMENDED)
-  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash
-
-  # Review config before installing
-  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --config-only
+  # Simplest - Install EGS with one command (REQUIRED: license file must be passed)
+  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \\
+    --license-file egs-license.yaml
 
   # Specify kubeconfig and context
   curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \\
+    --license-file egs-license.yaml \\
     --kubeconfig ~/.kube/config \\
     --context my-cluster
 
+  # Custom cluster name
+  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \\
+    --license-file egs-license.yaml \\
+    --cluster-name prod-cluster
+
+  # Specify custom license file location
+  curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \\
+    --license-file /path/to/my-license.yaml
+
 Notes:
-  - Cluster name is always 'worker-1' for single cluster setup
-  - Project name is always 'avesha'
-  - Installs: Controller, UI, Worker, Prometheus, GPU Operator, PostgreSQL
-  - For multi-cluster setup, use the full egs-installer-config.yaml
+  - LICENSE FILE IS MANDATORY - Must be passed via --license-file parameter
+  - Automatically installs ALL components (prerequisites + EGS)
+  - Default cluster: 'worker-1', Project: 'avesha'
+  - Installation order: License → PostgreSQL → Prometheus → GPU Operator → Controller → UI → Worker
+  - Takes 10-15 minutes for complete installation
+  - For license setup, see: docs/EGS-License-Setup.md
 
 EOF
     exit 0
@@ -100,6 +114,10 @@ while [[ $# -gt 0 ]]; do
             CLUSTER_NAME="$2"
             shift 2
             ;;
+        --license-file)
+            LICENSE_FILE="$2"
+            shift 2
+            ;;
         --image-registry)
             IMAGE_REGISTRY="$2"
             shift 2
@@ -116,10 +134,6 @@ while [[ $# -gt 0 ]]; do
             INSTALL_POSTGRESQL="false"
             shift
             ;;
-        --config-only)
-            AUTO_INSTALL="false"
-            shift
-            ;;
         --help|-h)
             show_help
             ;;
@@ -133,7 +147,7 @@ done
 
 # Banner
 echo "=============================================="
-echo "   🚀 EGS One-Line Installer"
+echo "   🚀 EGS Quick Installer"
 echo "   Enterprise GPU Scheduler"
 echo "=============================================="
 echo ""
@@ -253,8 +267,10 @@ print_info "Detecting cluster capabilities..."
 GPU_NODES=$(kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l || echo "0")
 if [ "$GPU_NODES" -gt 0 ]; then
     print_success "Detected $GPU_NODES GPU node(s)"
+    ENABLE_CUSTOM_APPS="true"
 else
-    print_warning "No GPU nodes detected. GPU Operator will still be installed."
+    print_warning "No GPU nodes detected. Skipping GPU Operator installation (CPU-only cluster)."
+    ENABLE_CUSTOM_APPS="false"
 fi
 
 # Detect cloud provider
@@ -275,8 +291,24 @@ fi
 print_info "Generating EGS configuration..."
 
 # Get kubeconfig details
-TEMP_KUBECONFIG="kubeconfig-temp"
-cp "$KUBECONFIG" "$TEMP_KUBECONFIG" 2>/dev/null || true
+# Use the actual kubeconfig filename if in same directory, otherwise use basename
+if [ -f "$KUBECONFIG" ]; then
+    KUBECONFIG_FULLPATH=$(realpath "$KUBECONFIG")
+    WORK_DIR_FULLPATH=$(realpath "$WORK_DIR")
+    KUBECONFIG_DIR=$(dirname "$KUBECONFIG_FULLPATH")
+    
+    if [ "$KUBECONFIG_DIR" = "$WORK_DIR_FULLPATH" ]; then
+        # Kubeconfig is in the same directory, use its basename
+        KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
+    else
+        # Kubeconfig is elsewhere, copy it to work directory
+        KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
+        cp "$KUBECONFIG" "$WORK_DIR/$KUBECONFIG_RELATIVE" 2>/dev/null || true
+    fi
+else
+    # Fallback
+    KUBECONFIG_RELATIVE="kubeconfig"
+fi
 
 # Show configuration being used
 if [ "$CLUSTER_NAME" != "worker-1" ] || [ "$INSTALL_PROMETHEUS" = "false" ] || [ "$INSTALL_GPU_OPERATOR" = "false" ] || [ "$INSTALL_POSTGRESQL" = "false" ]; then
@@ -292,7 +324,7 @@ cat > egs-installer-config.yaml << 'EOFCONFIG'
 ########################### MANDATORY PARAMETERS ####################################################################
 
 # Kubeconfig settings
-global_kubeconfig: "kubeconfig-temp"                         # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
+global_kubeconfig: "KUBECONFIG_PLACEHOLDER"                         # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
 global_kubecontext: "CONTEXT_PLACEHOLDER"                        # Global kubecontext to use - Mandatory
 use_global_context: true                      # If true, use the global kubecontext for all operations by default
 
@@ -308,7 +340,7 @@ enable_install_additional_apps: true         # Set to true to enable additional 
 # Enable custom applications
 # Set this to true if you want to allow custom applications to be deployed.
 # This is specifically useful for enabling NVIDIA driver installation on your nodes.
-enable_custom_apps: true
+enable_custom_apps: ENABLE_CUSTOM_APPS_PLACEHOLDER
 
 # Command execution settings
 # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
@@ -787,6 +819,7 @@ version: "1.15.3"
 EOFCONFIG
 
 # Replace placeholders with actual values
+sed -i "s/KUBECONFIG_PLACEHOLDER/$KUBECONFIG_RELATIVE/g" egs-installer-config.yaml
 sed -i "s/CONTEXT_PLACEHOLDER/$CURRENT_CONTEXT/g" egs-installer-config.yaml
 sed -i "s|IMAGE_REGISTRY_PLACEHOLDER|$IMAGE_REGISTRY|g" egs-installer-config.yaml
 sed -i "s/CLUSTER_NAME_PLACEHOLDER/$CLUSTER_NAME/g" egs-installer-config.yaml
@@ -794,58 +827,96 @@ sed -i "s/CLOUD_PROVIDER_PLACEHOLDER/$CLOUD_PROVIDER/g" egs-installer-config.yam
 sed -i "s/GPU_OPERATOR_SKIP_PLACEHOLDER/$([ "$INSTALL_GPU_OPERATOR" = "false" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
 sed -i "s/PROMETHEUS_SKIP_PLACEHOLDER/$([ "$INSTALL_PROMETHEUS" = "false" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
 sed -i "s/POSTGRESQL_SKIP_PLACEHOLDER/$([ "$INSTALL_POSTGRESQL" = "false" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
+sed -i "s/ENABLE_CUSTOM_APPS_PLACEHOLDER/$ENABLE_CUSTOM_APPS/g" egs-installer-config.yaml
 
 print_success "Generated egs-installer-config.yaml"
 
-if [ "$AUTO_INSTALL" = "true" ]; then
-    print_info "Starting automated installation..."
+# Always just generate config
+print_success "Configuration generated successfully!"
+echo ""
+
+# Check if we should auto-install (both curl and local mode)
+print_info "📁 Configuration saved to: $WORK_DIR/egs-installer-config.yaml"
+echo ""
+print_info "🚀 Starting automated installation..."
+echo ""
+
+# Disable cleanup trap during installation
+trap - EXIT
+
+# Step 0: Check for and apply EGS license
+print_info "📜 Step 0/3: Checking for EGS license file..."
+
+# Check if license file parameter was provided
+if [ -z "$LICENSE_FILE" ]; then
+    print_error "❌ ERROR: License file parameter is required!"
+    print_error "Please provide the license file path using: --license-file <path>"
+    print_error "Example: curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --license-file egs-license.yaml"
+    print_error "For license setup instructions, see: docs/EGS-License-Setup.md"
+    exit 1
+fi
+
+# Use absolute path if relative path provided
+if [[ "$LICENSE_FILE" != /* ]]; then
+    LICENSE_FILE="$(pwd)/$LICENSE_FILE"
+fi
+print_info "Using license file: $LICENSE_FILE"
+
+# Check if license file exists
+if [ ! -f "$LICENSE_FILE" ]; then
+    print_error "❌ ERROR: License file not found at: $LICENSE_FILE"
+    print_error "Please ensure the EGS license file exists at the specified path."
+    print_error "For license setup instructions, see: docs/EGS-License-Setup.md"
+    exit 1
+fi
+print_success "Found EGS license file: $LICENSE_FILE"
+
+print_info "Applying EGS license..."
+echo ""
+
+# Create namespace if it doesn't exist
+kubectl create namespace kubeslice-controller --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
+
+if kubectl apply -f "$LICENSE_FILE" -n kubeslice-controller; then
+    print_success "License applied successfully!"
     echo ""
-    
-    # Disable cleanup trap during installation
-    trap - EXIT
-    
-    # Run the installer
-    if ./egs-installer.sh --input-yaml egs-installer-config.yaml; then
-        print_success "EGS installation completed!"
-        echo ""
-        print_info "To access the UI, run:"
-        echo "  kubectl get svc -n kubeslice-controller kubeslice-ui-proxy"
-        echo ""
-        
-        # Clean up after successful installation (only for curl mode)
-        if [ "$LOCAL_MODE" = false ]; then
-            print_info "Cleaning up temporary files..."
-            cd /
-            rm -rf "$TEMP_DIR"
-        fi
-        exit 0
-    else
-        if [ "$LOCAL_MODE" = false ]; then
-            print_error "Installation failed. Temporary files kept at: $TEMP_DIR"
-        else
-            print_error "Installation failed."
-        fi
-        exit 1
-    fi
 else
-    print_success "Configuration generated!"
+    print_warning "License application failed or already exists. Continuing..."
     echo ""
+fi
+
+# Step 1: Install prerequisites
+print_info "📦 Step 1/2: Installing prerequisites (PostgreSQL, Prometheus, GPU Operator)..."
+echo ""
+if ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml; then
+    print_success "Prerequisites installed successfully!"
+    echo ""
+else
+    print_error "Prerequisites installation failed!"
     if [ "$LOCAL_MODE" = false ]; then
-        print_info "Configuration saved to: $TEMP_DIR/egs-installation/egs-installer-config.yaml"
-        print_info "To install, run:"
-        echo "  cd $TEMP_DIR/egs-installation"
-        echo "  ./egs-installer.sh --input-yaml egs-installer-config.yaml"
-        echo ""
-        print_info "Note: Keep this terminal open or copy the config before closing."
-        
-        # Disable auto-cleanup for config-only mode
-        trap - EXIT
-    else
-        print_info "Configuration saved to: $WORK_DIR/egs-installer-config.yaml"
-        print_info "To install, run:"
-        echo "  cd $WORK_DIR"
-        echo "  ./egs-installer.sh --input-yaml egs-installer-config.yaml"
-        echo ""
+        print_info "Temporary files kept at: $TEMP_DIR"
     fi
+    exit 1
+fi
+
+# Step 2: Install EGS components
+print_info "📦 Step 2/2: Installing EGS components (Controller, UI, Worker)..."
+echo ""
+if ./egs-installer.sh --input-yaml egs-installer-config.yaml; then
+    print_success "✅ EGS installation completed successfully!"
+    
+    # Clean up temp directory after success (curl mode only)
+    if [ "$LOCAL_MODE" = false ]; then
+        print_info "Cleaning up temporary files..."
+        cd /
+        rm -rf "$TEMP_DIR"
+    fi
+    exit 0
+else
+    print_error "EGS installation failed!"
+    if [ "$LOCAL_MODE" = false ]; then
+        print_info "Temporary files kept at: $TEMP_DIR for debugging"
+    fi
+    exit 1
 fi
 
