@@ -305,12 +305,12 @@ else
     print_info "Modifying configuration with custom settings..."
 
     # Use sed to update the config values directly
-    sed -i "s|global_kubeconfig: \"\"|global_kubeconfig: \"$KUBECONFIG_RELATIVE\"|" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|global_kubecontext: \"\"|global_kubecontext: \"$CURRENT_CONTEXT\"|" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|repository: \"https://index.docker.io/v1/\"|repository: \"$IMAGE_REGISTRY\"|" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|cluster_name: \"worker-1\"|cluster_name: \"$CLUSTER_NAME\"|" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|name: \"avesha\"|name: \"$PROJECT_NAME\"|" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|cloudProvider: \"\"|cloudProvider: \"$CLOUD_PROVIDER\"|" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|global_kubeconfig: \".*\"|global_kubeconfig: \"$KUBECONFIG_RELATIVE\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|global_kubecontext: \".*\"|global_kubecontext: \"$CURRENT_CONTEXT\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|repository: \".*\"|repository: \"$IMAGE_REGISTRY\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|cluster_name: \".*\"|cluster_name: \"$CLUSTER_NAME\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|name: \".*\"|name: \"$PROJECT_NAME\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|cloudProvider: \".*\"|cloudProvider: \"$CLOUD_PROVIDER\"|g" "$WORK_DIR/egs-installer-config.yaml"
 
     # Update skip/installation flags for additional apps
     if [ "$INSTALL_GPU_OPERATOR" = "false" ]; then
@@ -390,7 +390,7 @@ if [ -f "$KUBECONFIG" ]; then
     KUBECONFIG_FULLPATH=$(realpath "$KUBECONFIG")
     WORK_DIR_FULLPATH=$(realpath "$WORK_DIR")
     KUBECONFIG_DIR=$(dirname "$KUBECONFIG_FULLPATH")
-    
+
     if [ "$KUBECONFIG_DIR" = "$WORK_DIR_FULLPATH" ]; then
         # Kubeconfig is in the same directory, use its basename
         KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
@@ -408,6 +408,62 @@ if [ -f "$KUBECONFIG" ]; then
 else
     # Fallback
     KUBECONFIG_RELATIVE="kubeconfig"
+fi
+
+# Modify the config file with custom values (only in local mode, curl mode does it later)
+if [ "$LOCAL_MODE" = "true" ]; then
+    print_info "Modifying configuration with custom settings..."
+
+    # Use sed to update the config values directly
+    sed -i "s|global_kubeconfig: \".*\"|global_kubeconfig: \"$KUBECONFIG_RELATIVE\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|global_kubecontext: \".*\"|global_kubecontext: \"$CURRENT_CONTEXT\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|repository: \".*\"|repository: \"$IMAGE_REGISTRY\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|cluster_name: \".*\"|cluster_name: \"$CLUSTER_NAME\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|name: \".*\"|name: \"$PROJECT_NAME\"|g" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|cloudProvider: \".*\"|cloudProvider: \"$CLOUD_PROVIDER\"|g" "$WORK_DIR/egs-installer-config.yaml"
+
+    # Update skip/installation flags for additional apps
+    if [ "$INSTALL_GPU_OPERATOR" = "false" ]; then
+        sed -i 's|skip_installation: false # Do not skip the installation of the GPU operator|skip_installation: true # Do not skip the installation of the GPU operator|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    if [ "$INSTALL_PROMETHEUS" = "false" ]; then
+        sed -i 's|skip_installation: false # Do not skip the installation of Prometheus|skip_installation: true # Do not skip the installation of Prometheus|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    if [ "$INSTALL_POSTGRESQL" = "false" ]; then
+        sed -i 's|skip_installation: false # Do not skip the installation of PostgreSQL|skip_installation: true # Do not skip the installation of PostgreSQL|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    # Update enable flags
+    if [ "$INSTALL_CONTROLLER" = "false" ]; then
+        sed -i 's|enable_install_controller: true|enable_install_controller: false|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    if [ "$INSTALL_UI" = "false" ]; then
+        sed -i 's|enable_install_ui: true|enable_install_ui: false|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    if [ "$INSTALL_WORKER" = "false" ]; then
+        sed -i 's|enable_install_worker: true|enable_install_worker: false|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    # Update custom apps based on GPU detection
+    if [ "$ENABLE_CUSTOM_APPS" = "false" ]; then
+        sed -i 's|enable_custom_apps: true|enable_custom_apps: false|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    print_success "Configuration modified successfully"
+
+    # In local mode, copy the modified config and scripts to current directory for installation
+    if [ "$LOCAL_MODE" = "true" ]; then
+        cp "$WORK_DIR/egs-installer-config.yaml" "$ORIGINAL_DIR/"
+        cp "$WORK_DIR/egs-install-prerequisites.sh" "$ORIGINAL_DIR/"
+        cp "$WORK_DIR/egs-installer.sh" "$ORIGINAL_DIR/"
+        cp "$WORK_DIR/egs-uninstall.sh" "$ORIGINAL_DIR/" 2>/dev/null || true
+        cp -r "$WORK_DIR/charts" "$ORIGINAL_DIR/" 2>/dev/null || true
+        WORK_DIR="$ORIGINAL_DIR"
+    fi
 fi
 
 # Show configuration being used
