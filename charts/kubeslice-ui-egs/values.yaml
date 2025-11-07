@@ -105,7 +105,7 @@ kubeslice:
                     operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.16.0-RELEASE-fa6547d8
+    tag: 1.16.0-RELEASE-839c7ed5
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -305,7 +305,7 @@ kubeslice:
   egsCoreApis:
     enabled: true
     image: egs-core-apis
-    tag: 1.15.0-RELEASE-d072333f
+    tag: 1.15.0-RELEASE-ad2a8c34
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP

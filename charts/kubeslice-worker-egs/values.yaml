@@ -240,7 +240,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.16.0-RELEASE-6b9aa9fe
+  tag: 1.16.0-RELEASE-4e76f844
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -290,7 +290,7 @@ aiops:
 
 egsAgent:
   image: egs-agent
-  tag: 1.0.3-RELEASE-b5c5b9b9
+  tag: 1.0.3-RELEASE-c2258066
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-agent-access
