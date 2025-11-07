@@ -289,65 +289,17 @@ else
 
     print_success "Downloaded EGS installer"
 
-    # Copy necessary files to original directory
-    print_info "Setting up installation in current directory..."
-    cp -r "$TEMP_DIR/egs-installation/charts" "$ORIGINAL_DIR/" 2>/dev/null || true
-    cp "$TEMP_DIR/egs-installation/egs-installer.sh" "$ORIGINAL_DIR/"
-    cp "$TEMP_DIR/egs-installation/egs-install-prerequisites.sh" "$ORIGINAL_DIR/"
-    cp "$TEMP_DIR/egs-installation/egs-uninstall.sh" "$ORIGINAL_DIR/" 2>/dev/null || true
-    cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/" 2>/dev/null || true
-    
-    # Set work directory to original directory
-    WORK_DIR="$ORIGINAL_DIR"
+    # The repo is already cloned to $TEMP_DIR/egs-installation
+    # Set work directory to the cloned repo
+    WORK_DIR="$TEMP_DIR/egs-installation"
     LOCAL_MODE=false
 
-    # Modify the copied config file with custom values
-    print_info "Modifying configuration with custom settings..."
-
-    # Use sed to update the config values directly
-    sed -i "s|global_kubeconfig: \".*\"|global_kubeconfig: \"$KUBECONFIG_RELATIVE\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|global_kubecontext: \".*\"|global_kubecontext: \"$CURRENT_CONTEXT\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|repository: \".*\"|repository: \"$IMAGE_REGISTRY\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|cluster_name: \".*\"|cluster_name: \"$CLUSTER_NAME\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|name: \".*\"|name: \"$PROJECT_NAME\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|cloudProvider: \".*\"|cloudProvider: \"$CLOUD_PROVIDER\"|g" "$WORK_DIR/egs-installer-config.yaml"
-
-    # Update skip/installation flags for additional apps
-    if [ "$INSTALL_GPU_OPERATOR" = "false" ]; then
-        sed -i 's|skip_installation: false # Do not skip the installation of the GPU operator|skip_installation: true # Do not skip the installation of the GPU operator|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    if [ "$INSTALL_PROMETHEUS" = "false" ]; then
-        sed -i 's|skip_installation: false # Do not skip the installation of Prometheus|skip_installation: true # Do not skip the installation of Prometheus|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    if [ "$INSTALL_POSTGRESQL" = "false" ]; then
-        sed -i 's|skip_installation: false # Do not skip the installation of PostgreSQL|skip_installation: true # Do not skip the installation of PostgreSQL|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    # Update enable flags
-    if [ "$INSTALL_CONTROLLER" = "false" ]; then
-        sed -i 's|enable_install_controller: true|enable_install_controller: false|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    if [ "$INSTALL_UI" = "false" ]; then
-        sed -i 's|enable_install_ui: true|enable_install_ui: false|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    if [ "$INSTALL_WORKER" = "false" ]; then
-        sed -i 's|enable_install_worker: true|enable_install_worker: false|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    # Update custom apps based on GPU detection
-    if [ "$ENABLE_CUSTOM_APPS" = "false" ]; then
-        sed -i 's|enable_custom_apps: true|enable_custom_apps: false|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    print_success "Configuration modified successfully"
-
-    # Cleanup temp directory
-    rm -rf "$TEMP_DIR"
     print_success "Setup complete in: $WORK_DIR"
+fi
+
+# Set cleanup trap for temp directory
+if [ "$LOCAL_MODE" = "false" ]; then
+    trap 'rm -rf "$TEMP_DIR"' EXIT
 fi
 
 # Change to work directory
@@ -410,8 +362,8 @@ else
     KUBECONFIG_RELATIVE="kubeconfig"
 fi
 
-# Modify the config file with custom values (only in local mode, curl mode does it later)
-if [ "$LOCAL_MODE" = "true" ]; then
+# Modify the config file with custom values
+if [ "$LOCAL_MODE" = "true" ] || [ "$LOCAL_MODE" = "false" ]; then
     print_info "Modifying configuration with custom settings..."
 
     # Use sed to update the config values directly
@@ -454,16 +406,6 @@ if [ "$LOCAL_MODE" = "true" ]; then
     fi
 
     print_success "Configuration modified successfully"
-
-    # In local mode, copy the modified config and scripts to current directory for installation
-    if [ "$LOCAL_MODE" = "true" ]; then
-        cp "$WORK_DIR/egs-installer-config.yaml" "$ORIGINAL_DIR/"
-        cp "$WORK_DIR/egs-install-prerequisites.sh" "$ORIGINAL_DIR/"
-        cp "$WORK_DIR/egs-installer.sh" "$ORIGINAL_DIR/"
-        cp "$WORK_DIR/egs-uninstall.sh" "$ORIGINAL_DIR/" 2>/dev/null || true
-        cp -r "$WORK_DIR/charts" "$ORIGINAL_DIR/" 2>/dev/null || true
-        WORK_DIR="$ORIGINAL_DIR"
-    fi
 fi
 
 # Show configuration being used
