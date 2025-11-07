@@ -282,7 +282,7 @@ else
     BRANCH="${EGS_BRANCH:-main}"
     REPO="${EGS_REPO:-https://github.com/kubeslice-ent/egs-installation.git}"
 
-    if ! git clone --depth 1 --branch "$BRANCH" "$REPO" egs-installation 2>/dev/null; then
+    if ! git clone --branch "$BRANCH" "$REPO" egs-installation 2>/dev/null; then
         print_error "Failed to download EGS installer from branch: $BRANCH"
         exit 1
     fi
