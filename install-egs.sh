@@ -380,19 +380,40 @@ fi
 
 # Modify the existing config file with custom values
 
-# Replace placeholders with actual values
-sed -i "s/KUBECONFIG_PLACEHOLDER/$KUBECONFIG_RELATIVE/g" egs-installer-config.yaml
-sed -i "s/CONTEXT_PLACEHOLDER/$CURRENT_CONTEXT/g" egs-installer-config.yaml
-sed -i "s|IMAGE_REGISTRY_PLACEHOLDER|$IMAGE_REGISTRY|g" egs-installer-config.yaml
-sed -i "s/CLUSTER_NAME_PLACEHOLDER/$CLUSTER_NAME/g" egs-installer-config.yaml
-sed -i "s/CLOUD_PROVIDER_PLACEHOLDER/$CLOUD_PROVIDER/g" egs-installer-config.yaml
-sed -i "s/GPU_OPERATOR_SKIP_PLACEHOLDER/$([ "$INSTALL_GPU_OPERATOR" = "false" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
-sed -i "s/PROMETHEUS_SKIP_PLACEHOLDER/$([ "$INSTALL_PROMETHEUS" = "false" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
-sed -i "s/POSTGRESQL_SKIP_PLACEHOLDER/$([ "$INSTALL_POSTGRESQL" = "false" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
-sed -i "s/CONTROLLER_ENABLE_PLACEHOLDER/$([ "$INSTALL_CONTROLLER" = "true" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
-sed -i "s/UI_ENABLE_PLACEHOLDER/$([ "$INSTALL_UI" = "true" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
-sed -i "s/WORKER_ENABLE_PLACEHOLDER/$([ "$INSTALL_WORKER" = "true" ] && echo "true" || echo "false")/g" egs-installer-config.yaml
-sed -i "s/ENABLE_CUSTOM_APPS_PLACEHOLDER/$ENABLE_CUSTOM_APPS/g" egs-installer-config.yaml
+# Use yq to update the config values directly
+yq -i ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" egs-installer-config.yaml
+yq -i ".global_kubecontext = \"$CURRENT_CONTEXT\"" egs-installer-config.yaml
+yq -i ".global_image_pull_secret.repository = \"$IMAGE_REGISTRY\"" egs-installer-config.yaml
+yq -i ".cluster_registration[0].cluster_name = \"$CLUSTER_NAME\"" egs-installer-config.yaml
+yq -i ".projects[0].name = \"$PROJECT_NAME\"" egs-installer-config.yaml
+yq -i ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" egs-installer-config.yaml
+
+# Update skip/installation flags
+if [ "$INSTALL_GPU_OPERATOR" = "false" ]; then
+    yq -i ".additional_apps[0].skip_installation = true" egs-installer-config.yaml
+else
+    yq -i ".additional_apps[0].skip_installation = false" egs-installer-config.yaml
+fi
+
+if [ "$INSTALL_PROMETHEUS" = "false" ]; then
+    yq -i ".additional_apps[1].skip_installation = true" egs-installer-config.yaml
+else
+    yq -i ".additional_apps[1].skip_installation = false" egs-installer-config.yaml
+fi
+
+if [ "$INSTALL_POSTGRESQL" = "false" ]; then
+    yq -i ".additional_apps[2].skip_installation = true" egs-installer-config.yaml
+else
+    yq -i ".additional_apps[2].skip_installation = false" egs-installer-config.yaml
+fi
+
+# Update enable flags
+yq -i ".enable_install_controller = $([ "$INSTALL_CONTROLLER" = "true" ] && echo "true" || echo "false")" egs-installer-config.yaml
+yq -i ".enable_install_ui = $([ "$INSTALL_UI" = "true" ] && echo "true" || echo "false")" egs-installer-config.yaml
+yq -i ".enable_install_worker = $([ "$INSTALL_WORKER" = "true" ] && echo "true" || echo "false")" egs-installer-config.yaml
+
+# Update custom apps based on GPU detection
+yq -i ".enable_custom_apps = $ENABLE_CUSTOM_APPS" egs-installer-config.yaml
 
 print_success "Generated egs-installer-config.yaml"
 
