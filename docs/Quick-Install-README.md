@@ -1,21 +1,6 @@
-# 🚀 EGS Quick Installation Guide (Curl-Friendly)
+# EGS Quick Installation Guide
 
-## Overview
-
-The EGS Quick Installer provides a **one-command installation** experience for single-cluster EGS deployments, similar to popular tools like Teleport. This guide is designed for users who want to get EGS up and running quickly without manual configuration.
-
----
-
-## ✨ Features
-
-- **🎯 One-Command Installation**: Install EGS with a single curl command
-- **🔍 Auto-Detection**: Automatically detects cluster capabilities (GPU nodes, cloud provider)
-- **📝 Smart Defaults**: Uses sensible defaults optimized for single-cluster setups
-- **🤖 Automated Setup**: Handles all prerequisites automatically (PostgreSQL, Prometheus, GPU Operator)
-- **⚡ Fast Deployment**: Complete installation in 10-15 minutes
-- **🔒 License-First**: Ensures license is validated before proceeding
-
----
+This guide covers the curl-friendly installation of EGS for single-cluster setups.
 
 ## 🚦 Quick Start
 
@@ -32,9 +17,9 @@ The EGS Quick Installer provides a **one-command installation** experience for s
 # Navigate to your installation directory
 cd /path/to/your/directory
 
-# Run the installer (REQUIRED: --license-file parameter)
+# Run the installer (license file defaults to egs-license.yaml in current directory)
 export KUBECONFIG=/path/to/your/kubeconfig.yaml
-curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --license-file egs-license.yaml
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 ```
 
 **That's it!** The script will:
@@ -50,77 +35,96 @@ curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main
 ## 📋 Command Options
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- [OPTIONS]
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- [OPTIONS]
 ```
 
 ### Available Options
 
 | Option | Description | Default | Required |
 |--------|-------------|---------|----------|
-| `--license-file PATH` | Path to EGS license file | None | **YES** ✅ |
+| `--license-file PATH` | Path to EGS license file | egs-license.yaml | No |
 | `--kubeconfig PATH` | Path to kubeconfig file | Auto-detect | No |
 | `--context NAME` | Kubernetes context to use | Current context | No |
 | `--cluster-name NAME` | Cluster name for registration | `worker-1` | No |
+| `--skip-postgresql` | Skip PostgreSQL installation | false | No |
+| `--skip-prometheus` | Skip Prometheus installation | false | No |
+| `--skip-gpu-operator` | Skip GPU Operator installation | false | No |
+| `--skip-controller` | Skip EGS Controller installation | false | No |
+| `--skip-ui` | Skip EGS UI installation | false | No |
+| `--skip-worker` | Skip EGS Worker installation | false | No |
 | `--help, -h` | Show help message | - | No |
 
 ---
 
 ## 📝 Usage Examples
 
-### Example 1: Basic Installation (Most Common)
+### Example 1: Basic Installation (Simplest)
 
 ```bash
+# Place egs-license.yaml in current directory
 cd /home/user/egs-install
 export KUBECONFIG=/home/user/.kube/config
-curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 ```
 
-### Example 2: Custom Cluster Name
+### Example 2: Custom License File Location
 
 ```bash
 export KUBECONFIG=/home/user/.kube/config
-curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --license-file /path/to/my-license.yaml
+```
+
+### Example 3: Skip Specific Components
+
+```bash
+# Skip PostgreSQL and Prometheus (use existing ones)
+export KUBECONFIG=/home/user/.kube/config
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus
+```
+
+### Example 4: Install Only GPU Operator
+
+```bash
+# Install only GPU Operator on existing cluster
+export KUBECONFIG=/home/user/.kube/config
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus \
+  --skip-controller --skip-ui --skip-worker
+```
+
+### Example 5: Custom Cluster Configuration
+
+```bash
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --license-file /path/to/license.yaml \
+  --kubeconfig ~/.kube/config \
+  --context my-cluster \
   --cluster-name production-cluster
-```
-
-### Example 3: Specify Kubeconfig and Context
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \
-  --license-file /path/to/my-license.yaml \
-  --kubeconfig ~/.kube/custom-config \
-  --context my-cluster-context
-```
-
-### Example 4: Custom License File Location
-
-```bash
-export KUBECONFIG=~/.kube/config
-curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \
-  --license-file /secure/location/egs-license.yaml
 ```
 
 ---
 
 ## 🎯 What Gets Installed
 
-### Installation Order
+The installation order and components depend on the skip parameters used. By default, all components are installed.
 
-1. **📜 EGS License** (Applied to `kubeslice-controller` namespace)
-2. **🗄️ PostgreSQL** (Namespace: `kt-postgresql`)
-3. **📊 Prometheus Stack** (Namespace: `egs-monitoring`)
-4. **🎮 GPU Operator** (Namespace: `egs-gpu-operator`) - *Only if GPU nodes are detected*
-5. **🎛️ EGS Controller** (Namespace: `kubeslice-controller`)
-6. **🌐 EGS UI** (Namespace: `kubeslice-controller`)
-7. **⚙️ EGS Worker** (Namespace: `kubeslice-system`)
+### Default Installation Order
+
+1. **📜 EGS License** (Applied to `kubeslice-controller` namespace) - *Only if Controller/UI/Worker are enabled*
+2. **🗄️ PostgreSQL** (Namespace: `kt-postgresql`) - *Skipped with `--skip-postgresql`*
+3. **📊 Prometheus Stack** (Namespace: `egs-monitoring`) - *Skipped with `--skip-prometheus`*
+4. **🎮 GPU Operator** (Namespace: `egs-gpu-operator`) - *Skipped with `--skip-gpu-operator` or auto-skipped on CPU-only clusters*
+5. **🎛️ EGS Controller** (Namespace: `kubeslice-controller`) - *Skipped with `--skip-controller`*
+6. **🌐 EGS UI** (Namespace: `kubeslice-controller`) - *Skipped with `--skip-ui`*
+7. **⚙️ EGS Worker** (Namespace: `kubeslice-system`) - *Skipped with `--skip-worker`*
 
 ### Service Types (Single-Cluster Optimized)
 
-- **Grafana**: `ClusterIP` (internal access only)
-- **Prometheus**: `ClusterIP` (internal access only)
-- **UI Proxy**: `LoadBalancer` (external access)
+- **Grafana**: `ClusterIP` (internal access only) - *Only created if Prometheus is installed*
+- **Prometheus**: `ClusterIP` (internal access only) - *Only created if Prometheus is installed*
+- **UI Proxy**: `LoadBalancer` (external access) - *Only created if UI is installed*
 
 ---
 
@@ -192,10 +196,10 @@ enable_custom_apps: false  # true if GPU nodes detected
 # Cloud Provider (Auto-Detected)
 cloudProvider: ""  # Empty for Linode, auto-filled for others
 
-# Components (All Enabled by Default)
-enable_install_controller: true
-enable_install_ui: true
-enable_install_worker: true
+# Components (Modified by skip parameters)
+enable_install_controller: true      # false if --skip-controller used
+enable_install_ui: true             # false if --skip-ui used
+enable_install_worker: true         # false if --skip-worker used
 enable_install_additional_apps: true
 ```
 
@@ -248,9 +252,9 @@ bash install-egs.sh --license-file egs-license.yaml
 
 ## 🔍 Accessing Your Installation
 
-### UI Access
+### UI Access (Only if UI is installed)
 
-After successful installation, you'll see:
+If you installed the EGS UI (not skipped with `--skip-ui`), you'll see:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -277,15 +281,17 @@ The installer displays your project access token. Copy and paste this token in t
 
 ### License File Not Found
 
-**Error**: `❌ ERROR: License file parameter is required!`
+**Error**: `❌ ERROR: License file not found at: egs-license.yaml`
 
 **Solution**:
 ```bash
-# Ensure you pass --license-file parameter
-curl -fsSL ... | bash -s -- --license-file egs-license.yaml
-
-# Verify license file exists
+# 1. Obtain EGS license from https://avesha.io/egs-registration
+# 2. Save it as 'egs-license.yaml' in your current directory
 ls -la egs-license.yaml
+
+# Or specify custom path
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --license-file /path/to/your/license.yaml
 ```
 
 ### Kubeconfig Not Accessible
@@ -348,7 +354,7 @@ rm egs-installer-config.yaml
 
 # 3. Run installer again
 export KUBECONFIG=/path/to/kubeconfig.yaml
-curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --license-file egs-license.yaml
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --license-file egs-license.yaml
 ```
 
 ### Update Single Component
@@ -589,7 +595,7 @@ cp /path/to/egs-license.yaml .
 
 # Run the installer
 export KUBECONFIG=~/.kube/config
-curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- --license-file egs-license.yaml
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --license-file egs-license.yaml
 ```
 
 ### 4. Network Requirements
@@ -649,6 +655,21 @@ curl ... | bash -s -- --license-file egs-license.yaml --cluster-name my-cluster
 1. Edit `egs-installer-config.yaml` with new settings
 2. Run: `bash egs-installer.sh --input-yaml egs-installer-config.yaml`
 
+### Q: Can I install only specific components?
+
+**A:** Yes! Use skip parameters to install only what you need:
+```bash
+# Install only Controller
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator \
+  --skip-ui --skip-worker
+
+# Install only Worker (skip everything else)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator \
+  --skip-controller --skip-ui
+```
+
 ---
 
 ## 📞 Support
@@ -682,4 +703,5 @@ If you see this message, your installation is complete:
 ---
 
 *Last Updated: November 2025*
+
 
