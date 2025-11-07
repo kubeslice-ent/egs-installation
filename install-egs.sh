@@ -304,40 +304,44 @@ else
     # Modify the copied config file with custom values
     print_info "Modifying configuration with custom settings..."
 
-    # Use yq to update the config values directly
-    yq -i ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" "$WORK_DIR/egs-installer-config.yaml"
-    yq -i ".global_kubecontext = \"$CURRENT_CONTEXT\"" "$WORK_DIR/egs-installer-config.yaml"
-    yq -i ".global_image_pull_secret.repository = \"$IMAGE_REGISTRY\"" "$WORK_DIR/egs-installer-config.yaml"
-    yq -i ".cluster_registration[0].cluster_name = \"$CLUSTER_NAME\"" "$WORK_DIR/egs-installer-config.yaml"
-    yq -i ".projects[0].name = \"$PROJECT_NAME\"" "$WORK_DIR/egs-installer-config.yaml"
-    yq -i ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" "$WORK_DIR/egs-installer-config.yaml"
+    # Use sed to update the config values directly
+    sed -i "s|global_kubeconfig: \"\"|global_kubeconfig: \"$KUBECONFIG_RELATIVE\"|" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|global_kubecontext: \"\"|global_kubecontext: \"$CURRENT_CONTEXT\"|" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|repository: \"https://index.docker.io/v1/\"|repository: \"$IMAGE_REGISTRY\"|" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|cluster_name: \"worker-1\"|cluster_name: \"$CLUSTER_NAME\"|" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|name: \"avesha\"|name: \"$PROJECT_NAME\"|" "$WORK_DIR/egs-installer-config.yaml"
+    sed -i "s|cloudProvider: \"\"|cloudProvider: \"$CLOUD_PROVIDER\"|" "$WORK_DIR/egs-installer-config.yaml"
 
-    # Update skip/installation flags
+    # Update skip/installation flags for additional apps
     if [ "$INSTALL_GPU_OPERATOR" = "false" ]; then
-        yq -i ".additional_apps[0].skip_installation = true" "$WORK_DIR/egs-installer-config.yaml"
-    else
-        yq -i ".additional_apps[0].skip_installation = false" "$WORK_DIR/egs-installer-config.yaml"
+        sed -i 's|skip_installation: false # Do not skip the installation of the GPU operator|skip_installation: true # Do not skip the installation of the GPU operator|' "$WORK_DIR/egs-installer-config.yaml"
     fi
 
     if [ "$INSTALL_PROMETHEUS" = "false" ]; then
-        yq -i ".additional_apps[1].skip_installation = true" "$WORK_DIR/egs-installer-config.yaml"
-    else
-        yq -i ".additional_apps[1].skip_installation = false" "$WORK_DIR/egs-installer-config.yaml"
+        sed -i 's|skip_installation: false # Do not skip the installation of Prometheus|skip_installation: true # Do not skip the installation of Prometheus|' "$WORK_DIR/egs-installer-config.yaml"
     fi
 
     if [ "$INSTALL_POSTGRESQL" = "false" ]; then
-        yq -i ".additional_apps[2].skip_installation = true" "$WORK_DIR/egs-installer-config.yaml"
-    else
-        yq -i ".additional_apps[2].skip_installation = false" "$WORK_DIR/egs-installer-config.yaml"
+        sed -i 's|skip_installation: false # Do not skip the installation of PostgreSQL|skip_installation: true # Do not skip the installation of PostgreSQL|' "$WORK_DIR/egs-installer-config.yaml"
     fi
 
     # Update enable flags
-    yq -i ".enable_install_controller = $([ "$INSTALL_CONTROLLER" = "true" ] && echo "true" || echo "false")" "$WORK_DIR/egs-installer-config.yaml"
-    yq -i ".enable_install_ui = $([ "$INSTALL_UI" = "true" ] && echo "true" || echo "false")" "$WORK_DIR/egs-installer-config.yaml"
-    yq -i ".enable_install_worker = $([ "$INSTALL_WORKER" = "true" ] && echo "true" || echo "false")" "$WORK_DIR/egs-installer-config.yaml"
+    if [ "$INSTALL_CONTROLLER" = "false" ]; then
+        sed -i 's|enable_install_controller: true|enable_install_controller: false|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    if [ "$INSTALL_UI" = "false" ]; then
+        sed -i 's|enable_install_ui: true|enable_install_ui: false|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    if [ "$INSTALL_WORKER" = "false" ]; then
+        sed -i 's|enable_install_worker: true|enable_install_worker: false|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
 
     # Update custom apps based on GPU detection
-    yq -i ".enable_custom_apps = $ENABLE_CUSTOM_APPS" "$WORK_DIR/egs-installer-config.yaml"
+    if [ "$ENABLE_CUSTOM_APPS" = "false" ]; then
+        sed -i 's|enable_custom_apps: true|enable_custom_apps: false|' "$WORK_DIR/egs-installer-config.yaml"
+    fi
 
     print_success "Configuration modified successfully"
 
