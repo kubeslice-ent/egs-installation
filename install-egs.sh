@@ -300,7 +300,47 @@ else
     # Set work directory to original directory
     WORK_DIR="$ORIGINAL_DIR"
     LOCAL_MODE=false
-    
+
+    # Modify the copied config file with custom values
+    print_info "Modifying configuration with custom settings..."
+
+    # Use yq to update the config values directly
+    yq -i ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" "$WORK_DIR/egs-installer-config.yaml"
+    yq -i ".global_kubecontext = \"$CURRENT_CONTEXT\"" "$WORK_DIR/egs-installer-config.yaml"
+    yq -i ".global_image_pull_secret.repository = \"$IMAGE_REGISTRY\"" "$WORK_DIR/egs-installer-config.yaml"
+    yq -i ".cluster_registration[0].cluster_name = \"$CLUSTER_NAME\"" "$WORK_DIR/egs-installer-config.yaml"
+    yq -i ".projects[0].name = \"$PROJECT_NAME\"" "$WORK_DIR/egs-installer-config.yaml"
+    yq -i ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" "$WORK_DIR/egs-installer-config.yaml"
+
+    # Update skip/installation flags
+    if [ "$INSTALL_GPU_OPERATOR" = "false" ]; then
+        yq -i ".additional_apps[0].skip_installation = true" "$WORK_DIR/egs-installer-config.yaml"
+    else
+        yq -i ".additional_apps[0].skip_installation = false" "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    if [ "$INSTALL_PROMETHEUS" = "false" ]; then
+        yq -i ".additional_apps[1].skip_installation = true" "$WORK_DIR/egs-installer-config.yaml"
+    else
+        yq -i ".additional_apps[1].skip_installation = false" "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    if [ "$INSTALL_POSTGRESQL" = "false" ]; then
+        yq -i ".additional_apps[2].skip_installation = true" "$WORK_DIR/egs-installer-config.yaml"
+    else
+        yq -i ".additional_apps[2].skip_installation = false" "$WORK_DIR/egs-installer-config.yaml"
+    fi
+
+    # Update enable flags
+    yq -i ".enable_install_controller = $([ "$INSTALL_CONTROLLER" = "true" ] && echo "true" || echo "false")" "$WORK_DIR/egs-installer-config.yaml"
+    yq -i ".enable_install_ui = $([ "$INSTALL_UI" = "true" ] && echo "true" || echo "false")" "$WORK_DIR/egs-installer-config.yaml"
+    yq -i ".enable_install_worker = $([ "$INSTALL_WORKER" = "true" ] && echo "true" || echo "false")" "$WORK_DIR/egs-installer-config.yaml"
+
+    # Update custom apps based on GPU detection
+    yq -i ".enable_custom_apps = $ENABLE_CUSTOM_APPS" "$WORK_DIR/egs-installer-config.yaml"
+
+    print_success "Configuration modified successfully"
+
     # Cleanup temp directory
     rm -rf "$TEMP_DIR"
     print_success "Setup complete in: $WORK_DIR"
@@ -378,44 +418,7 @@ if [ "$CLUSTER_NAME" != "worker-1" ] || [ "$INSTALL_PROMETHEUS" = "false" ] || [
     [ "$INSTALL_WORKER" = "false" ] && print_warning "  Skipping Worker"
 fi
 
-# Modify the existing config file with custom values
-
-# Use yq to update the config values directly
-yq -i ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" egs-installer-config.yaml
-yq -i ".global_kubecontext = \"$CURRENT_CONTEXT\"" egs-installer-config.yaml
-yq -i ".global_image_pull_secret.repository = \"$IMAGE_REGISTRY\"" egs-installer-config.yaml
-yq -i ".cluster_registration[0].cluster_name = \"$CLUSTER_NAME\"" egs-installer-config.yaml
-yq -i ".projects[0].name = \"$PROJECT_NAME\"" egs-installer-config.yaml
-yq -i ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" egs-installer-config.yaml
-
-# Update skip/installation flags
-if [ "$INSTALL_GPU_OPERATOR" = "false" ]; then
-    yq -i ".additional_apps[0].skip_installation = true" egs-installer-config.yaml
-else
-    yq -i ".additional_apps[0].skip_installation = false" egs-installer-config.yaml
-fi
-
-if [ "$INSTALL_PROMETHEUS" = "false" ]; then
-    yq -i ".additional_apps[1].skip_installation = true" egs-installer-config.yaml
-else
-    yq -i ".additional_apps[1].skip_installation = false" egs-installer-config.yaml
-fi
-
-if [ "$INSTALL_POSTGRESQL" = "false" ]; then
-    yq -i ".additional_apps[2].skip_installation = true" egs-installer-config.yaml
-else
-    yq -i ".additional_apps[2].skip_installation = false" egs-installer-config.yaml
-fi
-
-# Update enable flags
-yq -i ".enable_install_controller = $([ "$INSTALL_CONTROLLER" = "true" ] && echo "true" || echo "false")" egs-installer-config.yaml
-yq -i ".enable_install_ui = $([ "$INSTALL_UI" = "true" ] && echo "true" || echo "false")" egs-installer-config.yaml
-yq -i ".enable_install_worker = $([ "$INSTALL_WORKER" = "true" ] && echo "true" || echo "false")" egs-installer-config.yaml
-
-# Update custom apps based on GPU detection
-yq -i ".enable_custom_apps = $ENABLE_CUSTOM_APPS" egs-installer-config.yaml
-
-print_success "Generated egs-installer-config.yaml"
+# Config file will be modified after copying from repo (in curl mode)
 
 # Always just generate config
 print_success "Configuration generated successfully!"
