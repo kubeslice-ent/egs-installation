@@ -17,7 +17,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🌐 **📚 For the complete EGS Installer documentation website, visit:** [**🚀 EGS Installer Documentation**](https://repo.egs.avesha.io/) **🚀**  
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
 - 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
-- ⚡ **For Quick Installation (Single-Cluster)**, please see the [**Quick Install Guide (Curl-Friendly)**](docs/Quick-Install-README.md) 🚀  
+- ⚡ **For Quick Installation (Single-Cluster)**, please see the [**Quick Install Guide**](docs/Quick-Install-README.md) 🚀  
 - 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
 - ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README.md) 🔍  
 - 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](docs/Slice-Admin-Token-README.md) 🔒  
@@ -34,6 +34,55 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 ---
 
 ## Getting Started
+
+### 🚀 Quick Installer (Recommended for Single-Cluster)
+
+For single-cluster installations, you can use the **EGS Quick Installer** (`install-egs.sh`) which provides a simplified, one-command installation experience:
+
+**Key Features:**
+- ✅ **One-Command Installation**: Install all EGS components with a single command
+- ✅ **Auto-Detection**: Automatically detects GPU nodes and cloud provider
+- ✅ **Smart Dependencies**: Validates component dependencies before installation
+- ✅ **Upgrade Support**: Automatically upgrades existing components when detected
+- ✅ **Flexible**: Skip individual components using `--skip-*` flags
+
+**Basic Usage:**
+```bash
+# Download and run the installer
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
+
+# Or with custom license file
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --license-file /path/to/license.yaml
+
+# Skip specific components
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --skip-gpu-operator --skip-prometheus
+```
+
+**Available Options:**
+- `--license-file PATH`: Path to EGS license file (default: `egs-license.yaml` in current directory)
+- `--kubeconfig PATH`: Path to kubeconfig file (default: auto-detect)
+- `--context NAME`: Kubernetes context to use (default: current-context)
+- `--skip-postgresql`: Skip PostgreSQL installation
+- `--skip-prometheus`: Skip Prometheus installation
+- `--skip-gpu-operator`: Skip GPU Operator installation
+- `--skip-controller`: Skip EGS Controller installation
+- `--skip-ui`: Skip EGS UI installation
+- `--skip-worker`: Skip EGS Worker installation
+
+**Dependency Management:**
+The Quick Installer automatically handles component dependencies:
+- **Controller** requires **PostgreSQL** (checks if already installed for upgrades)
+- **Worker** requires both **Controller** and **UI** (checks if already installed for upgrades)
+- **GPU Operator** is not auto-skipped even if no GPU nodes are detected (user can decide)
+
+**Upgrade Support:**
+The installer automatically detects existing installations and performs upgrades:
+- If a component is already installed, it will be upgraded instead of installed
+- You can skip dependencies if they're already installed (e.g., `--skip-controller --skip-ui` to upgrade only Worker)
+
+**For detailed Quick Installer documentation, see [Quick Install Guide](docs/Quick-Install-README.md)**
+
+---
 
 ### Prerequisites
 
@@ -767,6 +816,16 @@ cluster_registration:
 
 After completing all configuration changes, run the installation script to deploy EGS:
 
+**Option A: Using Quick Installer (Recommended for Single-Cluster)**
+```bash
+# Download and run the Quick Installer
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
+
+# Or if you have the script locally
+./install-egs.sh
+```
+
+**Option B: Using Full Installer (For Multi-Cluster or Advanced Configurations)**
 ```bash
 ./egs-installer.sh --input-yaml egs-installer-config.yaml
 ```
@@ -774,8 +833,12 @@ After completing all configuration changes, run the installation script to deplo
 **📌 IMPORTANT NOTES:**
 
 - **🔄 Configuration Changes:** If you make any changes to the configuration file after the initial installation, you must re-run the installation script to apply the changes.
-- **⬆️ Upgrades:** For EGS upgrades or configuration modifications, update your `egs-installer-config.yaml` file and re-run the installation script. The installer will handle upgrades automatically.
+- **⬆️ Upgrades:** For EGS upgrades or configuration modifications, update your `egs-installer-config.yaml` file and re-run the installation script. The installer will handle upgrades automatically by detecting existing Helm releases.
 - **✅ Verification:** Always verify the installation after making configuration changes to ensure all components are properly deployed.
+- **🔗 Component Dependencies:** 
+  - Controller requires PostgreSQL (will check if already installed for upgrade scenarios)
+  - Worker requires both Controller and UI (will check if already installed for upgrade scenarios)
+  - The installer validates these dependencies before proceeding
 
 ---
 
