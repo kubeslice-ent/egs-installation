@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# EGS Quick Installer (Curl-Friendly)
+# EGS Quick Installer
 # One-command installation for single-cluster EGS
-# Auto-installs: PostgreSQL, Prometheus, GPU Operator, Controller, UI, Worker
-# Usage:
+# Usage: 
 #   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
-#   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --license-file /path/to/license.yaml
-#   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --skip-postgresql --skip-prometheus
+#   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --license-file egs-license.yaml
+#   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --skip-postgresql --skip-gpu-operator
 
 set -e
 
@@ -20,17 +19,20 @@ NC='\033[0m'
 # Default values
 KUBECONFIG_PATH=""
 KUBE_CONTEXT=""
-EGS_VERSION=""
-PROJECT_NAME="avesha"  # Fixed project name
-CLUSTER_NAME="worker-1"  # Default cluster name matching egs-installer-config.yaml
+PROJECT_NAME="avesha"
+CLUSTER_NAME="worker-1"
 IMAGE_REGISTRY="harbor.saas1.smart-scaler.io/avesha/aveshasystems"
-LICENSE_FILE=""  # Path to license file (optional, defaults to egs-license.yaml in current directory)
-INSTALL_PROMETHEUS="true"
-INSTALL_GPU_OPERATOR="true"
-INSTALL_POSTGRESQL="true"
-INSTALL_CONTROLLER="true"
-INSTALL_UI="true"
-INSTALL_WORKER="true"
+LICENSE_FILE=""  # Defaults to egs-license.yaml in current directory
+SKIP_POSTGRESQL="false"
+SKIP_PROMETHEUS="false"
+SKIP_GPU_OPERATOR="false"
+SKIP_CONTROLLER="false"
+SKIP_UI="false"
+SKIP_WORKER="false"
+
+# GitHub repository details
+EGS_REPO="https://github.com/kubeslice-ent/egs-installation.git"
+EGS_BRANCH="main"
 
 # Function to print colored messages
 print_info() {
@@ -54,13 +56,13 @@ show_help() {
     cat << EOF
 EGS Quick Installer
 
-Auto-generates config and installs EGS with one command
+One-command installation for EGS (Enterprise GPU Scheduler)
 
 Usage:
-  curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- [OPTIONS]
+  curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash [OPTIONS]
 
 Options:
-  --license-file PATH        Path to EGS license file (optional, default: egs-license.yaml in current directory)
+  --license-file PATH        Path to EGS license file (default: egs-license.yaml in current directory)
   --kubeconfig PATH          Path to kubeconfig file (default: auto-detect)
   --context NAME             Kubernetes context to use (default: current-context)
   --cluster-name NAME        Cluster name (default: worker-1)
@@ -76,31 +78,59 @@ Examples:
   # Simplest - Install EGS with license file in current directory
   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 
-  # Specify custom license file location
+  # Specify license file path
   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
-    --license-file /path/to/my-license.yaml
+    --license-file /path/to/egs-license.yaml
 
   # Skip specific components
   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
-    --skip-postgresql --skip-prometheus
+    --skip-postgresql --skip-gpu-operator
 
-  # Install only GPU Operator
+  # Install only Controller and UI (skip prerequisites and worker)
   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
-    --skip-postgresql --skip-prometheus --skip-controller --skip-ui --skip-worker
-
-  # Custom cluster configuration
-  curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
-    --cluster-name prod-cluster --kubeconfig ~/.kube/config --context prod-context
+    --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-worker
 
 Notes:
-  - License file defaults to 'egs-license.yaml' in current directory
-  - Automatically installs all components unless explicitly skipped
-  - Installation order: License → PostgreSQL → Prometheus → GPU Operator → Controller → UI → Worker
-  - Takes 5-15 minutes depending on components selected
-  - For license setup, see: docs/EGS-License-Setup.md
+  - License file defaults to 'egs-license.yaml' in current directory if not specified
+  - All components are installed by default unless explicitly skipped
+  - Installation order: License → Prerequisites → Controller → UI → Worker
+  - Takes 10-15 minutes for complete installation
 
 EOF
     exit 0
+}
+
+# Function to show license generation steps
+show_license_steps() {
+    cat << EOF
+
+📋 To generate your EGS license file, follow these steps:
+
+1. Navigate to the EGS Registration page:
+   https://avesha.io/egs-registration
+
+2. Complete the registration form with:
+   - Your full name
+   - Company name
+   - Title/Position/Role
+   - Work email
+   - Cluster fingerprint (see step 3)
+
+3. Generate your cluster fingerprint:
+   kubectl get namespace kube-system -o=jsonpath='{.metadata.creationTimestamp}{.metadata.uid}{"\n"}'
+
+4. After registration, you will receive the license file via email
+
+5. Save the license file as 'egs-license.yaml' in your current directory:
+   # Copy the license content to egs-license.yaml
+   # Or download the file and place it in the current directory
+
+6. Run the installer again:
+   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
+
+For detailed instructions, see: https://docs.avesha.io/documentation/enterprise-egs
+
+EOF
 }
 
 # Parse command line arguments
@@ -112,10 +142,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --context)
             KUBE_CONTEXT="$2"
-            shift 2
-            ;;
-        --version)
-            EGS_VERSION="$2"
             shift 2
             ;;
         --cluster-name)
@@ -130,28 +156,28 @@ while [[ $# -gt 0 ]]; do
             IMAGE_REGISTRY="$2"
             shift 2
             ;;
+        --skip-postgresql)
+            SKIP_POSTGRESQL="true"
+            shift
+            ;;
         --skip-prometheus)
-            INSTALL_PROMETHEUS="false"
+            SKIP_PROMETHEUS="true"
             shift
             ;;
         --skip-gpu-operator)
-            INSTALL_GPU_OPERATOR="false"
-            shift
-            ;;
-        --skip-postgresql)
-            INSTALL_POSTGRESQL="false"
+            SKIP_GPU_OPERATOR="true"
             shift
             ;;
         --skip-controller)
-            INSTALL_CONTROLLER="false"
+            SKIP_CONTROLLER="true"
             shift
             ;;
         --skip-ui)
-            INSTALL_UI="false"
+            SKIP_UI="true"
             shift
             ;;
         --skip-worker)
-            INSTALL_WORKER="false"
+            SKIP_WORKER="true"
             shift
             ;;
         --help|-h)
@@ -171,17 +197,6 @@ echo "   🚀 EGS Quick Installer"
 echo "   Enterprise GPU Scheduler"
 echo "=============================================="
 echo ""
-
-# Show configuration
-if [ -n "$KUBECONFIG_PATH" ]; then
-    print_info "Using kubeconfig: $KUBECONFIG_PATH"
-fi
-if [ -n "$KUBE_CONTEXT" ]; then
-    print_info "Using context: $KUBE_CONTEXT"
-fi
-if [ -n "$EGS_VERSION" ]; then
-    print_info "Installing version: $EGS_VERSION"
-fi
 
 # Check if git is installed
 if ! command -v git &> /dev/null; then
@@ -226,97 +241,102 @@ fi
 
 print_success "Connected to cluster: $CURRENT_CONTEXT"
 
-# Handle license file - default to egs-license.yaml in current directory if not specified
-if [ -z "$LICENSE_FILE" ]; then
-    LICENSE_FILE="egs-license.yaml"
-    print_info "Using default license file: $LICENSE_FILE"
-fi
-
-# Resolve license file to absolute path BEFORE changing directories
-if [[ "$LICENSE_FILE" != /* ]]; then
-    LICENSE_FILE="$(cd "$(dirname "$LICENSE_FILE")" 2>/dev/null && pwd)/$(basename "$LICENSE_FILE")"
-fi
-
-# Verify license file exists NOW (before changing directories)
-if [ ! -f "$LICENSE_FILE" ]; then
-        print_error "❌ ERROR: License file not found at: $LICENSE_FILE"
-        print_error ""
-        print_error "To generate an EGS license file:"
-        print_error "1. Visit: https://avesha.io/egs-registration"
-        print_error "2. Complete the registration process"
-        print_error "3. Download the license file and save it as 'egs-license.yaml' in the current directory"
-        print_error "4. Or specify the path using: --license-file /path/to/your/license.yaml"
-        print_error ""
-        print_error "Example usage:"
-        print_error "  curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash"
-        print_error ""
-        print_error "For detailed license setup instructions, see: docs/EGS-License-Setup.md"
-    exit 1
-fi
-
-print_info "License file found: $LICENSE_FILE"
-
-# Detect if running locally or via curl
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
-
 # Save original directory (where user ran curl from)
 ORIGINAL_DIR="$(pwd)"
 
-# Check if we're already in the egs-installation directory (local mode)
-if [ -f "$SCRIPT_DIR/egs-installer.sh" ] && [ "$SCRIPT_NAME" = "install-egs.sh" ]; then
-    # Local mode - use current directory
-    print_info "Running in local mode (using current directory)"
-    WORK_DIR="$SCRIPT_DIR"
-    LOCAL_MODE=true
-    TEMP_DIR=""
+# Determine license file path
+if [ -z "$LICENSE_FILE" ]; then
+    # Default to egs-license.yaml in current directory
+    LICENSE_FILE="$ORIGINAL_DIR/egs-license.yaml"
+    print_info "License file not specified, using default: egs-license.yaml"
 else
-    # Curl mode - work in original directory, download scripts to temp
-    TEMP_DIR=$(mktemp -d)
-    print_info "Downloading EGS installer to temporary location..."
-    
-    # Clone the repository to temp
-    cd "$TEMP_DIR"
-    
-    # Clone the main branch
-    BRANCH="${EGS_BRANCH:-main}"
-    REPO="${EGS_REPO:-https://github.com/kubeslice-ent/egs-installation.git}"
+    # If relative path, convert to absolute path from current directory
+    if [[ "$LICENSE_FILE" != /* ]]; then
+        LICENSE_FILE="$ORIGINAL_DIR/$LICENSE_FILE"
+    fi
+fi
 
-    if ! git clone --branch "$BRANCH" "$REPO" egs-installation 2>/dev/null; then
-        print_error "Failed to download EGS installer from branch: $BRANCH"
+# Verify license file exists
+if [ ! -f "$LICENSE_FILE" ]; then
+    print_error "❌ ERROR: License file not found at: $LICENSE_FILE"
+    print_error ""
+    show_license_steps
+    exit 1
+fi
+
+print_success "License file found: $LICENSE_FILE"
+
+# Clone repository internally
+print_info "Downloading EGS installer..."
+TEMP_DIR=$(mktemp -d)
+cd "$TEMP_DIR"
+
+if ! git clone --depth 1 --branch "$EGS_BRANCH" "$EGS_REPO" egs-installation 2>/dev/null; then
+    print_error "Failed to download EGS installer from branch: $EGS_BRANCH"
+    print_info "Trying main branch..."
+    EGS_BRANCH="main"
+    if ! git clone --depth 1 --branch "$EGS_BRANCH" "$EGS_REPO" egs-installation; then
+        print_error "Failed to download EGS installer"
+        rm -rf "$TEMP_DIR"
         exit 1
     fi
-
-    print_success "Downloaded EGS installer"
-
-    # The repo is already cloned to $TEMP_DIR/egs-installation
-    # Set work directory to the cloned repo
-    WORK_DIR="$TEMP_DIR/egs-installation"
-    LOCAL_MODE=false
-
-    print_success "Setup complete in: $WORK_DIR"
 fi
 
-# Set cleanup trap for temp directory
-if [ "$LOCAL_MODE" = "false" ]; then
-    trap 'rm -rf "$TEMP_DIR"' EXIT
+print_success "Downloaded EGS installer"
+
+# Copy necessary files to original directory
+print_info "Setting up installation in current directory..."
+cp -r "$TEMP_DIR/egs-installation/charts" "$ORIGINAL_DIR/" 2>/dev/null || {
+    print_error "Failed to copy charts directory"
+    rm -rf "$TEMP_DIR"
+    exit 1
+}
+cp "$TEMP_DIR/egs-installation/egs-installer.sh" "$ORIGINAL_DIR/"
+cp "$TEMP_DIR/egs-installation/egs-install-prerequisites.sh" "$ORIGINAL_DIR/"
+cp "$TEMP_DIR/egs-installation/egs-uninstall.sh" "$ORIGINAL_DIR/" 2>/dev/null || true
+
+# Use egs-installer-config.yaml from repo as source of truth
+if [ ! -f "$TEMP_DIR/egs-installation/egs-installer-config.yaml" ]; then
+    print_error "egs-installer-config.yaml not found in repository"
+    rm -rf "$TEMP_DIR"
+    exit 1
 fi
 
-# Change to work directory
-cd "$WORK_DIR"
+# Copy base config from repo
+cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+
+# Cleanup temp directory
+rm -rf "$TEMP_DIR"
+print_success "Setup complete in: $ORIGINAL_DIR"
+
+# Change to original directory
+cd "$ORIGINAL_DIR"
 
 # Make scripts executable
-chmod +x egs-installer.sh 2>/dev/null || true
+chmod +x egs-installer.sh egs-install-prerequisites.sh 2>/dev/null || true
+
+# Check if yq is installed (required for config updates)
+if ! command -v yq &> /dev/null; then
+    print_error "yq is not installed. Please install yq (v4.44.2+) first."
+    exit 1
+fi
+
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    print_error "jq is not installed. Please install jq (v1.6+) first."
+    exit 1
+fi
 
 # Detect GPU nodes and cloud provider
 print_info "Detecting cluster capabilities..."
-GPU_NODES=$(kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l || echo "0")
+GPU_NODES=$(kubectl get nodes -o json 2>/dev/null | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l || echo "0")
 if [ "$GPU_NODES" -gt 0 ]; then
     print_success "Detected $GPU_NODES GPU node(s)"
     ENABLE_CUSTOM_APPS="true"
 else
-    print_warning "No GPU nodes detected. Skipping GPU Operator installation (CPU-only cluster)."
+    print_warning "No GPU nodes detected."
     ENABLE_CUSTOM_APPS="false"
+    # Don't automatically skip GPU Operator - let user decide via --skip-gpu-operator flag
 fi
 
 # Detect cloud provider
@@ -333,138 +353,133 @@ else
     CLOUD_PROVIDER=""
 fi
 
-# Generate egs-installer-config.yaml
-print_info "Generating EGS configuration..."
-
 # Get kubeconfig details
-# Use the actual kubeconfig filename if in same directory, otherwise copy to work directory
 if [ -f "$KUBECONFIG" ]; then
     KUBECONFIG_FULLPATH=$(realpath "$KUBECONFIG")
-    WORK_DIR_FULLPATH=$(realpath "$WORK_DIR")
+    ORIGINAL_DIR_FULLPATH=$(realpath "$ORIGINAL_DIR")
     KUBECONFIG_DIR=$(dirname "$KUBECONFIG_FULLPATH")
-
-    if [ "$KUBECONFIG_DIR" = "$WORK_DIR_FULLPATH" ]; then
+    
+    if [ "$KUBECONFIG_DIR" = "$ORIGINAL_DIR_FULLPATH" ]; then
         # Kubeconfig is in the same directory, use its basename
         KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
     else
         # Kubeconfig is elsewhere, copy it to work directory
         KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
-        if ! cp "$KUBECONFIG" "$WORK_DIR/$KUBECONFIG_RELATIVE"; then
+        if ! cp "$KUBECONFIG" "$ORIGINAL_DIR/$KUBECONFIG_RELATIVE"; then
             print_error "Failed to copy kubeconfig to work directory"
             exit 1
         fi
         print_success "Copied kubeconfig to work directory: $KUBECONFIG_RELATIVE"
         # Update KUBECONFIG environment variable to point to the copied file
-        export KUBECONFIG="$WORK_DIR/$KUBECONFIG_RELATIVE"
+        export KUBECONFIG="$ORIGINAL_DIR/$KUBECONFIG_RELATIVE"
     fi
 else
     # Fallback
     KUBECONFIG_RELATIVE="kubeconfig"
 fi
 
-# Modify the config file with custom values
-if [ "$LOCAL_MODE" = "true" ] || [ "$LOCAL_MODE" = "false" ]; then
-    print_info "Modifying configuration with custom settings..."
+# Update egs-installer-config.yaml with detected values
+print_info "Updating EGS configuration..."
 
-    # Use sed to update the config values directly
-    sed -i "s|global_kubeconfig: \".*\"|global_kubeconfig: \"$KUBECONFIG_RELATIVE\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|global_kubecontext: \".*\"|global_kubecontext: \"$CURRENT_CONTEXT\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|repository: \".*\"|repository: \"$IMAGE_REGISTRY\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|cluster_name: \".*\"|cluster_name: \"$CLUSTER_NAME\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|name: \".*\"|name: \"$PROJECT_NAME\"|g" "$WORK_DIR/egs-installer-config.yaml"
-    sed -i "s|cloudProvider: \".*\"|cloudProvider: \"$CLOUD_PROVIDER\"|g" "$WORK_DIR/egs-installer-config.yaml"
+# Update kubeconfig and context
+yq eval ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+yq eval ".global_kubecontext = \"$CURRENT_CONTEXT\"" -i egs-installer-config.yaml
 
-    # Update skip/installation flags for additional apps
-    if [ "$INSTALL_GPU_OPERATOR" = "false" ]; then
-        sed -i 's|skip_installation: false # Do not skip the installation of the GPU operator|skip_installation: true # Do not skip the installation of the GPU operator|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
+# Update cluster name
+yq eval ".kubeslice_worker_egs[0].name = \"$CLUSTER_NAME\"" -i egs-installer-config.yaml
+yq eval ".cluster_registration[0].cluster_name = \"$CLUSTER_NAME\"" -i egs-installer-config.yaml
 
-    if [ "$INSTALL_PROMETHEUS" = "false" ]; then
-        sed -i 's|skip_installation: false # Do not skip the installation of Prometheus|skip_installation: true # Do not skip the installation of Prometheus|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
+# Update cloud provider
+yq eval ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" -i egs-installer-config.yaml
 
-    if [ "$INSTALL_POSTGRESQL" = "false" ]; then
-        sed -i 's|skip_installation: false # Do not skip the installation of PostgreSQL|skip_installation: true # Do not skip the installation of PostgreSQL|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
+# Update image registry
+yq eval ".kubeslice_controller_egs.inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
+yq eval ".kubeslice_ui_egs.inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
+yq eval ".kubeslice_worker_egs[0].inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
 
-    # Update enable flags
-    if [ "$INSTALL_CONTROLLER" = "false" ]; then
-        sed -i 's|enable_install_controller: true|enable_install_controller: false|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
+# Update enable_custom_apps
+yq eval ".enable_custom_apps = $ENABLE_CUSTOM_APPS" -i egs-installer-config.yaml
 
-    if [ "$INSTALL_UI" = "false" ]; then
-        sed -i 's|enable_install_ui: true|enable_install_ui: false|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    if [ "$INSTALL_WORKER" = "false" ]; then
-        sed -i 's|enable_install_worker: true|enable_install_worker: false|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    # Update custom apps based on GPU detection
-    if [ "$ENABLE_CUSTOM_APPS" = "false" ]; then
-        sed -i 's|enable_custom_apps: true|enable_custom_apps: false|' "$WORK_DIR/egs-installer-config.yaml"
-    fi
-
-    print_success "Configuration modified successfully"
+# Update skip flags for additional apps (PostgreSQL, Prometheus, GPU Operator)
+# These are installed via egs-install-prerequisites.sh
+if [ "$SKIP_POSTGRESQL" = "true" ]; then
+    yq eval '(.additional_apps[] | select(.name == "postgresql") | .skip_installation) = true' -i egs-installer-config.yaml
+    print_warning "PostgreSQL installation will be skipped"
 fi
 
-# Show configuration being used
-if [ "$CLUSTER_NAME" != "worker-1" ] || [ "$INSTALL_PROMETHEUS" = "false" ] || [ "$INSTALL_GPU_OPERATOR" = "false" ] || [ "$INSTALL_POSTGRESQL" = "false" ] || [ "$INSTALL_CONTROLLER" = "false" ] || [ "$INSTALL_UI" = "false" ] || [ "$INSTALL_WORKER" = "false" ]; then
-    print_info "Using custom configuration:"
-    [ "$CLUSTER_NAME" != "worker-1" ] && print_info "  Cluster: $CLUSTER_NAME"
-    [ "$INSTALL_PROMETHEUS" = "false" ] && print_warning "  Skipping Prometheus"
-    [ "$INSTALL_GPU_OPERATOR" = "false" ] && print_warning "  Skipping GPU Operator"
-    [ "$INSTALL_POSTGRESQL" = "false" ] && print_warning "  Skipping PostgreSQL"
-    [ "$INSTALL_CONTROLLER" = "false" ] && print_warning "  Skipping Controller"
-    [ "$INSTALL_UI" = "false" ] && print_warning "  Skipping UI"
-    [ "$INSTALL_WORKER" = "false" ] && print_warning "  Skipping Worker"
+if [ "$SKIP_PROMETHEUS" = "true" ]; then
+    yq eval '(.additional_apps[] | select(.name == "prometheus") | .skip_installation) = true' -i egs-installer-config.yaml
+    print_warning "Prometheus installation will be skipped"
 fi
 
-# Config file will be modified after copying from repo (in curl mode)
+if [ "$SKIP_GPU_OPERATOR" = "true" ]; then
+    yq eval '(.additional_apps[] | select(.name == "gpu-operator") | .skip_installation) = true' -i egs-installer-config.yaml
+    print_warning "GPU Operator installation will be skipped"
+fi
 
-# Always just generate config
-print_success "Configuration generated successfully!"
+# Update skip flags for EGS components (Controller, UI, Worker)
+# These are installed via egs-installer.sh
+if [ "$SKIP_CONTROLLER" = "true" ]; then
+    yq eval ".kubeslice_controller_egs.skip_installation = true" -i egs-installer-config.yaml
+    yq eval ".enable_install_controller = false" -i egs-installer-config.yaml
+    print_warning "EGS Controller installation will be skipped"
+fi
+
+if [ "$SKIP_UI" = "true" ]; then
+    yq eval ".kubeslice_ui_egs.skip_installation = true" -i egs-installer-config.yaml
+    yq eval ".enable_install_ui = false" -i egs-installer-config.yaml
+    print_warning "EGS UI installation will be skipped"
+fi
+
+if [ "$SKIP_WORKER" = "true" ]; then
+    yq eval ".kubeslice_worker_egs[0].skip_installation = true" -i egs-installer-config.yaml
+    yq eval ".enable_install_worker = false" -i egs-installer-config.yaml
+    print_warning "EGS Worker installation will be skipped"
+fi
+
+print_success "Configuration updated successfully!"
 echo ""
 
-# Check if we should auto-install (both curl and local mode)
-print_info "📁 Configuration saved to: $WORK_DIR/egs-installer-config.yaml"
+# Copy license file to current directory if needed
+LICENSE_BASENAME=$(basename "$LICENSE_FILE")
+if [ "$LICENSE_FILE" != "$ORIGINAL_DIR/$LICENSE_BASENAME" ]; then
+    if ! cp "$LICENSE_FILE" "$ORIGINAL_DIR/$LICENSE_BASENAME"; then
+        print_error "Failed to copy license file to current directory"
+        exit 1
+    fi
+    LICENSE_FILE="$ORIGINAL_DIR/$LICENSE_BASENAME"
+    print_success "Copied license file to current directory"
+fi
+
+# Show configuration summary
+print_info "📁 Configuration saved to: $ORIGINAL_DIR/egs-installer-config.yaml"
 echo ""
 print_info "🚀 Starting automated installation..."
 echo ""
 
-# Disable cleanup trap during installation
-trap - EXIT
+# Step 0: Apply EGS license
+print_info "📜 Step 0/3: Applying EGS license..."
 
-# Step 0: Check for and apply EGS license (only if controller, UI, or worker are being installed)
-if [ "$INSTALL_CONTROLLER" = "true" ] || [ "$INSTALL_UI" = "true" ] || [ "$INSTALL_WORKER" = "true" ]; then
-    print_info "📜 Step 0/3: Applying EGS license..."
+print_success "Using license file: $LICENSE_FILE"
 
-    # License file handling is done earlier in the script
+print_info "Applying EGS license..."
+echo ""
 
-    print_info "Applying EGS license..."
+# Create namespace if it doesn't exist
+kubectl create namespace kubeslice-controller --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
+
+if kubectl apply -f "$LICENSE_FILE" -n kubeslice-controller; then
+    print_success "License applied successfully!"
     echo ""
 else
-    print_info "📜 Skipping license application (no EGS components selected for installation)..."
+    print_warning "License application failed or already exists. Continuing..."
     echo ""
 fi
 
-# Create namespace and apply license only if controller, UI, or worker are being installed
-if [ "$INSTALL_CONTROLLER" = "true" ] || [ "$INSTALL_UI" = "true" ] || [ "$INSTALL_WORKER" = "true" ]; then
-    # Create namespace if it doesn't exist
-    kubectl create namespace kubeslice-controller --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
-
-    if kubectl apply -f "$LICENSE_FILE" -n kubeslice-controller; then
-        print_success "License applied successfully!"
-        echo ""
-    else
-        print_warning "License application failed or already exists. Continuing..."
-        echo ""
-    fi
-fi
-
-# Step 1: Install prerequisites (only if any are enabled)
-if [ "$INSTALL_POSTGRESQL" = "true" ] || [ "$INSTALL_PROMETHEUS" = "true" ] || [ "$INSTALL_GPU_OPERATOR" = "true" ]; then
-    print_info "📦 Step 1/2: Installing prerequisites (PostgreSQL, Prometheus, GPU Operator)..."
+# Step 1: Install prerequisites (PostgreSQL, Prometheus, GPU Operator)
+# Only run if at least one is not skipped
+if [ "$SKIP_POSTGRESQL" = "false" ] || [ "$SKIP_PROMETHEUS" = "false" ] || [ "$SKIP_GPU_OPERATOR" = "false" ]; then
+    print_info "📦 Step 1/3: Installing prerequisites (PostgreSQL, Prometheus, GPU Operator)..."
     echo ""
     if ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml; then
         print_success "Prerequisites installed successfully!"
@@ -474,23 +489,73 @@ if [ "$INSTALL_POSTGRESQL" = "true" ] || [ "$INSTALL_PROMETHEUS" = "true" ] || [
         exit 1
     fi
 else
-    print_info "📦 Skipping prerequisites installation (none selected)..."
+    print_info "📦 Step 1/3: Skipping prerequisites (all skipped)"
     echo ""
 fi
 
-# Step 2: Install EGS components (only if any are enabled)
-if [ "$INSTALL_CONTROLLER" = "true" ] || [ "$INSTALL_UI" = "true" ] || [ "$INSTALL_WORKER" = "true" ]; then
-    print_info "🚀 Step 2/2: Installing EGS components (Controller, UI, Worker)..."
+# Step 2: Install EGS components (Controller, UI, Worker)
+# Check if Controller is being installed without PostgreSQL (not allowed)
+# But first check if PostgreSQL is already installed in the cluster
+if [ "$SKIP_CONTROLLER" = "false" ] && [ "$SKIP_POSTGRESQL" = "true" ]; then
+    # Check if PostgreSQL is already installed
+    POSTGRESQL_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "postgresql|kt-postgresql" | wc -l || echo "0")
+    if [ "$POSTGRESQL_INSTALLED" -eq 0 ]; then
+        print_error "❌ ERROR: Controller installation requires PostgreSQL to be installed."
+        print_error "Please install PostgreSQL first, or use --skip-controller to skip Controller installation."
+        print_error "Controller needs PostgreSQL for its database."
+        exit 1
+    else
+        print_info "ℹ️  PostgreSQL is already installed in the cluster. Proceeding with Controller installation."
+    fi
+fi
+
+# Check if Worker is being installed without Controller (not allowed)
+# But first check if Controller is already installed (for upgrade scenarios)
+if [ "$SKIP_WORKER" = "false" ] && [ "$SKIP_CONTROLLER" = "true" ]; then
+    # Check if Controller is already installed
+    CONTROLLER_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "egs-controller|kubeslice-controller" | wc -l || echo "0")
+    if [ "$CONTROLLER_INSTALLED" -eq 0 ]; then
+        print_error "❌ ERROR: Worker installation requires Controller to be installed."
+        print_error "Please install Controller first, or use --skip-worker to skip Worker installation."
+        print_error "Worker needs Controller CRDs and project registration to function."
+        exit 1
+    else
+        print_info "ℹ️  Controller is already installed in the cluster. Proceeding with Worker installation/upgrade."
+    fi
+fi
+
+# Check if Worker is being installed without UI (not allowed)
+# But first check if UI is already installed (for upgrade scenarios)
+if [ "$SKIP_WORKER" = "false" ] && [ "$SKIP_UI" = "true" ]; then
+    # Check if UI is already installed
+    UI_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "egs-ui|kubeslice-ui" | wc -l || echo "0")
+    if [ "$UI_INSTALLED" -eq 0 ]; then
+        print_error "❌ ERROR: Worker installation requires UI to be installed."
+        print_error "Please install UI first, or use --skip-worker to skip Worker installation."
+        print_error "Worker needs UI API gateway endpoint for egs-agent to function."
+        exit 1
+    else
+        print_info "ℹ️  UI is already installed in the cluster. Proceeding with Worker installation/upgrade."
+    fi
+fi
+
+# Only run if at least one is not skipped
+if [ "$SKIP_CONTROLLER" = "false" ] || [ "$SKIP_UI" = "false" ] || [ "$SKIP_WORKER" = "false" ]; then
+    print_info "📦 Step 2/3: Installing EGS components (Controller, UI, Worker)..."
     echo ""
     if ./egs-installer.sh --input-yaml egs-installer-config.yaml; then
         print_success "✅ EGS installation completed successfully!"
+        echo ""
+        print_info "📁 Installation files are in: $ORIGINAL_DIR"
+        print_info "📋 Configuration file: $ORIGINAL_DIR/egs-installer-config.yaml"
         exit 0
     else
         print_error "EGS installation failed!"
         exit 1
     fi
 else
-    print_info "🚀 Skipping EGS components installation (none selected)..."
+    print_info "📦 Step 2/3: Skipping EGS components (all skipped)"
     echo ""
+    print_success "✅ Installation completed (all components skipped)"
+    exit 0
 fi
-
