@@ -253,7 +253,7 @@ kubeslice:
 
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 1.16.0-RELEASE-8e67a719
+    tag: 1.16.0-RELEASE-9cab5477
     pullPolicy: IfNotPresent
     env:
       - name: DCGM_METRIC_JOB_VALUE
