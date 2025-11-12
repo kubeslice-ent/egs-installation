@@ -1,0 +1,27 @@
+# Create required namespaces as regular resources (not hooks)
+# These namespaces are needed by subcharts and must exist before resources are created in them.
+# Note: Subcharts may also create these namespaces, but Kubernetes handles idempotent creation.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spire
+  labels:
+    {{- include "kubeslice-operator.labels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubeslice-nsm-webhook-system
+  labels:
+    {{- include "kubeslice-operator.labels" . | nindent 4 }}
+{{- if and .Values.kserve .Values.kserve.localmodel .Values.kserve.localmodel.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.kserve.localmodel.jobNamespace | default "kserve-localmodel-jobs" }}
+  labels:
+    {{- include "kubeslice-operator.labels" . | nindent 4 }}
+{{- end }}
+

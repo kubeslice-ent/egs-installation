@@ -11,7 +11,7 @@ global:
     secretName: kubeslice-image-pull-secret
     
     # Create secret if credentials are provided
-    create: false
+    create: true
     
     # Registry credentials (leave empty if using existing secret)
     registry: harbor.saas1.smart-scaler.io

@@ -105,7 +105,13 @@ spec:
             - -c
             - kubectl delete cm nsm-config --ignore-not-found -n {{ .Release.Namespace }}
       restartPolicy: OnFailure
-      {{- if .Values.imagePullSecretsName }}
+      {{- $imagePullSecretName := "" }}
+      {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.secretName }}
+        {{- $imagePullSecretName = .Values.global.imagePullSecrets.secretName }}
+      {{- else if .Values.imagePullSecretsName }}
+        {{- $imagePullSecretName = .Values.imagePullSecretsName }}
+      {{- end }}
+      {{- if $imagePullSecretName }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+        - name: {{ $imagePullSecretName }}
       {{- end }}

@@ -41,6 +41,16 @@ spec:
         {{- toYaml .Values.kserve.controller.tolerations | nindent 8 }}
       {{- end }}
       serviceAccountName: kserve-controller-manager
+      {{- $imagePullSecretName := "" }}
+      {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.secretName }}
+        {{- $imagePullSecretName = .Values.global.imagePullSecrets.secretName }}
+      {{- else if .Values.kserve.controller.imagePullSecrets }}
+        {{- $imagePullSecretName = (index .Values.kserve.controller.imagePullSecrets 0).name }}
+      {{- end }}
+      {{- if $imagePullSecretName }}
+      imagePullSecrets:
+        - name: {{ $imagePullSecretName }}
+      {{- end }}
       {{- with .Values.kserve.controller.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
