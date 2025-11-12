@@ -11,7 +11,7 @@ global:
     secretName: kubeslice-image-pull-secret
     
     # Create secret if credentials are provided
-    create: true
+    create: false
     
     # Registry credentials (leave empty if using existing secret)
     registry: harbor.saas1.smart-scaler.io
@@ -24,14 +24,7 @@ global:
     
     # For existing secrets managed externally
     existingSecret: ""
-  
-  # Environment detection for environment-specific overrides
-  environment: production
-  
-  # Optional: Global image tag overrides for specific scenarios
-  imageTagOverrides: {}
-    # operator: "1.15.4-hotfix"
-    # dns: "0.1.5-patch"
+
   
   # Profile-based configuration
   profile:

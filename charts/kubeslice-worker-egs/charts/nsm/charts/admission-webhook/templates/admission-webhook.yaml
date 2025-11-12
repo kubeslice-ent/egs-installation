@@ -1,8 +1,10 @@
+{{- if .Values.global.createNamespaces }}
 apiVersion: v1
 kind: Namespace
 metadata:
   name: {{ .Values.nsmNs }}
 ---
+{{- end }}
 {{- $ca := genCA "admission-controller-ca" 3650 -}}
 {{- $cn := printf "admission-webhook-svc"  -}}
 {{- $altName1 := printf "%s.%s.svc" $cn .Values.nsmNs }}
