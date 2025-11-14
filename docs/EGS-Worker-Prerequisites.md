@@ -582,6 +582,32 @@ kubectl port-forward svc/prometheus-grafana 3000:80 -n egs-monitoring
 # Default credentials: admin / prom-operator
 # Import dashboard ID: 12239 (NVIDIA GPU Exporter Dashboard)
 ```
+### 3.4 Service Monitor for Latency Metrics
+
+Create a ServiceMonitor to scrape Latency metrics:
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: gateway-pods-podmonitor
+  namespace: egs-monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - kubeslice-system
+  podMetricsEndpoints:
+    - port: metrics   # Numeric ports should be quoted
+      path: /metrics
+      interval: 30s
+      scheme: http
+  selector:
+    matchLabels:
+      kubeslice.io/pod-type: slicegateway
+
+```
 
 ## 4. Verification Steps
 
