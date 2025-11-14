@@ -108,7 +108,7 @@ kubeslice_controller_egs:
         replication:
           minio:
             # Whether to install MinIO
-            install: "false"
+            install: "true"
             # Storage size for MinIO
             storage: 1Gi
             # Username for MinIO
