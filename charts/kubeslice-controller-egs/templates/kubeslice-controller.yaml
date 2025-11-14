@@ -273,11 +273,11 @@ spec:
             properties:
               dashboardBaseUrl:
                 type: string
-              gprName:
-                type: string
               workloadDetails:
                 items:
                   properties:
+                    gprName:
+                      type: string
                     gpuDetails:
                       properties:
                         gpuIds:
