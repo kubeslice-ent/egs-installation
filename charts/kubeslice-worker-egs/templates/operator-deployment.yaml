@@ -68,7 +68,10 @@ spec:
         imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.operator.pullPolicy "global" .Values.global) }}
         env:
           - name: PROMETHEUS_SERVICE_ENDPOINT
-            value: {{ .Values.egs.prometheusEndpoint }}
+            valueFrom:
+              configMapKeyRef:
+                name: aiops-config
+                key: PROMETHEUS_SERVICE_ENDPOINT
           - name: LOG_LEVEL
             value: {{ .Values.operator.logLevel }}
           - name: HUB_HOST_ENDPOINT

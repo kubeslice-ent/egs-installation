@@ -65,7 +65,7 @@ spec:
             - --workload-reconciler-interval=30s
           command:
             - /manager
-          image: {{ include "kubeslice.image" (dict "imageRoot" .Values.aiops "global" .Values.dev) }}
+          image: {{ include "kubeslice.image" (dict "imageRoot" .Values.aiops "global" .Values.global) }}
           imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.aiops.pullPolicy "global" .Values.global) }}
           env:
             - name: LOG_LEVEL

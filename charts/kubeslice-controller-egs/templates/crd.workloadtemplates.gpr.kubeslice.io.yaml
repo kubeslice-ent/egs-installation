@@ -40,8 +40,12 @@ spec:
             description: WorkloadTemplateSpec defines the desired state of WorkloadTemplate
             properties:
               burstDuration:
-                description: BurstDuration is the duration for which the workload
-                  will be bursted
+                description: |-
+                  BurstDuration is the duration for which the workload will be bursted
+                  Must be in time duration format (e.g., "1m", "1h", "30s", "2h30m", "1h30m45s", "1.5h", "300ms")
+                  Valid time units: ns, us (or µs), ms, s, m, h
+                maxLength: 100
+                pattern: ^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$
                 type: string
               cmdExec:
                 description: CmdExec represents kubectl commands to be executed before

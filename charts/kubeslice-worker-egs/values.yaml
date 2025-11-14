@@ -30,13 +30,9 @@ global:
   profile:
     openshift: false
 
-dev:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
-
-
 operator:
   image: worker-operator-ent-egs
-  tag: 1.15.3
+  tag: 1.15.4
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -233,7 +229,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.16.0-RELEASE-4e76f844
+  tag: 1.15.3
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -283,7 +279,7 @@ aiops:
 
 egsAgent:
   image: egs-agent
-  tag: 1.0.3-RELEASE-c2258066
+  tag: 1.0.3
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-agent-access
