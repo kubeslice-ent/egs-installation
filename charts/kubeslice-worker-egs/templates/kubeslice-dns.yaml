@@ -60,6 +60,9 @@ spec:
       {{- end }}
         kubeslice.io/pod-type: dns
     spec:
+      {{- if .Values.dns.tolerations }}
+      tolerations: {{ toYaml .Values.dns.tolerations | nindent 8 }}
+      {{- end }}
       serviceAccount: kubeslice-dns
       {{- if .Values.dns.affinity }}
       affinity:
@@ -67,14 +70,12 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: 30
       dnsPolicy: Default
-      {{- if .Values.imagePullSecretsName }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
-      {{- end }}
+        - name: {{ include "kubeslice.imagePullSecrets" . }}
       containers:
       - name: "dns"
-        image: '{{ .Values.global.imageRegistry }}/{{ .Values.dns.image }}:{{ .Values.dns.tag }}'
-        imagePullPolicy: {{ .Values.dns.pullPolicy }}
+        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.dns "global" .Values.global) }}
+        imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.dns.pullPolicy "global" .Values.global) }}
         {{- if .Values.dns.resources }}
         resources: 
         {{ toYaml .Values.dns.resources | nindent 10 }}
@@ -86,10 +87,6 @@ spec:
         - containerPort: 1053
           protocol: TCP
           name: tcp-53
-      {{- if .Values.dns.tolerations }}
-      tolerations: 
-      {{ toYaml .Values.dns.tolerations | nindent 8 }}
-      {{- end }}
       securityContext:
       {{- if .Values.dns.podSecurityContext }}
       {{ toYaml .Values.dns.podSecurityContext | nindent 8 }}

@@ -18,7 +18,24 @@ data:
   metrics-server.yaml: |-
     # source https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml
     ---
-    {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+    {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.registry .Values.global.imagePullSecrets.username .Values.global.imagePullSecrets.password }}
+    apiVersion: v1
+    data:
+      .dockerconfigjson: {{
+                            printf "{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\",\"email\":\"%s\",\"auth\":\"%s\"}}}"
+                            .Values.global.imagePullSecrets.registry
+                            .Values.global.imagePullSecrets.username
+                            .Values.global.imagePullSecrets.password
+                            .Values.global.imagePullSecrets.email
+                            (printf "%s:%s" .Values.global.imagePullSecrets.username .Values.global.imagePullSecrets.password | b64enc)
+                             | b64enc
+                         }}
+    kind: Secret
+    metadata:
+      name: {{ .Values.global.imagePullSecrets.secretName }}
+      namespace: kube-system
+    type: kubernetes.io/dockerconfigjson
+    {{- else if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
     apiVersion: v1
     data:
       .dockerconfigjson: {{
@@ -37,7 +54,16 @@ data:
     type: kubernetes.io/dockerconfigjson
     {{- end }}
     ---
-    {{- if and .Values.imagePullSecrets .Values.imagePullSecrets.dockerconfigjson }}
+    {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.dockerconfigjson }}
+    apiVersion: v1
+    data:
+      .dockerconfigjson: {{ .Values.global.imagePullSecrets.dockerconfigjson }}
+    kind: Secret
+    metadata:
+      name: {{ .Values.global.imagePullSecrets.secretName }}
+      namespace: kube-system
+    type: kubernetes.io/dockerconfigjson
+    {{- else if and .Values.imagePullSecrets .Values.imagePullSecrets.dockerconfigjson }}
     apiVersion: v1
     data:
       .dockerconfigjson: {{ .Values.imagePullSecrets.dockerconfigjson }}
@@ -231,9 +257,15 @@ data:
           volumes:
             - emptyDir: {}
               name: tmp-dir
-          {{- if .Values.imagePullSecretsName }}
+          {{- $imagePullSecretName := "" }}
+          {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.secretName }}
+            {{- $imagePullSecretName = .Values.global.imagePullSecrets.secretName }}
+          {{- else if .Values.imagePullSecretsName }}
+            {{- $imagePullSecretName = .Values.imagePullSecretsName }}
+          {{- end }}
+          {{- if $imagePullSecretName }}
           imagePullSecrets:
-            - name: {{ .Values.imagePullSecretsName }}
+            - name: {{ $imagePullSecretName }}
           {{- end }}
     ---
     apiVersion: apiregistration.k8s.io/v1

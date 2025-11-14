@@ -1650,14 +1650,39 @@ spec:
             items:
             - key: "crds.yaml"
               path: "crds.yaml"
-      {{- if .Values.imagePullSecretsName }}
+      {{- $imagePullSecretName := "" }}
+      {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.secretName }}
+        {{- $imagePullSecretName = .Values.global.imagePullSecrets.secretName }}
+      {{- else if .Values.imagePullSecretsName }}
+        {{- $imagePullSecretName = .Values.imagePullSecretsName }}
+      {{- end }}
+      {{- if $imagePullSecretName }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+        - name: {{ $imagePullSecretName }}
       {{- end }}
       securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
+        runAsUser: 65536
+        runAsGroup: 65536
+        runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       restartPolicy: OnFailure
+      {{- if .Values.operator.tolerations }}
+      tolerations: {{ toYaml .Values.operator.tolerations | nindent 8 }}
+      {{- else }}
+      tolerations:
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300
+        - key: "node.kubernetes.io/memory-pressure"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
+      {{- end }}

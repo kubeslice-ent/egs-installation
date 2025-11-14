@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cpu-workload-toleration-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    component: cpu-workload-toleration-config
+data:
+  config.yaml: |
+    # namespaces:
+    #   default: {}  # Empty means all workloads in this namespace get toleration
+    #   kube-system:
+    #     excludedWorkloads:
+    #       - kind: Deployment
+    #         name: kube-system-excluded
+    #       - kind: StatefulSet
+    #         name: kube-system-excluded
+    #       - kind: DaemonSet
+    #         name: kube-system-excluded
+

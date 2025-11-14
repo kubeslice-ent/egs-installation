@@ -3,7 +3,9 @@
 # Declare variables to be passed into your templates.
 
 global:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+  # These values will be inherited from parent chart's global configuration
+  # imageRegistry: ""  # Inherited from parent
+  # imagePullSecrets: {}  # Inherited from parent
 
 # Variables added
 spireAgent:
@@ -20,12 +22,11 @@ spireAgent:
 replicaCount: 1
 
 image:
-  repository: harbor.saas1.smart-scaler.io/avesha/aveshasystems/nginx
+  repository: nginx  # Will use global registry prefix
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
-imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
@@ -92,6 +93,24 @@ autoscaling:
 
 nodeSelector: {}
 
-tolerations: []
+tolerations:
+- key: "kubeslice.io/egs"
+  operator: "Equal"
+  value: "dedicated-node"
+  effect: "NoSchedule"
+- key: "node.kubernetes.io/not-ready"
+  operator: "Exists"
+  effect: "NoExecute"
+  tolerationSeconds: 300
+- key: "node.kubernetes.io/unreachable"
+  operator: "Exists"
+  effect: "NoExecute"
+  tolerationSeconds: 300
+- key: "node.kubernetes.io/memory-pressure"
+  operator: "Exists"
+  effect: "NoSchedule"
+- key: "node-role.kubernetes.io/control-plane"
+  operator: "Exists"
+  effect: "NoSchedule"
 
 affinity: {}

@@ -56,13 +56,17 @@ spec:
       {{ toYaml .Values.kubeslice.ui.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.kubeslice.ui.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.kubeslice.ui.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.kubeslice.ui.affinity }}
       affinity:
       {{ toYaml .Values.kubeslice.ui.affinity | nindent 8 }}
       {{- end }}
       containers:
-      - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.ui.image }}:{{ .Values.kubeslice.ui.tag }}'
-        imagePullPolicy: '{{ .Values.kubeslice.ui.pullPolicy }}'
+      - image: {{ include "component.image" (dict "component" .Values.kubeslice.ui "global" .Values.global "context" .) }}
+        imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" .Values.kubeslice.ui "global" .Values.global "context" .) }}
         name: kubeslice-ui
         securityContext:
         {{- if .Values.kubeslice.ui.containerSecurityContext }}
@@ -75,17 +79,13 @@ spec:
           value: 'ws://kubeslice-api-gw.kubeslice-controller.svc.cluster.local:3000'
         ports:
         - containerPort: 8080
-      {{- if .Values.imagePullSecretsName }}
+      {{- if include "global.imagePullSecretsWithFallback" . }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+{{ include "global.imagePullSecretsWithFallback" . | indent 8 }}
       {{- end }}
       serviceAccountName: kubeslice-api-gw
       serviceAccount: kubeslice-api-gw
       securityContext:
       {{- if .Values.kubeslice.ui.podSecurityContext }}
       {{ toYaml .Values.kubeslice.ui.podSecurityContext | nindent 8 }}
-      {{- end }}
-      {{- if .Values.kubeslice.ui.tolerations }}
-      tolerations: 
-      {{ toYaml .Values.kubeslice.ui.tolerations | nindent 8 }}
       {{- end }}

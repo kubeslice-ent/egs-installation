@@ -55,13 +55,16 @@ spec:
       {{ toYaml .Values.kubeslice.uiv2.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.kubeslice.uiv2.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.uiv2.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.kubeslice.uiv2.affinity }}
       affinity:
       {{ toYaml .Values.kubeslice.uiv2.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.uiv2.image }}:{{ .Values.kubeslice.uiv2.tag }}'
-          imagePullPolicy: '{{ .Values.kubeslice.uiv2.pullPolicy }}'
+        - image: {{ include "component.image" (dict "component" .Values.kubeslice.uiv2 "global" .Values.global "context" .) }}
+          imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" .Values.kubeslice.uiv2 "global" .Values.global "context" .) }}
           name: kubeslice-ui-v2
           securityContext:
           {{- if .Values.kubeslice.uiv2.containerSecurityContext }}
@@ -69,12 +72,9 @@ spec:
           {{- end }}
           ports:
             - containerPort: 8080
-      {{- if .Values.imagePullSecretsName }}
+      {{- if include "global.imagePullSecretsWithFallback" . }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
-      {{- end }}
-      {{- if .Values.kubeslice.uiv2.tolerations }}
-      tolerations: {{ toYaml .Values.kubeslice.uiv2.tolerations | nindent 8 }}
+{{ include "global.imagePullSecretsWithFallback" . | indent 8 }}
       {{- end }}
       securityContext:
       {{- if  .Values.kubeslice.uiv2.podSecurityContext }}

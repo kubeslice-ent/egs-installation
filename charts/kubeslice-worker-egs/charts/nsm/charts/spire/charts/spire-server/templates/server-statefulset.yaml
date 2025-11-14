@@ -18,14 +18,27 @@ spec:
       labels:
         app: spire-server
     spec:
+      tolerations:
+        - key: "kubeslice.io/egs"
+          operator: "Equal"
+          value: "dedicated-node"
+          effect: "NoSchedule"
       serviceAccountName: spire-server
       shareProcessNamespace: true
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
+      {{- $imagePullSecretName := "" }}
+      {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.secretName }}
+        {{- $imagePullSecretName = .Values.global.imagePullSecrets.secretName }}
+      {{- end }}
+      {{- if $imagePullSecretName }}
+      imagePullSecrets:
+        - name: {{ $imagePullSecretName }}
+      {{- end }}
       containers:
         - name: spire-server
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.spireServer.imageRegistry }}:{{ .Values.spireServer.imageTag }}'
+          image: '{{ include "spire-server.imageRegistry" . }}/{{ .Values.spireServer.imageRegistry }}:{{ .Values.spireServer.imageTag }}'
           args:
             - -config
             - /run/spire/config/server.conf
@@ -57,7 +70,7 @@ spec:
             exec:
               command: ["/opt/spire/bin/spire-server", "healthcheck", "--shallow"]
         - name: spire-controller-manager
-          image: '{{ .Values.global.imageRegistry }}/spiffe-spire-controller-manager:0.2.3'
+          image: '{{ include "spire-server.imageRegistry" . }}/spiffe-spire-controller-manager:0.2.3'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9443

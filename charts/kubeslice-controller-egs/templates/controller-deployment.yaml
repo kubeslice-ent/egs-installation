@@ -49,6 +49,10 @@ spec:
       {{ toYaml .Values.kubeslice.controller.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.kubeslice.controller.tolerations }}
+      tolerations: 
+      {{ toYaml .Values.kubeslice.controller.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.kubeslice.controller.affinity }}
       affinity:
       {{ toYaml .Values.kubeslice.controller.affinity | nindent 8 }}
@@ -59,7 +63,7 @@ spec:
             - --upstream=http://127.0.0.1:8080/
             - --logtostderr=true
             - --v=0
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.rbacproxy.image }}:{{ .Values.kubeslice.rbacproxy.tag }}'
+          image: {{ include "kubeslice.image" (dict "image" .Values.kubeslice.rbacproxy.image "tag" .Values.kubeslice.rbacproxy.tag "registry" .Values.global.imageRegistry) }}
           name: kube-rbac-proxy
           securityContext:
           {{- if .Values.kubeslice.rbacproxy.containerSecurityContext }}
@@ -78,9 +82,9 @@ spec:
             - --project-namespace-prefix={{ required "A valid value is required!" .Values.kubeslice.controller.projectnsPrefix }}
             - --controller-end-point={{ required "A valid value is required!" .Values.kubeslice.controller.endpoint }}
             - --prometheus-service-endpoint={{ required "A valid value is required!" .Values.global.kubeTally.prometheusUrl }}
-            - --precheckjob-image={{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}
+            - --precheckjob-image={{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.global.imageRegistry) }}
             - --metrics-cleanup-interval={{ .Values.kubeslice.controller.kubeTally.metricsCleanupInterval }}
-            - --ovpn-job-image={{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.ovpnJob.image }}:{{ .Values.kubeslice.ovpnJob.tag }}          
+            - --ovpn-job-image={{ include "kubeslice.image" (dict "image" .Values.kubeslice.ovpnJob.image "tag" .Values.kubeslice.ovpnJob.tag "registry" .Values.global.imageRegistry) }}          
           command:
             - /manager
           env:
@@ -92,7 +96,7 @@ spec:
               value: {{ .Values.kubeslice.controller.invmgrGrpcAddress }}
             - name: WEBHOOK_CA_BUNDLE
               value: {{ $ca.Cert | b64enc }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.controller.image }}:{{ .Values.kubeslice.controller.tag }}'
+          image: {{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.global.imageRegistry) }}
           imagePullPolicy: '{{ .Values.kubeslice.controller.pullPolicy }}'
           livenessProbe:
             httpGet:
@@ -145,14 +149,7 @@ spec:
           secret:
             defaultMode: 420
             secretName: webhook-server-cert-secret
-      {{- if .Values.imagePullSecretsName }}
-      imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
-      {{- end }}
-      {{- if .Values.kubeslice.controller.tolerations }}
-      tolerations: 
-      {{ toYaml .Values.kubeslice.controller.tolerations | nindent 8 }}
-      {{- end }}
+      {{- include "kubeslice.imagePullSecrets" . | nindent 6 }}
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration

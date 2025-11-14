@@ -1,5 +1,7 @@
+{{- if .Values.global.createNamespaces }}
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: spire
+{{- end }}

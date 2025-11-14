@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the script version
-SCRIPT_VERSION="1.15.3"
+SCRIPT_VERSION="1.15.4"
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
@@ -736,7 +736,7 @@ parse_yaml() {
     READD_HELM_REPOS=$(yq e '.readd_helm_repos' "$yaml_file")
 
     # Extract global imagePullSecrets settings
-    GLOBAL_IMAGE_PULL_SECRET_REPO=$(yq e '.global_image_pull_secret.repository' "$yaml_file")
+    GLOBAL_IMAGE_PULL_SECRET_REPO=$(yq e '.global_image_pull_secret.registry' "$yaml_file")
     GLOBAL_IMAGE_PULL_SECRET_USERNAME=$(yq e '.global_image_pull_secret.username' "$yaml_file")
     GLOBAL_IMAGE_PULL_SECRET_PASSWORD=$(yq e '.global_image_pull_secret.password' "$yaml_file")
     GLOBAL_IMAGE_PULL_SECRET_EMAIL=$(yq e '.global_image_pull_secret.email' "$yaml_file")
@@ -867,7 +867,7 @@ parse_yaml() {
 
     KUBESLICE_CONTROLLER_INLINE_VALUES=$(yq e '.kubeslice_controller_egs.inline_values // {}' "$yaml_file")
 
-    KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO=$(yq e '.kubeslice_controller_egs.imagePullSecrets.repository' "$yaml_file")
+    KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO=$(yq e '.kubeslice_controller_egs.imagePullSecrets.registry' "$yaml_file")
     if [ -z "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" ] || [ "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" = "null" ]; then
         KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO="$GLOBAL_IMAGE_PULL_SECRET_REPO"
     fi
@@ -965,7 +965,7 @@ parse_yaml() {
     KUBESLICE_UI_INGRESS_ENABLED=$(yq e '.kubeslice_ui_egs.inline_values.kubeslice.uiproxy.ingress.enabled // false' "$yaml_file")
     KUBESLICE_UI_INGRESS_HOST=$(yq e '.kubeslice_ui_egs.inline_values.kubeslice.uiproxy.ingress.hosts[0].host // "ui.kubeslice.com"' "$yaml_file")
 
-    KUBESLICE_UI_IMAGE_PULL_SECRET_REPO=$(yq e '.kubeslice_ui_egs.imagePullSecrets.repository' "$yaml_file")
+    KUBESLICE_UI_IMAGE_PULL_SECRET_REPO=$(yq e '.kubeslice_ui_egs.imagePullSecrets.registry' "$yaml_file")
     if [ -z "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" ] || [ "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" = "null" ]; then
         KUBESLICE_UI_IMAGE_PULL_SECRET_REPO="$GLOBAL_IMAGE_PULL_SECRET_REPO"
     fi
@@ -1044,7 +1044,7 @@ parse_yaml() {
 
         WORKER_INLINE_VALUES=$(yq e ".kubeslice_worker_egs[$i].inline_values // {}" "$yaml_file")
 
-        WORKER_IMAGE_PULL_SECRET_REPO=$(yq e ".kubeslice_worker_egs[$i].imagePullSecrets.repository" "$yaml_file")
+        WORKER_IMAGE_PULL_SECRET_REPO=$(yq e ".kubeslice_worker_egs[$i].imagePullSecrets.registry" "$yaml_file")
         if [ -z "$WORKER_IMAGE_PULL_SECRET_REPO" ] || [ "$WORKER_IMAGE_PULL_SECRET_REPO" = "null" ]; then
             WORKER_IMAGE_PULL_SECRET_REPO="$GLOBAL_IMAGE_PULL_SECRET_REPO"
         fi
@@ -1677,7 +1677,7 @@ install_or_upgrade_helm_chart() {
     echo "$inline_values"
 
     # Extract the values from inline_values using yq
-    image_pull_secret_repo=$(echo "$inline_values" | yq e '.imagePullSecrets.repository' -)
+    image_pull_secret_repo=$(echo "$inline_values" | yq e '.imagePullSecrets.registry' -)
     image_pull_secret_username=$(echo "$inline_values" | yq e '.imagePullSecrets.username' -)
     image_pull_secret_password=$(echo "$inline_values" | yq e '.imagePullSecrets.password' -)
 
@@ -1755,12 +1755,25 @@ install_or_upgrade_helm_chart() {
 
     # Create inline values for imagePullSecrets
     if [ -n "$image_pull_secret_username_used" ] && [ -n "$image_pull_secret_password_used" ]; then
+        # Get email from inline values, passed parameter, or global values, default to empty if not provided
+        image_pull_secret_email_used=""
+        if [ -n "$image_pull_secret_email_inline" ] && [ "$image_pull_secret_email_inline" != "null" ]; then
+            image_pull_secret_email_used=$image_pull_secret_email_inline
+        elif [ -n "$image_pull_secret_email" ] && [ "$image_pull_secret_email" != "null" ]; then
+            image_pull_secret_email_used=$image_pull_secret_email
+        elif [ -n "$GLOBAL_IMAGE_PULL_SECRET_EMAIL" ] && [ "$GLOBAL_IMAGE_PULL_SECRET_EMAIL" != "null" ]; then
+            image_pull_secret_email_used=$GLOBAL_IMAGE_PULL_SECRET_EMAIL
+        fi
+        
         image_pull_secrets_inline=$(
             cat <<EOF
-imagePullSecrets:
-  repository: $image_pull_secret_repo_used
-  username: $image_pull_secret_username_used
-  password: $image_pull_secret_password_used
+global:
+  imagePullSecrets:
+    create: true
+    registry: $image_pull_secret_repo_used
+    username: $image_pull_secret_username_used
+    password: $image_pull_secret_password_used
+    email: "$image_pull_secret_email_used"
 EOF
         )
         echo "✅ Image pull secrets configured successfully with credentials."

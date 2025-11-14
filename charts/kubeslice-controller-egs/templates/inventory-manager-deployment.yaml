@@ -29,6 +29,9 @@ spec:
       {{ toYaml .Values.egs.inventory.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.egs.inventory.tolerations }}
+      tolerations: {{ toYaml .Values.egs.inventory.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.egs.inventory.affinity }}
       affinity:
       {{ toYaml .Values.egs.inventory.affinity | nindent 8 }}
@@ -40,8 +43,8 @@ spec:
         - --health-probe-bind-address=:8081
         command:
           - /manager
-        image: "{{ .Values.global.imageRegistry }}/{{ .Values.egs.inventory.image }}:{{ .Values.egs.inventory.tag }}"
-        imagePullPolicy: "{{ .Values.egs.inventory.pullPolicy }}"
+        image: {{ include "kubeslice.image" (dict "image" .Values.egs.inventory.image "tag" .Values.egs.inventory.tag "registry" .Values.global.imageRegistry) }}
+        imagePullPolicy: "{{ .Values.egs.inventory.imagePullPolicy }}"
         env:
           - name: LOG_LEVEL
             value: {{ .Values.egs.inventory.logLevel }}
@@ -73,10 +76,4 @@ spec:
       {{- end }}
       serviceAccountName: inventory-manager-access
       terminationGracePeriodSeconds: 10
-      {{- if .Values.imagePullSecretsName }}
-      imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
-      {{- end }}
-      {{- if .Values.egs.inventory.tolerations }}
-      tolerations: {{ toYaml .Values.egs.inventory.tolerations | nindent 8 }}
-      {{- end }}
+      {{- include "kubeslice.imagePullSecrets" . | nindent 6 }}

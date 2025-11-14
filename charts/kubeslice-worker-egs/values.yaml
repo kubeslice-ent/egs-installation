@@ -1,12 +1,38 @@
 global:
+  # Centralized image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+  
+  # Global image pull policy (can be overridden per component)
+  imagePullPolicy: IfNotPresent
+  
+  # Centralized imagePullSecrets configuration
+  imagePullSecrets:
+    # Name of the secret to create/use
+    secretName: kubeslice-image-pull-secret
+    
+    # Create secret if credentials are provided
+    create: false
+    
+    # Registry credentials (leave empty if using existing secret)
+    registry: harbor.saas1.smart-scaler.io
+    username: ""
+    password: ""
+    email: ""
+    
+    # Alternative: provide pre-encoded dockerconfigjson
+    dockerconfigjson: ""
+    
+    # For existing secrets managed externally
+    existingSecret: ""
+
+  
+  # Profile-based configuration
   profile:
     openshift: false
 
-
 operator:
   image: worker-operator-ent-egs
-  tag: 1.15.3
+  tag: 1.15.4
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -44,6 +70,10 @@ operator:
       memory: 64Mi
   tolerations:
     - operator: "Exists"
+    - key: "kubeslice.io/egs"
+      operator: "Equal"
+      value: "dedicated-node"
+      effect: "NoSchedule"
   affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -156,6 +186,24 @@ dns:
       operator: "Equal"
       value: "gateway"
       effect: "NoExecute"
+    - key: "kubeslice.io/egs"
+      operator: "Equal"
+      value: "dedicated-node"
+      effect: "NoSchedule"
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/memory-pressure"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "NoSchedule"
   affinity:
     nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -181,7 +229,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.15.2
+  tag: 1.15.3
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -216,6 +264,10 @@ aiops:
       type: RuntimeDefault
   tolerations:
     - operator: "Exists"
+    - key: "kubeslice.io/egs"
+      operator: "Equal"
+      value: "dedicated-node"
+      effect: "NoSchedule"
   affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -227,7 +279,7 @@ aiops:
 
 egsAgent:
   image: egs-agent
-  tag: 1.0.2
+  tag: 1.0.3
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-agent-access
@@ -263,6 +315,10 @@ egsAgent:
       memory: 64Mi
   tolerations:
     - operator: "Exists"
+    - key: "kubeslice.io/egs"
+      operator: "Equal"
+      value: "dedicated-node"
+      effect: "NoSchedule"
   affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -301,8 +357,9 @@ egsGpuAgent:
       operator: "Exists"
       effect: "NoSchedule"
     - key: "kubeslice.io/egs"
-      effect: "NoSchedule"
+      operator: "Equal"
       value: "dedicated-node"
+      effect: "NoSchedule"
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -330,6 +387,7 @@ events:
 
 kserve:
   enabled: true
+  # Inherits global configuration from parent chart automatically
   # KServe chart options
   kserve:
     controller:
@@ -366,14 +424,8 @@ alpine:
   # Image tag for the alpine
   tag: 1.0.1
 
-imagePullSecretsName: "kubeslice-image-pull-secret"
-# leave the below fields empty if secrets are managed externally.
-imagePullSecrets:
-  repository: https://index.docker.io/v1/ ## Value to be used incase using the docker hub images-  https://index.docker.io/v1/
-  username:
-  password:
-  email:
-  dockerconfigjson: ## Value to be used if using external secret managers
+# REMOVED: Legacy imagePullSecretsName and imagePullSecrets configuration
+# Use global.imagePullSecrets configuration instead (see lines 1-38)
 
 controllerNamespace: kubeslice-controller
 
@@ -382,9 +434,18 @@ kubesliceNetworking:
   enabled: true
 
 nsm:
+  # Inherits global configuration from parent chart automatically
   spire:
     priorityClassName: ""
     spire-server:
       priorityClassName: ""
     spiffe-csi-driver:
       priorityClassName: ""
+
+# Netop subchart configuration
+# Inherits global imageRegistry and imagePullSecrets from parent chart
+# All other values come from charts/netop/values.yaml defaults
+netop:
+  enabled: true
+  netop:
+    networkInterface: eth0

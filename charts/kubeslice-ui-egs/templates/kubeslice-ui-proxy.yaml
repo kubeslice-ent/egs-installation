@@ -56,6 +56,9 @@ spec:
       {{ toYaml .Values.kubeslice.uiproxy.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.kubeslice.uiproxy.tolerations }}
+      tolerations: {{ toYaml .Values.kubeslice.uiproxy.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.kubeslice.uiproxy.affinity }}
       affinity:
       {{ toYaml .Values.kubeslice.uiproxy.affinity | nindent 8 }}
@@ -66,8 +69,8 @@ spec:
           {{- if .Values.kubeslice.uiproxy.containerSecurityContext }}
           {{ toYaml .Values.kubeslice.uiproxy.containerSecurityContext | nindent 12 }}
           {{- end }}
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.kubeslice.uiproxy.image }}:{{ .Values.kubeslice.uiproxy.tag }}'
-          imagePullPolicy: '{{ .Values.kubeslice.uiproxy.pullPolicy }}'
+          image: {{ include "component.image" (dict "component" .Values.kubeslice.uiproxy "global" .Values.global "context" .) }}
+          imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" .Values.kubeslice.uiproxy "global" .Values.global "context" .) }}
           env:
           - name: KUBESLICE-CONTROLLER-PROMETHEUS
             value: {{ .Values.kubeslice.prometheus.url }}
@@ -75,12 +78,9 @@ spec:
             value: 'ws://kubeslice-api-gw.kubeslice-controller.svc.cluster.local:3000'
           ports:
             - containerPort: 8443
-      {{- if .Values.imagePullSecretsName }}
+      {{- if include "global.imagePullSecretsWithFallback" . }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
-        {{- end }}
-      {{- if .Values.kubeslice.uiproxy.tolerations }}
-      tolerations: {{ toYaml .Values.kubeslice.uiproxy.tolerations | nindent 8 }}
+{{ include "global.imagePullSecretsWithFallback" . | indent 8 }}
       {{- end }}
       securityContext:
       {{- if .Values.kubeslice.uiproxy.podSecurityContext }}

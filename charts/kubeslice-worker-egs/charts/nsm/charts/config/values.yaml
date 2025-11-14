@@ -3,12 +3,16 @@
 # Declare variables to be passed into your templates.
 
 global:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
-  nsmcfg_docker_existingImagePullSecret: "kubeslice-image-pull-secret"
-  # IF You dont have existing secret then pass all below values it will create new secret "avesha-docker-ips"
-  ## MANDOTORY FIELDS IF EXISTING SECRET NOT PRESENT ##
+  # These values will be inherited from parent chart's global configuration
+  # imageRegistry: ""  # Inherited from parent
+  # imagePullSecrets: {}  # Inherited from parent
+  
+  # Config-specific global configuration (will use parent's imagePullSecrets.secretName)
+  nsmcfg_docker_existingImagePullSecret: ""  # Will be set by parent chart
+  
+  # Legacy configuration - kept for backward compatibility but not used when parent global config is available
   nsmcfg_docker_imagePullSecrets:
-    repository: 
+    registry:  # Use registry instead of repository for consistency
     username: ''
     password: ''
     email: ''

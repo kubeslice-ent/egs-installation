@@ -55,6 +55,7 @@ rules:
   - gprautoevictions
   - gprtemplates
   - gprtemplatebindings
+  - workloadtemplates
   verbs:
   - create
   - delete
@@ -70,6 +71,7 @@ rules:
   - gprautoevictions/finalizers
   - gprtemplates/finalizers
   - gprtemplatebindings/finalizers
+  - workloadtemplates/finalizers
   verbs:
   - update
 - apiGroups:
@@ -79,6 +81,7 @@ rules:
   - gprautoevictions/status
   - gprtemplates/status
   - gprtemplatebindings/status
+  - workloadtemplates/status
   verbs:
   - get
   - patch
@@ -86,6 +89,7 @@ rules:
 - apiGroups:
   - worker.kubeslice.io
   resources:
+  - workloadplacements
   - workerslicegpuprovisioningrequests
   verbs:
   - create
@@ -99,11 +103,13 @@ rules:
   - worker.kubeslice.io
   resources:
   - workerslicegpuprovisioningrequests/finalizers
+  - workloadplacements/finalizers
   verbs:
   - update
 - apiGroups:
   - worker.kubeslice.io
   resources:
+  - workloadplacements/status
   - workerslicegpuprovisioningrequests/status
   verbs:
   - get

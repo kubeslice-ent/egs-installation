@@ -1,8 +1,10 @@
+{{- if .Values.global.createNamespaces }}
 apiVersion: v1
 kind: Namespace
 metadata:
   name: {{ .Values.nsmNs }}
 ---
+{{- end }}
 {{- $ca := genCA "admission-controller-ca" 3650 -}}
 {{- $cn := printf "admission-webhook-svc"  -}}
 {{- $altName1 := printf "%s.%s.svc" $cn .Values.nsmNs }}
@@ -49,6 +51,9 @@ spec:
       {{ toYaml .Values.admissionWebhook.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.admissionWebhook.tolerations }}
+      tolerations: {{ toYaml .Values.admissionWebhook.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.admissionWebhook.affinity }}
       affinity:
       {{ toYaml .Values.admissionWebhook.affinity | nindent 8 }}
@@ -59,7 +64,7 @@ spec:
       priorityClassName: nsm-webhook-high-priority
       containers:
         - name: admission-webhook-k8s
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.admissionWebhook.webhookImageRegistry }}:{{ .Values.admissionWebhook.webhookImageTag }}'
+          image: '{{ include "admission-webhook.imageRegistry" . }}/{{ .Values.admissionWebhook.webhookImageRegistry }}:{{ .Values.admissionWebhook.webhookImageTag }}'
           imagePullPolicy: IfNotPresent
           securityContext: 
           {{- if .Values.admissionWebhook.containerSecurityContext }}
@@ -86,9 +91,9 @@ spec:
             - name: NSM_ANNOTATION
               value: networkservicemesh.io
             - name: NSM_CONTAINER_IMAGES
-              value: "{{ .Values.global.imageRegistry }}/{{ .Values.nsmInjectContainerImageRegistry }}:{{ .Values.nsmInjectContainerImageTag }}"
+              value: "{{ include "admission-webhook.imageRegistry" . }}/{{ .Values.nsmInjectContainerImageRegistry }}:{{ .Values.nsmInjectContainerImageTag }}"
             - name: NSM_INIT_CONTAINER_IMAGES
-              value: "{{ .Values.global.imageRegistry }}/{{ .Values.nsmInjectInitContainerImageRegistry }}:{{ .Values.nsmInjectInitContainerImageTag }}"
+              value: "{{ include "admission-webhook.imageRegistry" . }}/{{ .Values.nsmInjectInitContainerImageRegistry }}:{{ .Values.nsmInjectInitContainerImageTag }}"
             - name: NSM_LABELS
               value: spiffe.io/spiffe-id:true
             - name: NSM_ENVS
@@ -111,10 +116,6 @@ spec:
         - name: webhook-certs
           secret:
             secretName: nsm-admission-webhook-certs
-      {{- if .Values.admissionWebhook.tolerations }}
-      tolerations: 
-      {{ toYaml .Values.admissionWebhook.tolerations | nindent 8 }}
-      {{- end }}
       securityContext:
       {{- if .Values.admissionWebhook.podSecurityContext }}
       {{ toYaml .Values.admissionWebhook.podSecurityContext | nindent 8 }}

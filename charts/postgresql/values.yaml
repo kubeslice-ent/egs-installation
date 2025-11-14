@@ -121,7 +121,7 @@ diagnosticMode:
 image:
   registry: harbor.saas1.smart-scaler.io/smartscaler
   repository: postgresql
-  tag: 17.6.0-debian-12-r4
+  tag: 17.6.0
   digest: ""
   ## Specify a imagePullPolicy
   ## ref: https://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images

@@ -5,16 +5,16 @@ kind: Namespace
 metadata:
   name: kubernetes-dashboard
 ---
-{{- if and .Values.imagePullSecrets .Values.imagePullSecrets.repository .Values.imagePullSecrets.username .Values.imagePullSecrets.password }}
+{{- if and .Values.global.imagePullSecrets .Values.global.imagePullSecrets.registry .Values.global.imagePullSecrets.username .Values.global.imagePullSecrets.password }}
 apiVersion: v1
 data:
   .dockerconfigjson: {{
                         printf "{\"auths\":{\"%s\":{\"username\":\"%s\",\"password\":\"%s\",\"email\":\"%s\",\"auth\":\"%s\"}}}"
-                        .Values.imagePullSecrets.repository
-                        .Values.imagePullSecrets.username
-                        .Values.imagePullSecrets.password
-                        .Values.imagePullSecrets.email
-                        (printf "%s:%s" .Values.imagePullSecrets.username .Values.imagePullSecrets.password | b64enc)
+                        .Values.global.imagePullSecrets.registry
+                        .Values.global.imagePullSecrets.username
+                        .Values.global.imagePullSecrets.password
+                        .Values.global.imagePullSecrets.email
+                        (printf "%s:%s" .Values.global.imagePullSecrets.username .Values.global.imagePullSecrets.password | b64enc)
                          | b64enc
                      }}
 kind: Secret
@@ -24,10 +24,10 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 {{- end }}
 ---
-{{- if and .Values.imagePullSecrets .Values.imagePullSecrets.dockerconfigjson }}
+{{- if and .Values.global.imagePullSecrets .Values.global.imagePullSecrets.dockerconfigjson }}
 apiVersion: v1
 data:
-  .dockerconfigjson: {{ .Values.imagePullSecrets.dockerconfigjson }}
+  .dockerconfigjson: {{ .Values.global.imagePullSecrets.dockerconfigjson }}
 kind: Secret
 metadata:
   name: {{ .Values.imagePullSecretsName }}
@@ -439,14 +439,14 @@ spec:
                     operator: "DoesNotExist"
       serviceAccountName: kubernetes-dashboard-kong
       automountServiceAccountToken: false
-      {{- if .Values.imagePullSecretsName }}
+      {{- if include "global.imagePullSecretsWithFallback" . }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+{{ include "global.imagePullSecretsWithFallback" . | indent 8 }}
       {{- end }}
       initContainers:
         - name: clear-stale-pid
-          image: "{{ .Values.global.imageRegistry }}/{{ $.Values.kubeslice.dashboard.proxy.image }}:{{ $.Values.kubeslice.dashboard.proxy.tag }}"
-          imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
+          image: {{ include "component.image" (dict "component" $.Values.kubeslice.dashboard.proxy "global" $.Values.global "context" $) }}
+          imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" $.Values.kubeslice.dashboard.proxy "global" $.Values.global "context" $) }}
           securityContext:
             runAsUser: 65536
             runAsGroup: 65536
@@ -526,8 +526,8 @@ spec:
       containers:
         - name: "proxy"
 
-          image: "{{ .Values.global.imageRegistry }}/{{ $.Values.kubeslice.dashboard.proxy.image }}:{{ $.Values.kubeslice.dashboard.proxy.tag }}"
-          imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
+          image: {{ include "component.image" (dict "component" $.Values.kubeslice.dashboard.proxy "global" $.Values.global "context" $) }}
+          imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" $.Values.kubeslice.dashboard.proxy "global" $.Values.global "context" $) }}
           securityContext:
             runAsUser: 65536
             runAsGroup: 65536
@@ -710,14 +710,14 @@ spec:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
-      {{- if .Values.imagePullSecretsName }}
+      {{- if include "global.imagePullSecretsWithFallback" . }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+{{ include "global.imagePullSecretsWithFallback" . | indent 8 }}
       {{- end }}
       containers:
         - name: kubernetes-dashboard-api
-          image: "{{ .Values.global.imageRegistry }}/{{ $.Values.kubeslice.dashboard.api.image }}:{{ $.Values.kubeslice.dashboard.api.tag }}"
-          imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
+          image: {{ include "component.image" (dict "component" $.Values.kubeslice.dashboard.api "global" $.Values.global "context" $) }}
+          imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" $.Values.kubeslice.dashboard.api "global" $.Values.global "context" $) }}
           args:
             - --namespace=kubernetes-dashboard
             - --metrics-scraper-service-name=kubernetes-dashboard-metrics-scraper
@@ -819,14 +819,14 @@ spec:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
-      {{- if .Values.imagePullSecretsName }}
+      {{- if include "global.imagePullSecretsWithFallback" . }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+{{ include "global.imagePullSecretsWithFallback" . | indent 8 }}
       {{- end }}
       containers:
         - name: kubernetes-dashboard-auth
-          image: "{{ .Values.global.imageRegistry }}/{{ $.Values.kubeslice.dashboard.auth.image }}:{{ $.Values.kubeslice.dashboard.auth.tag }}"
-          imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
+          image: {{ include "component.image" (dict "component" $.Values.kubeslice.dashboard.auth "global" $.Values.global "context" $) }}
+          imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" $.Values.kubeslice.dashboard.auth "global" $.Values.global "context" $) }}
           env:
             - name: CSRF_KEY
               valueFrom:
@@ -922,14 +922,14 @@ spec:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
-      {{- if .Values.imagePullSecretsName }}
+      {{- if include "global.imagePullSecretsWithFallback" . }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+{{ include "global.imagePullSecretsWithFallback" . | indent 8 }}
       {{- end }}
       containers:
         - name: kubernetes-dashboard-metrics-scraper
-          image: "{{ .Values.global.imageRegistry }}/{{ $.Values.kubeslice.dashboard.scrapper.image }}:{{ $.Values.kubeslice.dashboard.scrapper.tag }}"
-          imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
+          image: {{ include "component.image" (dict "component" $.Values.kubeslice.dashboard.scrapper "global" $.Values.global "context" $) }}
+          imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" $.Values.kubeslice.dashboard.scrapper "global" $.Values.global "context" $) }}
           env:
             - name: GOMAXPROCS
               valueFrom:
@@ -1018,14 +1018,14 @@ spec:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
-      {{- if .Values.imagePullSecretsName }}
+      {{- if include "global.imagePullSecretsWithFallback" . }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+{{ include "global.imagePullSecretsWithFallback" . | indent 8 }}
       {{- end }}
       containers:
         - name: kubernetes-dashboard-web
-          image: "{{ .Values.global.imageRegistry }}/{{ $.Values.kubeslice.dashboard.web.image }}:{{ $.Values.kubeslice.dashboard.web.tag }}"
-          imagePullPolicy: {{ $.Values.kubeslice.dashboard.pullPolicy }}
+          image: {{ include "component.image" (dict "component" $.Values.kubeslice.dashboard.web "global" $.Values.global "context" $) }}
+          imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" $.Values.kubeslice.dashboard.web "global" $.Values.global "context" $) }}
           args:
             - --namespace=kubernetes-dashboard
             - --settings-config-map-name=kubernetes-dashboard-web-settings

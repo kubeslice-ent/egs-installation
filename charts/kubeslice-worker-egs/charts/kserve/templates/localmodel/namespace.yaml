@@ -1,4 +1,4 @@
-{{- if .Values.kserve.localmodel.enabled }}
+{{- if and .Values.kserve.localmodel.enabled .Values.global.createNamespaces }}
 ---
 apiVersion: v1
 kind: Namespace
