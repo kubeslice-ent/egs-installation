@@ -609,6 +609,16 @@ spec:
 
 ```
 
+### 3.5 Apply Monitoring Configuration
+
+```bash
+# Apply the PodMonitor
+kubectl apply -f pod-monitor.yaml
+
+# Verify the monitors are created
+kubectl get podmonitor -n egs-monitoring
+```
+
 ## 4. Verification Steps
 
 ### 4.1 Verify GPU Operator
