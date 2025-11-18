@@ -13,10 +13,11 @@ The EGS Quick Installer provides a **one-command installation** experience for s
 - **📝 Smart Defaults**: Uses sensible defaults optimized for single-cluster setups
 - **🤖 Automated Setup**: Handles all prerequisites automatically (PostgreSQL, Prometheus, GPU Operator)
 - **⚡ Fast Deployment**: Complete installation in 10-15 minutes
-- **🔒 License-First**: Validates license before proceeding
+- **🔒 Conditional License**: License only required when installing Controller (not for UI, Worker, or prerequisites)
 - **🎛️ Flexible**: Skip individual components as needed
 - **🔄 Upgrade Support**: Automatically detects existing installations and performs upgrades
 - **🔗 Smart Dependencies**: Validates component dependencies and checks for existing installations before blocking
+- **🌐 Worker Registration**: Register worker clusters with controller independently (`--register-worker`)
 
 ---
 
@@ -26,7 +27,7 @@ The EGS Quick Installer provides a **one-command installation** experience for s
 
 1. **Kubernetes Cluster**: Admin access to a Kubernetes cluster (v1.23.6+)
 2. **kubectl**: Configured and connected to your cluster
-3. **EGS License**: Valid license file (`egs-license.yaml` in current directory)
+3. **EGS License**: Valid license file (`egs-license.yaml` in current directory) - **Only required when installing Controller. Not required for UI, Worker, or prerequisites (PostgreSQL, Prometheus, GPU Operator).**
 4. **Required Tools**: `yq` (v4.44.2+), `helm` (v3.15.0+), `kubectl` (v1.23.6+), `jq` (v1.6+), `git`
 
 ### Simplest Installation
@@ -47,7 +48,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 1. ✅ Download EGS installer files internally
 2. ✅ Auto-detect your cluster configuration
 3. ✅ Generate `egs-installer-config.yaml` in your current directory
-4. ✅ Apply the EGS license
+4. ✅ Apply the EGS license (only if installing Controller)
 5. ✅ Install PostgreSQL, Prometheus, GPU Operator (unless explicitly skipped)
 6. ✅ Install EGS Controller, UI, and Worker
 7. ✅ Display access information and tokens
@@ -75,6 +76,23 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash [OPTIONS]
 | `--skip-ui` | Skip EGS UI installation | Install | No |
 | `--skip-worker` | Skip EGS Worker installation | Install | No |
 | `--help, -h` | Show help message | - | No |
+
+### Worker Registration Options
+
+| Option | Description | Default | Required |
+|--------|-------------|---------|----------|
+| `--register-worker` | Register a worker cluster with controller (standalone mode) | - | No |
+| `--controller-kubeconfig PATH` | Path to controller cluster kubeconfig | - | Yes (if `--register-worker`) |
+| `--controller-context NAME` | Controller cluster context | Current context | No |
+| `--worker-kubeconfig PATH` | Path to worker cluster kubeconfig (for validation) | - | No |
+| `--worker-context NAME` | Worker cluster context | Current context | No |
+| `--register-cluster-name NAME` | Cluster name to register | - | Yes (if `--register-worker`) |
+| `--register-project-name NAME` | Project name | `avesha` | No |
+| `--telemetry-endpoint URL` | Prometheus endpoint URL | Auto-detected | No |
+| `--telemetry-provider NAME` | Telemetry provider | `prometheus` | No |
+| `--cloud-provider NAME` | Cloud provider name | Auto-detected | No |
+| `--cloud-region NAME` | Cloud region | - | No |
+| `--controller-namespace NAME` | Controller namespace | `kubeslice-controller` | No |
 
 ---
 
@@ -117,11 +135,58 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-worker
 ```
 
-### Example 5: Install Only GPU Operator
+### Example 5: Install Only Prerequisites (No License Required)
 
 ```bash
+# Install only Prometheus and GPU Operator (no license needed)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --skip-postgresql --skip-prometheus --skip-controller --skip-ui --skip-worker
+  --skip-postgresql --skip-controller --skip-ui --skip-worker
+
+# Install only PostgreSQL (no license needed)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui --skip-worker
+```
+
+### Example 6: Install UI or Worker Without License (Controller Already Installed)
+
+```bash
+# Install only UI (no license needed if Controller is already installed)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-worker
+
+# Install only Worker (no license needed if Controller and UI are already installed)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
+```
+
+### Example 7: Register Worker Cluster with Controller
+
+```bash
+# Basic worker cluster registration
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --register-worker \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --register-cluster-name worker-2 \
+  --register-project-name avesha
+
+# Register worker with telemetry endpoint and cloud provider
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --register-worker \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
+  --register-cluster-name worker-3 \
+  --register-project-name avesha \
+  --telemetry-endpoint http://prometheus.example.com:9090 \
+  --cloud-provider GCP \
+  --cloud-region us-west1
+
+# Register Linode worker (cloud provider/region automatically left empty)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --register-worker \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/linode-worker-kubeconfig.yaml \
+  --register-cluster-name worker-linode-1 \
+  --register-project-name avesha
 ```
 
 ---
@@ -130,7 +195,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 ### Installation Order
 
-1. **📜 EGS License** (Applied to `kubeslice-controller` namespace)
+1. **📜 EGS License** (Applied to `kubeslice-controller` namespace) - *Only applied when installing Controller. Not required for UI, Worker, or prerequisites only.*
 2. **🗄️ PostgreSQL** (Namespace: `kt-postgresql`) - *Can be skipped*
 3. **📊 Prometheus Stack** (Namespace: `egs-monitoring`) - *Can be skipped*
 4. **🎮 GPU Operator** (Namespace: `egs-gpu-operator`) - *Can be manually skipped with `--skip-gpu-operator`*
@@ -262,11 +327,101 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 ---
 
+## 🔗 Worker Cluster Registration
+
+The `--register-worker` feature allows you to register a worker cluster with an existing controller cluster without running the full installation process. This is useful for multi-cluster setups where you want to register worker clusters separately.
+
+### When to Use
+
+- **Multi-cluster setups**: Register worker clusters in different Kubernetes clusters
+- **Separate registration**: Register workers independently of installation
+- **Cluster management**: Add new worker clusters to an existing EGS deployment
+
+### How It Works
+
+1. **Connects to Controller**: Uses `--controller-kubeconfig` to connect to the controller cluster
+2. **Validates Worker** (optional): If `--worker-kubeconfig` is provided, validates worker cluster connectivity
+3. **Detects Cloud Provider**: Automatically detects Linode clusters and leaves cloud provider/region empty
+4. **Creates Cluster CRD**: Registers the worker cluster in the controller's project namespace
+5. **Verifies Registration**: Confirms the cluster was successfully registered
+
+### Required Parameters
+
+- `--register-worker`: Enables registration mode
+- `--controller-kubeconfig PATH`: Path to controller cluster kubeconfig file
+- `--register-cluster-name NAME`: Unique name for the worker cluster
+
+### Optional Parameters
+
+- `--controller-context NAME`: Controller cluster context (if not using default)
+- `--worker-kubeconfig PATH`: Worker cluster kubeconfig (for validation and cloud provider detection)
+- `--worker-context NAME`: Worker cluster context
+- `--register-project-name NAME`: Project name (default: `avesha`)
+- `--telemetry-endpoint URL`: Prometheus endpoint URL
+- `--telemetry-provider NAME`: Telemetry provider (default: `prometheus`)
+- `--cloud-provider NAME`: Cloud provider name (auto-detected if worker kubeconfig provided)
+- `--cloud-region NAME`: Cloud region
+- `--controller-namespace NAME`: Controller namespace (default: `kubeslice-controller`)
+
+### Linode Cluster Handling
+
+When a Linode cluster is detected (via `--worker-kubeconfig`), the installer automatically:
+- Sets `cloudProvider` to empty string
+- Sets `cloudRegion` to empty string
+- Ignores any user-provided cloud provider/region values
+
+This is a Linode-specific requirement and is handled automatically.
+
+### Example Workflow
+
+```bash
+# Step 1: Register worker cluster with controller
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --register-worker \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
+  --register-cluster-name worker-2 \
+  --register-project-name avesha
+
+# Step 2: Install EGS Worker on the worker cluster
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator \
+  --skip-controller --skip-ui
+```
+
+### Verification
+
+After registration, verify the cluster status:
+
+```bash
+kubectl --kubeconfig /path/to/controller-kubeconfig.yaml \
+  get cluster.controller.kubeslice.io -n kubeslice-avesha
+```
+
+### Error Handling
+
+The registration process validates:
+- ✅ Controller kubeconfig file exists and is accessible
+- ✅ Controller cluster connectivity
+- ✅ Worker cluster connectivity (if kubeconfig provided)
+- ✅ Project namespace exists in controller cluster
+- ✅ Required parameters are provided
+
+If any validation fails, the installer displays a clear error message and exits.
+
+---
+
 ## 🔐 License File
+
+**Important**: The EGS license file is **only required when installing the Controller**. It is **not required** for:
+- Installing prerequisites (PostgreSQL, Prometheus, GPU Operator)
+- Installing UI (if Controller is already installed)
+- Installing Worker (if Controller and UI are already installed)
+- Registering worker clusters (`--register-worker`)
 
 ### Default Behavior
 
-The installer expects `egs-license.yaml` in the current directory by default:
+When installing Controller, the installer expects `egs-license.yaml` in the current directory by default:
 
 ```bash
 # License file in current directory
@@ -286,7 +441,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 ### License Not Found
 
-If the license file is not found, the installer will:
+**Note**: This only applies when installing Controller. If the license file is not found during Controller installation, the installer will:
 1. Display an error message
 2. Show steps to generate the license file
 3. Exit with instructions
