@@ -63,7 +63,9 @@ validator:
   args: []
   resources: {}
   plugin:
-    env: []
+    env:
+      - name: WITH_WORKLOAD
+        value: "false"
 
 operator:
   repository: nvcr.io/nvidia
@@ -342,7 +344,7 @@ gfd:
   resources: {}
 
 migManager:
-  enabled: true
+  enabled: false
   repository: nvcr.io/nvidia/cloud-native
   image: k8s-mig-manager
   version: v0.12.3-ubuntu20.04
