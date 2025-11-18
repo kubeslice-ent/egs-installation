@@ -25,6 +25,9 @@ spec:
         app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
     spec:
+      {{- if .Values.operator.tolerations }}
+      tolerations: {{ toYaml .Values.operator.tolerations | nindent 8 }}
+      {{- end }}
       restartPolicy: Never
       serviceAccountName: kubeslice-preinstall
       containers:
