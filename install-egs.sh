@@ -30,6 +30,21 @@ SKIP_CONTROLLER="false"
 SKIP_UI="false"
 SKIP_WORKER="false"
 
+# Worker registration mode
+REGISTER_WORKER="false"
+CONTROLLER_KUBECONFIG=""
+CONTROLLER_CONTEXT=""
+WORKER_KUBECONFIG=""
+WORKER_CONTEXT=""
+REGISTER_CLUSTER_NAME=""
+REGISTER_PROJECT_NAME=""
+TELEMETRY_ENABLED="true"
+TELEMETRY_ENDPOINT=""
+TELEMETRY_PROVIDER="prometheus"
+CLOUD_PROVIDER=""
+CLOUD_REGION=""
+CONTROLLER_NAMESPACE="kubeslice-controller"
+
 # GitHub repository details
 EGS_REPO="https://github.com/kubeslice-ent/egs-installation.git"
 EGS_BRANCH="main"
@@ -49,6 +64,151 @@ print_error() {
 
 print_warning() {
     echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+# Function to register worker cluster with controller
+register_worker_cluster() {
+    print_info "Registering worker cluster with controller..."
+
+    # Validate required parameters
+    if [ -z "$CONTROLLER_KUBECONFIG" ]; then
+        print_error "❌ ERROR: --controller-kubeconfig is required for --register-worker"
+        exit 1
+    fi
+
+    if [ ! -f "$CONTROLLER_KUBECONFIG" ]; then
+        print_error "❌ ERROR: Controller kubeconfig file not found: $CONTROLLER_KUBECONFIG"
+        exit 1
+    fi
+
+    if [ -z "$REGISTER_CLUSTER_NAME" ]; then
+        print_error "❌ ERROR: --register-cluster-name is required for --register-worker"
+        exit 1
+    fi
+
+    # Set default project name if not provided
+    if [ -z "$REGISTER_PROJECT_NAME" ]; then
+        REGISTER_PROJECT_NAME="avesha"
+        print_info "Using default project name: $REGISTER_PROJECT_NAME"
+    fi
+
+    # Validate controller cluster connectivity
+    print_info "Validating controller cluster connectivity..."
+    CONTROLLER_CMD="kubectl --kubeconfig $CONTROLLER_KUBECONFIG"
+    if [ -n "$CONTROLLER_CONTEXT" ]; then
+        CONTROLLER_CMD="$CONTROLLER_CMD --context $CONTROLLER_CONTEXT"
+    fi
+
+    if ! $CONTROLLER_CMD cluster-info &>/dev/null; then
+        print_error "❌ ERROR: Cannot connect to controller cluster"
+        print_error "Please verify the controller kubeconfig and context"
+        exit 1
+    fi
+
+    print_success "Controller cluster connectivity verified"
+
+    # Validate worker cluster if kubeconfig provided and detect cloud provider
+    if [ -n "$WORKER_KUBECONFIG" ]; then
+        print_info "Validating worker cluster connectivity..."
+        WORKER_CMD="kubectl --kubeconfig $WORKER_KUBECONFIG"
+        if [ -n "$WORKER_CONTEXT" ]; then
+            WORKER_CMD="$WORKER_CMD --context $WORKER_CONTEXT"
+        fi
+
+        if ! $WORKER_CMD cluster-info &>/dev/null; then
+            print_warning "⚠️  Cannot connect to worker cluster (non-fatal, continuing...)"
+        else
+            print_success "Worker cluster connectivity verified"
+
+            # Detect cloud provider from worker cluster
+            WORKER_CLOUD_PROVIDER=$($WORKER_CMD get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | cut -d: -f1 || echo "")
+            if [ "$WORKER_CLOUD_PROVIDER" = "linode" ]; then
+                CLOUD_PROVIDER=""  # Keep empty for Linode
+                CLOUD_REGION=""    # Keep empty for Linode
+                print_info "Detected Linode cluster - cloud provider and region will be left empty"
+            elif [ -n "$WORKER_CLOUD_PROVIDER" ] && [ -z "$CLOUD_PROVIDER" ]; then
+                print_info "Detected cloud provider: $WORKER_CLOUD_PROVIDER (not setting automatically - use --cloud-provider if needed)"
+            fi
+        fi
+    fi
+
+    # Check if project namespace exists
+    PROJECT_NAMESPACE="kubeslice-$REGISTER_PROJECT_NAME"
+    print_info "Checking if project namespace exists: $PROJECT_NAMESPACE"
+
+    if ! $CONTROLLER_CMD get namespace "$PROJECT_NAMESPACE" &>/dev/null; then
+        print_error "❌ ERROR: Project namespace '$PROJECT_NAMESPACE' does not exist in controller cluster"
+        print_error "Please create the project first or use an existing project name"
+        exit 1
+    fi
+
+    print_success "Project namespace found: $PROJECT_NAMESPACE"
+
+    # Set default telemetry endpoint if not provided
+    if [ -z "$TELEMETRY_ENDPOINT" ]; then
+        TELEMETRY_ENDPOINT="http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+        print_info "Using default telemetry endpoint: $TELEMETRY_ENDPOINT"
+    fi
+
+
+    # Create temporary directory for cluster YAML
+    TEMP_DIR=$(mktemp -d)
+    CLUSTER_YAML="$TEMP_DIR/${REGISTER_CLUSTER_NAME}_cluster.yaml"
+
+    # Generate Cluster CRD YAML
+    print_info "Generating Cluster CRD for: $REGISTER_CLUSTER_NAME"
+    cat <<EOF > "$CLUSTER_YAML"
+apiVersion: controller.kubeslice.io/v1alpha1
+kind: Cluster
+metadata:
+  name: $REGISTER_CLUSTER_NAME
+  namespace: $PROJECT_NAMESPACE
+spec:
+  clusterProperty:
+    telemetry:
+      enabled: $TELEMETRY_ENABLED
+      endpoint: $TELEMETRY_ENDPOINT
+      telemetryProvider: $TELEMETRY_PROVIDER
+    geoLocation:
+      cloudProvider: "$CLOUD_PROVIDER"
+      cloudRegion: "$CLOUD_REGION"
+EOF
+
+    # Apply Cluster CRD to controller
+    print_info "Registering cluster '$REGISTER_CLUSTER_NAME' in project '$REGISTER_PROJECT_NAME'..."
+    if $CONTROLLER_CMD apply -f "$CLUSTER_YAML" -n "$PROJECT_NAMESPACE"; then
+        print_success "Cluster CRD applied successfully"
+    else
+        print_error "❌ ERROR: Failed to apply Cluster CRD"
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+
+    # Verify cluster registration
+    print_info "Verifying cluster registration..."
+    sleep 2
+    if $CONTROLLER_CMD get cluster.controller.kubeslice.io "$REGISTER_CLUSTER_NAME" -n "$PROJECT_NAMESPACE" &>/dev/null; then
+        print_success "✅ Cluster '$REGISTER_CLUSTER_NAME' registered successfully in project '$REGISTER_PROJECT_NAME'"
+        echo ""
+        print_info "Cluster details:"
+        $CONTROLLER_CMD get cluster.controller.kubeslice.io "$REGISTER_CLUSTER_NAME" -n "$PROJECT_NAMESPACE" -o wide
+        echo ""
+    else
+        print_warning "⚠️  Cluster CRD applied but verification failed. Please check manually."
+    fi
+
+    # Cleanup
+    rm -rf "$TEMP_DIR"
+
+    print_success "✅ Worker cluster registration complete!"
+    echo ""
+    print_info "Next steps:"
+    print_info "1. Install EGS Worker on the worker cluster:"
+    print_info "   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\"
+    print_info "     --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui"
+    print_info "2. Ensure the worker cluster can reach the controller cluster"
+    print_info "3. Verify cluster status in the controller:"
+    print_info "   kubectl --kubeconfig $CONTROLLER_KUBECONFIG get cluster.controller.kubeslice.io -n $PROJECT_NAMESPACE"
 }
 
 # Function to show help
@@ -74,6 +234,20 @@ Options:
   --skip-worker              Skip EGS Worker installation
   --help, -h                 Show this help message
 
+Worker Registration Mode:
+  --register-worker          Register a worker cluster with controller (standalone mode)
+  --controller-kubeconfig PATH  Path to controller cluster kubeconfig (required for --register-worker)
+  --controller-context NAME     Controller cluster context (optional)
+  --worker-kubeconfig PATH      Path to worker cluster kubeconfig (optional, for validation)
+  --worker-context NAME         Worker cluster context (optional)
+  --register-cluster-name NAME  Cluster name to register (required for --register-worker)
+  --register-project-name NAME  Project name (required for --register-worker, default: avesha)
+  --telemetry-endpoint URL      Prometheus endpoint URL (optional)
+  --telemetry-provider NAME     Telemetry provider (default: prometheus)
+  --cloud-provider NAME         Cloud provider name (optional)
+  --cloud-region NAME           Cloud region (optional)
+  --controller-namespace NAME   Controller namespace (default: kubeslice-controller)
+
 Examples:
   # Simplest - Install EGS with license file in current directory
   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
@@ -90,11 +264,23 @@ Examples:
   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
     --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-worker
 
+  # Register a worker cluster with controller
+  curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
+    --register-worker \\
+    --controller-kubeconfig /path/to/controller-kubeconfig.yaml \\
+    --register-cluster-name worker-2 \\
+    --register-project-name avesha \\
+    --telemetry-endpoint http://prometheus.example.com:9090 \\
+    --cloud-provider GCP \\
+    --cloud-region us-west1
+
 Notes:
   - License file defaults to 'egs-license.yaml' in current directory if not specified
   - All components are installed by default unless explicitly skipped
   - Installation order: License → Prerequisites → Controller → UI → Worker
   - Takes 10-15 minutes for complete installation
+  - Use --register-worker to register a worker cluster with an existing controller (standalone mode)
+  - When using --register-worker, controller kubeconfig and cluster name are required
 
 EOF
     exit 0
@@ -180,6 +366,54 @@ while [[ $# -gt 0 ]]; do
             SKIP_WORKER="true"
             shift
             ;;
+        --register-worker)
+            REGISTER_WORKER="true"
+            shift
+            ;;
+        --controller-kubeconfig)
+            CONTROLLER_KUBECONFIG="$2"
+            shift 2
+            ;;
+        --controller-context)
+            CONTROLLER_CONTEXT="$2"
+            shift 2
+            ;;
+        --worker-kubeconfig)
+            WORKER_KUBECONFIG="$2"
+            shift 2
+            ;;
+        --worker-context)
+            WORKER_CONTEXT="$2"
+            shift 2
+            ;;
+        --register-cluster-name)
+            REGISTER_CLUSTER_NAME="$2"
+            shift 2
+            ;;
+        --register-project-name)
+            REGISTER_PROJECT_NAME="$2"
+            shift 2
+            ;;
+        --telemetry-endpoint)
+            TELEMETRY_ENDPOINT="$2"
+            shift 2
+            ;;
+        --telemetry-provider)
+            TELEMETRY_PROVIDER="$2"
+            shift 2
+            ;;
+        --cloud-provider)
+            CLOUD_PROVIDER="$2"
+            shift 2
+            ;;
+        --cloud-region)
+            CLOUD_REGION="$2"
+            shift 2
+            ;;
+        --controller-namespace)
+            CONTROLLER_NAMESPACE="$2"
+            shift 2
+            ;;
         --help|-h)
             show_help
             ;;
@@ -208,6 +442,12 @@ fi
 if ! command -v kubectl &> /dev/null; then
     print_error "kubectl is not installed. Please install kubectl first."
     exit 1
+fi
+
+# If --register-worker is set, run registration and exit (skip normal installation flow)
+if [ "$REGISTER_WORKER" = "true" ]; then
+    register_worker_cluster
+    exit 0
 fi
 
 # Set kubeconfig if provided
@@ -244,27 +484,39 @@ print_success "Connected to cluster: $CURRENT_CONTEXT"
 # Save original directory (where user ran curl from)
 ORIGINAL_DIR="$(pwd)"
 
-# Determine license file path
-if [ -z "$LICENSE_FILE" ]; then
-    # Default to egs-license.yaml in current directory
-    LICENSE_FILE="$ORIGINAL_DIR/egs-license.yaml"
-    print_info "License file not specified, using default: egs-license.yaml"
-else
-    # If relative path, convert to absolute path from current directory
-    if [[ "$LICENSE_FILE" != /* ]]; then
-        LICENSE_FILE="$ORIGINAL_DIR/$LICENSE_FILE"
+# Check if Controller is being installed
+# License is only required for Controller, not for UI, Worker, or prerequisites (PostgreSQL, Prometheus, GPU Operator)
+NEEDS_LICENSE="false"
+if [ "$SKIP_CONTROLLER" = "false" ]; then
+    NEEDS_LICENSE="true"
+fi
+
+# Only check license if Controller is being installed
+if [ "$NEEDS_LICENSE" = "true" ]; then
+    # Determine license file path
+    if [ -z "$LICENSE_FILE" ]; then
+        # Default to egs-license.yaml in current directory
+        LICENSE_FILE="$ORIGINAL_DIR/egs-license.yaml"
+        print_info "License file not specified, using default: egs-license.yaml"
+    else
+        # If relative path, convert to absolute path from current directory
+        if [[ "$LICENSE_FILE" != /* ]]; then
+            LICENSE_FILE="$ORIGINAL_DIR/$LICENSE_FILE"
+        fi
     fi
-fi
 
-# Verify license file exists
-if [ ! -f "$LICENSE_FILE" ]; then
-    print_error "❌ ERROR: License file not found at: $LICENSE_FILE"
-    print_error ""
-    show_license_steps
-    exit 1
-fi
+    # Verify license file exists
+    if [ ! -f "$LICENSE_FILE" ]; then
+        print_error "❌ ERROR: License file not found at: $LICENSE_FILE"
+        print_error ""
+        show_license_steps
+        exit 1
+    fi
 
-print_success "License file found: $LICENSE_FILE"
+    print_success "License file found: $LICENSE_FILE"
+else
+    print_info "License not required (Controller is not being installed)"
+fi
 
 # Clone repository internally
 print_info "Downloading EGS installer..."
@@ -440,15 +692,17 @@ fi
 print_success "Configuration updated successfully!"
 echo ""
 
-# Copy license file to current directory if needed
-LICENSE_BASENAME=$(basename "$LICENSE_FILE")
-if [ "$LICENSE_FILE" != "$ORIGINAL_DIR/$LICENSE_BASENAME" ]; then
-    if ! cp "$LICENSE_FILE" "$ORIGINAL_DIR/$LICENSE_BASENAME"; then
-        print_error "Failed to copy license file to current directory"
-        exit 1
+# Copy license file to current directory if needed (only if license is required)
+if [ "$NEEDS_LICENSE" = "true" ]; then
+    LICENSE_BASENAME=$(basename "$LICENSE_FILE")
+    if [ "$LICENSE_FILE" != "$ORIGINAL_DIR/$LICENSE_BASENAME" ]; then
+        if ! cp "$LICENSE_FILE" "$ORIGINAL_DIR/$LICENSE_BASENAME"; then
+            print_error "Failed to copy license file to current directory"
+            exit 1
+        fi
+        LICENSE_FILE="$ORIGINAL_DIR/$LICENSE_BASENAME"
+        print_success "Copied license file to current directory"
     fi
-    LICENSE_FILE="$ORIGINAL_DIR/$LICENSE_BASENAME"
-    print_success "Copied license file to current directory"
 fi
 
 # Show configuration summary
@@ -457,22 +711,25 @@ echo ""
 print_info "🚀 Starting automated installation..."
 echo ""
 
-# Step 0: Apply EGS license
-print_info "📜 Step 0/3: Applying EGS license..."
-
-print_success "Using license file: $LICENSE_FILE"
-
-print_info "Applying EGS license..."
-echo ""
-
-# Create namespace if it doesn't exist
-kubectl create namespace kubeslice-controller --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
-
-if kubectl apply -f "$LICENSE_FILE" -n kubeslice-controller; then
-    print_success "License applied successfully!"
+# Step 0: Apply EGS license (only if Controller is being installed)
+if [ "$NEEDS_LICENSE" = "true" ]; then
+    print_info "📜 Step 0/3: Applying EGS license..."
+    print_success "Using license file: $LICENSE_FILE"
+    print_info "Applying EGS license..."
     echo ""
+
+    # Create namespace if it doesn't exist
+    kubectl create namespace kubeslice-controller --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
+
+    if kubectl apply -f "$LICENSE_FILE" -n kubeslice-controller; then
+        print_success "License applied successfully!"
+        echo ""
+    else
+        print_warning "License application failed or already exists. Continuing..."
+        echo ""
+    fi
 else
-    print_warning "License application failed or already exists. Continuing..."
+    print_info "📜 Step 0/3: Skipping license application (Controller is not being installed)"
     echo ""
 fi
 
@@ -481,6 +738,11 @@ fi
 if [ "$SKIP_POSTGRESQL" = "false" ] || [ "$SKIP_PROMETHEUS" = "false" ] || [ "$SKIP_GPU_OPERATOR" = "false" ]; then
     print_info "📦 Step 1/3: Installing prerequisites (PostgreSQL, Prometheus, GPU Operator)..."
     echo ""
+    # Ensure KUBECONFIG is exported for the prerequisites script
+    if [ -n "$KUBECONFIG" ]; then
+        export KUBECONFIG
+        print_info "Using KUBECONFIG: $KUBECONFIG"
+    fi
     if ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml; then
         print_success "Prerequisites installed successfully!"
         echo ""
