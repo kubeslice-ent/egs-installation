@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # EGS Quick Installer
-# One-command installation for single-cluster EGS
+# One-command installation for EGS (supports both single-cluster and multi-cluster modes)
 # Usage: 
 #   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 #   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --license-file egs-license.yaml
 #   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --skip-postgresql --skip-gpu-operator
+#   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- --controller-kubeconfig /path/to/controller-kubeconfig.yaml --worker-kubeconfig /path/to/worker-kubeconfig.yaml
 
 set -e
 
@@ -34,8 +35,16 @@ SKIP_WORKER="false"
 REGISTER_WORKER="false"
 CONTROLLER_KUBECONFIG=""
 CONTROLLER_CONTEXT=""
+# Multiple workers support (arrays)
+WORKER_KUBECONFIGS=()
+WORKER_CONTEXTS=()
+WORKER_NAMES=()
+# Legacy single worker support (for backward compatibility)
 WORKER_KUBECONFIG=""
 WORKER_CONTEXT=""
+# Note: Multi-cluster mode is auto-detected when both CONTROLLER_KUBECONFIG and at least one WORKER_KUBECONFIG are provided
+# Note: UI always uses the same kubeconfig/context as Controller (they're deployed together)
+# Note: You can specify multiple workers using multiple --worker-kubeconfig flags
 REGISTER_CLUSTER_NAME=""
 REGISTER_PROJECT_NAME=""
 TELEMETRY_ENABLED="true"
@@ -223,8 +232,8 @@ Usage:
 
 Options:
   --license-file PATH        Path to EGS license file (default: egs-license.yaml in current directory)
-  --kubeconfig PATH          Path to kubeconfig file (default: auto-detect)
-  --context NAME             Kubernetes context to use (default: current-context)
+  --kubeconfig PATH          Path to kubeconfig file (default: auto-detect, used for single-cluster mode)
+  --context NAME             Kubernetes context to use (default: current-context, used for single-cluster mode)
   --cluster-name NAME        Cluster name (default: worker-1)
   --skip-postgresql          Skip PostgreSQL installation
   --skip-prometheus          Skip Prometheus installation
@@ -233,6 +242,17 @@ Options:
   --skip-ui                  Skip EGS UI installation
   --skip-worker              Skip EGS Worker installation
   --help, -h                 Show this help message
+
+Multi-Cluster Mode (Auto-detected):
+  --controller-kubeconfig PATH  Path to controller cluster kubeconfig (auto-detects multi-cluster when used with --worker-kubeconfig)
+  --controller-context NAME     Controller cluster context (optional)
+  --worker-kubeconfig PATH      Path to worker cluster kubeconfig (can be specified multiple times for multiple workers)
+  --worker-context NAME         Worker cluster context (optional, can be specified multiple times, matches order of --worker-kubeconfig)
+  --worker-name NAME            Worker cluster name (optional, can be specified multiple times, defaults to worker-1, worker-2, etc.)
+  
+  Note: Multi-cluster mode is automatically enabled when both --controller-kubeconfig and at least one --worker-kubeconfig are provided
+  Note: UI always uses the same kubeconfig/context as Controller (they're deployed together)
+  Note: You can add multiple workers by specifying --worker-kubeconfig multiple times
 
 Worker Registration Mode:
   --register-worker          Register a worker cluster with controller (standalone mode)
@@ -274,11 +294,31 @@ Examples:
     --cloud-provider GCP \\
     --cloud-region us-west1
 
+  # Multi-cluster installation (Controller/UI in one cluster, Worker in another)
+  # Multi-cluster mode is auto-detected when both --controller-kubeconfig and --worker-kubeconfig are provided
+  curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
+    --controller-kubeconfig /path/to/controller-kubeconfig.yaml \\
+    --controller-context controller-context \\
+    --worker-kubeconfig /path/to/worker-kubeconfig.yaml \\
+    --worker-context worker-context \\
+    --skip-postgresql --skip-prometheus --skip-gpu-operator
+  
+  # Multi-cluster with multiple workers
+  curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
+    --controller-kubeconfig /path/to/controller-kubeconfig.yaml \\
+    --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \\
+    --worker-context worker1-context \\
+    --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \\
+    --worker-context worker2-context \\
+    --skip-postgresql --skip-prometheus --skip-gpu-operator
+
 Notes:
   - License file defaults to 'egs-license.yaml' in current directory if not specified
   - All components are installed by default unless explicitly skipped
   - Installation order: License → Prerequisites → Controller → UI → Worker
   - Takes 10-15 minutes for complete installation
+  - Single-cluster mode (default): All components installed in the same cluster with strict dependency checks
+  - Multi-cluster mode (auto-detected): Automatically enabled when both --controller-kubeconfig and --worker-kubeconfig are provided. Allows Controller, UI, and Worker in different clusters, relaxes dependency checks
   - Use --register-worker to register a worker cluster with an existing controller (standalone mode)
   - When using --register-worker, controller kubeconfig and cluster name are required
 
@@ -379,11 +419,22 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --worker-kubeconfig)
+            # Support multiple workers - add to array
+            WORKER_KUBECONFIGS+=("$2")
+            # Also set legacy variable for backward compatibility (last one)
             WORKER_KUBECONFIG="$2"
             shift 2
             ;;
         --worker-context)
+            # Support multiple worker contexts - add to array
+            WORKER_CONTEXTS+=("$2")
+            # Also set legacy variable for backward compatibility (last one)
             WORKER_CONTEXT="$2"
+            shift 2
+            ;;
+        --worker-name)
+            # Support multiple worker names - add to array
+            WORKER_NAMES+=("$2")
             shift 2
             ;;
         --register-cluster-name)
@@ -450,36 +501,90 @@ if [ "$REGISTER_WORKER" = "true" ]; then
     exit 0
 fi
 
-# Set kubeconfig if provided
-if [ -n "$KUBECONFIG_PATH" ]; then
-    export KUBECONFIG="$KUBECONFIG_PATH"
-    print_info "Set KUBECONFIG to: $KUBECONFIG_PATH"
+# Normalize worker arrays: if legacy WORKER_KUBECONFIG is set but arrays are empty, add it to array
+if [ -n "$WORKER_KUBECONFIG" ] && [ ${#WORKER_KUBECONFIGS[@]} -eq 0 ]; then
+    WORKER_KUBECONFIGS+=("$WORKER_KUBECONFIG")
+    if [ -n "$WORKER_CONTEXT" ]; then
+        WORKER_CONTEXTS+=("$WORKER_CONTEXT")
+    fi
 fi
 
-# Set context if provided
-if [ -n "$KUBE_CONTEXT" ]; then
-    print_info "Switching to context: $KUBE_CONTEXT"
-    kubectl config use-context "$KUBE_CONTEXT" &>/dev/null || {
-        print_error "Failed to switch to context: $KUBE_CONTEXT"
+# Auto-detect multi-cluster mode: if both CONTROLLER_KUBECONFIG and at least one WORKER_KUBECONFIG are provided
+MULTI_CLUSTER="false"
+if [ -n "$CONTROLLER_KUBECONFIG" ] && [ ${#WORKER_KUBECONFIGS[@]} -gt 0 ]; then
+    MULTI_CLUSTER="true"
+    print_info "🌐 Multi-cluster mode auto-detected (Controller kubeconfig and ${#WORKER_KUBECONFIGS[@]} worker kubeconfig(s) provided)"
+fi
+
+# Validate multi-cluster mode if enabled
+if [ "$MULTI_CLUSTER" = "true" ]; then
+    # Validate required kubeconfigs for components being installed
+    if [ "$SKIP_CONTROLLER" = "false" ] && [ -z "$CONTROLLER_KUBECONFIG" ]; then
+        print_error "❌ ERROR: --controller-kubeconfig is required when installing Controller in multi-cluster mode"
         exit 1
-    }
+    fi
+    
+    # UI uses the same kubeconfig as Controller (they're deployed together)
+    if [ "$SKIP_UI" = "false" ] && [ -z "$CONTROLLER_KUBECONFIG" ]; then
+        print_error "❌ ERROR: --controller-kubeconfig is required when installing UI in multi-cluster mode (UI uses Controller's kubeconfig)"
+        exit 1
+    fi
+    
+    if [ "$SKIP_WORKER" = "false" ] && [ ${#WORKER_KUBECONFIGS[@]} -eq 0 ]; then
+        print_error "❌ ERROR: At least one --worker-kubeconfig is required when installing Worker in multi-cluster mode"
+        exit 1
+    fi
+    
+    # Validate kubeconfig files exist
+    if [ -n "$CONTROLLER_KUBECONFIG" ] && [ ! -f "$CONTROLLER_KUBECONFIG" ]; then
+        print_error "❌ ERROR: Controller kubeconfig file not found: $CONTROLLER_KUBECONFIG"
+        exit 1
+    fi
+    
+    # Validate all worker kubeconfig files exist
+    for worker_kubeconfig in "${WORKER_KUBECONFIGS[@]}"; do
+        if [ ! -f "$worker_kubeconfig" ]; then
+            print_error "❌ ERROR: Worker kubeconfig file not found: $worker_kubeconfig"
+            exit 1
+        fi
+    done
+    
+    print_success "Multi-cluster mode validation passed"
+    echo ""
+    # For multi-cluster, we'll use component-specific kubeconfigs later
+    CURRENT_CONTEXT="multi-cluster"
+else
+    # Single-cluster mode: Set kubeconfig if provided
+    if [ -n "$KUBECONFIG_PATH" ]; then
+        export KUBECONFIG="$KUBECONFIG_PATH"
+        print_info "Set KUBECONFIG to: $KUBECONFIG_PATH"
+    fi
+    
+    # Set context if provided
+    if [ -n "$KUBE_CONTEXT" ]; then
+        print_info "Switching to context: $KUBE_CONTEXT"
+        kubectl config use-context "$KUBE_CONTEXT" &>/dev/null || {
+            print_error "Failed to switch to context: $KUBE_CONTEXT"
+            exit 1
+        }
+    fi
+    
+    # Check cluster connectivity
+    print_info "Checking Kubernetes cluster connectivity..."
+    if ! kubectl cluster-info &>/dev/null; then
+        print_error "Cannot connect to Kubernetes cluster."
+        print_info "Please ensure kubectl is configured correctly."
+        exit 1
+    fi
+    
+    CURRENT_CONTEXT=$(kubectl config current-context 2>/dev/null || echo "")
+    if [ -z "$CURRENT_CONTEXT" ]; then
+        print_error "No active Kubernetes context found!"
+        exit 1
+    fi
+    
+    print_success "Connected to cluster: $CURRENT_CONTEXT"
 fi
-
-# Check cluster connectivity
-print_info "Checking Kubernetes cluster connectivity..."
-if ! kubectl cluster-info &>/dev/null; then
-    print_error "Cannot connect to Kubernetes cluster."
-    print_info "Please ensure kubectl is configured correctly."
-    exit 1
-fi
-
-CURRENT_CONTEXT=$(kubectl config current-context 2>/dev/null || echo "")
-if [ -z "$CURRENT_CONTEXT" ]; then
-    print_error "No active Kubernetes context found!"
-    exit 1
-fi
-
-print_success "Connected to cluster: $CURRENT_CONTEXT"
 
 # Save original directory (where user ran curl from)
 ORIGINAL_DIR="$(pwd)"
@@ -579,9 +684,132 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-# Detect GPU nodes and cloud provider
-print_info "Detecting cluster capabilities..."
-GPU_NODES=$(kubectl get nodes -o json 2>/dev/null | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l || echo "0")
+# Handle kubeconfigs based on mode
+if [ "$MULTI_CLUSTER" = "true" ]; then
+    # Multi-cluster mode: Copy component-specific kubeconfigs
+    print_info "Copying component-specific kubeconfigs for multi-cluster mode..."
+    
+    # Initialize GLOBAL_CONTEXT variable
+    GLOBAL_CONTEXT=""
+    
+    # Copy controller kubeconfig if provided (UI uses the same kubeconfig as Controller)
+    if [ -n "$CONTROLLER_KUBECONFIG" ]; then
+        CONTROLLER_KUBECONFIG_RELATIVE=$(basename "$CONTROLLER_KUBECONFIG")
+        CONTROLLER_KUBECONFIG_FULLPATH=$(realpath "$CONTROLLER_KUBECONFIG" 2>/dev/null || echo "$CONTROLLER_KUBECONFIG")
+        ORIGINAL_DIR_FULLPATH=$(realpath "$ORIGINAL_DIR")
+        CONTROLLER_KUBECONFIG_DIR=$(dirname "$CONTROLLER_KUBECONFIG_FULLPATH")
+        
+        # Get controller context (use provided context or get from kubeconfig)
+        if [ -z "$CONTROLLER_CONTEXT" ]; then
+            CONTROLLER_CONTEXT=$(kubectl config --kubeconfig="$CONTROLLER_KUBECONFIG" current-context 2>/dev/null || echo "")
+        fi
+        
+        # Only copy if kubeconfig is not already in the work directory
+        if [ "$CONTROLLER_KUBECONFIG_DIR" != "$ORIGINAL_DIR_FULLPATH" ]; then
+            if ! cp "$CONTROLLER_KUBECONFIG" "$ORIGINAL_DIR/$CONTROLLER_KUBECONFIG_RELATIVE"; then
+                print_error "Failed to copy controller kubeconfig to work directory"
+                exit 1
+            fi
+            print_success "Copied controller kubeconfig: $CONTROLLER_KUBECONFIG_RELATIVE (UI will use the same)"
+        else
+            print_success "Controller kubeconfig already in work directory: $CONTROLLER_KUBECONFIG_RELATIVE (UI will use the same)"
+        fi
+        # Use controller kubeconfig as global (default)
+        KUBECONFIG_RELATIVE="$CONTROLLER_KUBECONFIG_RELATIVE"
+        # Use controller context as global context
+        GLOBAL_CONTEXT="$CONTROLLER_CONTEXT"
+    fi
+    
+    # Copy worker kubeconfigs if provided (support multiple workers)
+    WORKER_KUBECONFIG_RELATIVES=()
+    WORKER_CONTEXTS_DETECTED=()
+    ORIGINAL_DIR_FULLPATH=$(realpath "$ORIGINAL_DIR")
+    
+    for i in "${!WORKER_KUBECONFIGS[@]}"; do
+        WORKER_KUBECONFIG="${WORKER_KUBECONFIGS[$i]}"
+        WORKER_KUBECONFIG_RELATIVE=$(basename "$WORKER_KUBECONFIG")
+        WORKER_KUBECONFIG_FULLPATH=$(realpath "$WORKER_KUBECONFIG" 2>/dev/null || echo "$WORKER_KUBECONFIG")
+        WORKER_KUBECONFIG_DIR=$(dirname "$WORKER_KUBECONFIG_FULLPATH")
+        
+        # Get worker context (use provided context or get from kubeconfig)
+        if [ $i -lt ${#WORKER_CONTEXTS[@]} ]; then
+            WORKER_CTX="${WORKER_CONTEXTS[$i]}"
+        else
+            WORKER_CTX=""
+        fi
+        
+        if [ -z "$WORKER_CTX" ]; then
+            WORKER_CTX=$(kubectl config --kubeconfig="$WORKER_KUBECONFIG" current-context 2>/dev/null || echo "")
+        fi
+        WORKER_CONTEXTS_DETECTED+=("$WORKER_CTX")
+        
+        # Only copy if kubeconfig is not already in the work directory
+        if [ "$WORKER_KUBECONFIG_DIR" != "$ORIGINAL_DIR_FULLPATH" ]; then
+            if ! cp "$WORKER_KUBECONFIG" "$ORIGINAL_DIR/$WORKER_KUBECONFIG_RELATIVE"; then
+                print_error "Failed to copy worker kubeconfig to work directory: $WORKER_KUBECONFIG_RELATIVE"
+                exit 1
+            fi
+            print_success "Copied worker kubeconfig: $WORKER_KUBECONFIG_RELATIVE"
+        else
+            print_success "Worker kubeconfig already in work directory: $WORKER_KUBECONFIG_RELATIVE"
+        fi
+        WORKER_KUBECONFIG_RELATIVES+=("$WORKER_KUBECONFIG_RELATIVE")
+        
+        # Use first worker kubeconfig as global if controller not provided
+        if [ $i -eq 0 ] && [ -z "$CONTROLLER_KUBECONFIG" ]; then
+            KUBECONFIG_RELATIVE="$WORKER_KUBECONFIG_RELATIVE"
+            GLOBAL_CONTEXT="$WORKER_CTX"
+        fi
+    done
+    
+    # Detect cloud provider and GPU nodes from first worker cluster (if available)
+    if [ ${#WORKER_KUBECONFIGS[@]} -gt 0 ]; then
+        FIRST_WORKER_KUBECONFIG="${WORKER_KUBECONFIGS[0]}"
+        export KUBECONFIG="$FIRST_WORKER_KUBECONFIG"
+        if [ ${#WORKER_CONTEXTS_DETECTED[@]} -gt 0 ] && [ -n "${WORKER_CONTEXTS_DETECTED[0]}" ]; then
+            kubectl config use-context "${WORKER_CONTEXTS_DETECTED[0]}" &>/dev/null || true
+        fi
+        CLOUD_PROVIDER_DETECTED=$(kubectl get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | cut -d: -f1 || echo "")
+        GPU_NODES=$(kubectl get nodes -o json 2>/dev/null | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l || echo "0")
+    else
+        CLOUD_PROVIDER_DETECTED=""
+        GPU_NODES="0"
+    fi
+else
+    # Single-cluster mode: Detect GPU nodes and cloud provider
+    print_info "Detecting cluster capabilities..."
+    GPU_NODES=$(kubectl get nodes -o json 2>/dev/null | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l || echo "0")
+    
+    # Detect cloud provider
+    CLOUD_PROVIDER_DETECTED=$(kubectl get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | cut -d: -f1 || echo "")
+    
+    # Get kubeconfig details
+    if [ -f "$KUBECONFIG" ]; then
+        KUBECONFIG_FULLPATH=$(realpath "$KUBECONFIG")
+        ORIGINAL_DIR_FULLPATH=$(realpath "$ORIGINAL_DIR")
+        KUBECONFIG_DIR=$(dirname "$KUBECONFIG_FULLPATH")
+        
+        if [ "$KUBECONFIG_DIR" = "$ORIGINAL_DIR_FULLPATH" ]; then
+            # Kubeconfig is in the same directory, use its basename
+            KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
+        else
+            # Kubeconfig is elsewhere, copy it to work directory
+            KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
+            if ! cp "$KUBECONFIG" "$ORIGINAL_DIR/$KUBECONFIG_RELATIVE"; then
+                print_error "Failed to copy kubeconfig to work directory"
+                exit 1
+            fi
+            print_success "Copied kubeconfig to work directory: $KUBECONFIG_RELATIVE"
+            # Update KUBECONFIG environment variable to point to the copied file
+            export KUBECONFIG="$ORIGINAL_DIR/$KUBECONFIG_RELATIVE"
+        fi
+    else
+        # Fallback
+        KUBECONFIG_RELATIVE="kubeconfig"
+    fi
+fi
+
+# Set GPU detection result
 if [ "$GPU_NODES" -gt 0 ]; then
     print_success "Detected $GPU_NODES GPU node(s)"
     ENABLE_CUSTOM_APPS="true"
@@ -590,9 +818,6 @@ else
     ENABLE_CUSTOM_APPS="false"
     # Don't automatically skip GPU Operator - let user decide via --skip-gpu-operator flag
 fi
-
-# Detect cloud provider
-CLOUD_PROVIDER_DETECTED=$(kubectl get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | cut -d: -f1 || echo "")
 
 # Set cloud provider in config (exclude Linode - keep it empty for Linode clusters)
 if [ "$CLOUD_PROVIDER_DETECTED" = "linode" ]; then
@@ -605,41 +830,100 @@ else
     CLOUD_PROVIDER=""
 fi
 
-# Get kubeconfig details
-if [ -f "$KUBECONFIG" ]; then
-    KUBECONFIG_FULLPATH=$(realpath "$KUBECONFIG")
-    ORIGINAL_DIR_FULLPATH=$(realpath "$ORIGINAL_DIR")
-    KUBECONFIG_DIR=$(dirname "$KUBECONFIG_FULLPATH")
-    
-    if [ "$KUBECONFIG_DIR" = "$ORIGINAL_DIR_FULLPATH" ]; then
-        # Kubeconfig is in the same directory, use its basename
-        KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
-    else
-        # Kubeconfig is elsewhere, copy it to work directory
-        KUBECONFIG_RELATIVE=$(basename "$KUBECONFIG")
-        if ! cp "$KUBECONFIG" "$ORIGINAL_DIR/$KUBECONFIG_RELATIVE"; then
-            print_error "Failed to copy kubeconfig to work directory"
-            exit 1
-        fi
-        print_success "Copied kubeconfig to work directory: $KUBECONFIG_RELATIVE"
-        # Update KUBECONFIG environment variable to point to the copied file
-        export KUBECONFIG="$ORIGINAL_DIR/$KUBECONFIG_RELATIVE"
-    fi
-else
-    # Fallback
-    KUBECONFIG_RELATIVE="kubeconfig"
-fi
-
 # Update egs-installer-config.yaml with detected values
 print_info "Updating EGS configuration..."
 
 # Update kubeconfig and context
-yq eval ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
-yq eval ".global_kubecontext = \"$CURRENT_CONTEXT\"" -i egs-installer-config.yaml
+if [ "$MULTI_CLUSTER" = "true" ]; then
+    # Multi-cluster mode: Set global kubeconfig (use controller as default, or first available)
+    yq eval ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+    # Set global context (use controller context if available, otherwise worker context)
+    if [ -n "$GLOBAL_CONTEXT" ]; then
+        yq eval ".global_kubecontext = \"$GLOBAL_CONTEXT\"" -i egs-installer-config.yaml
+    else
+        yq eval ".global_kubecontext = \"\"" -i egs-installer-config.yaml
+    fi
+    
+    # Set component-specific kubeconfigs and contexts (even if skipping installation, we need them in config)
+    if [ -n "$CONTROLLER_KUBECONFIG" ]; then
+        # Set Controller kubeconfig and context
+        if [ "$SKIP_CONTROLLER" = "false" ]; then
+            yq eval ".kubeslice_controller_egs.use_global_kubeconfig = false" -i egs-installer-config.yaml
+            yq eval ".kubeslice_controller_egs.kubeconfig = \"$CONTROLLER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+            if [ -n "$CONTROLLER_CONTEXT" ]; then
+                yq eval ".kubeslice_controller_egs.kubecontext = \"$CONTROLLER_CONTEXT\"" -i egs-installer-config.yaml
+            else
+                yq eval ".kubeslice_controller_egs.kubecontext = \"\"" -i egs-installer-config.yaml
+            fi
+            print_success "Set Controller kubeconfig: $CONTROLLER_KUBECONFIG_RELATIVE"
+        fi
+        
+        # UI uses the same kubeconfig and context as Controller (they're deployed together)
+        if [ "$SKIP_UI" = "false" ]; then
+            yq eval ".kubeslice_ui_egs.use_global_kubeconfig = false" -i egs-installer-config.yaml
+            yq eval ".kubeslice_ui_egs.kubeconfig = \"$CONTROLLER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+            if [ -n "$CONTROLLER_CONTEXT" ]; then
+                yq eval ".kubeslice_ui_egs.kubecontext = \"$CONTROLLER_CONTEXT\"" -i egs-installer-config.yaml
+            else
+                yq eval ".kubeslice_ui_egs.kubecontext = \"\"" -i egs-installer-config.yaml
+            fi
+            print_success "Set UI kubeconfig (same as Controller): $CONTROLLER_KUBECONFIG_RELATIVE"
+        fi
+    fi
+    
+    # Set worker kubeconfigs and contexts for multiple workers
+    if [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]; then
+        # Remove all existing workers from the array first
+        yq eval 'del(.kubeslice_worker_egs[])' -i egs-installer-config.yaml
+        
+        # Add each worker to the array
+        for i in "${!WORKER_KUBECONFIG_RELATIVES[@]}"; do
+            WORKER_KUBECONFIG_RELATIVE="${WORKER_KUBECONFIG_RELATIVES[$i]}"
+            WORKER_CTX="${WORKER_CONTEXTS_DETECTED[$i]}"
+            
+            # Determine worker name (use provided name or default to worker-1, worker-2, etc.)
+            if [ $i -lt ${#WORKER_NAMES[@]} ] && [ -n "${WORKER_NAMES[$i]}" ]; then
+                WORKER_NAME="${WORKER_NAMES[$i]}"
+            else
+                WORKER_NAME="worker-$((i+1))"
+            fi
+            
+            # Add new worker entry
+            yq eval ".kubeslice_worker_egs[$i] = {}" -i egs-installer-config.yaml
+            yq eval ".kubeslice_worker_egs[$i].name = \"$WORKER_NAME\"" -i egs-installer-config.yaml
+            yq eval ".kubeslice_worker_egs[$i].use_global_kubeconfig = false" -i egs-installer-config.yaml
+            yq eval ".kubeslice_worker_egs[$i].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+            
+            if [ -n "$WORKER_CTX" ]; then
+                yq eval ".kubeslice_worker_egs[$i].kubecontext = \"$WORKER_CTX\"" -i egs-installer-config.yaml
+                if [ "$SKIP_WORKER" = "false" ]; then
+                    print_success "Set Worker $WORKER_NAME kubeconfig: $WORKER_KUBECONFIG_RELATIVE with context: $WORKER_CTX"
+                fi
+            else
+                yq eval ".kubeslice_worker_egs[$i].kubecontext = \"\"" -i egs-installer-config.yaml
+                print_warning "Worker $WORKER_NAME context not found, leaving empty"
+            fi
+        done
+        
+        if [ "$SKIP_WORKER" = "false" ]; then
+            print_success "Configured ${#WORKER_KUBECONFIG_RELATIVES[@]} worker cluster(s)"
+        fi
+    fi
+else
+    # Single-cluster mode: Use global kubeconfig and context
+    yq eval ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+    yq eval ".global_kubecontext = \"$CURRENT_CONTEXT\"" -i egs-installer-config.yaml
+fi
 
-# Update cluster name
-yq eval ".kubeslice_worker_egs[0].name = \"$CLUSTER_NAME\"" -i egs-installer-config.yaml
-yq eval ".cluster_registration[0].cluster_name = \"$CLUSTER_NAME\"" -i egs-installer-config.yaml
+# Update cluster name (for cluster registration - use first worker name or default)
+if [ ${#WORKER_NAMES[@]} -gt 0 ] && [ -n "${WORKER_NAMES[0]}" ]; then
+    FIRST_WORKER_NAME="${WORKER_NAMES[0]}"
+elif [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]; then
+    FIRST_WORKER_NAME="worker-1"
+else
+    FIRST_WORKER_NAME="$CLUSTER_NAME"
+fi
+yq eval ".cluster_registration[0].cluster_name = \"$FIRST_WORKER_NAME\"" -i egs-installer-config.yaml
 
 # Update cloud provider
 yq eval ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" -i egs-installer-config.yaml
@@ -647,7 +931,11 @@ yq eval ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\
 # Update image registry
 yq eval ".kubeslice_controller_egs.inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
 yq eval ".kubeslice_ui_egs.inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
-yq eval ".kubeslice_worker_egs[0].inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
+# Update image registry for all workers
+WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' egs-installer-config.yaml)
+for ((i=0; i<WORKER_COUNT; i++)); do
+    yq eval ".kubeslice_worker_egs[$i].inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
+done
 
 # Update enable_custom_apps
 yq eval ".enable_custom_apps = $ENABLE_CUSTOM_APPS" -i egs-installer-config.yaml
@@ -684,9 +972,13 @@ if [ "$SKIP_UI" = "true" ]; then
 fi
 
 if [ "$SKIP_WORKER" = "true" ]; then
-    yq eval ".kubeslice_worker_egs[0].skip_installation = true" -i egs-installer-config.yaml
+    # Set skip_installation for all workers
+    WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' egs-installer-config.yaml)
+    for ((i=0; i<WORKER_COUNT; i++)); do
+        yq eval ".kubeslice_worker_egs[$i].skip_installation = true" -i egs-installer-config.yaml
+    done
     yq eval ".enable_install_worker = false" -i egs-installer-config.yaml
-    print_warning "EGS Worker installation will be skipped"
+    print_warning "EGS Worker installation will be skipped for all workers"
 fi
 
 print_success "Configuration updated successfully!"
@@ -756,49 +1048,64 @@ else
 fi
 
 # Step 2: Install EGS components (Controller, UI, Worker)
-# Check if Controller is being installed without PostgreSQL (not allowed)
-# But first check if PostgreSQL is already installed in the cluster
-if [ "$SKIP_CONTROLLER" = "false" ] && [ "$SKIP_POSTGRESQL" = "true" ]; then
-    # Check if PostgreSQL is already installed
-    POSTGRESQL_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "postgresql|kt-postgresql" | wc -l || echo "0")
-    if [ "$POSTGRESQL_INSTALLED" -eq 0 ]; then
-        print_error "❌ ERROR: Controller installation requires PostgreSQL to be installed."
-        print_error "Please install PostgreSQL first, or use --skip-controller to skip Controller installation."
-        print_error "Controller needs PostgreSQL for its database."
-        exit 1
-    else
-        print_info "ℹ️  PostgreSQL is already installed in the cluster. Proceeding with Controller installation."
+# Dependency checks (relaxed for multi-cluster mode)
+# Note: Do dependency checks BEFORE calling egs-installer.sh to show warnings early
+if [ "$MULTI_CLUSTER" = "false" ]; then
+    # Single-cluster mode: Strict dependency checks
+    # Check if Controller is being installed without PostgreSQL (not allowed)
+    # But first check if PostgreSQL is already installed in the cluster
+    if [ "$SKIP_CONTROLLER" = "false" ] && [ "$SKIP_POSTGRESQL" = "true" ]; then
+        # Check if PostgreSQL is already installed
+        POSTGRESQL_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "postgresql|kt-postgresql" | wc -l || echo "0")
+        if [ "$POSTGRESQL_INSTALLED" -eq 0 ]; then
+            print_error "❌ ERROR: Controller installation requires PostgreSQL to be installed."
+            print_error "Please install PostgreSQL first, or use --skip-controller to skip Controller installation."
+            print_error "Controller needs PostgreSQL for its database."
+            exit 1
+        else
+            print_info "ℹ️  PostgreSQL is already installed in the cluster. Proceeding with Controller installation."
+        fi
     fi
-fi
-
-# Check if Worker is being installed without Controller (not allowed)
-# But first check if Controller is already installed (for upgrade scenarios)
-if [ "$SKIP_WORKER" = "false" ] && [ "$SKIP_CONTROLLER" = "true" ]; then
-    # Check if Controller is already installed
-    CONTROLLER_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "egs-controller|kubeslice-controller" | wc -l || echo "0")
-    if [ "$CONTROLLER_INSTALLED" -eq 0 ]; then
-        print_error "❌ ERROR: Worker installation requires Controller to be installed."
-        print_error "Please install Controller first, or use --skip-worker to skip Worker installation."
-        print_error "Worker needs Controller CRDs and project registration to function."
-        exit 1
-    else
-        print_info "ℹ️  Controller is already installed in the cluster. Proceeding with Worker installation/upgrade."
+    
+    # Check if Worker is being installed without Controller (not allowed)
+    # But first check if Controller is already installed (for upgrade scenarios)
+    if [ "$SKIP_WORKER" = "false" ] && [ "$SKIP_CONTROLLER" = "true" ]; then
+        # Check if Controller is already installed
+        CONTROLLER_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "egs-controller|kubeslice-controller" | wc -l || echo "0")
+        if [ "$CONTROLLER_INSTALLED" -eq 0 ]; then
+            print_error "❌ ERROR: Worker installation requires Controller to be installed."
+            print_error "Please install Controller first, or use --skip-worker to skip Worker installation."
+            print_error "Worker needs Controller CRDs and project registration to function."
+            exit 1
+        else
+            print_info "ℹ️  Controller is already installed in the cluster. Proceeding with Worker installation/upgrade."
+        fi
     fi
-fi
-
-# Check if Worker is being installed without UI (not allowed)
-# But first check if UI is already installed (for upgrade scenarios)
-if [ "$SKIP_WORKER" = "false" ] && [ "$SKIP_UI" = "true" ]; then
-    # Check if UI is already installed
-    UI_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "egs-ui|kubeslice-ui" | wc -l || echo "0")
-    if [ "$UI_INSTALLED" -eq 0 ]; then
-        print_error "❌ ERROR: Worker installation requires UI to be installed."
-        print_error "Please install UI first, or use --skip-worker to skip Worker installation."
-        print_error "Worker needs UI API gateway endpoint for egs-agent to function."
-        exit 1
-    else
-        print_info "ℹ️  UI is already installed in the cluster. Proceeding with Worker installation/upgrade."
+    
+    # Check if Worker is being installed without UI (not allowed)
+    # But first check if UI is already installed (for upgrade scenarios)
+    if [ "$SKIP_WORKER" = "false" ] && [ "$SKIP_UI" = "true" ]; then
+        # Check if UI is already installed
+        UI_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "egs-ui|kubeslice-ui" | wc -l || echo "0")
+        if [ "$UI_INSTALLED" -eq 0 ]; then
+            print_error "❌ ERROR: Worker installation requires UI to be installed."
+            print_error "Please install UI first, or use --skip-worker to skip Worker installation."
+            print_error "Worker needs UI API gateway endpoint for egs-agent to function."
+            exit 1
+        else
+            print_info "ℹ️  UI is already installed in the cluster. Proceeding with Worker installation/upgrade."
+        fi
     fi
+else
+    # Multi-cluster mode: Relaxed dependency checks (components can be in different clusters)
+    # In multi-cluster mode, it's expected that components may be in different clusters
+    # Only warn about PostgreSQL for Controller (as it's a hard requirement)
+    print_info "ℹ️  Multi-cluster mode: Dependency checks relaxed (components may be in different clusters)"
+    if [ "$SKIP_CONTROLLER" = "false" ] && [ "$SKIP_POSTGRESQL" = "true" ]; then
+        print_warning "⚠️  Controller installation without PostgreSQL in multi-cluster mode."
+        print_warning "⚠️  Ensure PostgreSQL is installed in the controller cluster or use --skip-controller"
+    fi
+    # No warnings for Worker without Controller/UI - this is expected in multi-cluster mode
 fi
 
 # Only run if at least one is not skipped

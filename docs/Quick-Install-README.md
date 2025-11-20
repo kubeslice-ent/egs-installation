@@ -2,7 +2,7 @@
 
 ## Overview
 
-The EGS Quick Installer provides a **one-command installation** experience for single-cluster EGS deployments. This guide is designed for users who want to get EGS up and running quickly without manual configuration.
+The EGS Quick Installer provides a **one-command installation** experience for EGS deployments. This guide is designed for users who want to get EGS up and running quickly without manual configuration. The installer supports both single-cluster and multi-cluster deployments, including the ability to install multiple worker clusters in a single command.
 
 ---
 
@@ -10,7 +10,7 @@ The EGS Quick Installer provides a **one-command installation** experience for s
 
 - **🎯 One-Command Installation**: Install EGS with a single curl command
 - **🔍 Auto-Detection**: Automatically detects cluster capabilities (GPU nodes, cloud provider)
-- **📝 Smart Defaults**: Uses sensible defaults optimized for single-cluster setups
+- **📝 Smart Defaults**: Uses sensible defaults optimized for single-cluster and multi-cluster setups
 - **🤖 Automated Setup**: Handles all prerequisites automatically (PostgreSQL, Prometheus, GPU Operator)
 - **⚡ Fast Deployment**: Complete installation in 10-15 minutes
 - **🔒 Conditional License**: License only required when installing Controller (not for UI, Worker, or prerequisites)
@@ -18,6 +18,7 @@ The EGS Quick Installer provides a **one-command installation** experience for s
 - **🔄 Upgrade Support**: Automatically detects existing installations and performs upgrades
 - **🔗 Smart Dependencies**: Validates component dependencies and checks for existing installations before blocking
 - **🌐 Worker Registration**: Register worker clusters with controller independently (`--register-worker`)
+- **👥 Multiple Workers**: Support for installing multiple worker clusters in a single command
 
 ---
 
@@ -76,6 +77,18 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash [OPTIONS]
 | `--skip-ui` | Skip EGS UI installation | Install | No |
 | `--skip-worker` | Skip EGS Worker installation | Install | No |
 | `--help, -h` | Show help message | - | No |
+
+### Multi-Cluster Mode Options
+
+| Option | Description | Default | Required |
+|--------|-------------|---------|----------|
+| `--controller-kubeconfig PATH` | Path to controller cluster kubeconfig | - | Yes (multi-cluster mode) |
+| `--controller-context NAME` | Controller cluster context | Auto-detected | No |
+| `--worker-kubeconfig PATH` | Path to worker cluster kubeconfig (can be specified multiple times) | - | Yes (multi-cluster mode) |
+| `--worker-context NAME` | Worker cluster context (can be specified multiple times, matches order of --worker-kubeconfig) | Auto-detected | No |
+| `--worker-name NAME` | Worker cluster name (can be specified multiple times, defaults to worker-1, worker-2, etc.) | Auto-generated | No |
+
+**Note**: Multi-cluster mode is automatically detected when both `--controller-kubeconfig` and at least one `--worker-kubeconfig` are provided. You can specify multiple `--worker-kubeconfig` flags to install multiple worker clusters.
 
 ### Worker Registration Options
 
@@ -159,7 +172,45 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
 ```
 
-### Example 7: Register Worker Cluster with Controller
+### Example 7: Multi-Cluster Installation (Controller/UI in One Cluster, Worker in Another)
+
+```bash
+# Single worker cluster in multi-cluster mode
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator
+
+# Multiple worker clusters in multi-cluster mode (with default names)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator
+
+# Multiple worker clusters with custom names
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
+  --worker-name production-worker-1 \
+  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
+  --worker-name production-worker-2 \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator
+
+# Multiple workers with contexts
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --controller-context controller-ctx \
+  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
+  --worker-context worker1-ctx \
+  --worker-name worker-1 \
+  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
+  --worker-context worker2-ctx \
+  --worker-name worker-2 \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator
+```
+
+### Example 8: Register Worker Cluster with Controller
 
 ```bash
 # Basic worker cluster registration
@@ -201,7 +252,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 4. **🎮 GPU Operator** (Namespace: `egs-gpu-operator`) - *Can be manually skipped with `--skip-gpu-operator`*
 5. **🎛️ EGS Controller** (Namespace: `kubeslice-controller`) - *Can be skipped*
 6. **🌐 EGS UI** (Namespace: `kubeslice-controller`) - *Can be skipped*
-7. **⚙️ EGS Worker** (Namespace: `kubeslice-system`) - *Can be skipped*
+7. **⚙️ EGS Worker** (Namespace: `kubeslice-system`) - *Can be skipped, supports multiple workers in multi-cluster mode*
 
 ### Service Types (Single-Cluster Optimized)
 
@@ -275,7 +326,7 @@ You can skip individual components during installation. The installer intelligen
 
 - `--skip-controller`: Skip EGS Controller installation
 - `--skip-ui`: Skip EGS UI installation
-- `--skip-worker`: Skip EGS Worker installation
+- `--skip-worker`: Skip EGS Worker installation (applies to all workers when multiple workers are configured)
 
 ### 🔗 Dependency Management & Upgrade Support
 
@@ -287,13 +338,17 @@ The installer automatically validates component dependencies and supports upgrad
   - ❌ **If PostgreSQL missing**: Installation fails with clear error message
 
 **Worker Dependencies:**
-- **Requires both Controller and UI**: If you use `--skip-controller` or `--skip-ui`, the installer checks if these components are already installed
+- **Single-Cluster Mode**: Requires both Controller and UI in the same cluster
   - ✅ **If both exist**: Worker installation/upgrade proceeds automatically
   - ❌ **If either missing**: Installation fails with clear error message
+- **Multi-Cluster Mode**: Dependency checks are relaxed (Controller/UI may be in a different cluster)
+  - ⚠️ **Warning issued**: If Controller/UI are not found in the worker cluster, a warning is shown but installation continues
+  - ℹ️ **Assumes multi-cluster setup**: The installer assumes Controller/UI are in the controller cluster
 
 **Upgrade Scenarios:**
 - If a component is already installed, the installer automatically performs an upgrade instead of a fresh installation
 - You can skip dependencies if they're already installed (e.g., `--skip-controller --skip-ui` to upgrade only Worker)
+- In multi-cluster mode, you can install workers independently of Controller/UI location
 
 ### Use Cases
 
@@ -318,11 +373,81 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
 ```
 
-**Install only Worker (will fail if Controller/UI not installed):**
+**Install only Worker (will fail if Controller/UI not installed in single-cluster mode):**
 ```bash
-# This will fail if Controller and UI are not already installed
+# This will fail if Controller and UI are not already installed (single-cluster mode)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
+```
+
+**Install multiple workers in multi-cluster mode:**
+```bash
+# Install Controller/UI in controller cluster and multiple workers in different clusters
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
+  --worker-name worker-1 \
+  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
+  --worker-name worker-2 \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator
+```
+
+---
+
+## 👥 Multiple Workers Support
+
+The Quick Installer supports installing multiple worker clusters in a single command. This is particularly useful for multi-cluster deployments where you have multiple worker clusters that need to be managed by a single controller.
+
+### How It Works
+
+- **Multiple `--worker-kubeconfig` Flags**: Specify `--worker-kubeconfig` multiple times, once for each worker cluster
+- **Worker Names**: Use `--worker-name` to assign custom names to each worker (defaults to `worker-1`, `worker-2`, etc.)
+- **Worker Contexts**: Use `--worker-context` to specify contexts for each worker (auto-detected if not provided)
+- **Order Matters**: The order of `--worker-kubeconfig`, `--worker-context`, and `--worker-name` flags should match
+
+### Examples
+
+```bash
+# Two workers with default names (worker-1, worker-2)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml
+
+# Two workers with custom names
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
+  --worker-name production-worker-1 \
+  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
+  --worker-name production-worker-2
+
+# Three workers (mix of named and default)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
+  --worker-name worker-1 \
+  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker3-kubeconfig.yaml \
+  --worker-name worker-3
+```
+
+### Configuration
+
+All workers are automatically added to the `kubeslice_worker_egs` array in the generated `egs-installer-config.yaml` file. Each worker gets:
+- A unique name (custom or auto-generated)
+- Its own kubeconfig file (copied to the working directory)
+- Its own context (auto-detected or specified)
+- Shared configuration (image registry, etc.)
+
+### Backward Compatibility
+
+Single worker installations continue to work as before:
+```bash
+# Single worker (still supported)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker-kubeconfig.yaml
 ```
 
 ---
@@ -544,26 +669,32 @@ kubectl top nodes
 **Error**: `❌ ERROR: Worker installation requires Controller to be installed.`
 
 **Solution**:
-- Install Controller first, or
-- If Controller is already installed, ensure it's detected:
+- **Single-Cluster Mode**: Install Controller first, or ensure it's detected:
   ```bash
   # Verify Controller is installed
   helm list -A | grep egs-controller
   
   # If installed, the installer should detect it automatically
   ```
+- **Multi-Cluster Mode**: Use `--controller-kubeconfig` to specify the controller cluster:
+  ```bash
+  # In multi-cluster mode, Controller may be in a different cluster
+  curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+    --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+    --worker-kubeconfig /path/to/worker-kubeconfig.yaml
+  ```
 
 **Error**: `❌ ERROR: Worker installation requires UI to be installed.`
 
 **Solution**:
-- Install UI first, or
-- If UI is already installed, ensure it's detected:
+- **Single-Cluster Mode**: Install UI first, or ensure it's detected:
   ```bash
   # Verify UI is installed
   helm list -A | grep egs-ui
   
   # If installed, the installer should detect it automatically
   ```
+- **Multi-Cluster Mode**: UI is installed with Controller in the controller cluster. Use `--controller-kubeconfig` to specify the controller cluster (UI uses the same kubeconfig as Controller).
 
 ---
 
