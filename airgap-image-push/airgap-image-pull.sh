@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# Helm Chart Image Fetch Script
+# AirGap Image Pull Script
 # 
 # This script extracts container images from Helm charts for kubeslice-egs-helm-ent-prod
 # It reads chart information from a file and generates a list of all container images
@@ -37,7 +37,7 @@ FAILED_CHARTS=()
 SKIPPED_CHARTS=()
 
 echo "========================================="
-echo "Helm Chart Image Fetch Script"
+echo "AirGap Image Pull Script"
 echo "========================================="
 echo "Input file: $input_file"
 echo "Output file: $OUTPUT_FILE"
