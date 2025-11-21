@@ -1,0 +1,4 @@
+*****************<repo-url>*************** ******<repo-name>****** ****<chart-name>**** ****<chart-version>****
+https://kubeslice.aveshalabs.io/repository kubeslice-egs-helm-ent-prod kubeslice-controller-egs 1.15.4
+https://kubeslice.aveshalabs.io/repository kubeslice-egs-helm-ent-prod kubeslice-worker-egs 1.15.4
+https://kubeslice.aveshalabs.io/repository kubeslice-egs-helm-ent-prod kubeslice-ui-egs 1.15.4
