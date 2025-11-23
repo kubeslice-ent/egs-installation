@@ -402,6 +402,116 @@ additional_apps:
     verify_install_timeout: 600                # Timeout for verification (in seconds)
     skip_on_verify_fail: false                 # Do not skip if verification fails
 
+  - name: "soperator-crds"                    # Name of the application
+    skip_installation: true                   # Do not skip the installation of soperator-crds
+    use_global_kubeconfig: true                # Use global kubeconfig for this application
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "soperator-system"              # Namespace where soperator-crds will be installed
+    release: "soperator-crds"                  # Helm release name for soperator-crds
+    chart: "soperator-crds"                    # Helm chart name for soperator-crds
+    repo_url: ""                               # Not used when using local charts
+    version: "1.22.3"                          # Version of the soperator-crds chart to install
+    specific_use_local_charts: true            # Use local charts for this application
+    values_file: ""                            # Path to an external values file, if any
+    #### Inline Helm Values for soperator-crds ####
+    inline_values: {}                          # soperator-crds typically doesn't require custom values
+    helm_flags: "--wait --timeout 5m"          # Additional Helm flags for this application's installation
+    verify_install: false                    # Verify the installation of soperator-crds
+    verify_install_timeout: 300                # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                  # Skip the step if verification fails
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+
+  - name: "soperator"                    # Name of the application
+    skip_installation: true                   # Do not skip the installation of soperator-crds
+    use_global_kubeconfig: true                # Use global kubeconfig for this application
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "soperator-system"              # Namespace where soperator-crds will be installed
+    release: "soperator"                  # Helm release name for soperator-crds
+    chart: "soperator"                    # Helm chart name for soperator-crds
+    repo_url: ""                               # Not used when using local charts
+    version: "1.22.3"                          # Version of the soperator-crds chart to install
+    specific_use_local_charts: true            # Use local charts for this application
+    values_file: ""                            # Path to an external values file, if any
+    #### Inline Helm Values for soperator-crds ####
+    # If kruise is already installed separately and you want to avoid conflicts,
+    # you can disable kruise installation by setting:
+    # kruise:
+    #   installOperator: false
+    inline_values: {}                          # soperator-crds typically doesn't require custom values
+    helm_flags: "--wait --timeout 5m --force-conflicts"   # Additional Helm flags for this application's installation. --force flag is added to handle kruise webhook configuration conflicts during upgrades
+    verify_install: false                    # Verify the installation of soperator-crds
+    verify_install_timeout: 300                # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                  # Skip the step if verification fails
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+
+  - name: "slurm-cluster"                      # Name of the application
+    skip_installation: true                   # Do not skip the installation of slurm-cluster
+    use_global_kubeconfig: true                # Use global kubeconfig for this application
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "slurm1"                        # Namespace where slurm-cluster will be installed (change as needed)
+    release: "slurm1"                           # Helm release name for slurm-cluster (change as needed)
+    chart: "slurm-cluster"                     # Helm chart name for slurm-cluster
+    repo_url: ""                               # Not used when using local charts
+    version: "1.22.3"                          # Version of the slurm-cluster chart to install
+    specific_use_local_charts: true            # Use local charts for this application
+    values_file: ""                            # Path to an external values file, if any
+    #### Inline Helm Values for slurm-cluster ####
+    inline_values:
+      clusterName: "slurm1"
+      clusterType: "gpu"
+      k8sNodeFilters:
+        - name: gpu
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: "nebius.com/node-group-id"  # Change to match your node labels
+                        operator: In
+                        values:
+                          - "mk8snodegroup-...."        # Change to your gpu node group ID
+          tolerations:
+            - key: nvidia.com/gpu
+              operator: Exists
+              effect: NoSchedule
+            - key: "kubeslice.io/egs"                      # Add additional tolerations as needed
+              operator: "Equal"
+              value: "dedicated-node"
+              effect: "NoSchedule"
+        - name: no-gpu
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: "nebius.com/node-group-id"
+                        operator: In
+                        values:
+                          - "mk8snodegroup-...."        # Change to your cpu node group ID
+
+      volumeSources:
+        - name: jail
+          createPVC: true
+          storageClassName: "csi-mounted-fs-path-sc"      # Change to your file storage class
+          size: "200Gi"
+          persistentVolumeClaim:
+            claimName: "jail-pvc"
+            readOnly: false
+      
+      slurmNodes:
+        login:
+          sshRootPublicKeys:
+            # put your ssh public keys here
+            - "ssh-rsa AAAAB......."  # Replace with your actual SSH public key
+
+    helm_flags: "--wait --timeout 15m"         # Additional Helm flags for this application's installation
+    verify_install: true                       # Verify the installation of slurm-cluster
+    verify_install_timeout: 900                # Timeout for verification (in seconds)
+    skip_on_verify_fail: false                 # Do not skip if verification fails
+    enable_troubleshoot: false
 
 #### Define Custom Applications and Associated Manifests ####
 manifests:

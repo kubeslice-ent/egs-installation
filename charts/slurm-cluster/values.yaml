@@ -1,0 +1,519 @@
+clusterName: "slurm1"
+# Additional annotations for the cluster
+annotations: {}
+# Add appArmor profile to the cluster
+useDefaultAppArmorProfile: false
+# Maintenance defines the maintenance window for the cluster.
+# It can have the following values:
+# - none: No maintenance is performed. The cluster operates normally.
+# - downscale: Scales down all components to 0.
+# - downscaleAndDeletePopulateJail: Scales down all components to 0 and deletes the kubernetes Kind Jobs populateJail.
+# - downscaleAndOverwritePopulateJail: Scales down all components to 0 and overwrite populateJail (same as overwrite=true).
+# - skipPopulateJail: Skips the execution of the populateJail job during maintenance.
+maintenance: "none"
+# Slurm cluster type. Can be now gpu or cpu
+clusterType: gpu
+# partitionConfiguration define partition configuration of slurm worker nodes
+# https://slurm.schedmd.com/slurm.conf.html#SECTION_PARTITION-CONFIGURATION
+partitionConfiguration:
+  # Could be default or custom
+  configType: "default"
+  # configuration as list string started with PartitionName
+  # Example for custom ConfigType:
+  rawConfig: []
+#    - PartitionName=low_priority Nodes=low_priority Default=YES MaxTime=INFINITE State=UP PriorityTier=1
+#    - PartitionName=high_priority  Nodes=high_priority Default=NO MaxTime=INFINITE State=UP PriorityTier=2
+# If Nodes present, they must not contain node names: use only nodeset values, "ALL" or "".
+# Specifying specific nodes is not supported since Dynamic Nodes are used.
+# For more details, see https://slurm.schedmd.com/dynamic_nodes.html#partitions.
+
+# List of features to be enabled on worker nodes. Each feature object has:
+# - name: (Required) The name of the feature.
+# - hostlist_expr: (Required) A Slurm hostlist expression, e.g. "workers-[0-2,10],workers-[3-5]".
+#   Soperator will run these workers with the feature name.
+# - nodeset_name: (Optional) The Slurm nodeset name to be provisioned using this feature.
+#   This nodeset may be used in conjunction with partitions.
+workerFeatures: []
+#  - name: "low_priority"
+#    hostlistExpr: "worker-[0-9]"
+#    nodesetName: "low_priority"
+#  - name: "high_priority"
+#    hostlistExpr: "worker-[10-12]"
+#    nodesetName: "high_priority"
+
+# HealthCheckConfig defines Slurm health check configuration.
+healthCheckConfig: null
+# K8s node filters used in Slurm node specifications. Define which nodes should be used to schedule pods to
+k8sNodeFilters:
+  - name: gpu
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "nebius.com/node-group-id"
+                  operator: In
+                  values:
+                    - ""
+    tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
+  - name: no-gpu
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: "nebius.com/node-group-id"
+                  operator: In
+                  values:
+                    - ""
+# Sources for the volumes used in Slurm node specifications
+# You can use existing pvc or create via helm if `createPVC: true`
+volumeSources:
+  - name: controller-spool
+    createPVC: false
+    storageClassName: "csi-mounted-fs-path-sc"
+    size: "30Gi"
+    persistentVolumeClaim:
+      claimName: "controller-spool-pvc"
+      readOnly: false
+  - name: jail
+    createPVC: true
+    storageClassName: "csi-mounted-fs-path-sc"
+    size: "200Gi"
+    persistentVolumeClaim:
+      claimName: "jail-pvc"
+      readOnly: false
+#  - name: jail-snapshot
+#    createPVC: false
+#    storageClassName: ""
+#    size: ""
+#    persistentVolumeClaim:
+#      claimName: "jail-snapshot-pvc"
+#      readOnly: true
+#  - name: mlperf-sd
+#    createPVC: false
+#    storageClassName: ""
+#    size: ""
+#    persistentVolumeClaim:
+#      claimName: "jail-submount-mlperf-sd-pvc"
+#      readOnly: false
+
+# Secret references needed for Slurm cluster operation
+secrets: {}
+# Secret reference required for login sshd. If secret name empty - operator generate own secret with keys
+# sshdKeysName: ""
+# Job performing initial jail file system population
+populateJail:
+  imagePullPolicy: "IfNotPresent"
+  appArmorProfile: "unconfined"
+  # Name of the k8s node filter
+  k8sNodeFilterName: "gpu"
+  # Configuration of the volume containing the custom initial jail content (the default content is used if not set)
+  jailSnapshotVolume: null
+  #  jailSnapshotVolume:
+  #    volumeSourceName: "jail-snapshot"
+  overwrite: false
+slurmConfig:
+  defMemPerNode: 1048576
+  defCpuPerGPU: 4
+  completeWait: 5
+  prolog: /opt/slurm_scripts/prolog.sh
+  epilog: /opt/slurm_scripts/epilog.sh
+  taskPluginParam: ""
+  maxJobCount: 20000
+  minJobAge: 28800
+  messageTimeout: 60
+  topologyPlugin: "topology/none"
+  topologyParam: "SwitchAsNodeRank"
+  # AutoDetect: off
+  # GresTypes: gpu:nvidia_h100_80gb_hbm3:1
+
+mpiConfig:
+  pmixEnv: "OMPI_MCA_btl_tcp_if_include=eth0"
+plugStackConfig:
+  pyxis:
+    required: true
+    containerImageSave: "/var/cache/enroot-container-images/"
+  ncclDebug:
+    required: false
+    enabled: true
+    logLevel: "INFO"
+    outputToFile: true
+    outputToStdOut: false
+    outputDirectory: "/opt/soperator-outputs/nccl_logs"
+  customPlugins: []
+#  customPlugins:
+#    - required: true
+#      path: custom.so
+#      arguments:
+#        foo: bar
+
+slurmNodes:
+  accounting:
+    enabled: false
+    k8sNodeFilterName: "no-gpu"
+    slurmConfig:
+      accountingStorageTRES: "CPU,Mem,Node,VMem,Gres/gpu"
+      jobAcctGatherType: "jobacct_gather/cgroup"
+      jobAcctGatherFrequency: 30
+      priorityWeightAge: 0
+      priorityWeightFairshare: 0
+      priorityWeightQOS: 0
+    slurmdbdConfig:
+      archiveEvents: "yes"
+      archiveJobs: "yes"
+      archiveResvs: "yes"
+      archiveSteps: "no"
+      archiveSuspend: "no"
+      archiveTXN: "no"
+      archiveUsage: "yes"
+      debugLevel: "info"
+      tcpTimeout: 2
+      purgeEventAfter: "1month"
+      purgeJobAfter: "12month"
+      purgeResvAfter: "1month"
+      purgeStepAfter: "1month"
+      purgeSuspendAfter: "1month"
+      purgeTXNAfter: "12month"
+      purgeUsageAfter: "24month"
+    slurmdbd:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      command: []
+      args: []
+      port: 6819
+      resources:
+        cpu: "1000m"
+        memory: "3Gi"
+        ephemeralStorage: "10Gi"
+    munge:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      resources:
+        cpu: "1000m"
+        memory: "1Gi"
+        ephemeralStorage: "5Gi"
+    customInitContainers: []
+    externalDB:
+      enabled: false
+      # host: ""
+      port: 3306
+      # user: ""
+      # passwordSecretKeyRef:
+      #   name: ""
+      #   key: ""
+      # tls:
+      #   serverCASecretRef: ""
+      #   clientCertSecretRef: ""
+      # storageParameters:
+      #   SSL_CIPHER: ""
+    mariadbOperator:
+      enabled: true
+      protectedSecret: false
+      resources:
+        cpu: "1000m"
+        memory: "1Gi"
+        ephemeralStorage: "5Gi"
+      replicas: 1
+      replication: {}
+      # enabled: false
+      # primary: {}
+      # probesEnabled: false
+      # replica: {}
+      # syncBinlog: false
+      storage: {}
+      # ephemeral: false
+      # resizeInUseVolumes: false
+      # size: {}
+      # storageClassName: ""
+      # volumeClaimTemplate: ""
+      # waitForVolumeResize: false
+      podSecurityContext: {}
+      # fsGroup: 2000
+      # runAsUser: 1000
+      # runAsGroup: 3000
+      # runAsNonRoot: true
+      # supplementalGroups: [1000]
+      securityContext: {}
+      # runAsUser: 1000
+      # runAsGroup: 3000
+      # runAsNonRoot: true
+      # capabilities:
+      #   add: ["NET_ADMIN", "SYS_TIME"]
+      metrics:
+        enabled: true
+        # username: ""
+        # serviceMonitor: {}
+        # jobLabel: ""
+        # interval: ""
+        # scrapeTimeout: ""
+        # exporter: {}
+        # passwordSecretKeyRef: {}
+        # name: ""
+        # key: ""
+      # affinity: {}
+      # args: []
+      # env: []
+      # envFrom: []
+      # image: ""
+      # imagePullPolicy: ""
+      # imagePullSecrets: []
+      # initContainers: []
+      # livenessProbe: {}
+      # nodeSelector: {}
+      # podMetadata: {}
+      # securityContext: {}
+      # serviceAccountName: ""
+      # sidecarContainers: []
+      # tolerations: []
+      # resources: {}
+      # volumeMounts: []
+      # volumes: []
+      # resources: {}
+      #   limits:
+      #     cpu: "100m"
+      #     memory: "128Mi"
+      #   requests:
+      #     cpu: "50m"
+      #     memory: "64Mi"
+  controller:
+    k8sNodeFilterName: "no-gpu"
+    priorityClass: ""
+    slurmctld:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      command: []
+      args: []
+      port: 6817
+      resources:
+        cpu: "1000m"
+        memory: "3Gi"
+        ephemeralStorage: "20Gi"
+    munge:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      command: []
+      args: []
+      resources:
+        cpu: "1000m"
+        memory: "1Gi"
+        ephemeralStorage: "5Gi"
+    customInitContainers: []
+    volumes:
+      spool:
+        volumeClaimTemplateSpec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 50Gi
+          storageClassName: "csi-mounted-fs-path-sc"
+      jail:
+        volumeSourceName: "jail"
+      customMounts: []
+  worker:
+    size: 1
+    maxUnavailable: "20%"
+    k8sNodeFilterName: "gpu"
+    cgroupVersion: v2
+    enableGDRCopy: false
+    priorityClass: ""
+    slurmNodeExtra: ""
+    supervisordConfigMapRefName: ""
+    sshdConfigMapRefName: ""
+    # workerAnnotations: []
+    slurmd:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      port: 6818
+      command: []
+      args: []
+      resources:
+        cpu: "5000m"
+        memory: "20Gi"
+        ephemeralStorage: "55Gi"
+        gpu: 1
+      securityLimitsConfig: ""
+    munge:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      command: []
+      args: []
+      resources:
+        cpu: "2000m"
+        memory: "4Gi"
+        ephemeralStorage: "5Gi"
+    customInitContainers: []
+    volumes:
+      spool:
+        volumeClaimTemplateSpec:
+          storageClassName: "csi-mounted-fs-path-sc"
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: "128Gi"
+      jail:
+        volumeSourceName: "jail"
+      jailSubMounts: []
+      # jailSubMounts:
+      #   - name: "mlcommons-sd-bench-data"
+      #     mountPath: "/mlperf-sd"
+      #     volumeSourceName: "mlperf-sd"
+      customMounts: []
+      # customMounts:
+      #   - name: "slurm-prolog"
+      #     mountPath: "/etc/slurm-scripts/prolog.sh"
+      #     subPath: "prolog.sh"
+      #     readOnly: true
+      #     volumeSourceName: "slurm-prolog"
+      sharedMemorySize: "64Gi"
+  login:
+    size: 1
+    k8sNodeFilterName: "no-gpu"
+    sshd:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      port: 22
+      resources:
+        cpu: "3000m"
+        memory: "9Gi"
+        ephemeralStorage: "30Gi"
+      command: []
+      args: []
+    # Authorized keys required for SSH connection to Slurm login nodes
+    sshRootPublicKeys:
+      - "ssh-rsa AAAAB3Nz......."
+    # Either `LoadBalancer` or `NodePort`
+    sshdServiceType: "LoadBalancer"
+    # Could be needed in case of sshdServiceType == `LoadBalancer`
+    # sshdServiceLoadBalancerIP: "192.168.0.1"
+    sshdServiceLoadBalancerIP: ""
+    # Source IP ranges allowed to access LoadBalancer (CIDR format)
+    # sshdServiceLoadBalancerSourceRanges: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+    sshdServiceLoadBalancerSourceRanges: []
+    # Required in case of sshdServiceType == `NodePort`
+    sshdServiceNodePort: 30022
+    # Annotations to be configure on login service
+    sshdServiceAnnotations: {}
+    munge:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      command: []
+      args: []
+      resources:
+        cpu: "500m"
+        memory: "500Mi"
+        ephemeralStorage: "5Gi"
+    customInitContainers: []
+    volumes:
+      jail:
+        volumeSourceName: "jail"
+      jailSubMounts: []
+      # jailSubMounts:
+      #   - name: "mlcommons-sd-bench-data"
+      #     mountPath: "/mlperf-sd"
+      #     volumeSourceName: "mlperf-sd"
+      customMounts: []
+  exporter:
+    enabled: true
+    size: 1
+    k8sNodeFilterName: "no-gpu"
+    podMonitorConfig:
+      jobLabel: "slurm-exporter"
+      interval: "30s"
+      scrapeTimeout: "28s"
+    collectionInterval: "30s"
+    exporter:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      command: []
+      args: []
+      resources:
+        cpu: "250m"
+        memory: "256Mi"
+        ephemeralStorage: "500Mi"
+    munge:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      command: []
+      args: []
+      resources:
+        cpu: "1000m"
+        memory: "1Gi"
+        ephemeralStorage: "5Gi"
+    customInitContainers: []
+    volumes:
+      jail:
+        volumeSourceName: "jail"
+  rest:
+    enabled: false
+    size: 2
+    k8sNodeFilterName: "no-gpu"
+    threadCount: 3
+    maxConnections: 10
+    rest:
+      imagePullPolicy: "IfNotPresent"
+      appArmorProfile: "unconfined"
+      command: []
+      args: []
+      resources:
+        cpu: "2000m"
+        memory: "8Gi"
+        ephemeralStorage: "500Mi"
+    customInitContainers: []
+sConfigController:
+  node:
+    k8sNodeFilterName: "no-gpu"
+    size: 1
+  container:
+    imagePullPolicy: "IfNotPresent"
+    resources:
+      cpu: "250m"
+      memory: "256Mi"
+      ephemeralStorage: "500Mi"
+  # These should match UID and GID in sconfigcontroller image
+  runAsUid: 1001
+  runAsGid: 1001
+  reconfigurePollInterval: "20s"
+  reconfigureWaitTimeout: "1m"
+telemetry: {}
+# jobsTelemetry:
+#   otelCollectorHttpHost: vmsingle-slurm.monitoring-system.svc.cluster.local
+#   otelCollectorPath: /opentelemetry/api/v1/push
+#   otelCollectorPort: 8429
+#   sendJobsEvents: true
+#   sendOtelMetrics: true
+# openTelemetryCollector:
+#   enabled: true
+#   replicasOtelCollector: 1
+#   otelCollectorPort: 8429
+
+images:
+  slurmctld: "cr.eu-north1.nebius.cloud/soperator/controller_slurmctld:1.22.3-noble-slurm24.11.6"
+  slurmrestd: "cr.eu-north1.nebius.cloud/soperator/slurmrestd:1.22.3-noble-slurm24.11.6"
+  slurmd: "cr.eu-north1.nebius.cloud/soperator/worker_slurmd:1.22.3-noble-slurm24.11.6"
+  sshd: "cr.eu-north1.nebius.cloud/soperator/login_sshd:1.22.3-noble-slurm24.11.6"
+  munge: "cr.eu-north1.nebius.cloud/soperator/munge:1.22.3-noble-slurm24.11.6"
+  populateJail: "cr.eu-north1.nebius.cloud/soperator/populate_jail:1.22.3-noble-slurm24.11.6"
+  slurmdbd: "cr.eu-north1.nebius.cloud/soperator/controller_slurmdbd:1.22.3-noble-slurm24.11.6"
+  soperatorExporter: "cr.eu-north1.nebius.cloud/soperator/soperator-exporter:1.22.3-noble-slurm24.11.6"
+  sConfigController: cr.eu-north1.nebius.cloud/soperator/sconfigcontroller:1.22.3
+  mariaDB: docker-registry1.mariadb.com/library/mariadb:11.4.3
+# Configuration for slurm scripts.
+slurmScripts:
+  prolog: null
+  epilog: null
+  hcProgram: null
+  # custom:
+  #   example.sh: |
+  #     #!/bin/bash
+  #
+  #     echo "Example"
+  custom: null

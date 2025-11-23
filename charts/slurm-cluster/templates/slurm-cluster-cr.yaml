@@ -1,0 +1,464 @@
+{{- include "validateAccountingConfig" . -}}
+apiVersion: slurm.nebius.ai/v1
+kind: SlurmCluster
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "slurm-cluster.name" . }}
+  {{- with include "slurm-cluster.labels" . }}
+  labels:
+    {{- . | nindent 4 -}}
+  {{- end }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- .  | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.mpiConfig }}
+  mpiConfig:
+    {{- toYaml .Values.mpiConfig | nindent 4 }}
+  {{- end }}
+  {{- if .Values.slurmConfig }}
+  slurmConfig:
+    {{- toYaml .Values.slurmConfig | nindent 4 }}
+  {{- end }}
+  {{- if eq .Values.clusterType "gpu" }}
+  healthCheckConfig:
+    healthCheckInterval: 300
+    healthCheckProgram: /opt/slurm_scripts/hc_program.sh
+    healthCheckNodeState:
+    - state: ANY
+    - state: CYCLE
+  {{- end }}
+  maintenance: {{ default "none" .Values.maintenance | quote  }}
+  crVersion: {{ .Chart.Version }}
+  useDefaultAppArmorProfile: {{ .Values.useDefaultAppArmorProfile }}
+  clusterType: {{ .Values.clusterType }}
+  partitionConfiguration:
+    configType: {{ (default "default" .Values.partitionConfiguration.configType) }}
+    rawConfig:
+      {{- default list .Values.partitionConfiguration.rawConfig | toYaml | nindent 6 }}
+  workerFeatures:
+    {{- $workerFeatures := default list .Values.workerFeatures }}
+    {{- range $workerFeatures }}
+    - name: {{ .name | quote }}
+      hostlistExpr: {{ .hostlistExpr | quote }}
+      nodesetName: {{ .nodesetName | quote }}
+    {{- else }}
+    []
+    {{- end }}
+  {{- if .Values.healthCheckConfig }}
+  healthCheckConfig:
+    healthCheckInterval: {{ required "Health check interval must be provided." .Values.healthCheckConfig.healthCheckInterval }}
+    healthCheckProgram: {{ required "Health check program must be provided." .Values.healthCheckConfig.healthCheckProgram | quote }}
+    healthCheckNodeState:
+      {{- range .Values.healthCheckConfig.healthCheckNodeState }}
+      - state: {{ required "Health check node state must be provided." .state | quote }}
+      {{- end }}
+  {{- end }}
+  k8sNodeFilters:
+    {{- range .Values.k8sNodeFilters }}
+    - name: {{ .name }}
+    {{- with .affinity }}
+      affinity:
+        {{- . | toYaml | nindent 8 }}
+    {{- end }}
+    {{- with .tolerations }}
+      tolerations:
+        {{- . | toYaml | nindent 8 }}
+    {{- end }}
+    {{- with .nodeSelector }}
+      nodeSelector:
+        {{- . | toYaml | nindent 8 }}
+    {{- end }}
+    {{- end }}
+  volumeSources:
+    - name: slurm-scripts
+      configMap:
+        name: slurm-scripts
+        defaultMode: 500
+    {{- range .Values.volumeSources }}
+    - name: {{ .name | quote }}
+      {{- omit . "name" "createPVC" "size" "storageClassName" "accessModes" | toYaml | nindent 6 }}
+    {{- end }}
+  secrets: {{ toYaml .Values.secrets | nindent 4 }}
+  populateJail:
+    image: {{ required "populateJail image" .Values.images.populateJail | quote }}
+    imagePullPolicy: {{ default "IfNotPresent" .Values.populateJail.imagePullPolicy | quote }}
+    appArmorProfile: {{ default "unconfined" .Values.populateJail.appArmorProfile | quote }}
+    k8sNodeFilterName: {{ required "Populate Jail job k8s node filter name must be provided." .Values.populateJail.k8sNodeFilterName | quote }}
+    priorityClass: {{ default (printf "%s-%s" (include "slurm-cluster.name" .) "slurm-populate-jail") .Values.populateJail.priorityClass | quote }}
+    {{- if .Values.populateJail.jailSnapshotVolume }}
+    jailSnapshotVolume:
+      volumeSourceName: {{ required "Jail snapshot volume source name must be provided." .Values.populateJail.jailSnapshotVolume.volumeSourceName | quote }}
+    {{- end }}
+    overwrite: {{ default false .Values.populateJail.overwrite }}
+  {{- if .Values.plugStackConfig }}
+  plugStackConfig:
+    {{- toYaml .Values.plugStackConfig | nindent 4 }}
+  {{- end }}
+  slurmNodes:
+    accounting:
+      enabled: {{ default false .Values.slurmNodes.accounting.enabled }}
+      k8sNodeFilterName: {{ required ".Values.slurmNodes.accounting.k8sNodeFilterName must be provided." .Values.slurmNodes.accounting.k8sNodeFilterName | quote }}
+      priorityClass: {{ default (printf "%s-%s" (include "slurm-cluster.name" .) "slurm-accounting") .Values.slurmNodes.accounting.priorityClass | quote }}
+      {{- if .Values.slurmNodes.accounting.slurmConfig }}
+      slurmConfig:
+        {{- toYaml .Values.slurmNodes.accounting.slurmConfig | nindent 8 }}
+      {{- end }}
+      {{- if .Values.slurmNodes.accounting.slurmdbdConfig }}
+      slurmdbdConfig:
+        {{- toYaml .Values.slurmNodes.accounting.slurmdbdConfig | nindent 8 }}
+      {{- end }}
+      slurmdbd:
+        image: {{ required "slurmd image" .Values.images.slurmdbd | quote }}
+        {{- if .Values.slurmNodes.accounting.slurmdbd.command }}
+        command: {{- .Values.slurmNodes.accounting.slurmdbd.command | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.slurmNodes.accounting.slurmdbd.args }}
+        args: {{- .Values.slurmNodes.accounting.slurmdbd.args | toYaml | nindent 8 }}
+        {{- end }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.slurmNodes.accounting.slurmdbd.imagePullPolicy | quote }}
+        appArmorProfile: {{ default "unconfined" .Values.slurmNodes.accounting.slurmdbd.appArmorProfile | quote }}
+      {{- if .Values.slurmNodes.accounting.enabled }}
+        port: {{ default 6819 .Values.slurmNodes.accounting.slurmdbd.port }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.accounting.slurmdbd.resources.cpu must be provided." .Values.slurmNodes.accounting.slurmdbd.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.accounting.slurmdbd.resources.memory must be provided." .Values.slurmNodes.accounting.slurmdbd.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.accounting.slurmdbd.resources.ephemeralStorage must be provided." .Values.slurmNodes.accounting.slurmdbd.resources.ephemeralStorage | quote}}
+      customInitContainers: {{- default list .Values.slurmNodes.accounting.customInitContainers | toYaml | nindent 10 }}
+      {{- if and .Values.slurmNodes.accounting.enabled .Values.slurmNodes.accounting.externalDB.enabled }}
+      externalDB:
+        enabled: {{ default false .Values.slurmNodes.accounting.externalDB.enabled }}
+        host: {{ required ".Values.slurmNodes.accounting.externalDB.host must be provided." .Values.slurmNodes.accounting.externalDB.host | quote }}
+        port: {{ required ".Values.slurmNodes.accounting.externalDB.port must be provided." .Values.slurmNodes.accounting.externalDB.port }}
+        passwordSecretKeyRef:
+          name: {{ required ".Values.slurmNodes.accounting.externalDB.passwordSecretKeyRef.name must be provided." .Values.slurmNodes.accounting.externalDB.passwordSecretKeyRef.name | quote }}
+          key: {{ required ".Values.slurmNodes.accounting.externalDB.passwordSecretKeyRef.key must be provided." .Values.slurmNodes.accounting.externalDB.passwordSecretKeyRef.key | quote }}
+        {{- if .Values.slurmNodes.accounting.externalDB.tls  }}
+        tls:
+          {{- if .Values.slurmNodes.accounting.externalDB.tls.serverCASecretRef }}
+          serverCASecretRef: {{ .Values.slurmNodes.accounting.externalDB.tls.serverCASecretRef | quote }}
+          {{- end }}
+          {{- if .Values.slurmNodes.accounting.externalDB.tls.clientCertSecretRef }}
+          clientCertSecretRef: {{ .Values.slurmNodes.accounting.externalDB.tls.clientCertSecretRef | quote }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.slurmNodes.accounting.externalDB.storageParameters }}
+        storageParameters: {{ .Values.slurmNodes.accounting.externalDB.storageParameters | toYaml | nindent 10 }}
+        {{- end }}
+      {{- end }}
+      {{- if and .Values.slurmNodes.accounting.enabled .Values.slurmNodes.accounting.mariadbOperator.enabled }}
+      mariadbOperator:
+        enabled: {{ default false .Values.slurmNodes.accounting.mariadbOperator.enabled }}
+        protectedSecret: {{ .Values.slurmNodes.accounting.mariadbOperator.protectedSecret }}
+        image: {{ required "mariadb image" .Values.images.mariaDB | quote }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.accounting.mariadbOperator.resources.cpu must be provided." .Values.slurmNodes.accounting.mariadbOperator.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.accounting.mariadbOperator.resources.memory must be provided." .Values.slurmNodes.accounting.mariadbOperator.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.accounting.mariadbOperator.resources.ephemeralStorage must be provided." .Values.slurmNodes.accounting.mariadbOperator.resources.ephemeralStorage | quote}}
+        replicas: {{ int .Values.slurmNodes.accounting.mariadbOperator.replicas }}
+        metrics: {{ toYaml .Values.slurmNodes.accounting.mariadbOperator.metrics | nindent 10 }}
+        podSecurityContext: {{ toYaml .Values.slurmNodes.accounting.mariadbOperator.podSecurityContext | nindent 10 }}
+        securityContext: {{ toYaml .Values.slurmNodes.accounting.mariadbOperator.securityContext | nindent 10 }}
+        replication: {{ toYaml .Values.slurmNodes.accounting.mariadbOperator.replication | nindent 10 }}
+        storage: {{toYaml .Values.slurmNodes.accounting.mariadbOperator.storage | nindent 10 }}
+      {{- end }}
+      munge:
+        image: {{ required "munge image" .Values.images.munge | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.slurmNodes.accounting.munge.imagePullPolicy | quote }}
+        appArmorProfile: {{ default "unconfined" .Values.slurmNodes.accounting.munge.appArmorProfile | quote }}
+        {{- if .Values.slurmNodes.accounting.munge.command }}
+        command: {{- .Values.slurmNodes.accounting.munge.command | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.slurmNodes.accounting.munge.args }}
+        args: {{- .Values.slurmNodes.accounting.munge.args | toYaml | nindent 8 }}
+        {{- end }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.accounting.munge.resources.cpu must be provided." .Values.slurmNodes.accounting.munge.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.accounting.munge.resources.memory must be provided." .Values.slurmNodes.accounting.munge.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.accounting.munge.resources.ephemeralStorage must be provided." .Values.slurmNodes.accounting.munge.resources.ephemeralStorage | quote}}
+      {{- end }}
+    controller:
+      k8sNodeFilterName: {{ required ".Values.slurmNodes.controller.k8sNodeFilterName must be provided." .Values.slurmNodes.controller.k8sNodeFilterName | quote }}
+      priorityClass: {{ default (printf "%s-%s" (include "slurm-cluster.name" .) "slurm-controller") .Values.slurmNodes.controller.priorityClass | quote }}
+      slurmctld:
+        image: {{ required "slurmctld image" .Values.images.slurmctld | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.slurmNodes.controller.slurmctld.imagePullPolicy | quote }}
+        appArmorProfile: {{ default "unconfined" .Values.slurmNodes.controller.slurmctld.appArmorProfile | quote }}
+        {{- if .Values.slurmNodes.controller.slurmctld.command }}
+        command: {{- .Values.slurmNodes.controller.slurmctld.command | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.slurmNodes.controller.slurmctld.args }}
+        args: {{- .Values.slurmNodes.controller.slurmctld.args | toYaml | nindent 8 }}
+        {{- end }}
+        port: {{ default 6817 .Values.slurmNodes.controller.slurmctld.port }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.controller.slurmctld.resources.cpu must be provided." .Values.slurmNodes.controller.slurmctld.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.controller.slurmctld.resources.memory must be provided." .Values.slurmNodes.controller.slurmctld.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.controller.slurmctld.resources.ephemeralStorage must be provided." .Values.slurmNodes.controller.slurmctld.resources.ephemeralStorage | quote}}
+      munge:
+        image: {{ required "munge image" .Values.images.munge | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.slurmNodes.controller.munge.imagePullPolicy | quote }}
+        appArmorProfile: {{ default "unconfined" .Values.slurmNodes.controller.munge.appArmorProfile | quote }}
+        {{- if .Values.slurmNodes.controller.munge.command }}
+        command: {{- .Values.slurmNodes.controller.munge.command | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.slurmNodes.controller.munge.args }}
+        args: {{- .Values.slurmNodes.controller.munge.args | toYaml | nindent 8 }}
+        {{- end }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.controller.munge.resources.cpu must be provided." .Values.slurmNodes.controller.munge.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.controller.munge.resources.memory must be provided." .Values.slurmNodes.controller.munge.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.controller.munge.resources.ephemeralStorage must be provided." .Values.slurmNodes.controller.munge.resources.ephemeralStorage | quote}}
+      customInitContainers: {{- default list .Values.slurmNodes.controller.customInitContainers | toYaml | nindent 10 }}
+      volumes:
+        spool:
+          {{- required ".Values.slurmNodes.controller.volumes.spool must be provided." .Values.slurmNodes.controller.volumes.spool | toYaml | nindent 10 }}
+        jail:
+          {{- required ".Values.slurmNodes.controller.volumes.jail must be provided." .Values.slurmNodes.controller.volumes.jail | toYaml | nindent 10 }}
+        {{- if .Values.slurmNodes.controller.volumes.customMounts }}
+        customMounts:
+          {{- .Values.slurmNodes.controller.volumes.customMounts | toYaml | nindent 10 }}
+        {{- end }}
+    worker:
+      {{- if .Values.slurmNodes.worker.maxUnavailable }}
+      maxUnavailable: {{ .Values.slurmNodes.worker.maxUnavailable | quote }}
+      {{- end }}
+      cgroupVersion: {{ .Values.slurmNodes.worker.cgroupVersion | quote }}
+      enableGDRCopy: {{ default false .Values.slurmNodes.worker.enableGDRCopy }}
+      priorityClass: {{ default (printf "%s-%s" (include "slurm-cluster.name" .) "slurm-worker") .Values.slurmNodes.worker.priorityClass | quote }}
+      {{- if .Values.slurmNodes.worker.slurmNodeExtra }}
+      slurmNodeExtra: {{ .Values.slurmNodes.worker.slurmNodeExtra | quote }}
+      {{- end }}
+      size: {{ required ".Values.slurmNodes.worker.size must be provided." .Values.slurmNodes.worker.size }}
+      k8sNodeFilterName: {{ required ".Values.slurmNodes.worker.k8sNodeFilterName must be provided." .Values.slurmNodes.worker.k8sNodeFilterName | quote }}
+      {{- if .Values.slurmNodes.worker.supervisordConfigMapRefName }}
+      supervisordConfigMapRefName: {{ .Values.slurmNodes.worker.supervisordConfigMapRefName | quote }}
+      {{- end }}
+      {{- if .Values.slurmNodes.worker.sshdConfigMapRefName }}
+      sshdConfigMapRefName: {{ .Values.slurmNodes.worker.sshdConfigMapRefName | quote }}
+      {{- end }}
+      {{- if .Values.slurmNodes.worker.workerAnnotations }}
+      workerAnnotations:
+      {{- default list .Values.slurmNodes.worker.workerAnnotations | toYaml | nindent 8 }}
+      {{- end }}
+      slurmd:
+        image: {{ required "slurmd image" .Values.images.slurmd | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.slurmNodes.worker.slurmd.imagePullPolicy | quote }}
+        appArmorProfile: {{ default "unconfined" .Values.slurmNodes.worker.slurmd.appArmorProfile | quote }}
+        port: {{ default 6818 .Values.slurmNodes.worker.slurmd.port }}
+        {{- if .Values.slurmNodes.worker.slurmd.command }}
+        command: {{- .Values.slurmNodes.worker.slurmd.command | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.slurmNodes.worker.slurmd.args }}
+        args: {{- .Values.slurmNodes.worker.slurmd.args | toYaml | nindent 8 }}
+        {{- end }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.worker.slurmd.resources.cpu must be provided." .Values.slurmNodes.worker.slurmd.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.worker.slurmd.resources.memory must be provided." .Values.slurmNodes.worker.slurmd.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.worker.slurmd.resources.ephemeralStorage must be provided." .Values.slurmNodes.worker.slurmd.resources.ephemeralStorage | quote}}
+          nvidia.com/gpu: {{ required ".Values.slurmNodes.worker.slurmd.resources.gpu must be provided." .Values.slurmNodes.worker.slurmd.resources.gpu | quote }}
+        {{- if .Values.slurmNodes.worker.slurmd.securityLimitsConfig }}
+        securityLimitsConfig: {{ .Values.slurmNodes.worker.slurmd.securityLimitsConfig }}
+        {{- end }}
+      munge:
+        image: {{ required "munge image" .Values.images.munge | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.slurmNodes.worker.munge.imagePullPolicy | quote }}
+        {{- if .Values.slurmNodes.worker.munge.command }}
+        command: {{- .Values.slurmNodes.worker.munge.command | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.slurmNodes.worker.munge.args }}
+        args: {{- .Values.slurmNodes.worker.munge.args | toYaml | nindent 8 }}
+        {{- end }}
+        appArmorProfile: {{ default "unconfined" .Values.slurmNodes.worker.munge.appArmorProfile | quote }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.worker.munge.resources.cpu must be provided." .Values.slurmNodes.worker.munge.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.worker.munge.resources.memory must be provided." .Values.slurmNodes.worker.munge.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.worker.munge.resources.ephemeralStorage must be provided." .Values.slurmNodes.worker.munge.resources.ephemeralStorage | quote}}
+      customInitContainers: {{- default list .Values.slurmNodes.worker.customInitContainers | toYaml | nindent 10 }}
+      volumes:
+        spool:
+          {{- required ".Values.slurmNodes.worker.volumes.spool must be provided." .Values.slurmNodes.worker.volumes.spool | toYaml | nindent 10 }}
+        jail:
+          {{- required ".Values.slurmNodes.worker.volumes.jail must be provided." .Values.slurmNodes.worker.volumes.jail | toYaml | nindent 10 }}
+        {{- if .Values.slurmNodes.worker.volumes.jailSubMounts }}
+        jailSubMounts:
+          {{- .Values.slurmNodes.worker.volumes.jailSubMounts | toYaml | nindent 10 }}
+        {{- end }}
+        customMounts:
+          - name: slurm-scripts
+            mountPath: /opt/slurm_scripts/
+            volumeSourceName: slurm-scripts
+          - name: slurm-scripts-jail
+            mountPath: /mnt/jail.upper/opt/slurm_scripts/
+            volumeSourceName: slurm-scripts
+          {{- if .Values.slurmNodes.worker.volumes.customMounts }}
+          {{- .Values.slurmNodes.worker.volumes.customMounts | toYaml | nindent 10 }}
+          {{- end }}
+        {{- if .Values.slurmNodes.worker.volumes.sharedMemorySize }}
+        sharedMemorySize: {{ .Values.slurmNodes.worker.volumes.sharedMemorySize | quote }}
+        {{- end }}
+    login:
+      size: {{ required ".Values.slurmNodes.login.size must be provided." .Values.slurmNodes.login.size }}
+      k8sNodeFilterName: {{ required ".Values.slurmNodes.login.k8sNodeFilterName must be provided." .Values.slurmNodes.login.k8sNodeFilterName | quote }}
+      priorityClass: {{ default (printf "%s-%s" (include "slurm-cluster.name" .) "slurm-login") .Values.slurmNodes.login.priorityClass | quote }}
+      sshd:
+        image: {{ required "sshd image" .Values.images.sshd | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.slurmNodes.login.sshd.imagePullPolicy | quote }}
+        appArmorProfile: {{ default "unconfined" .Values.slurmNodes.login.sshd.appArmorProfile | quote }}
+        {{- if .Values.slurmNodes.login.sshd.command }}
+        command: {{- .Values.slurmNodes.login.sshd.command | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.slurmNodes.login.sshd.args }}
+        args: {{- .Values.slurmNodes.login.sshd.args | toYaml | nindent 8 }}
+        {{- end }}
+        port: {{ default 22 .Values.slurmNodes.login.sshd.port }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.login.sshd.resources.cpu must be provided." .Values.slurmNodes.login.sshd.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.login.sshd.resources.memory must be provided." .Values.slurmNodes.login.sshd.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.login.sshd.resources.ephemeralStorage must be provided." .Values.slurmNodes.login.sshd.resources.ephemeralStorage | quote}}
+      sshRootPublicKeys:
+        {{- default list .Values.slurmNodes.login.sshRootPublicKeys | toYaml | nindent 8 }}
+      sshdServiceType: {{ default "LoadBalancer" .Values.slurmNodes.login.sshdServiceType | quote }}
+      sshdServiceAnnotations:
+      {{- .Values.slurmNodes.login.sshdServiceAnnotations | toYaml | nindent 8 }}
+      {{- /*external-dns.alpha.kubernetes.io/hostname: "{{ include "slurm-cluster.name" . }}.slurm-operator.msp-dev.nemax.nebius.cloud."*/ -}}
+      {{- if and (eq .Values.slurmNodes.login.sshdServiceType "LoadBalancer") .Values.slurmNodes.login.sshdServiceLoadBalancerIP }}
+      sshdServiceLoadBalancerIP: {{ .Values.slurmNodes.login.sshdServiceLoadBalancerIP | quote }}
+      {{- end }}
+      {{- if and (eq .Values.slurmNodes.login.sshdServiceType "LoadBalancer") .Values.slurmNodes.login.sshdServiceLoadBalancerSourceRanges }}
+      sshdServiceLoadBalancerSourceRanges:
+        {{- .Values.slurmNodes.login.sshdServiceLoadBalancerSourceRanges | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if eq .Values.slurmNodes.login.sshdServiceType "NodePort" }}
+      sshdServiceNodePort: {{ required "slurmNodes.login.sshdServiceNodePort is required in case of slurmNodes.login.sshdServiceType == `NodePort`" .Values.slurmNodes.login.sshdServiceNodePort }}
+      {{- end }}
+      munge:
+        image: {{ required "sshd munge" .Values.images.munge | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.slurmNodes.login.munge.imagePullPolicy | quote }}
+        appArmorProfile: {{ default "unconfined" .Values.slurmNodes.login.munge.appArmorProfile | quote }}
+        {{- if .Values.slurmNodes.login.munge.command }}
+        command: {{- .Values.slurmNodes.login.munge.command | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.slurmNodes.login.munge.args }}
+        args: {{- .Values.slurmNodes.login.munge.args | toYaml | nindent 8 }}
+        {{- end }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.login.munge.resources.cpu must be provided." .Values.slurmNodes.login.munge.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.login.munge.resources.memory must be provided." .Values.slurmNodes.login.munge.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.login.munge.resources.ephemeralStorage must be provided." .Values.slurmNodes.login.munge.resources.ephemeralStorage | quote}}
+      customInitContainers: {{- default list .Values.slurmNodes.login.customInitContainers | toYaml | nindent 10 }}
+      volumes:
+        jail:
+          {{- required ".Values.slurmNodes.login.volumes.jail must be provided." .Values.slurmNodes.login.volumes.jail | toYaml | nindent 10 }}
+        jailSubMounts:
+          {{- default list .Values.slurmNodes.login.volumes.jailSubMounts | toYaml | nindent 10 }}
+        customMounts:
+          - name: slurm-scripts
+            mountPath: /opt/slurm_scripts/
+            volumeSourceName: slurm-scripts
+          - name: slurm-scripts-jail
+            mountPath: /mnt/jail.upper/opt/slurm_scripts/
+            volumeSourceName: slurm-scripts
+          {{- if .Values.slurmNodes.login.volumes.customMounts }}
+          {{- .Values.slurmNodes.login.volumes.customMounts | toYaml | nindent 10 }}
+          {{- end }}
+    exporter:
+      enabled: {{ .Values.slurmNodes.exporter.enabled }}
+      size: {{ required ".Values.slurmNodes.exporter.size must be provided." .Values.slurmNodes.exporter.size }}
+      k8sNodeFilterName: {{ required ".Values.slurmNodes.exporter.k8sNodeFilterName must be provided." .Values.slurmNodes.exporter.k8sNodeFilterName | quote }}
+      priorityClass: {{ default (printf "%s-%s" (include "slurm-cluster.name" .) "slurm-exporter") .Values.slurmNodes.exporter.priorityClass | quote }}
+      {{- if .Values.slurmNodes.exporter.collectionInterval }}
+      collectionInterval: {{ .Values.slurmNodes.exporter.collectionInterval | quote }}
+      {{- end }}
+      {{- if .Values.slurmNodes.exporter.podMonitorConfig }}
+      podMonitorConfig:
+        {{- toYaml .Values.slurmNodes.exporter.podMonitorConfig | nindent 8 }}
+      {{- end }}
+      exporterContainer:
+        image: {{ required "soperator exporter image" .Values.images.soperatorExporter | quote }}
+        imagePullPolicy: {{ default "IfNotPresent" .Values.slurmNodes.exporter.imagePullPolicy | quote }}
+        appArmorProfile: {{ default "unconfined" .Values.slurmNodes.exporter.appArmorProfile | quote }}
+    rest:
+      enabled: {{ .Values.slurmNodes.rest.enabled }}
+      size: {{ required ".Values.slurmNodes.rest.size must be provided." .Values.slurmNodes.rest.size }}
+      k8sNodeFilterName: {{ required ".Values.slurmNodes.rest.k8sNodeFilterName must be provided." .Values.slurmNodes.rest.k8sNodeFilterName | quote }}
+      priorityClass: {{ default (printf "%s-%s" (include "slurm-cluster.name" .) "slurm-rest") .Values.slurmNodes.rest.priorityClass | quote }}
+      {{- if .Values.slurmNodes.rest.threadCount }}
+      threadCount: {{ .Values.slurmNodes.rest.threadCount }}
+      {{- end }}
+      {{- if .Values.slurmNodes.rest.maxConnections }}
+      maxConnections: {{ .Values.slurmNodes.rest.maxConnections }}
+      {{- end }}
+      customInitContainers: {{- default list .Values.slurmNodes.rest.customInitContainers | toYaml | nindent 10 }}
+      rest:
+        image: {{ required "rest image" .Values.images.slurmrestd | quote }}
+        {{- if .Values.slurmNodes.rest.rest.command }}
+        command: {{- .Values.slurmNodes.rest.rest.command | toYaml | nindent 8 }}
+        {{- end }}
+        {{- if .Values.slurmNodes.rest.rest.args }}
+        args: {{- .Values.slurmNodes.rest.rest.args | toYaml | nindent 8 }}
+        {{- end }}
+        resources:
+          cpu: {{ required ".Values.slurmNodes.rest.rest.resources.cpu must be provided." .Values.slurmNodes.rest.rest.resources.cpu | quote}}
+          memory: {{ required ".Values.slurmNodes.rest.rest.resources.memory must be provided." .Values.slurmNodes.rest.rest.resources.memory | quote}}
+          ephemeral-storage: {{ required ".Values.slurmNodes.rest.rest.resources.ephemeralStorage must be provided." .Values.slurmNodes.rest.rest.resources.ephemeralStorage | quote}}
+  sConfigController:
+    node:
+      size: {{ required ".Values.sConfigController.node.size must be provided." .Values.sConfigController.node.size }}
+      k8sNodeFilterName: {{ required ".Values.sConfigController.node.k8sNodeFilterName must be provided." .Values.sConfigController.node.k8sNodeFilterName | quote }}
+      priorityClass: {{ default (printf "%s-%s" (include "slurm-cluster.name" .) "slurm-sconfigcontroller") .Values.sConfigController.node.priorityClass | quote }}
+    container:
+      image: {{ required "sConfigController image" .Values.images.sConfigController | quote }}
+      imagePullPolicy: {{ default "IfNotPresent" .Values.sConfigController.container.imagePullPolicy | quote }}
+      resources:
+        cpu: {{ required ".Values.sConfigController.container.resources.cpu must be provided." .Values.sConfigController.container.resources.cpu | quote}}
+        memory: {{ required ".Values.sConfigController.container.resources.memory must be provided." .Values.sConfigController.container.resources.memory | quote}}
+        ephemeral-storage: {{ required ".Values.sConfigController.container.resources.ephemeralStorage must be provided." .Values.sConfigController.container.resources.ephemeralStorage | quote}}
+    runAsUid: {{ .Values.sConfigController.runAsUid }}
+    runAsGid: {{ .Values.sConfigController.runAsGid }}
+    {{- if .Values.sConfigController.reconfigurePollInterval }}
+    reconfigurePollInterval: {{ .Values.sConfigController.reconfigurePollInterval | quote }}
+    {{- end }}
+    {{- if .Values.sConfigController.reconfigureWaitTimeout }}
+    reconfigureWaitTimeout: {{ .Values.sConfigController.reconfigureWaitTimeout | quote }}
+    {{- end }}
+  {{- if .Values.telemetry }}
+  telemetry:
+    {{- if .Values.telemetry.jobsTelemetry }}
+    jobsTelemetry:
+      {{- if .Values.telemetry.jobsTelemetry.otelCollectorHttpHost }}
+      otelCollectorHttpHost: {{ .Values.telemetry.jobsTelemetry.otelCollectorHttpHost | quote }}
+      {{- end }}
+      {{- if .Values.telemetry.jobsTelemetry.otelCollectorGrpcHost }}
+      otelCollectorGrpcHost: {{ .Values.telemetry.jobsTelemetry.otelCollectorGrpcHost | quote }}
+      {{- end }}
+      {{- if .Values.telemetry.jobsTelemetry.otelCollectorPath }}
+      otelCollectorPath: {{ .Values.telemetry.jobsTelemetry.otelCollectorPath | quote }}
+      {{- end }}
+      {{- if .Values.telemetry.jobsTelemetry.otelCollectorPort }}
+      otelCollectorPort: {{ .Values.telemetry.jobsTelemetry.otelCollectorPort }}
+      {{- end }}
+      {{- if .Values.telemetry.jobsTelemetry.sendJobsEvents }}
+      sendJobsEvents: {{ .Values.telemetry.jobsTelemetry.sendJobsEvents }}
+      {{- end }}
+      {{- if .Values.telemetry.jobsTelemetry.sendOtelMetrics }}
+      sendOtelMetrics: {{ .Values.telemetry.jobsTelemetry.sendOtelMetrics }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.telemetry.openTelemetryCollector }}
+    openTelemetryCollector:
+      {{- if .Values.telemetry.openTelemetryCollector.enabled }}
+      enabled: {{ .Values.telemetry.openTelemetryCollector.enabled }}
+      {{- end }}
+      {{- if .Values.telemetry.jobsTelemetry.otelCollectorHttpHost }}
+      podTemplateNameRef: {{ .Values.telemetry.openTelemetryCollector.podTemplateNameRef | quote }}
+      {{- end }}
+      {{- if .Values.telemetry.jobsTelemetry.replicasOtelCollector }}
+      replicasOtelCollector: {{ .Values.telemetry.openTelemetryCollector.replicasOtelCollector }}
+      {{- end }}
+      {{- if .Values.telemetry.jobsTelemetry.otelCollectorPort }}
+      otelCollectorPort: {{ .Values.telemetry.openTelemetryCollector.OtelCollectorPort }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
