@@ -211,13 +211,69 @@ EOF
 
     print_success "✅ Worker cluster registration complete!"
     echo ""
-    print_info "Next steps:"
-    print_info "1. Install EGS Worker on the worker cluster:"
-    print_info "   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\"
-    print_info "     --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui"
-    print_info "2. Ensure the worker cluster can reach the controller cluster"
-    print_info "3. Verify cluster status in the controller:"
-    print_info "   kubectl --kubeconfig $CONTROLLER_KUBECONFIG get cluster.controller.kubeslice.io -n $PROJECT_NAMESPACE"
+    
+    # Automatically set skip flags for all components when in register-worker mode
+    # This ensures --register-worker is a standalone functionality
+    SKIP_POSTGRESQL="true"
+    SKIP_PROMETHEUS="true"
+    SKIP_GPU_OPERATOR="true"
+    SKIP_CONTROLLER="true"
+    SKIP_UI="true"
+    
+    # If worker kubeconfig is provided, proceed with worker installation
+    if [ -n "$WORKER_KUBECONFIG" ]; then
+        print_info "Worker kubeconfig provided - proceeding with worker installation..."
+        print_info "Setting up for worker installation..."
+        
+        # Only set SKIP_WORKER="false" if it hasn't been explicitly set to true via --skip-worker flag
+        # This respects the user's --skip-worker flag if provided
+        if [ "$SKIP_WORKER" != "true" ]; then
+            SKIP_WORKER="false"
+        else
+            print_info "Worker installation will be skipped (--skip-worker flag provided)"
+        fi
+        
+        # Set cluster name to registered cluster name
+        CLUSTER_NAME="$REGISTER_CLUSTER_NAME"
+        
+        # Set multi-cluster mode
+        MULTI_CLUSTER="true"
+        
+        # Add worker to arrays for config generation
+        WORKER_KUBECONFIGS=("$WORKER_KUBECONFIG")
+        if [ -n "$WORKER_CONTEXT" ]; then
+            WORKER_CONTEXTS=("$WORKER_CONTEXT")
+        else
+            WORKER_CONTEXTS=()
+        fi
+        WORKER_NAMES=("$REGISTER_CLUSTER_NAME")
+        
+        print_success "Configuration prepared for worker installation"
+        print_info "Worker will be installed on: $REGISTER_CLUSTER_NAME"
+        print_info "All other components (Controller, UI, Prerequisites) will be automatically skipped"
+        echo ""
+        # Continue with normal installation flow (will skip to worker installation)
+    else
+        # No worker kubeconfig - just registration, exit after this
+        SKIP_WORKER="true"
+        print_info "✅ Registration complete! Worker cluster '$REGISTER_CLUSTER_NAME' is now registered."
+        echo ""
+        print_info "Next steps:"
+        print_info "1. To install EGS Worker on this cluster, run:"
+        print_info "   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\"
+        print_info "     --register-worker \\"
+        print_info "     --controller-kubeconfig <controller-kubeconfig> \\"
+        print_info "     --worker-kubeconfig <worker-kubeconfig> \\"
+        print_info "     --register-cluster-name $REGISTER_CLUSTER_NAME \\"
+        print_info "     --register-project-name $REGISTER_PROJECT_NAME"
+        echo ""
+        print_info "   Note: All components (Controller, UI, Prerequisites) are automatically skipped when using --register-worker"
+        print_info "2. Verify cluster status in the controller:"
+        print_info "   kubectl --kubeconfig $CONTROLLER_KUBECONFIG get cluster.controller.kubeslice.io -n $PROJECT_NAMESPACE"
+        echo ""
+        # Exit if no worker kubeconfig provided
+        exit 0
+    fi
 }
 
 # Function to show help
@@ -495,10 +551,16 @@ if ! command -v kubectl &> /dev/null; then
     exit 1
 fi
 
-# If --register-worker is set, run registration and exit (skip normal installation flow)
+# Save original directory (where user ran curl from) - needed for register_worker_cluster
+ORIGINAL_DIR="$(pwd)"
+
+# If --register-worker is set, run registration
+# If worker kubeconfig is provided, it will continue with installation
+# Otherwise, it will exit after registration
 if [ "$REGISTER_WORKER" = "true" ]; then
     register_worker_cluster
-    exit 0
+    # If register_worker_cluster didn't exit, it means worker installation should proceed
+    # The function sets up the necessary variables and continues
 fi
 
 # Normalize worker arrays: if legacy WORKER_KUBECONFIG is set but arrays are empty, add it to array
@@ -586,8 +648,11 @@ else
     print_success "Connected to cluster: $CURRENT_CONTEXT"
 fi
 
-# Save original directory (where user ran curl from)
-ORIGINAL_DIR="$(pwd)"
+# ORIGINAL_DIR is already set earlier (before register_worker_cluster if used)
+# If not set yet, set it now (shouldn't happen, but safety check)
+if [ -z "$ORIGINAL_DIR" ]; then
+    ORIGINAL_DIR="$(pwd)"
+fi
 
 # Check if Controller is being installed
 # License is only required for Controller, not for UI, Worker, or prerequisites (PostgreSQL, Prometheus, GPU Operator)
@@ -659,10 +724,158 @@ if [ ! -f "$TEMP_DIR/egs-installation/egs-installer-config.yaml" ]; then
     exit 1
 fi
 
-# Copy base config from repo
-cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+# Save worker template from the repo config OR existing config
+# Copy repo config to a temporary location in working directory for yq to access
+# (yq may not work reliably with files in /tmp)
+TEMP_WORKER_TEMPLATE="$ORIGINAL_DIR/.temp-worker-template.yaml"
+TEMP_REPO_CONFIG_COPY="$ORIGINAL_DIR/.temp-repo-config.yaml"
 
-# Cleanup temp directory
+# Priority for template source:
+# 1. If register-worker mode and existing config has workers, use existing config (preserves customizations)
+# 2. Otherwise, use repo config
+TEMPLATE_SOURCE=""
+if [ "$REGISTER_WORKER" = "true" ] && [ -f "$ORIGINAL_DIR/egs-installer-config.yaml" ]; then
+    EXISTING_WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' "$ORIGINAL_DIR/egs-installer-config.yaml" 2>/dev/null || echo "0")
+    if [ "$EXISTING_WORKER_COUNT" -gt 0 ]; then
+        # Use existing config for template (preserves any customizations from previous installation)
+        TEMPLATE_SOURCE="$ORIGINAL_DIR/egs-installer-config.yaml"
+        print_info "Using existing config for worker template (found $EXISTING_WORKER_COUNT existing worker(s))"
+    fi
+fi
+
+# If no template source yet, use repo config
+if [ -z "$TEMPLATE_SOURCE" ] && [ -f "$TEMP_DIR/egs-installation/egs-installer-config.yaml" ]; then
+    # Copy repo config to working directory so yq can access it
+    cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$TEMP_REPO_CONFIG_COPY"
+    TEMPLATE_SOURCE="$TEMP_REPO_CONFIG_COPY"
+    print_info "Using repo config for worker template"
+fi
+
+# Save the template
+if [ -n "$TEMPLATE_SOURCE" ] && [ -f "$TEMPLATE_SOURCE" ]; then
+    WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' "$TEMPLATE_SOURCE" 2>/dev/null || echo "0")
+    if [ "$WORKER_COUNT" -gt 0 ]; then
+        # Save the template from the first worker entry
+        yq eval '.kubeslice_worker_egs[0]' "$TEMPLATE_SOURCE" > "$TEMP_WORKER_TEMPLATE" 2>/dev/null
+        # Verify template has valid content
+        if [ -s "$TEMP_WORKER_TEMPLATE" ] && ! grep -qE "^(null|{})$" "$TEMP_WORKER_TEMPLATE"; then
+            TEMPLATE_NAME=$(yq eval '.name' "$TEMP_WORKER_TEMPLATE" 2>/dev/null || echo "")
+            TEMPLATE_NAME_CLEAN=$(echo "$TEMPLATE_NAME" | tr -d '"' | tr -d "'" | xargs)
+            if [ -n "$TEMPLATE_NAME_CLEAN" ] && [ "$TEMPLATE_NAME_CLEAN" != "null" ]; then
+                print_info "Saved worker template with all fields preserved"
+            else
+                if [ -s "$TEMP_WORKER_TEMPLATE" ]; then
+                    print_info "Saved worker template (name check inconclusive, but file has content)"
+                fi
+            fi
+        fi
+    fi
+fi
+# Clean up temp copy
+rm -f "$TEMP_REPO_CONFIG_COPY"
+
+# Now copy base config from repo to working directory
+# In register-worker mode, preserve existing config if it has workers configured
+EXISTING_WORKERS=0
+if [ "$REGISTER_WORKER" = "true" ]; then
+    # Check if local config exists
+    if [ -f "$ORIGINAL_DIR/egs-installer-config.yaml" ]; then
+        EXISTING_WORKERS=$(yq eval '.kubeslice_worker_egs | length' "$ORIGINAL_DIR/egs-installer-config.yaml" 2>/dev/null || echo "0")
+        if [ "$EXISTING_WORKERS" -gt 0 ]; then
+            print_info "Preserving existing local config with $EXISTING_WORKERS worker(s) (register-worker mode)"
+            # Don't overwrite - we'll append to existing config
+            # Ensure all existing workers have skip_installation=true (they're already installed)
+            for ((i=0; i<EXISTING_WORKERS; i++)); do
+                CURRENT_SKIP=$(yq eval ".kubeslice_worker_egs[$i].skip_installation" "$ORIGINAL_DIR/egs-installer-config.yaml" 2>/dev/null)
+                if [ "$CURRENT_SKIP" != "true" ]; then
+                    yq eval ".kubeslice_worker_egs[$i].skip_installation = true" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
+                    WORKER_NAME=$(yq eval ".kubeslice_worker_egs[$i].name" "$ORIGINAL_DIR/egs-installer-config.yaml" 2>/dev/null)
+                    print_info "Set skip_installation=true for existing worker: $WORKER_NAME"
+                fi
+            done
+            WORKERS_PRESERVED_FROM_CONTROLLER="true"  # Mark as preserved
+        else
+            # Local config exists but has no workers - copy from repo
+            cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+            EXISTING_WORKERS=0
+            WORKERS_PRESERVED_FROM_CONTROLLER="false"
+        fi
+    else
+        # No local config - check controller cluster for existing workers
+        print_info "No local config found - checking controller cluster for existing workers..."
+        CONTROLLER_CMD="kubectl --kubeconfig $CONTROLLER_KUBECONFIG"
+        if [ -n "$CONTROLLER_CONTEXT" ]; then
+            CONTROLLER_CMD="$CONTROLLER_CMD --context $CONTROLLER_CONTEXT"
+        fi
+        
+        # Check for cluster CRDs in the project namespace
+        PROJECT_NAMESPACE="kubeslice-$REGISTER_PROJECT_NAME"
+        EXISTING_CLUSTERS=$($CONTROLLER_CMD get cluster.controller.kubeslice.io -n "$PROJECT_NAMESPACE" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
+        
+        if [ -n "$EXISTING_CLUSTERS" ]; then
+            print_info "Found existing worker clusters in controller: $EXISTING_CLUSTERS"
+            print_info "These workers will be preserved in the config"
+            
+            # Copy repo config as base
+            cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+            
+            # Delete the default worker entry
+            yq eval 'del(.kubeslice_worker_egs[])' -i "$ORIGINAL_DIR/egs-installer-config.yaml"
+            
+            # Add existing clusters as worker entries (using template structure)
+            CLUSTER_INDEX=0
+            for CLUSTER in $EXISTING_CLUSTERS; do
+                # Skip if this is the cluster we're currently registering (avoid duplicate)
+                if [ "$CLUSTER" = "$REGISTER_CLUSTER_NAME" ]; then
+                    print_info "Skipping existing cluster '$CLUSTER' (will be added as new worker)"
+                    continue
+                fi
+                
+                # Load template for each existing cluster
+                if [ -f "$TEMP_WORKER_TEMPLATE" ]; then
+                    print_info "Adding preserved worker: $CLUSTER at index $CLUSTER_INDEX"
+                    # Load the template structure
+                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX] = load(\"$TEMP_WORKER_TEMPLATE\")" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
+                    
+                    # Now update ALL specific fields for preserved workers (AFTER template load)
+                    # This ensures our values override any template defaults
+                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].name = \"$CLUSTER\" | .kubeslice_worker_egs[$CLUSTER_INDEX].name style=\"double\"" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
+                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].use_global_kubeconfig = true" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
+                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].kubeconfig = \"\" | .kubeslice_worker_egs[$CLUSTER_INDEX].kubeconfig style=\"double\"" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
+                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].kubecontext = \"\" | .kubeslice_worker_egs[$CLUSTER_INDEX].kubecontext style=\"double\"" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
+                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].skip_installation = true" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
+                    
+                    # Double-check it was set correctly
+                    VERIFY_SKIP=$(yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].skip_installation" "$ORIGINAL_DIR/egs-installer-config.yaml" 2>/dev/null)
+                    VERIFY_USE_GLOBAL=$(yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].use_global_kubeconfig" "$ORIGINAL_DIR/egs-installer-config.yaml" 2>/dev/null)
+                    if [ "$VERIFY_SKIP" = "true" ] && [ "$VERIFY_USE_GLOBAL" = "true" ]; then
+                        print_info "✅ Preserved worker: $CLUSTER (skip_installation=true, use_global_kubeconfig=true, will not be reinstalled)"
+                    else
+                        print_warning "⚠️  Failed to set skip_installation for $CLUSTER (skip=$VERIFY_SKIP, use_global=$VERIFY_USE_GLOBAL)"
+                    fi
+                    CLUSTER_INDEX=$((CLUSTER_INDEX + 1))
+                fi
+            done
+            EXISTING_WORKERS=$CLUSTER_INDEX
+            print_info "Added $EXISTING_WORKERS preserved worker(s) from controller cluster"
+        else
+            print_info "No existing workers found in controller cluster"
+            # Copy repo config as is
+            cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+            EXISTING_WORKERS=0
+        fi
+    fi
+else
+    # Normal mode: always copy from repo (ONLY if not in register-worker mode with existing workers)
+    cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+    EXISTING_WORKERS=0
+    WORKERS_PRESERVED_FROM_CONTROLLER="false"
+fi
+
+# Clean up temp copy
+rm -f "$TEMP_REPO_CONFIG_COPY"
+
+# Cleanup temp directory (AFTER template is saved)
 rm -rf "$TEMP_DIR"
 print_success "Setup complete in: $ORIGINAL_DIR"
 
@@ -873,37 +1086,215 @@ if [ "$MULTI_CLUSTER" = "true" ]; then
     
     # Set worker kubeconfigs and contexts for multiple workers
     if [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]; then
-        # Remove all existing workers from the array first
-        yq eval 'del(.kubeslice_worker_egs[])' -i egs-installer-config.yaml
+        # Use the template that was saved from the original repo config (before any modifications)
+        TEMP_WORKER_TEMPLATE="$ORIGINAL_DIR/.temp-worker-template.yaml"
         
-        # Add each worker to the array
+        # Ensure we're in the right directory
+        cd "$ORIGINAL_DIR" 2>/dev/null || true
+        
+        # Check if template file exists and has valid content
+        if [ -f "$TEMP_WORKER_TEMPLATE" ] && [ -s "$TEMP_WORKER_TEMPLATE" ]; then
+            # Verify template has a name field (indicates it's a valid worker config)
+            # Use proper yq syntax (don't use // empty as it causes errors)
+            TEMPLATE_NAME_CHECK=$(yq eval '.name' "$TEMP_WORKER_TEMPLATE" 2>/dev/null || echo "")
+            if [ -n "$TEMPLATE_NAME_CHECK" ] && [ "$TEMPLATE_NAME_CHECK" != "null" ]; then
+                HAS_TEMPLATE=true
+                print_info "Using worker template with all fields preserved"
+            else
+                # Still use template if file exists and has content (might have fields even if name check fails)
+                if [ -s "$TEMP_WORKER_TEMPLATE" ] && ! grep -qE "^(null|{})$" "$TEMP_WORKER_TEMPLATE"; then
+                    HAS_TEMPLATE=true
+                    print_info "Using worker template (name check inconclusive, but file has content)"
+                else
+                    HAS_TEMPLATE=false
+                    print_warning "Template file exists but is invalid, will use empty structure"
+                fi
+            fi
+        else
+            HAS_TEMPLATE=false
+            print_warning "Template file not found, will use empty structure (fields may be missing)"
+        fi
+        
+        # Get the count of existing workers before processing
+        # Use the EXISTING_WORKERS value set earlier (from controller cluster or local config)
+        if [ -n "$EXISTING_WORKERS" ] && [ "$EXISTING_WORKERS" -gt 0 ]; then
+            EXISTING_WORKER_COUNT=$EXISTING_WORKERS
+        else
+            EXISTING_WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' egs-installer-config.yaml 2>/dev/null || echo "0")
+        fi
+        
+        # Check if we're in register-worker mode (adding a new worker to existing ones)
+        # In register-worker mode, we should append, not replace
+        if [ "$REGISTER_WORKER" = "true" ] && [ "$EXISTING_WORKER_COUNT" -gt 0 ]; then
+            print_info "Register-worker mode: Appending new worker to existing ${EXISTING_WORKER_COUNT} worker(s)"
+            
+            # But first, check if a worker with the same name already exists and remove it
+            # This prevents duplicate entries when re-registering the same worker
+            if [ ${#WORKER_NAMES[@]} -gt 0 ] && [ -n "${WORKER_NAMES[0]}" ]; then
+                NEW_WORKER_NAME="${WORKER_NAMES[0]}"
+            elif [ -n "$CLUSTER_NAME" ] && [ "$CLUSTER_NAME" != "worker-1" ]; then
+                NEW_WORKER_NAME="$CLUSTER_NAME"
+            else
+                NEW_WORKER_NAME="worker-1"
+            fi
+            
+            # Check if this worker name already exists and remove ALL instances
+            print_info "Checking for existing worker(s) named '$NEW_WORKER_NAME'"
+            REMOVED_COUNT=0
+            # Loop backwards to avoid index shifting issues when deleting
+            for ((idx=EXISTING_WORKER_COUNT-1; idx>=0; idx--)); do
+                EXISTING_NAME=$(yq eval ".kubeslice_worker_egs[$idx].name" egs-installer-config.yaml 2>/dev/null | tr -d '"' | tr -d "'" | xargs)
+                if [ "$EXISTING_NAME" = "$NEW_WORKER_NAME" ]; then
+                    print_warning "Found duplicate worker '$NEW_WORKER_NAME' at index $idx - removing to avoid duplicates"
+                    yq eval "del(.kubeslice_worker_egs[$idx])" -i egs-installer-config.yaml
+                    REMOVED_COUNT=$((REMOVED_COUNT + 1))
+                fi
+            done
+            
+            if [ "$REMOVED_COUNT" -gt 0 ]; then
+                # After deletion, recalculate the existing worker count
+                EXISTING_WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' egs-installer-config.yaml 2>/dev/null || echo "0")
+                print_info "Removed $REMOVED_COUNT duplicate worker(s). Updated existing worker count: $EXISTING_WORKER_COUNT"
+            fi
+            
+            # Don't delete existing workers - we'll append the new one
+            START_INDEX=$EXISTING_WORKER_COUNT
+        else
+            # Normal mode: replace all workers
+            # ONLY delete if we didn't preserve workers from controller cluster
+            if [ "$WORKERS_PRESERVED_FROM_CONTROLLER" != "true" ]; then
+                print_info "Replacing all workers in config"
+                # Remove all existing workers from the array first
+                yq eval 'del(.kubeslice_worker_egs[])' -i egs-installer-config.yaml
+                START_INDEX=0
+                # After deletion, EXISTING_WORKER_COUNT should be 0 for the template load logic
+                EXISTING_WORKER_COUNT=0
+            else
+                print_info "Preserving workers from controller cluster, appending new ones"
+                START_INDEX=$EXISTING_WORKER_COUNT
+            fi
+        fi
+        
+        # Add each worker to the array (starting from START_INDEX for append mode)
         for i in "${!WORKER_KUBECONFIG_RELATIVES[@]}"; do
+            # Calculate the actual index in the config array
+            CONFIG_INDEX=$((START_INDEX + i))
             WORKER_KUBECONFIG_RELATIVE="${WORKER_KUBECONFIG_RELATIVES[$i]}"
             WORKER_CTX="${WORKER_CONTEXTS_DETECTED[$i]}"
             
-            # Determine worker name (use provided name or default to worker-1, worker-2, etc.)
+            # Check if this worker entry already exists (when updating existing worker, not appending)
+            # Skip workers that were preserved from controller cluster (skip_installation=true, use_global_kubeconfig=true)
+            EXISTING_WORKER_NAME=""
+            EXISTING_WORKER_KUBECONFIG=""
+            EXISTING_WORKER_KUBECONTEXT=""
+            EXISTING_WORKER_SKIP=""
+            EXISTING_WORKER_USE_GLOBAL=""
+            SHOULD_SKIP_WORKER=false
+            
+            if [ "$CONFIG_INDEX" -lt "$EXISTING_WORKER_COUNT" ]; then
+                # This is an existing worker - check if it should be skipped (preserved from controller)
+                EXISTING_WORKER_SKIP=$(yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].skip_installation" egs-installer-config.yaml 2>/dev/null)
+                EXISTING_WORKER_USE_GLOBAL=$(yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].use_global_kubeconfig" egs-installer-config.yaml 2>/dev/null)
+                EXISTING_WORKER_NAME=$(yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].name" egs-installer-config.yaml 2>/dev/null | tr -d '"' | tr -d "'" | xargs)
+                EXISTING_WORKER_KUBECONFIG=$(yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].kubeconfig" egs-installer-config.yaml 2>/dev/null | tr -d '"' | tr -d "'" | xargs)
+                EXISTING_WORKER_KUBECONTEXT=$(yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].kubecontext" egs-installer-config.yaml 2>/dev/null | tr -d '"' | tr -d "'" | xargs)
+                
+                # If this worker is marked as skip_installation=true and use_global_kubeconfig=true,
+                # it was preserved from the controller cluster - don't modify it AT ALL
+                if [ "$EXISTING_WORKER_SKIP" = "true" ] && [ "$EXISTING_WORKER_USE_GLOBAL" = "true" ]; then
+                    print_info "Skipping worker $EXISTING_WORKER_NAME at index $CONFIG_INDEX (preserved from controller, already configured with skip_installation=true)"
+                    SHOULD_SKIP_WORKER=true
+                fi
+            fi
+            
+            # If this worker should be skipped (preserved), don't process it
+            if [ "$SHOULD_SKIP_WORKER" = "true" ]; then
+                continue
+            fi
+            
+            # Determine worker name
+            # Priority: 1) Provided name via --worker-name, 2) CLUSTER_NAME flag, 3) Existing name (if kubeconfig/kubecontext match), 4) Default
             if [ $i -lt ${#WORKER_NAMES[@]} ] && [ -n "${WORKER_NAMES[$i]}" ]; then
                 WORKER_NAME="${WORKER_NAMES[$i]}"
+            elif [ -n "$CLUSTER_NAME" ] && [ "$CLUSTER_NAME" != "worker-1" ] && [ $i -eq 0 ]; then
+                # Use CLUSTER_NAME for first worker if it's explicitly provided (not default)
+                WORKER_NAME="$CLUSTER_NAME"
+            elif [ -n "$EXISTING_WORKER_NAME" ] && [ "$EXISTING_WORKER_NAME" != "null" ] && [ "$EXISTING_WORKER_NAME" != "empty" ] && \
+                 [ -n "$EXISTING_WORKER_KUBECONFIG" ] && [ "$EXISTING_WORKER_KUBECONFIG" != "null" ] && [ "$EXISTING_WORKER_KUBECONFIG" != "empty" ] && \
+                 [ -n "$EXISTING_WORKER_KUBECONTEXT" ] && [ "$EXISTING_WORKER_KUBECONTEXT" != "null" ] && [ "$EXISTING_WORKER_KUBECONTEXT" != "empty" ]; then
+                # Preserve existing name if kubeconfig and kubecontext are already set
+                WORKER_NAME="$EXISTING_WORKER_NAME"
+                print_info "Preserving existing worker name: $WORKER_NAME (kubeconfig and kubecontext already set)"
             else
                 WORKER_NAME="worker-$((i+1))"
             fi
             
-            # Add new worker entry
-            yq eval ".kubeslice_worker_egs[$i] = {}" -i egs-installer-config.yaml
-            yq eval ".kubeslice_worker_egs[$i].name = \"$WORKER_NAME\"" -i egs-installer-config.yaml
-            yq eval ".kubeslice_worker_egs[$i].use_global_kubeconfig = false" -i egs-installer-config.yaml
-            yq eval ".kubeslice_worker_egs[$i].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
-            
-            if [ -n "$WORKER_CTX" ]; then
-                yq eval ".kubeslice_worker_egs[$i].kubecontext = \"$WORKER_CTX\"" -i egs-installer-config.yaml
-                if [ "$SKIP_WORKER" = "false" ]; then
-                    print_success "Set Worker $WORKER_NAME kubeconfig: $WORKER_KUBECONFIG_RELATIVE with context: $WORKER_CTX"
+            # Only load template for NEW workers (CONFIG_INDEX >= EXISTING_WORKER_COUNT)
+            # For existing workers, preserve all their fields
+            if [ "$CONFIG_INDEX" -ge "$EXISTING_WORKER_COUNT" ]; then
+                # This is a new worker - load template
+                if [ "$HAS_TEMPLATE" = "true" ] && [ -f "$TEMP_WORKER_TEMPLATE" ]; then
+                    # Load the template structure directly into the worker entry
+                    # Use absolute path to ensure yq can find the file
+                    print_info "Loading template for new worker at index $CONFIG_INDEX from $TEMP_WORKER_TEMPLATE"
+                    yq eval ".kubeslice_worker_egs[$CONFIG_INDEX] = load(\"$TEMP_WORKER_TEMPLATE\")" -i egs-installer-config.yaml
+                    # Verify the load was successful
+                    LOADED_KEYS=$(yq eval ".kubeslice_worker_egs[$CONFIG_INDEX] | keys" egs-installer-config.yaml 2>/dev/null | wc -l)
+                    if [ "$LOADED_KEYS" -gt 5 ]; then
+                        print_info "Template loaded successfully with $LOADED_KEYS fields"
+                    else
+                        print_warning "Template load may have failed, only $LOADED_KEYS fields found"
+                    fi
+                else
+                    # Create a new worker entry with empty structure (will use defaults from egs-installer.sh)
+                    yq eval ".kubeslice_worker_egs[$CONFIG_INDEX] = {}" -i egs-installer-config.yaml
+                    if [ "$HAS_TEMPLATE" = "true" ]; then
+                        print_warning "Template file not found at $TEMP_WORKER_TEMPLATE, using empty structure"
+                    fi
+                fi
+                
+                # Update all fields for new worker
+                yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].name = \"$WORKER_NAME\" | .kubeslice_worker_egs[$CONFIG_INDEX].name style=\"double\"" -i egs-installer-config.yaml
+                yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].use_global_kubeconfig = false" -i egs-installer-config.yaml
+                yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\" | .kubeslice_worker_egs[$CONFIG_INDEX].kubeconfig style=\"double\"" -i egs-installer-config.yaml
+                
+                if [ -n "$WORKER_CTX" ]; then
+                    yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].kubecontext = \"$WORKER_CTX\" | .kubeslice_worker_egs[$CONFIG_INDEX].kubecontext style=\"double\"" -i egs-installer-config.yaml
+                    if [ "$SKIP_WORKER" = "false" ]; then
+                        print_success "Set Worker $WORKER_NAME kubeconfig: $WORKER_KUBECONFIG_RELATIVE with context: $WORKER_CTX"
+                    fi
+                else
+                    yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].kubecontext = \"\" | .kubeslice_worker_egs[$CONFIG_INDEX].kubecontext style=\"double\"" -i egs-installer-config.yaml
+                    print_warning "Worker $WORKER_NAME context not found, leaving empty"
+                fi
+                
+                # Set skip_installation based on SKIP_WORKER flag (only for the NEW worker)
+                # Existing workers should already have skip_installation: true
+                if [ "$SKIP_WORKER" = "true" ]; then
+                    yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].skip_installation = true" -i egs-installer-config.yaml
+                    print_info "New worker $WORKER_NAME: skip_installation=true (--skip-worker flag provided)"
+                else
+                    # Don't set skip_installation - let it use template default (false)
+                    # This worker will be installed
+                    print_info "New worker $WORKER_NAME: skip_installation=false (will be installed)"
                 fi
             else
-                yq eval ".kubeslice_worker_egs[$i].kubecontext = \"\"" -i egs-installer-config.yaml
-                print_warning "Worker $WORKER_NAME context not found, leaving empty"
+                # This is an existing worker - only update kubeconfig/kubecontext if they are different
+                # Preserve ALL other fields
+                if [ -n "$WORKER_NAME" ]; then
+                    yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].name = \"$WORKER_NAME\" | .kubeslice_worker_egs[$CONFIG_INDEX].name style=\"double\"" -i egs-installer-config.yaml
+                fi
+                yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].use_global_kubeconfig = false" -i egs-installer-config.yaml
+                yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\" | .kubeslice_worker_egs[$CONFIG_INDEX].kubeconfig style=\"double\"" -i egs-installer-config.yaml
+                if [ -n "$WORKER_CTX" ]; then
+                    yq eval ".kubeslice_worker_egs[$CONFIG_INDEX].kubecontext = \"$WORKER_CTX\" | .kubeslice_worker_egs[$CONFIG_INDEX].kubecontext style=\"double\"" -i egs-installer-config.yaml
+                fi
+                print_info "Updated existing worker $WORKER_NAME with new kubeconfig/kubecontext"
             fi
         done
+        
+        # Cleanup temp file (only after all workers are processed)
+        rm -f "$TEMP_WORKER_TEMPLATE"
         
         if [ "$SKIP_WORKER" = "false" ]; then
             print_success "Configured ${#WORKER_KUBECONFIG_RELATIVES[@]} worker cluster(s)"
@@ -915,25 +1306,70 @@ else
     yq eval ".global_kubecontext = \"$CURRENT_CONTEXT\"" -i egs-installer-config.yaml
 fi
 
-# Update cluster name (for cluster registration - use first worker name or default)
-if [ ${#WORKER_NAMES[@]} -gt 0 ] && [ -n "${WORKER_NAMES[0]}" ]; then
-    FIRST_WORKER_NAME="${WORKER_NAMES[0]}"
-elif [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]; then
-    FIRST_WORKER_NAME="worker-1"
+# Update cluster_registration for workers
+# In register-worker mode with existing workers, we should add a new cluster_registration entry
+# Otherwise, update the first entry
+if [ "$REGISTER_WORKER" = "true" ] && [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]; then
+    # Register-worker mode: add or update cluster_registration entry
+    EXISTING_CLUSTER_REGISTRATIONS=$(yq eval '.cluster_registration | length' egs-installer-config.yaml 2>/dev/null || echo "0")
+    
+    # For each new worker, add a cluster_registration entry
+    for i in "${!WORKER_NAMES[@]}"; do
+        WORKER_NAME="${WORKER_NAMES[$i]}"
+        CLUSTER_REG_INDEX=$((EXISTING_CLUSTER_REGISTRATIONS + i))
+        
+        # Check if this cluster_registration entry already exists with this cluster_name
+        EXISTING_REG_NAME=$(yq eval ".cluster_registration[] | select(.cluster_name == \"$WORKER_NAME\") | .cluster_name" egs-installer-config.yaml 2>/dev/null | head -1 | tr -d '"' | xargs)
+        
+        if [ -z "$EXISTING_REG_NAME" ]; then
+            # Add new cluster_registration entry for this worker
+            yq eval ".cluster_registration[$CLUSTER_REG_INDEX].cluster_name = \"$WORKER_NAME\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$CLUSTER_REG_INDEX].project_name = \"$REGISTER_PROJECT_NAME\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$CLUSTER_REG_INDEX].telemetry.enabled = true" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$CLUSTER_REG_INDEX].telemetry.endpoint = \"$TELEMETRY_ENDPOINT\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$CLUSTER_REG_INDEX].telemetry.telemetryProvider = \"$TELEMETRY_PROVIDER\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$CLUSTER_REG_INDEX].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$CLUSTER_REG_INDEX].geoLocation.cloudRegion = \"$CLOUD_REGION\"" -i egs-installer-config.yaml
+            print_info "Added cluster_registration entry for: $WORKER_NAME"
+        else
+            print_info "Cluster registration for '$WORKER_NAME' already exists, preserving"
+        fi
+    done
 else
-    FIRST_WORKER_NAME="$CLUSTER_NAME"
+    # Normal mode: update the first cluster_registration entry
+    # Preserve existing cluster_name if it already exists and has a value
+    EXISTING_CLUSTER_NAME=$(yq eval ".cluster_registration[0].cluster_name // empty" egs-installer-config.yaml 2>/dev/null | tr -d '"' | tr -d "'" | xargs)
+    if [ -n "$EXISTING_CLUSTER_NAME" ] && [ "$EXISTING_CLUSTER_NAME" != "null" ] && [ "$EXISTING_CLUSTER_NAME" != "empty" ]; then
+        # Preserve existing cluster_name
+        print_info "Preserving existing cluster_registration.cluster_name: $EXISTING_CLUSTER_NAME"
+    else
+        # Determine new cluster name
+        # Priority: 1) First worker name from array, 2) CLUSTER_NAME if not default, 3) Default
+        if [ ${#WORKER_NAMES[@]} -gt 0 ] && [ -n "${WORKER_NAMES[0]}" ]; then
+            FIRST_WORKER_NAME="${WORKER_NAMES[0]}"
+        elif [ -n "$CLUSTER_NAME" ] && [ "$CLUSTER_NAME" != "worker-1" ]; then
+            # Use CLUSTER_NAME if it's explicitly provided (not default)
+            FIRST_WORKER_NAME="$CLUSTER_NAME"
+        elif [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]; then
+            FIRST_WORKER_NAME="worker-1"
+        else
+            FIRST_WORKER_NAME="$CLUSTER_NAME"
+        fi
+        yq eval ".cluster_registration[0].cluster_name = \"$FIRST_WORKER_NAME\"" -i egs-installer-config.yaml
+    fi
+    
+    # Update cloud provider for the first entry
+    yq eval ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" -i egs-installer-config.yaml
 fi
-yq eval ".cluster_registration[0].cluster_name = \"$FIRST_WORKER_NAME\"" -i egs-installer-config.yaml
-
-# Update cloud provider
-yq eval ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" -i egs-installer-config.yaml
 
 # Update image registry
 yq eval ".kubeslice_controller_egs.inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
 yq eval ".kubeslice_ui_egs.inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
 # Update image registry for all workers
+# This should merge with existing inline_values, not overwrite them
 WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' egs-installer-config.yaml)
 for ((i=0; i<WORKER_COUNT; i++)); do
+    # Always update imageRegistry, yq should merge this with existing inline_values.global fields
     yq eval ".kubeslice_worker_egs[$i].inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
 done
 
@@ -973,12 +1409,56 @@ fi
 
 if [ "$SKIP_WORKER" = "true" ]; then
     # Set skip_installation for all workers
+    # BUT in register-worker mode, preserved workers already have skip_installation=true
+    # So only update workers that don't already have skip_installation=true
     WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' egs-installer-config.yaml)
     for ((i=0; i<WORKER_COUNT; i++)); do
-        yq eval ".kubeslice_worker_egs[$i].skip_installation = true" -i egs-installer-config.yaml
+        # Check if this worker already has skip_installation=true (preserved worker)
+        CURRENT_SKIP=$(yq eval ".kubeslice_worker_egs[$i].skip_installation" egs-installer-config.yaml 2>/dev/null)
+        if [ "$CURRENT_SKIP" != "true" ]; then
+            # Only update if not already true
+            yq eval ".kubeslice_worker_egs[$i].skip_installation = true" -i egs-installer-config.yaml
+        fi
     done
     yq eval ".enable_install_worker = false" -i egs-installer-config.yaml
     print_warning "EGS Worker installation will be skipped for all workers"
+fi
+
+# In register-worker mode, ensure all EXISTING workers (not the new one) have skip_installation=true
+# This should run regardless of SKIP_WORKER flag to ensure existing workers aren't reinstalled
+if [ "$REGISTER_WORKER" = "true" ]; then
+    # Get total worker count
+    TOTAL_WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' egs-installer-config.yaml 2>/dev/null || echo "0")
+    
+    if [ "$TOTAL_WORKER_COUNT" -gt 0 ]; then
+        # The last worker is the newly registered worker
+        # All others are existing workers that should be skipped
+        NEW_WORKER_INDEX=$((TOTAL_WORKER_COUNT - 1))
+        print_info "Register-worker mode: Ensuring existing workers have skip_installation=true, new worker respects --skip-worker flag"
+        
+        for ((i=0; i<TOTAL_WORKER_COUNT; i++)); do
+            WORKER_NAME=$(yq eval ".kubeslice_worker_egs[$i].name" egs-installer-config.yaml 2>/dev/null)
+            if [ "$i" -lt "$NEW_WORKER_INDEX" ]; then
+                # This is an existing worker - always skip
+                CURRENT_SKIP=$(yq eval ".kubeslice_worker_egs[$i].skip_installation" egs-installer-config.yaml 2>/dev/null)
+                if [ "$CURRENT_SKIP" != "true" ]; then
+                    yq eval ".kubeslice_worker_egs[$i].skip_installation = true" -i egs-installer-config.yaml
+                    print_info "✅ Set skip_installation=true for existing worker: $WORKER_NAME"
+                else
+                    print_info "✅ Worker $WORKER_NAME already has skip_installation=true"
+                fi
+            elif [ "$i" -eq "$NEW_WORKER_INDEX" ]; then
+                # This is the newly registered worker - respect SKIP_WORKER flag
+                if [ "$SKIP_WORKER" = "true" ]; then
+                    yq eval ".kubeslice_worker_egs[$i].skip_installation = true" -i egs-installer-config.yaml
+                    print_info "✅ New worker $WORKER_NAME: skip_installation=true (--skip-worker flag provided)"
+                else
+                    yq eval ".kubeslice_worker_egs[$i].skip_installation = false" -i egs-installer-config.yaml
+                    print_info "✅ New worker $WORKER_NAME: skip_installation=false (will be installed)"
+                fi
+            fi
+        done
+    fi
 fi
 
 print_success "Configuration updated successfully!"
@@ -1010,15 +1490,46 @@ if [ "$NEEDS_LICENSE" = "true" ]; then
     print_info "Applying EGS license..."
     echo ""
 
-    # Create namespace if it doesn't exist
-    kubectl create namespace kubeslice-controller --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
-
-    if kubectl apply -f "$LICENSE_FILE" -n kubeslice-controller; then
-        print_success "License applied successfully!"
-        echo ""
+    # Determine which kubeconfig and context to use for license application
+    if [ "$MULTI_CLUSTER" = "true" ] && [ -n "$CONTROLLER_KUBECONFIG" ]; then
+        # Multi-cluster mode: Use controller kubeconfig
+        LICENSE_KUBECONFIG_ARG="--kubeconfig $CONTROLLER_KUBECONFIG"
+        if [ -n "$CONTROLLER_CONTEXT" ]; then
+            LICENSE_CONTEXT_ARG="--context $CONTROLLER_CONTEXT"
+        else
+            LICENSE_CONTEXT_ARG=""
+        fi
+        print_info "Using controller kubeconfig for license application (multi-cluster mode)"
     else
-        print_warning "License application failed or already exists. Continuing..."
-        echo ""
+        # Single-cluster mode: Use current KUBECONFIG
+        LICENSE_KUBECONFIG_ARG=""
+        LICENSE_CONTEXT_ARG=""
+    fi
+
+    # Create namespace if it doesn't exist
+    if [ -n "$LICENSE_KUBECONFIG_ARG" ]; then
+        kubectl $LICENSE_KUBECONFIG_ARG $LICENSE_CONTEXT_ARG create namespace kubeslice-controller --dry-run=client -o yaml | kubectl $LICENSE_KUBECONFIG_ARG $LICENSE_CONTEXT_ARG apply -f - 2>/dev/null || true
+    else
+        kubectl create namespace kubeslice-controller --dry-run=client -o yaml | kubectl apply -f - 2>/dev/null || true
+    fi
+
+    # Apply license
+    if [ -n "$LICENSE_KUBECONFIG_ARG" ]; then
+        if kubectl $LICENSE_KUBECONFIG_ARG $LICENSE_CONTEXT_ARG apply -f "$LICENSE_FILE" -n kubeslice-controller; then
+            print_success "License applied successfully to controller cluster!"
+            echo ""
+        else
+            print_warning "License application failed or already exists. Continuing..."
+            echo ""
+        fi
+    else
+        if kubectl apply -f "$LICENSE_FILE" -n kubeslice-controller; then
+            print_success "License applied successfully!"
+            echo ""
+        else
+            print_warning "License application failed or already exists. Continuing..."
+            echo ""
+        fi
     fi
 else
     print_info "📜 Step 0/3: Skipping license application (Controller is not being installed)"

@@ -28,7 +28,7 @@ The EGS Quick Installer provides a **one-command installation** experience for E
 
 1. **Kubernetes Cluster**: Admin access to a Kubernetes cluster (v1.23.6+)
 2. **kubectl**: Configured and connected to your cluster
-3. **EGS License**: Valid license file (`egs-license.yaml` in current directory) - **Only required when installing Controller. Not required for UI, Worker, or prerequisites (PostgreSQL, Prometheus, GPU Operator).**
+3. **EGS License**: Valid license file (`egs-license.yaml` in current directory) - **Only required when installing Controller. Not required for UI, Worker, or prerequisites (PostgreSQL, Prometheus, GPU Operator).** In multi-cluster mode, the license is automatically applied to the controller cluster.
 4. **Required Tools**: `yq` (v4.44.2+), `helm` (v3.15.0+), `kubectl` (v1.23.6+), `jq` (v1.6+), `git`
 
 ### Simplest Installation
@@ -350,6 +350,25 @@ The installer automatically validates component dependencies and supports upgrad
 - You can skip dependencies if they're already installed (e.g., `--skip-controller --skip-ui` to upgrade only Worker)
 - In multi-cluster mode, you can install workers independently of Controller/UI location
 
+### 🔄 Advanced Features
+
+**Template Preservation:**
+- When adding new workers, the script preserves all configuration fields from the template
+- Ensures fields like `chart`, `namespace`, `release`, `helm_flags`, `inline_values` are not lost
+- Automatically saves worker template from repository or existing configuration
+- New workers inherit the complete structure with only specific fields updated
+
+**Multi-Cluster License Application:**
+- In multi-cluster mode, license is automatically applied to the controller cluster
+- Uses `--controller-kubeconfig` and `--controller-context` for license application
+- No manual intervention required for multi-cluster license setup
+
+**Intelligent Worker Management:**
+- Existing workers are automatically preserved with `skip_installation=true`
+- New workers get `skip_installation=false` (will be installed)
+- Duplicate workers are automatically detected and removed
+- Worker configurations are merged, not replaced
+
 ### Use Cases
 
 **Install only prerequisites (PostgreSQL, Prometheus, GPU Operator):**
@@ -440,6 +459,19 @@ All workers are automatically added to the `kubeslice_worker_egs` array in the g
 - Its own context (auto-detected or specified)
 - Shared configuration (image registry, etc.)
 
+### Duplicate Worker Handling
+
+When using `--register-worker` to add a new worker cluster:
+- **Automatic Duplicate Removal**: If a worker with the same name already exists in the configuration, all duplicate entries are automatically removed before adding the new worker
+- **Preserved Workers**: Existing workers (not being re-registered) automatically have `skip_installation=true` to prevent reinstallation
+- **New Worker**: The newly registered worker has `skip_installation=false` (unless `--skip-worker` flag is provided) so it will be installed
+- **No Manual Cleanup Required**: The script handles all duplicate detection and removal automatically
+
+**Example**: If you register `test-worker-2` twice:
+1. First registration: Creates `test-worker-2` with `skip_installation=false`
+2. Second registration: Removes old `test-worker-2` entry, creates new one with `skip_installation=false`
+3. Other workers remain unchanged with `skip_installation=true`
+
 ### Backward Compatibility
 
 Single worker installations continue to work as before:
@@ -454,21 +486,28 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 ## 🔗 Worker Cluster Registration
 
-The `--register-worker` feature allows you to register a worker cluster with an existing controller cluster without running the full installation process. This is useful for multi-cluster setups where you want to register worker clusters separately.
+The `--register-worker` feature allows you to register a worker cluster with an existing controller cluster. It supports two modes:
+
+1. **Registration Only**: Register the cluster without installing the worker
+2. **Registration + Installation**: Register AND install the worker in one command (when `--worker-kubeconfig` is provided)
 
 ### When to Use
 
 - **Multi-cluster setups**: Register worker clusters in different Kubernetes clusters
-- **Separate registration**: Register workers independently of installation
-- **Cluster management**: Add new worker clusters to an existing EGS deployment
+- **Add new workers**: Add new worker clusters to an existing EGS deployment
+- **Separate registration**: Register workers independently, then install later
+- **One-command registration + installation**: Register and install worker simultaneously
 
 ### How It Works
 
 1. **Connects to Controller**: Uses `--controller-kubeconfig` to connect to the controller cluster
-2. **Validates Worker** (optional): If `--worker-kubeconfig` is provided, validates worker cluster connectivity
-3. **Detects Cloud Provider**: Automatically detects Linode clusters and leaves cloud provider/region empty
-4. **Creates Cluster CRD**: Registers the worker cluster in the controller's project namespace
-5. **Verifies Registration**: Confirms the cluster was successfully registered
+2. **Registers Cluster**: Creates cluster CRD in the controller's project namespace
+3. **Validates Worker** (optional): If `--worker-kubeconfig` is provided, validates worker cluster connectivity
+4. **Detects Cloud Provider**: Automatically detects Linode clusters and leaves cloud provider/region empty
+5. **Handles Duplicates**: Automatically removes any existing worker entries with the same name
+6. **Preserves Existing Workers**: Sets `skip_installation=true` for all existing workers
+7. **Installs Worker** (if `--worker-kubeconfig` provided): Automatically proceeds with worker installation on the new cluster
+8. **Verifies Registration**: Confirms the cluster was successfully registered
 
 ### Required Parameters
 
@@ -479,7 +518,7 @@ The `--register-worker` feature allows you to register a worker cluster with an 
 ### Optional Parameters
 
 - `--controller-context NAME`: Controller cluster context (if not using default)
-- `--worker-kubeconfig PATH`: Worker cluster kubeconfig (for validation and cloud provider detection)
+- `--worker-kubeconfig PATH`: Worker cluster kubeconfig (**Important**: If provided, worker will be installed automatically after registration)
 - `--worker-context NAME`: Worker cluster context
 - `--register-project-name NAME`: Project name (default: `avesha`)
 - `--telemetry-endpoint URL`: Prometheus endpoint URL
@@ -487,6 +526,7 @@ The `--register-worker` feature allows you to register a worker cluster with an 
 - `--cloud-provider NAME`: Cloud provider name (auto-detected if worker kubeconfig provided)
 - `--cloud-region NAME`: Cloud region
 - `--controller-namespace NAME`: Controller namespace (default: `kubeslice-controller`)
+- `--skip-worker`: Skip worker installation (even if `--worker-kubeconfig` is provided)
 
 ### Linode Cluster Handling
 
@@ -497,10 +537,11 @@ When a Linode cluster is detected (via `--worker-kubeconfig`), the installer aut
 
 This is a Linode-specific requirement and is handled automatically.
 
-### Example Workflow
+### Example Workflows
 
+**Option 1: Register AND Install Worker (One Command - Recommended)**
 ```bash
-# Step 1: Register worker cluster with controller
+# Register worker cluster with controller AND install worker in one command
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
   --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
@@ -508,10 +549,38 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-cluster-name worker-2 \
   --register-project-name avesha
 
-# Step 2: Install EGS Worker on the worker cluster
+# That's it! The script will:
+# 1. Register worker-2 with the controller
+# 2. Automatically install the worker on worker-2 cluster
+# 3. Preserve existing workers (skip_installation=true)
+# 4. Set new worker: skip_installation=false (will install)
+```
+
+**Option 2: Register Only (Without Installation)**
+```bash
+# Register worker cluster WITHOUT installing (no --worker-kubeconfig)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --register-worker \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --register-cluster-name worker-2 \
+  --register-project-name avesha
+
+# Later, install the worker separately:
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --skip-postgresql --skip-prometheus --skip-gpu-operator \
   --skip-controller --skip-ui
+```
+
+**Option 3: Register Without Installing (Even With Kubeconfig)**
+```bash
+# Register but skip installation using --skip-worker flag
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --register-worker \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
+  --register-cluster-name worker-2 \
+  --register-project-name avesha \
+  --skip-worker
 ```
 
 ### Verification
