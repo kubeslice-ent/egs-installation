@@ -86,8 +86,6 @@ spec:
                 key: namespace
           - name: CLUSTER_NAME
             value: {{ .Values.cluster.name }}
-          - name: CLUSTER_ENDPOINT
-            value: "{{ .Values.cluster.endpoint }}"
           - name: WORKER_INSTALLER_IMAGE
             value: {{ include "kubeslice.image" (dict "imageRoot" .Values.workerInstaller "global" .Values.global) }}
           - name: IMAGE_PULL_SECRET_NAME
@@ -104,6 +102,8 @@ spec:
             value: {{ include "kubeslice.image" (dict "imageRoot" .Values.routerSidecar "global" .Values.global) }}
           - name: AVESHA_VL3_SIDECAR_IMAGE_PULLPOLICY
             value: {{ .Values.routerSidecar.pullPolicy }}
+          - name: CLUSTER_ENDPOINT
+            value: "{{ .Values.cluster.endpoint }}"
           - name: AVESHA_GW_SIDECAR_IMAGE
             value: {{ include "kubeslice.image" (dict "imageRoot" .Values.gateway "global" .Values.global) }}
           - name: AVESHA_GW_SIDECAR_IMAGE_PULLPOLICY

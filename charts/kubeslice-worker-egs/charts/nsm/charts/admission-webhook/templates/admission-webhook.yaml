@@ -5,11 +5,27 @@ metadata:
   name: {{ .Values.nsmNs }}
 ---
 {{- end }}
+{{- $secretName := "nsm-admission-webhook-certs" }}
+{{- $existingSecret := lookup "v1" "Secret" .Values.nsmNs $secretName }}
+{{- $caCertEnc := "" -}}
+{{- $tlsCertEnc := "" -}}
+{{- $tlsKeyEnc := "" -}}
+{{- if not $existingSecret }}
+# generate a new ca & certificate
 {{- $ca := genCA "admission-controller-ca" 3650 -}}
+{{- $caCertEnc = $ca.Cert | b64enc -}}
 {{- $cn := printf "admission-webhook-svc"  -}}
 {{- $altName1 := printf "%s.%s.svc" $cn .Values.nsmNs }}
 {{- $altName2 := printf "%s.%s.svc.cluster.local" $cn .Values.nsmNs }}
 {{- $cert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca -}}
+{{- $tlsCertEnc = $cert.Cert | b64enc -}}
+{{- $tlsKeyEnc = $cert.Key | b64enc -}}
+{{- else }}
+# Reuse existing certificates from the secret
+{{- $caCertEnc = index $existingSecret.data "ca.crt" -}}
+{{- $tlsCertEnc = index $existingSecret.data "tls.crt" -}}
+{{- $tlsKeyEnc = index $existingSecret.data "tls.key" -}}
+{{- end }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -17,8 +33,9 @@ metadata:
   namespace: {{ .Values.nsmNs }}
 type: Opaque
 data:
-  tls.key: {{ $cert.Key | b64enc }}
-  tls.crt: {{ $cert.Cert | b64enc }}
+  ca.crt: {{ $caCertEnc }}
+  tls.key: {{ $tlsKeyEnc }}
+  tls.crt: {{ $tlsCertEnc }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -103,7 +120,7 @@ spec:
             - name: NSM_REGISTER_WEBHOOK_CLIENT
               value: "false"
             - name: NSM_CA_BUNDLE
-              value: "{{ $ca.Cert | b64enc }}"
+              value: "{{ $caCertEnc }}"
             - name: NSM_CERT_FILE_PATH
               value: /etc/webhook/certs/tls.crt
             - name: NSM_KEY_FILE_PATH
@@ -152,7 +169,7 @@ webhooks:
         name: admission-webhook-svc
         namespace: {{ .Values.nsmNs }}
         path: "/mutate"
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
     rules:
       - apiGroups:
         - ""

@@ -350,7 +350,7 @@ kubeslice:
 
   workerinstaller:
     image: worker-installer
-    tag: 1.9.0
+    tag: 1.10.0
     pullPolicy: IfNotPresent
 
   prometheus:
