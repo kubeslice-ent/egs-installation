@@ -337,5 +337,12 @@ egs:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"                    
 
+# ServiceMonitor configuration for Prometheus monitoring
+serviceMonitor:
+  # Enable or disable ServiceMonitor deployment
+  enabled: false
+  # Namespace where ServiceMonitor will be deployed
+  namespace: egs-monitoring
+
 # Legacy configuration has been moved to global.imagePullSecrets above
 # All templates now use the global configuration for consistency

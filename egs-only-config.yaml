@@ -60,6 +60,12 @@ kubeslice_controller_egs:
             service:
               # minio service type
               type: "LoadBalancer"
+    # ServiceMonitor configuration for Prometheus monitoring
+    serviceMonitor:
+      # Enable or disable ServiceMonitor deployment
+      enabled: true
+      # Namespace where ServiceMonitor will be deployed
+      namespace: egs-monitoring
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
   verify_install: false                        # Verify the installation of the controller
@@ -177,6 +183,10 @@ kubeslice_worker_egs:
             value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
           - name: HEALTH_CHECK_INTERVAL
             value: "15m"
+      monitoring:
+        podMonitor:
+          enabled: true
+          namespace: egs-monitoring
 #### Helm Flags and Verification Settings ####
     helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
     verify_install: true                       # Verify the installation of the worker
