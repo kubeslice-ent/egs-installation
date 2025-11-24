@@ -377,7 +377,7 @@ egs:
 
 workerInstaller:
   image: worker-installer
-  tag: 1.9.0
+  tag: 1.10.0
 
 jaeger:
   enabled: false
@@ -400,6 +400,11 @@ metrics:
   insecure: false
   metricResolution: "15s"
   imagePullPolicy: IfNotPresent
+
+monitoring:
+  podMonitor:
+    enabled: false
+    namespace: egs-monitoring
 
 rbacproxy:
   # Image name for the RBAC proxy

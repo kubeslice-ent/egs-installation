@@ -1,8 +1,24 @@
+{{- $secretName := "webhook-server-cert-secret" }}
+{{- $existingSecret := lookup "v1" "Secret" .Release.Namespace $secretName }}
+{{- $caCertEnc := "" -}}
+{{- $tlsCertEnc := "" -}}
+{{- $tlsKeyEnc := "" -}}
+{{- if not $existingSecret }}
+# generate a new ca & certificate
 {{- $ca := genCA "kubeslice-controller-webhook-service" 3650 -}}
+{{- $caCertEnc = $ca.Cert | b64enc -}}
 {{- $cn := printf "kubeslice-controller-webhook-service" -}}
 {{- $altName1 := printf "%s.%s.svc" $cn .Release.Namespace }}
 {{- $altName2 := printf "%s.%s.svc.cluster.local" $cn .Release.Namespace }}
 {{- $cert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca -}}
+{{- $tlsCertEnc = $cert.Cert | b64enc -}}
+{{- $tlsKeyEnc = $cert.Key | b64enc -}}
+{{- else }}
+# Reuse existing certificates from the secret
+{{- $caCertEnc = index $existingSecret.data "ca.crt" -}}
+{{- $tlsCertEnc = index $existingSecret.data "tls.crt" -}}
+{{- $tlsKeyEnc = index $existingSecret.data "tls.key" -}}
+{{- end }}
 
 apiVersion: v1
 kind: Secret
@@ -11,8 +27,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
 type: Opaque
 data:
-  tls.key: {{ $cert.Key | b64enc }}
-  tls.crt: {{ $cert.Cert | b64enc }}
+  ca.crt: {{ $caCertEnc }}
+  tls.key: {{ $tlsKeyEnc }}
+  tls.crt: {{ $tlsCertEnc }}
 
 ---
 
@@ -95,7 +112,7 @@ spec:
             - name: INVMGR_GRPC_ADDRESS
               value: {{ .Values.kubeslice.controller.invmgrGrpcAddress }}
             - name: WEBHOOK_CA_BUNDLE
-              value: {{ $ca.Cert | b64enc }}
+              value: {{ $caCertEnc }}
           image: {{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.global.imageRegistry) }}
           imagePullPolicy: '{{ .Values.kubeslice.controller.pullPolicy }}'
           livenessProbe:
@@ -159,7 +176,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -181,7 +198,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -203,7 +220,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -225,7 +242,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -247,7 +264,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -269,7 +286,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -291,7 +308,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -313,7 +330,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -335,7 +352,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -357,7 +374,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -379,7 +396,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -402,7 +419,7 @@ webhooks:
       - v1
       - v1beta1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -424,7 +441,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
@@ -445,7 +462,7 @@ webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
-      caBundle: {{ $ca.Cert | b64enc }}
+      caBundle: {{ $caCertEnc }}
       service:
         name: kubeslice-controller-webhook-service
         namespace: kubeslice-controller
