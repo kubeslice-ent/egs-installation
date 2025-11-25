@@ -1304,6 +1304,21 @@ else
     # Single-cluster mode: Use global kubeconfig and context
     yq eval ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
     yq eval ".global_kubecontext = \"$CURRENT_CONTEXT\"" -i egs-installer-config.yaml
+    
+    # Update worker name if --cluster-name was explicitly provided
+    if [ -n "$CLUSTER_NAME" ] && [ "$CLUSTER_NAME" != "worker-1" ]; then
+        yq eval ".kubeslice_worker_egs[0].name = \"$CLUSTER_NAME\" | .kubeslice_worker_egs[0].name style=\"double\"" -i egs-installer-config.yaml
+        print_info "Updated worker name to: $CLUSTER_NAME"
+    elif [ "$CLUSTER_NAME" = "worker-1" ]; then
+        # Even if default, ensure the worker name is set (in case config has a different default)
+        EXISTING_WORKER_NAME=$(yq eval ".kubeslice_worker_egs[0].name" egs-installer-config.yaml 2>/dev/null | tr -d '"' | tr -d "'" | xargs)
+        if [ -z "$EXISTING_WORKER_NAME" ] || [ "$EXISTING_WORKER_NAME" = "null" ] || [ "$EXISTING_WORKER_NAME" = "empty" ]; then
+            yq eval ".kubeslice_worker_egs[0].name = \"$CLUSTER_NAME\" | .kubeslice_worker_egs[0].name style=\"double\"" -i egs-installer-config.yaml
+        fi
+    fi
+    
+    # Ensure use_global_kubeconfig is set for single-cluster mode
+    yq eval ".kubeslice_worker_egs[0].use_global_kubeconfig = true" -i egs-installer-config.yaml
 fi
 
 # Update cluster_registration for workers
