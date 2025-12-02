@@ -24,12 +24,26 @@ PROJECT_NAME="avesha"
 CLUSTER_NAME="worker-1"
 IMAGE_REGISTRY="harbor.saas1.smart-scaler.io/avesha/aveshasystems"
 LICENSE_FILE=""  # Defaults to egs-license.yaml in current directory
-SKIP_POSTGRESQL="false"
-SKIP_PROMETHEUS="false"
-SKIP_GPU_OPERATOR="false"
+
+# Skip flags for EGS components (works for both single & multi-cluster)
 SKIP_CONTROLLER="false"
 SKIP_UI="false"
 SKIP_WORKER="false"
+
+# Skip flag for PostgreSQL (works for both single & multi-cluster - PostgreSQL is only on controller)
+SKIP_POSTGRESQL="false"
+
+# Skip flags for single-cluster mode ONLY (Prometheus & GPU Operator on the single cluster)
+SKIP_PROMETHEUS="false"
+SKIP_GPU_OPERATOR="false"
+
+# Skip flags for multi-cluster mode (controller cluster prerequisites)
+SKIP_CONTROLLER_PROMETHEUS="false"
+SKIP_CONTROLLER_GPU_OPERATOR="false"
+
+# Skip flags for multi-cluster mode (worker cluster prerequisites)
+SKIP_WORKER_PROMETHEUS="false"
+SKIP_WORKER_GPU_OPERATOR="false"
 
 # Worker registration mode
 REGISTER_WORKER="false"
@@ -291,13 +305,29 @@ Options:
   --kubeconfig PATH          Path to kubeconfig file (default: auto-detect, used for single-cluster mode)
   --context NAME             Kubernetes context to use (default: current-context, used for single-cluster mode)
   --cluster-name NAME        Cluster name (default: worker-1)
-  --skip-postgresql          Skip PostgreSQL installation
-  --skip-prometheus          Skip Prometheus installation
-  --skip-gpu-operator        Skip GPU Operator installation
+  --help, -h                 Show this help message
+
+Common Skip Flags (works for both single & multi-cluster):
+  --skip-postgresql          Skip PostgreSQL installation (controller only - PostgreSQL is never on workers)
   --skip-controller          Skip EGS Controller installation
   --skip-ui                  Skip EGS UI installation
   --skip-worker              Skip EGS Worker installation
-  --help, -h                 Show this help message
+
+Single-Cluster Mode Skip Flags (use these when installing on ONE cluster):
+  --skip-prometheus          Skip Prometheus installation
+  --skip-gpu-operator        Skip GPU Operator installation
+
+Multi-Cluster Mode Skip Flags (use these when installing on MULTIPLE clusters):
+  Controller Cluster:
+    --skip-controller-prometheus    Skip Prometheus on controller cluster
+    --skip-controller-gpu-operator  Skip GPU Operator on controller cluster
+  
+  Worker Cluster(s):
+    --skip-worker-prometheus        Skip Prometheus on worker cluster(s)
+    --skip-worker-gpu-operator      Skip GPU Operator on worker cluster(s)
+  
+  Note: In multi-cluster mode, use --skip-controller-* and --skip-worker-* flags
+        instead of --skip-prometheus and --skip-gpu-operator
 
 Multi-Cluster Mode (Auto-detected):
   --controller-kubeconfig PATH  Path to controller cluster kubeconfig (auto-detects multi-cluster when used with --worker-kubeconfig)
@@ -357,7 +387,9 @@ Examples:
     --controller-context controller-context \\
     --worker-kubeconfig /path/to/worker-kubeconfig.yaml \\
     --worker-context worker-context \\
-    --skip-postgresql --skip-prometheus --skip-gpu-operator
+    --skip-postgresql \\
+    --skip-controller-prometheus --skip-controller-gpu-operator \\
+    --skip-worker-prometheus --skip-worker-gpu-operator
   
   # Multi-cluster with multiple workers
   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
@@ -366,7 +398,9 @@ Examples:
     --worker-context worker1-context \\
     --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \\
     --worker-context worker2-context \\
-    --skip-postgresql --skip-prometheus --skip-gpu-operator
+    --skip-postgresql \\
+    --skip-controller-prometheus --skip-controller-gpu-operator \\
+    --skip-worker-prometheus --skip-worker-gpu-operator
 
 Notes:
   - License file defaults to 'egs-license.yaml' in current directory if not specified
@@ -460,6 +494,25 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skip-worker)
             SKIP_WORKER="true"
+            shift
+            ;;
+        # Multi-cluster specific skip flags (controller cluster)
+        # Note: No --skip-controller-postgresql - use --skip-postgresql (PostgreSQL is only on controller)
+        --skip-controller-prometheus)
+            SKIP_CONTROLLER_PROMETHEUS="true"
+            shift
+            ;;
+        --skip-controller-gpu-operator)
+            SKIP_CONTROLLER_GPU_OPERATOR="true"
+            shift
+            ;;
+        # Multi-cluster specific skip flags (worker clusters)
+        --skip-worker-prometheus)
+            SKIP_WORKER_PROMETHEUS="true"
+            shift
+            ;;
+        --skip-worker-gpu-operator)
+            SKIP_WORKER_GPU_OPERATOR="true"
             shift
             ;;
         --register-worker)
@@ -1391,21 +1444,194 @@ done
 # Update enable_custom_apps
 yq eval ".enable_custom_apps = $ENABLE_CUSTOM_APPS" -i egs-installer-config.yaml
 
-# Update skip flags for additional apps (PostgreSQL, Prometheus, GPU Operator)
-# These are installed via egs-install-prerequisites.sh
-if [ "$SKIP_POSTGRESQL" = "true" ]; then
-    yq eval '(.additional_apps[] | select(.name == "postgresql") | .skip_installation) = true' -i egs-installer-config.yaml
-    print_warning "PostgreSQL installation will be skipped"
-fi
+# ============================================================================
+# MULTI-CLUSTER PREREQUISITES CONFIGURATION
+# ============================================================================
+# In multi-cluster mode, we need to:
+# 1. Configure prerequisites for controller cluster (PostgreSQL, Prometheus, GPU Operator)
+# 2. Add additional_apps entries for each worker cluster (Prometheus, GPU Operator)
+# 3. Add manifests entries for each worker cluster (GPU operator quota, nvidia driver)
+# 4. Add commands entries for each worker cluster
+# ============================================================================
 
-if [ "$SKIP_PROMETHEUS" = "true" ]; then
-    yq eval '(.additional_apps[] | select(.name == "prometheus") | .skip_installation) = true' -i egs-installer-config.yaml
-    print_warning "Prometheus installation will be skipped"
-fi
+if [ "$MULTI_CLUSTER" = "true" ] && [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]; then
+    print_info "🌐 Configuring multi-cluster prerequisites..."
+    
+    # Determine skip flags for controller and worker clusters
+    # Logic:
+    # - PostgreSQL: Only on controller, use --skip-postgresql
+    # - Prometheus/GPU Operator: Use multi-cluster flags (--skip-controller-*, --skip-worker-*)
+    # - Single-cluster flags (--skip-prometheus, --skip-gpu-operator) should NOT be used in multi-cluster mode
+    #   but if used, they will be applied to controller only (with a warning)
+    
+    # Controller cluster: PostgreSQL - use global flag (PostgreSQL is only on controller)
+    CONTROLLER_SKIP_POSTGRESQL="$SKIP_POSTGRESQL"
+    
+    # Controller cluster: Prometheus - use controller-specific flag
+    # If single-cluster flag is used in multi-cluster mode, warn and apply to controller
+    if [ "$SKIP_PROMETHEUS" = "true" ]; then
+        print_warning "⚠️  --skip-prometheus used in multi-cluster mode. Use --skip-controller-prometheus and --skip-worker-prometheus instead."
+        print_warning "⚠️  Applying --skip-prometheus to controller cluster only."
+        CONTROLLER_SKIP_PROMETHEUS="true"
+    else
+        CONTROLLER_SKIP_PROMETHEUS="$SKIP_CONTROLLER_PROMETHEUS"
+    fi
+    
+    # Controller cluster: GPU Operator - use controller-specific flag
+    if [ "$SKIP_GPU_OPERATOR" = "true" ]; then
+        print_warning "⚠️  --skip-gpu-operator used in multi-cluster mode. Use --skip-controller-gpu-operator and --skip-worker-gpu-operator instead."
+        print_warning "⚠️  Applying --skip-gpu-operator to controller cluster only."
+        CONTROLLER_SKIP_GPU_OPERATOR="true"
+    else
+        CONTROLLER_SKIP_GPU_OPERATOR="$SKIP_CONTROLLER_GPU_OPERATOR"
+    fi
+    
+    # Worker clusters: Use worker-specific flags only
+    WORKER_SKIP_PROMETHEUS="$SKIP_WORKER_PROMETHEUS"
+    WORKER_SKIP_GPU_OPERATOR="$SKIP_WORKER_GPU_OPERATOR"
+    
+    # Update controller cluster prerequisites (index 0 in additional_apps for each type)
+    # PostgreSQL is ONLY on controller cluster
+    if [ "$CONTROLLER_SKIP_POSTGRESQL" = "true" ]; then
+        yq eval '(.additional_apps[] | select(.name == "postgresql") | .skip_installation) = true' -i egs-installer-config.yaml
+        print_warning "PostgreSQL installation will be skipped on controller cluster"
+    fi
+    
+    # Update first prometheus entry (controller cluster)
+    if [ "$CONTROLLER_SKIP_PROMETHEUS" = "true" ]; then
+        # Skip the first prometheus entry (controller cluster)
+        yq eval '(.additional_apps | to_entries | map(select(.value.name == "prometheus"))[0].key) as $idx | .additional_apps[$idx].skip_installation = true' -i egs-installer-config.yaml 2>/dev/null || \
+        yq eval '(.additional_apps[] | select(.name == "prometheus") | .skip_installation) = true' -i egs-installer-config.yaml
+        print_warning "Prometheus installation will be skipped on controller cluster"
+    fi
+    
+    # Update first gpu-operator entry (controller cluster)
+    if [ "$CONTROLLER_SKIP_GPU_OPERATOR" = "true" ]; then
+        yq eval '(.additional_apps | to_entries | map(select(.value.name == "gpu-operator"))[0].key) as $idx | .additional_apps[$idx].skip_installation = true' -i egs-installer-config.yaml 2>/dev/null || \
+        yq eval '(.additional_apps[] | select(.name == "gpu-operator") | .skip_installation) = true' -i egs-installer-config.yaml
+        print_warning "GPU Operator installation will be skipped on controller cluster"
+    fi
+    
+    # Get current counts for additional_apps, manifests, and commands
+    CURRENT_ADDITIONAL_APPS_COUNT=$(yq eval '.additional_apps | length' egs-installer-config.yaml 2>/dev/null || echo "3")
+    CURRENT_MANIFESTS_COUNT=$(yq eval '.manifests | length' egs-installer-config.yaml 2>/dev/null || echo "2")
+    CURRENT_COMMANDS_COUNT=$(yq eval '.commands | length' egs-installer-config.yaml 2>/dev/null || echo "1")
+    
+    # Find template indices for gpu-operator and prometheus in additional_apps (from repo config)
+    GPU_OP_TEMPLATE_IDX=$(yq eval '.additional_apps | to_entries | map(select(.value.name == "gpu-operator"))[0].key // 0' egs-installer-config.yaml 2>/dev/null || echo "0")
+    PROM_TEMPLATE_IDX=$(yq eval '.additional_apps | to_entries | map(select(.value.name == "prometheus"))[0].key // 1' egs-installer-config.yaml 2>/dev/null || echo "1")
+    
+    # Find template indices for manifests (gpu-operator-quota and nvidia-driver-installer)
+    GPU_QUOTA_TEMPLATE_IDX=$(yq eval '.manifests | to_entries | map(select(.value.appname == "gpu-operator-quota"))[0].key // 0' egs-installer-config.yaml 2>/dev/null || echo "0")
+    NVIDIA_DRIVER_TEMPLATE_IDX=$(yq eval '.manifests | to_entries | map(select(.value.appname == "nvidia-driver-installer"))[0].key // 1' egs-installer-config.yaml 2>/dev/null || echo "1")
+    
+    # Find template index for commands (first one)
+    CMD_TEMPLATE_IDX="0"
+    
+    # Add additional_apps, manifests, and commands for each worker cluster
+    for i in "${!WORKER_KUBECONFIG_RELATIVES[@]}"; do
+        WORKER_KUBECONFIG_RELATIVE="${WORKER_KUBECONFIG_RELATIVES[$i]}"
+        WORKER_CTX="${WORKER_CONTEXTS_DETECTED[$i]}"
+        
+        # Determine worker name
+        if [ $i -lt ${#WORKER_NAMES[@]} ] && [ -n "${WORKER_NAMES[$i]}" ]; then
+            WORKER_NAME="${WORKER_NAMES[$i]}"
+        else
+            WORKER_NAME="worker-$((i+1))"
+        fi
+        
+        print_info "Adding prerequisites for worker cluster: $WORKER_NAME"
+        
+        # ===== ADD GPU-OPERATOR FOR WORKER (copy from template) =====
+        GPU_OP_INDEX=$((CURRENT_ADDITIONAL_APPS_COUNT + i * 2))
+        
+        # Copy the gpu-operator template entry to the new index
+        yq eval ".additional_apps[$GPU_OP_INDEX] = .additional_apps[$GPU_OP_TEMPLATE_IDX]" -i egs-installer-config.yaml
+        # Update only the kubeconfig-related fields
+        yq eval ".additional_apps[$GPU_OP_INDEX].use_global_kubeconfig = false" -i egs-installer-config.yaml
+        yq eval ".additional_apps[$GPU_OP_INDEX].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+        yq eval ".additional_apps[$GPU_OP_INDEX].kubecontext = \"$WORKER_CTX\"" -i egs-installer-config.yaml
+        yq eval ".additional_apps[$GPU_OP_INDEX].skip_installation = $WORKER_SKIP_GPU_OPERATOR" -i egs-installer-config.yaml
+        
+        if [ "$WORKER_SKIP_GPU_OPERATOR" = "true" ]; then
+            print_warning "GPU Operator will be skipped on worker: $WORKER_NAME"
+        else
+            print_success "Added GPU Operator for worker: $WORKER_NAME (copied from template)"
+        fi
+        
+        # ===== ADD PROMETHEUS FOR WORKER (copy from template) =====
+        PROM_INDEX=$((CURRENT_ADDITIONAL_APPS_COUNT + i * 2 + 1))
+        
+        # Copy the prometheus template entry to the new index
+        yq eval ".additional_apps[$PROM_INDEX] = .additional_apps[$PROM_TEMPLATE_IDX]" -i egs-installer-config.yaml
+        # Update only the kubeconfig-related fields
+        yq eval ".additional_apps[$PROM_INDEX].use_global_kubeconfig = false" -i egs-installer-config.yaml
+        yq eval ".additional_apps[$PROM_INDEX].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+        yq eval ".additional_apps[$PROM_INDEX].kubecontext = \"$WORKER_CTX\"" -i egs-installer-config.yaml
+        yq eval ".additional_apps[$PROM_INDEX].skip_installation = $WORKER_SKIP_PROMETHEUS" -i egs-installer-config.yaml
+        
+        if [ "$WORKER_SKIP_PROMETHEUS" = "true" ]; then
+            print_warning "Prometheus will be skipped on worker: $WORKER_NAME"
+        else
+            print_success "Added Prometheus for worker: $WORKER_NAME (copied from template)"
+        fi
+        
+        # ===== ADD MANIFESTS FOR WORKER (GPU Operator Quota - copy from template) =====
+        MANIFEST_INDEX=$((CURRENT_MANIFESTS_COUNT + i * 2))
+        
+        # Copy the gpu-operator-quota template entry to the new index
+        yq eval ".manifests[$MANIFEST_INDEX] = .manifests[$GPU_QUOTA_TEMPLATE_IDX]" -i egs-installer-config.yaml
+        # Update only the kubeconfig-related fields
+        yq eval ".manifests[$MANIFEST_INDEX].use_global_kubeconfig = false" -i egs-installer-config.yaml
+        yq eval ".manifests[$MANIFEST_INDEX].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+        yq eval ".manifests[$MANIFEST_INDEX].kubecontext = \"$WORKER_CTX\"" -i egs-installer-config.yaml
+        yq eval ".manifests[$MANIFEST_INDEX].skip_installation = $WORKER_SKIP_GPU_OPERATOR" -i egs-installer-config.yaml
+        
+        # ===== ADD MANIFESTS FOR WORKER (NVIDIA Driver Installer - copy from template) =====
+        NVIDIA_MANIFEST_INDEX=$((CURRENT_MANIFESTS_COUNT + i * 2 + 1))
+        
+        # Copy the nvidia-driver-installer template entry to the new index
+        yq eval ".manifests[$NVIDIA_MANIFEST_INDEX] = .manifests[$NVIDIA_DRIVER_TEMPLATE_IDX]" -i egs-installer-config.yaml
+        # Update only the kubeconfig-related fields
+        yq eval ".manifests[$NVIDIA_MANIFEST_INDEX].use_global_kubeconfig = false" -i egs-installer-config.yaml
+        yq eval ".manifests[$NVIDIA_MANIFEST_INDEX].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+        yq eval ".manifests[$NVIDIA_MANIFEST_INDEX].kubecontext = \"$WORKER_CTX\"" -i egs-installer-config.yaml
+        
+        print_success "Added manifests for worker: $WORKER_NAME (copied from template)"
+        
+        # ===== ADD COMMANDS FOR WORKER (copy from template) =====
+        CMD_INDEX=$((CURRENT_COMMANDS_COUNT + i))
+        
+        # Copy the commands template entry to the new index
+        yq eval ".commands[$CMD_INDEX] = .commands[$CMD_TEMPLATE_IDX]" -i egs-installer-config.yaml
+        # Update only the kubeconfig-related fields
+        yq eval ".commands[$CMD_INDEX].use_global_kubeconfig = false" -i egs-installer-config.yaml
+        yq eval ".commands[$CMD_INDEX].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+        yq eval ".commands[$CMD_INDEX].kubecontext = \"$WORKER_CTX\"" -i egs-installer-config.yaml
+        
+        print_success "Added commands for worker: $WORKER_NAME (copied from template)"
+    done
+    
+    print_success "Multi-cluster prerequisites configured for ${#WORKER_KUBECONFIG_RELATIVES[@]} worker cluster(s)"
+    echo ""
+else
+    # Single-cluster mode: Use simple skip flags
+    # Update skip flags for additional apps (PostgreSQL, Prometheus, GPU Operator)
+    # These are installed via egs-install-prerequisites.sh
+    if [ "$SKIP_POSTGRESQL" = "true" ]; then
+        yq eval '(.additional_apps[] | select(.name == "postgresql") | .skip_installation) = true' -i egs-installer-config.yaml
+        print_warning "PostgreSQL installation will be skipped"
+    fi
 
-if [ "$SKIP_GPU_OPERATOR" = "true" ]; then
-    yq eval '(.additional_apps[] | select(.name == "gpu-operator") | .skip_installation) = true' -i egs-installer-config.yaml
-    print_warning "GPU Operator installation will be skipped"
+    if [ "$SKIP_PROMETHEUS" = "true" ]; then
+        yq eval '(.additional_apps[] | select(.name == "prometheus") | .skip_installation) = true' -i egs-installer-config.yaml
+        print_warning "Prometheus installation will be skipped"
+    fi
+
+    if [ "$SKIP_GPU_OPERATOR" = "true" ]; then
+        yq eval '(.additional_apps[] | select(.name == "gpu-operator") | .skip_installation) = true' -i egs-installer-config.yaml
+        print_warning "GPU Operator installation will be skipped"
+    fi
 fi
 
 # Update skip flags for EGS components (Controller, UI, Worker)
@@ -1553,7 +1779,23 @@ fi
 
 # Step 1: Install prerequisites (PostgreSQL, Prometheus, GPU Operator)
 # Only run if at least one is not skipped
-if [ "$SKIP_POSTGRESQL" = "false" ] || [ "$SKIP_PROMETHEUS" = "false" ] || [ "$SKIP_GPU_OPERATOR" = "false" ]; then
+# Check both single-cluster flags and multi-cluster flags
+SHOULD_INSTALL_PREREQS="false"
+if [ "$MULTI_CLUSTER" = "true" ]; then
+    # Multi-cluster mode: Check controller and worker specific flags
+    if [ "$SKIP_POSTGRESQL" = "false" ] || \
+       [ "$SKIP_CONTROLLER_PROMETHEUS" = "false" ] || [ "$SKIP_CONTROLLER_GPU_OPERATOR" = "false" ] || \
+       [ "$SKIP_WORKER_PROMETHEUS" = "false" ] || [ "$SKIP_WORKER_GPU_OPERATOR" = "false" ]; then
+        SHOULD_INSTALL_PREREQS="true"
+    fi
+else
+    # Single-cluster mode: Check simple flags
+    if [ "$SKIP_POSTGRESQL" = "false" ] || [ "$SKIP_PROMETHEUS" = "false" ] || [ "$SKIP_GPU_OPERATOR" = "false" ]; then
+        SHOULD_INSTALL_PREREQS="true"
+    fi
+fi
+
+if [ "$SHOULD_INSTALL_PREREQS" = "true" ]; then
     print_info "📦 Step 1/3: Installing prerequisites (PostgreSQL, Prometheus, GPU Operator)..."
     echo ""
     # Ensure KUBECONFIG is exported for the prerequisites script

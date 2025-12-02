@@ -70,13 +70,45 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash [OPTIONS]
 | `--kubeconfig PATH` | Path to kubeconfig file | Auto-detect | No |
 | `--context NAME` | Kubernetes context to use | Current context | No |
 | `--cluster-name NAME` | Cluster name for registration | `worker-1` | No |
-| `--skip-postgresql` | Skip PostgreSQL installation | Install | No |
-| `--skip-prometheus` | Skip Prometheus installation | Install | No |
-| `--skip-gpu-operator` | Skip GPU Operator installation | Install | No |
-| `--skip-controller` | Skip EGS Controller installation | Install | No |
-| `--skip-ui` | Skip EGS UI installation | Install | No |
-| `--skip-worker` | Skip EGS Worker installation | Install | No |
 | `--help, -h` | Show help message | - | No |
+
+### Common Skip Flags (works for both single & multi-cluster)
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--skip-postgresql` | Skip PostgreSQL installation (controller only - PostgreSQL is never on workers) | Install |
+| `--skip-controller` | Skip EGS Controller installation | Install |
+| `--skip-ui` | Skip EGS UI installation | Install |
+| `--skip-worker` | Skip EGS Worker installation | Install |
+
+### Single-Cluster Mode Skip Flags (use ONLY in single-cluster mode)
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--skip-prometheus` | Skip Prometheus installation | Install |
+| `--skip-gpu-operator` | Skip GPU Operator installation | Install |
+
+### Multi-Cluster Mode Skip Flags (use in multi-cluster mode)
+
+**Controller Cluster:**
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--skip-controller-prometheus` | Skip Prometheus on controller cluster | Install |
+| `--skip-controller-gpu-operator` | Skip GPU Operator on controller cluster | Install |
+
+**Worker Cluster(s):**
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--skip-worker-prometheus` | Skip Prometheus on worker cluster(s) | Install |
+| `--skip-worker-gpu-operator` | Skip GPU Operator on worker cluster(s) | Install |
+
+**Important**: 
+- `--skip-postgresql` works the same in both modes (PostgreSQL is only on controller)
+- In **single-cluster mode**: Use `--skip-prometheus`, `--skip-gpu-operator`
+- In **multi-cluster mode**: Use `--skip-controller-prometheus`, `--skip-worker-prometheus`, etc.
+- EGS component flags (`--skip-controller`, `--skip-ui`, `--skip-worker`) work the same in both modes
 
 ### Multi-Cluster Mode Options
 
@@ -174,19 +206,41 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 ### Example 7: Multi-Cluster Installation (Controller/UI in One Cluster, Worker in Another)
 
+**Important**: In multi-cluster mode, each cluster needs its own prerequisites (Prometheus, GPU Operator). The installer automatically configures:
+- **Controller cluster**: PostgreSQL, Prometheus, GPU Operator
+- **Worker cluster(s)**: Prometheus, GPU Operator (no PostgreSQL needed)
+
 ```bash
-# Single worker cluster in multi-cluster mode
+# Full multi-cluster installation (all prerequisites on all clusters)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker-kubeconfig.yaml
+
+# Skip PostgreSQL (same flag for single & multi-cluster - PostgreSQL is only on controller)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
   --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
-  --skip-postgresql --skip-prometheus --skip-gpu-operator
+  --skip-postgresql
+
+# Skip all prerequisites on controller, install on workers
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
+  --skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator
+
+# Skip all prerequisites on ALL clusters
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
+  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
+  --skip-postgresql \
+  --skip-controller-prometheus --skip-controller-gpu-operator \
+  --skip-worker-prometheus --skip-worker-gpu-operator
 
 # Multiple worker clusters in multi-cluster mode (with default names)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
   --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --skip-postgresql --skip-prometheus --skip-gpu-operator
+  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml
 
 # Multiple worker clusters with custom names
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
@@ -194,8 +248,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
   --worker-name production-worker-1 \
   --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-name production-worker-2 \
-  --skip-postgresql --skip-prometheus --skip-gpu-operator
+  --worker-name production-worker-2
 
 # Multiple workers with contexts
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
@@ -206,8 +259,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --worker-name worker-1 \
   --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
   --worker-context worker2-ctx \
-  --worker-name worker-2 \
-  --skip-postgresql --skip-prometheus --skip-gpu-operator
+  --worker-name worker-2
 ```
 
 ### Example 8: Register Worker Cluster with Controller
@@ -244,7 +296,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 ## 🎯 What Gets Installed
 
-### Installation Order
+### Single-Cluster Installation Order
 
 1. **📜 EGS License** (Applied to `kubeslice-controller` namespace) - *Only applied when installing Controller. Not required for UI, Worker, or prerequisites only.*
 2. **🗄️ PostgreSQL** (Namespace: `kt-postgresql`) - *Can be skipped*
@@ -253,6 +305,27 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 5. **🎛️ EGS Controller** (Namespace: `kubeslice-controller`) - *Can be skipped*
 6. **🌐 EGS UI** (Namespace: `kubeslice-controller`) - *Can be skipped*
 7. **⚙️ EGS Worker** (Namespace: `kubeslice-system`) - *Can be skipped, supports multiple workers in multi-cluster mode*
+
+### Multi-Cluster Installation Order
+
+In multi-cluster mode, prerequisites are installed on EACH cluster:
+
+**Controller Cluster:**
+1. **📜 EGS License** (Applied to `kubeslice-controller` namespace)
+2. **🗄️ PostgreSQL** (Namespace: `kt-postgresql`) - *Can be skipped with `--skip-postgresql`*
+3. **📊 Prometheus Stack** (Namespace: `egs-monitoring`) - *Can be skipped with `--skip-controller-prometheus`*
+4. **🎮 GPU Operator** (Namespace: `egs-gpu-operator`) - *Can be skipped with `--skip-controller-gpu-operator`*
+5. **🎛️ EGS Controller** (Namespace: `kubeslice-controller`)
+6. **🌐 EGS UI** (Namespace: `kubeslice-controller`)
+
+**Worker Cluster(s):**
+1. **📊 Prometheus Stack** (Namespace: `egs-monitoring`) - *Can be skipped with `--skip-worker-prometheus`*
+2. **🎮 GPU Operator** (Namespace: `egs-gpu-operator`) - *Can be skipped with `--skip-worker-gpu-operator`*
+3. **📋 GPU Operator Quota** (Namespace: `egs-gpu-operator`) - *ResourceQuota for GPU pods*
+4. **🖥️ NVIDIA Driver Installer** (Namespace: `kube-system`) - *DaemonSet for GPU drivers*
+5. **⚙️ EGS Worker** (Namespace: `kubeslice-system`)
+
+**Note**: The worker requires Prometheus CRDs (PodMonitor) to be installed. If you skip Prometheus on the worker cluster, you may encounter errors like `no matches for kind "PodMonitor"`.
 
 ### Service Types (Single-Cluster Optimized)
 
@@ -316,17 +389,84 @@ current-directory/
 
 You can skip individual components during installation. The installer intelligently handles dependencies and upgrade scenarios.
 
-### Skip Prerequisites
+### Single-Cluster Skip Flags
 
+These flags apply to all components in a single-cluster setup, or to ALL clusters in multi-cluster mode (if no multi-cluster flags are used):
+
+**Skip Prerequisites:**
 - `--skip-postgresql`: Skip PostgreSQL installation (useful if using existing PostgreSQL)
 - `--skip-prometheus`: Skip Prometheus installation (useful if using existing Prometheus)
 - `--skip-gpu-operator`: Skip GPU Operator installation (useful for CPU-only clusters or existing GPU setup)
 
-### Skip EGS Components
-
+**Skip EGS Components:**
 - `--skip-controller`: Skip EGS Controller installation
 - `--skip-ui`: Skip EGS UI installation
 - `--skip-worker`: Skip EGS Worker installation (applies to all workers when multiple workers are configured)
+
+### Multi-Cluster Skip Flags
+
+These flags provide fine-grained control over prerequisites in multi-cluster mode:
+
+**Controller Cluster Prerequisites:**
+- `--skip-controller-prometheus`: Skip Prometheus on controller cluster only
+- `--skip-controller-gpu-operator`: Skip GPU Operator on controller cluster only
+
+**Worker Cluster Prerequisites:**
+- `--skip-worker-prometheus`: Skip Prometheus on ALL worker clusters
+- `--skip-worker-gpu-operator`: Skip GPU Operator on ALL worker clusters
+
+**Note:** For PostgreSQL, use `--skip-postgresql` (same flag for both modes since PostgreSQL is only on controller)
+
+**How Skip Flags Work in Multi-Cluster Mode:**
+
+| What you use | Controller Cluster | Worker Cluster(s) |
+|--------------|-------------------|-------------------|
+| `--skip-postgresql` | ❌ PostgreSQL Skipped | N/A (not installed) |
+| `--skip-controller-prometheus` | ❌ Prometheus Skipped | ✅ Prometheus Installed |
+| `--skip-worker-prometheus` | ✅ Prometheus Installed | ❌ Prometheus Skipped |
+| `--skip-controller-prometheus --skip-worker-prometheus` | ❌ Prometheus Skipped | ❌ Prometheus Skipped |
+| `--skip-controller-gpu-operator` | ❌ GPU Op Skipped | ✅ GPU Op Installed |
+| `--skip-worker-gpu-operator` | ✅ GPU Op Installed | ❌ GPU Op Skipped |
+
+**Rules:**
+1. `--skip-postgresql` → Only affects controller (PostgreSQL is never on workers)
+2. In multi-cluster mode, use `--skip-controller-*` and `--skip-worker-*` for Prometheus/GPU Operator
+3. Using `--skip-prometheus` or `--skip-gpu-operator` in multi-cluster mode will show a warning
+4. EGS component flags (`--skip-controller`, `--skip-ui`, `--skip-worker`) always work the same way
+
+**Examples:**
+```bash
+# Skip PostgreSQL (controller only - same flag for single & multi-cluster)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-postgresql
+
+# Skip Prometheus on controller only (workers still get Prometheus)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-controller-prometheus
+
+# Skip Prometheus on workers only (controller still gets Prometheus)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-worker-prometheus
+
+# Skip all prerequisites on controller, install on workers
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator
+
+# Skip Prometheus & GPU Operator everywhere (all clusters)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-controller-prometheus --skip-controller-gpu-operator \
+  --skip-worker-prometheus --skip-worker-gpu-operator
+```
 
 ### 🔗 Dependency Management & Upgrade Support
 
@@ -369,47 +509,277 @@ The installer automatically validates component dependencies and supports upgrad
 - Duplicate workers are automatically detected and removed
 - Worker configurations are merged, not replaced
 
-### Use Cases
+### 📚 Complete Skip Flag Examples
 
-**Install only prerequisites (PostgreSQL, Prometheus, GPU Operator):**
+This section provides comprehensive examples for ALL skip flag combinations.
+
+---
+
+#### 🔹 SINGLE-CLUSTER MODE Examples
+
+**1. Full Installation (no skips):**
 ```bash
-# Install only prerequisites, skip EGS components (Controller, UI, Worker)
+# Install everything: PostgreSQL, Prometheus, GPU Operator, Controller, UI, Worker
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
+```
+
+**2. Skip PostgreSQL only:**
+```bash
+# Use existing PostgreSQL
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql
+```
+
+**3. Skip Prometheus only:**
+```bash
+# Use existing Prometheus
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-prometheus
+```
+
+**4. Skip GPU Operator only:**
+```bash
+# Use existing GPU Operator or CPU-only cluster
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-gpu-operator
+```
+
+**5. Skip all prerequisites:**
+```bash
+# Prerequisites already installed, install only EGS components
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator
+```
+
+**6. Install only prerequisites (no EGS components):**
+```bash
+# Install PostgreSQL, Prometheus, GPU Operator only (no license required)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --skip-controller --skip-ui --skip-worker
 ```
 
-**Install only Controller (PostgreSQL already installed):**
+**7. Install only Controller:**
 ```bash
-# If PostgreSQL is already installed, this will work
+# Prerequisites already installed
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-ui --skip-worker
 ```
 
-**Upgrade only Worker (Controller and UI already installed):**
+**8. Install only UI:**
 ```bash
-# If Controller and UI are already installed, this will upgrade Worker
+# Controller and prerequisites already installed (no license required)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-worker
+```
+
+**9. Install only Worker:**
+```bash
+# Controller, UI, and prerequisites already installed (no license required)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
 ```
 
-**Install only Worker (will fail if Controller/UI not installed in single-cluster mode):**
+**10. Install Controller and UI only (no Worker):**
 ```bash
-# This will fail if Controller and UI are not already installed (single-cluster mode)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
+  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-worker
 ```
 
-**Install multiple workers in multi-cluster mode:**
+**11. Install prerequisites and Controller only:**
 ```bash
-# Install Controller/UI in controller cluster and multiple workers in different clusters
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-name worker-1 \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-name worker-2 \
-  --skip-postgresql --skip-prometheus --skip-gpu-operator
+  --skip-ui --skip-worker
 ```
+
+**12. Skip PostgreSQL and Prometheus:**
+```bash
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-prometheus
+```
+
+**13. Skip PostgreSQL and GPU Operator:**
+```bash
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-postgresql --skip-gpu-operator
+```
+
+**14. Skip Prometheus and GPU Operator:**
+```bash
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --skip-prometheus --skip-gpu-operator
+```
+
+---
+
+#### 🔹 MULTI-CLUSTER MODE Examples
+
+**15. Full multi-cluster installation (all prerequisites on all clusters):**
+```bash
+# Controller cluster: PostgreSQL, Prometheus, GPU Operator, Controller, UI
+# Worker cluster: Prometheus, GPU Operator, Worker
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml
+```
+
+**16. Skip PostgreSQL (controller only - same as single-cluster):**
+```bash
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-postgresql
+```
+
+**17. Skip Prometheus on controller only:**
+```bash
+# Controller: No Prometheus | Workers: Prometheus installed
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-controller-prometheus
+```
+
+**18. Skip Prometheus on workers only:**
+```bash
+# Controller: Prometheus installed | Workers: No Prometheus
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-worker-prometheus
+```
+
+**19. Skip Prometheus on all clusters:**
+```bash
+# Controller: No Prometheus | Workers: No Prometheus
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-controller-prometheus --skip-worker-prometheus
+```
+
+**20. Skip GPU Operator on controller only:**
+```bash
+# Controller: No GPU Operator | Workers: GPU Operator installed
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-controller-gpu-operator
+```
+
+**21. Skip GPU Operator on workers only:**
+```bash
+# Controller: GPU Operator installed | Workers: No GPU Operator
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-worker-gpu-operator
+```
+
+**22. Skip GPU Operator on all clusters:**
+```bash
+# Controller: No GPU Operator | Workers: No GPU Operator
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-controller-gpu-operator --skip-worker-gpu-operator
+```
+
+**23. Skip all prerequisites on controller only:**
+```bash
+# Controller: No PostgreSQL, No Prometheus, No GPU Operator
+# Workers: Prometheus, GPU Operator installed
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator
+```
+
+**24. Skip all prerequisites on workers only:**
+```bash
+# Controller: PostgreSQL, Prometheus, GPU Operator installed
+# Workers: No Prometheus, No GPU Operator
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-worker-prometheus --skip-worker-gpu-operator
+```
+
+**25. Skip all prerequisites on all clusters:**
+```bash
+# Controller: No PostgreSQL, No Prometheus, No GPU Operator
+# Workers: No Prometheus, No GPU Operator
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-postgresql \
+  --skip-controller-prometheus --skip-controller-gpu-operator \
+  --skip-worker-prometheus --skip-worker-gpu-operator
+```
+
+**26. Skip Prometheus on controller, GPU Operator on workers:**
+```bash
+# Controller: No Prometheus, GPU Operator installed
+# Workers: Prometheus installed, No GPU Operator
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-controller-prometheus --skip-worker-gpu-operator
+```
+
+**27. Skip GPU Operator on controller, Prometheus on workers:**
+```bash
+# Controller: Prometheus installed, No GPU Operator
+# Workers: No Prometheus, GPU Operator installed
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-controller-gpu-operator --skip-worker-prometheus
+```
+
+**28. Multi-cluster with multiple workers - skip all prerequisites:**
+```bash
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker1.yaml \
+  --worker-kubeconfig /path/to/worker2.yaml \
+  --skip-postgresql \
+  --skip-controller-prometheus --skip-controller-gpu-operator \
+  --skip-worker-prometheus --skip-worker-gpu-operator
+```
+
+**29. Multi-cluster - install prerequisites on workers only:**
+```bash
+# Use case: Controller cluster already has prerequisites, workers need them
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator
+```
+
+**30. Multi-cluster - skip Worker installation:**
+```bash
+# Install Controller, UI, and prerequisites only
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml \
+  --skip-worker
+```
+
+---
+
+#### 🔹 Skip Flag Quick Reference Table
+
+| Scenario | Flags |
+|----------|-------|
+| **Single-cluster: Skip all prerequisites** | `--skip-postgresql --skip-prometheus --skip-gpu-operator` |
+| **Single-cluster: Skip all EGS components** | `--skip-controller --skip-ui --skip-worker` |
+| **Multi-cluster: Skip all controller prerequisites** | `--skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator` |
+| **Multi-cluster: Skip all worker prerequisites** | `--skip-worker-prometheus --skip-worker-gpu-operator` |
+| **Multi-cluster: Skip ALL prerequisites** | `--skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator --skip-worker-prometheus --skip-worker-gpu-operator` |
+| **Multi-cluster: Prometheus on workers only** | `--skip-controller-prometheus` |
+| **Multi-cluster: GPU Operator on workers only** | `--skip-controller-gpu-operator` |
+| **Multi-cluster: Prometheus on controller only** | `--skip-worker-prometheus` |
+| **Multi-cluster: GPU Operator on controller only** | `--skip-worker-gpu-operator` |
 
 ---
 
@@ -718,6 +1088,26 @@ helm list -A
 
 # Check node resources
 kubectl top nodes
+```
+
+### PodMonitor CRD Not Found (Multi-Cluster)
+
+**Error**: `resource mapping not found for name: "gateway-pods-podmonitor" namespace: "egs-monitoring" from "": no matches for kind "PodMonitor" in version "monitoring.coreos.com/v1"`
+
+**Cause**: The worker cluster doesn't have Prometheus CRDs installed. In multi-cluster mode, each worker cluster needs Prometheus installed to provide the PodMonitor CRD.
+
+**Solution**:
+```bash
+# Option 1: Install with Prometheus on worker clusters (recommended)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig /path/to/controller.yaml \
+  --worker-kubeconfig /path/to/worker.yaml
+
+# Option 2: If you skipped Prometheus on workers, install it manually
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  --namespace egs-monitoring --create-namespace \
+  --kubeconfig /path/to/worker.yaml
 ```
 
 ### Dependency Errors
