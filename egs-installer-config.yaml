@@ -341,14 +341,14 @@ additional_apps:
         prometheusSpec:
           storageSpec: {}                     # Placeholder for storage configuration
           additionalScrapeConfigs:
-          - job_name: nvidia-dcgm-exporter
-            kubernetes_sd_configs:
-            - role: endpoints
-            relabel_configs:
-            - source_labels: [__meta_kubernetes_pod_name]
-              target_label: pod_name
-            - source_labels: [__meta_kubernetes_pod_container_name]
-              target_label: container_name
+          # - job_name: nvidia-dcgm-exporter
+          #   kubernetes_sd_configs:
+          #   - role: endpoints
+          #   relabel_configs:
+          #   - source_labels: [__meta_kubernetes_pod_name]
+          #     target_label: pod_name
+          #   - source_labels: [__meta_kubernetes_pod_container_name]
+          #     target_label: container_name
           - job_name: gpu-metrics
             scrape_interval: 1s
             metrics_path: /metrics
