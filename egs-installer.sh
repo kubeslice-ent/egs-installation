@@ -179,7 +179,20 @@ get_lb_external_ip() {
     service_type=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.type}')
 
     if [ "$service_type" = "LoadBalancer" ]; then
+        # Try to get IP first
         ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # If IP is empty, try to get hostname (common for AWS ELB)
+        if [ -z "$ip" ]; then
+            ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        fi
+        
+        # Check if we got either IP or hostname
+        if [ -z "$ip" ]; then
+            echo "Error: LoadBalancer has no external IP or hostname assigned yet" >&2
+            return 1
+        fi
+        
         echo "$ip"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
@@ -190,7 +203,7 @@ get_lb_external_ip() {
         service_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].port}')
         echo "$cluster_ip:$service_port"
     else
-        echo "Unknown service type: $service_type"
+        echo "Unknown service type: $service_type" >&2
         return 1
     fi
 }
@@ -2034,7 +2047,7 @@ get_prometheus_external_ip() {
     local service_type="$5"
 
     # Print the input values (redirected to stderr)
-    echo "🔧 get_lb_external_ip:" >&2
+    echo "🔧 get_prometheus_external_ip:" >&2
     echo "  🗂️  Kubeconfig: $kubeconfig" >&2
     echo "  🌐 Kubecontext: $kubecontext" >&2
     echo "  📦 Namespace: $namespace" >&2
@@ -2046,7 +2059,20 @@ get_prometheus_external_ip() {
     if [ "$service_type_existing" != "$service_type" ]; then
         echo "${service_name}.${namespace}.svc.cluster.local:9090"
     elif [ "$service_type" = "LoadBalancer" ]; then
+        # Try to get IP first
         ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # If IP is empty, try to get hostname (common for AWS ELB)
+        if [ -z "$ip" ]; then
+            ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        fi
+        
+        # Check if we got either IP or hostname
+        if [ -z "$ip" ]; then
+            echo "Error: LoadBalancer has no external IP or hostname assigned yet" >&2
+            return 1
+        fi
+        
         echo "$ip:9090"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
@@ -2070,7 +2096,7 @@ get_grafana_external_ip() {
     local service_type="$5"
 
     # Print the input values (redirected to stderr)
-    echo "🔧 get_lb_external_ip:" >&2
+    echo "🔧 get_grafana_external_ip:" >&2
     echo "  🗂️  Kubeconfig: $kubeconfig" >&2
     echo "  🌐 Kubecontext: $kubecontext" >&2
     echo "  📦 Namespace: $namespace" >&2
@@ -2080,9 +2106,23 @@ get_grafana_external_ip() {
     service_type_existing=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.type}')
 
     if [ "$service_type_existing" != "$service_type" ]; then
-        echo "defined_service_type_is_not_correct"
+        echo "defined_service_type_is_not_correct" >&2
+        return 1
     elif [ "$service_type" = "LoadBalancer" ]; then
+        # Try to get IP first
         ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # If IP is empty, try to get hostname (common for AWS ELB)
+        if [ -z "$ip" ]; then
+            ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        fi
+        
+        # Check if we got either IP or hostname
+        if [ -z "$ip" ]; then
+            echo "Error: LoadBalancer has no external IP or hostname assigned yet" >&2
+            return 1
+        fi
+        
         echo "$ip"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
@@ -2097,6 +2137,8 @@ get_grafana_external_ip() {
         return 1
     fi
 }
+
+
 
 upgrade_cluster_registration(){
     echo "🚀 Starting cluster registration in controller cluster..."
