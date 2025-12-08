@@ -29,6 +29,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰  
 - 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
 - 🔐 For Prometheus TLS based authentication, please refer to the [Prometheus-TLS-Authentication] (docs/Prometheus-TLS-Authentication.md) 🔒
+- 📦 For airgap image management (pull and push), please refer to the [Airgap Image Management Documentation](airgap-image-push/README-airgap-images.md) 🚀
 
 ---
 
@@ -788,5 +789,18 @@ The uninstallation script will delete **all resources** associated with EGS, inc
 ```bash
   ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
   ```
+
+---
+
+## 📦 Airgap Deployment
+
+For airgap/offline deployments where clusters don't have internet access, EGS provides scripts to manage container images:
+
+1. **Extract Images**: Use `airgap-image-pull.sh` to extract all container images from EGS Helm charts
+2. **Push to Private Registry**: Use `airgap-image-push.sh` to push images to your private registry (Docker Hub, Nexus, etc.)
+
+The scripts support both Docker Hub and private registries like Nexus, with auto-detection of registry type.
+
+👉 **For detailed instructions, see [Airgap Image Management Documentation](airgap-image-push/README-airgap-images.md)**
 
 ---
