@@ -34,7 +34,7 @@ global:
     openshift: false
 
 operator:
-  image: aveshadev/worker-operator-ent-egs
+  image: worker-operator-ent-egs
   tag: 1.16.0-RELEASE-8cc9fefd
   pullPolicy: IfNotPresent
   logLevel: INFO
