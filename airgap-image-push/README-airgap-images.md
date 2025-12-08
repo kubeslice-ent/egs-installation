@@ -631,11 +631,37 @@ The `airgap-image-push.sh` script is a companion utility that helps push contain
 - ✅ Tags images with target repository prefix
 - ✅ Pushes images to target repository
 - ✅ Supports dry-run mode for testing
+- ✅ Supports both Docker Hub and private registries (Nexus)
+- ✅ Auto-detects registry type and adjusts image tagging accordingly
 - ✅ Processes all images from version 1.15.4
+
+### Supported Registry Types
+
+| Registry Type | REPO Format | Tagged Image Format |
+|--------------|-------------|---------------------|
+| Docker Hub | `docker.io/username` | `username/image:tag` |
+| Private Registry (Nexus) | `registry.example.com` | `registry.example.com/path/image:tag` |
 
 ### Prerequisites
 
 1. **Docker**: Docker must be installed and running
+
+2. **Registry Authentication**: You must login to your target registry before running the push script:
+
+   **For Docker Hub:**
+   ```bash
+   docker login -u <username>
+   # Enter your password or access token when prompted
+   ```
+
+   **For Private Registry (Nexus):**
+   ```bash
+   docker login <registry-url>
+   # Example: docker login kubeslice.aveshalabs.io
+   # Enter your username and password when prompted
+   ```
+
+   **Note**: Without authentication, the push operation will fail with `unauthorized: access to the requested resource is not authorized`.
 
 ### Configuration
 
@@ -680,17 +706,13 @@ sed -i "s|^REPO=.*|REPO=\"${TARGET_REGISTRY}\"|" airgap-image-push/airgap-image-
 
 The script contains a hardcoded list of images in the `IMAGES` array. You need to update this list with the images extracted by `airgap-image-pull.sh`.
 
-**Option A: Use the consolidated output file**
+**Option A: Copy from the consolidated output file**
 
-After running `airgap-image-pull.sh`, you'll have a consolidated file `helm-chart-images.txt` (this is a **generated output file** created in the directory where you run the script). Update the script:
+After running `airgap-image-pull.sh`, you'll have a consolidated file `helm-chart-images.txt`. Copy the images from this file to the `IMAGES` array in `airgap-image-push.sh`:
 
-```bash
-# Extract images from the consolidated output file
-IMAGES=$(cat helm-chart-images.txt | sed 's/^/"/' | sed 's/$/"/' | tr '\n' ' ')
-
-# Or manually copy the images from helm-chart-images.txt
-# and update the IMAGES array in airgap-image-push.sh
-```
+1. Open `helm-chart-images.txt` to view the extracted images
+2. Copy the image list
+3. Update the `IMAGES` array in `airgap-image-push.sh` with the copied images
 
 **Option B: Manually update the IMAGES array**
 
@@ -713,16 +735,6 @@ IMAGES=(
 "harbor.saas1.smart-scaler.io/avesha/aveshasystems/new-image1:tag1"
 "harbor.saas1.smart-scaler.io/avesha/aveshasystems/new-image2:tag2"
 )
-```
-
-**Quick update using sed (if you have helm-chart-images.txt):**
-
-```bash
-# This is a helper command - you may need to adjust based on your file format
-# Extract images and format them for the script
-# Note: helm-chart-images.txt is a generated output file created by airgap-image-pull.sh
-cat helm-chart-images.txt | sed 's/^/"/' | sed 's/$/"/' > /tmp/images.txt
-# Then manually copy and paste into the script's IMAGES array
 ```
 
 ### Usage
