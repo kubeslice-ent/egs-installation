@@ -175,3 +175,24 @@ webhooks:
     resources:
     - vpcserviceimports
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: {{ $caCertEnc }}
+    service:
+      name: kubeslice-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-networking-kubeslice-io-v1alpha1-slicensgateway
+  failurePolicy: Ignore
+  name: vslicensgateway.kb.io
+  rules:
+  - apiGroups:
+    - networking.kubeslice.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - slicensgateways
+  sideEffects: None

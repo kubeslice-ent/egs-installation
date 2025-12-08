@@ -1,3 +1,5 @@
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
 # Default values for k-native.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
@@ -99,7 +101,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.15.4
+    tag: 1.16.0-RELEASE-e8f7a0df
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -186,7 +188,7 @@ egs:
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: 1.14.3
+    tag: 1.15.0-RELEASE-5924f996
     imagePullPolicy: IfNotPresent
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60

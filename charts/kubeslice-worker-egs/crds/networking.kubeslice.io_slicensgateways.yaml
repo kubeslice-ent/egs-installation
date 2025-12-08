@@ -1,0 +1,547 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: slicensgateways.networking.kubeslice.io
+spec:
+  group: networking.kubeslice.io
+  names:
+    kind: SliceNSGateway
+    listKind: SliceNSGatewayList
+    plural: slicensgateways
+    singular: slicensgateway
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.gatewayRef.name
+      name: Gateway
+      type: string
+    - jsonPath: .spec.fqdn[0]
+      name: FQDN
+      type: string
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SliceNSGateway is the Schema for multi-cluster service routing
+          across slice networks
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SliceNSGatewaySpec defines the desired state of SliceNSGateway
+            properties:
+              backends:
+                description: Backends defines the backend services with weights for
+                  load balancing
+                items:
+                  description: BackendConfig defines a backend service configuration
+                  properties:
+                    cluster:
+                      description: Cluster identifies the cluster name for remote
+                        backends (optional, for documentation)
+                      type: string
+                    loadBalancingMode:
+                      allOf:
+                      - enum:
+                        - RR
+                        - Weighted
+                      - enum:
+                        - RR
+                        - Weighted
+                      default: Weighted
+                      description: |-
+                        LoadBalancingMode defines how to distribute traffic for this backend
+                        RR: Round-robin across all endpoints (equal weight) - single backend with all ServiceImport endpoints
+                        Weighted: Use weights to distribute traffic - multiple backends with different weights
+                        If not specified, defaults to Weighted for backward compatibility
+                      type: string
+                    name:
+                      description: Name is a unique identifier for this backend
+                      minLength: 1
+                      type: string
+                    nsmIP:
+                      description: |-
+                        NSMIP defines the NSM IP address of the remote gateway pod (for type: remote)
+                        Alternative to ServiceImport for direct NSM IP specification
+                      format: ipv4
+                      type: string
+                    service:
+                      description: 'Service defines the local Kubernetes Service (for
+                        type: local)'
+                      properties:
+                        name:
+                          description: Name of the Kubernetes Service
+                          minLength: 1
+                          type: string
+                        namespace:
+                          description: |-
+                            Namespace of the Kubernetes Service
+                            If empty, defaults to the same namespace as SliceNSGateway
+                          type: string
+                        port:
+                          description: Port is the port number of the service
+                          format: int32
+                          maximum: 65535
+                          minimum: 1
+                          type: integer
+                      required:
+                      - name
+                      - port
+                      type: object
+                    serviceImport:
+                      description: 'ServiceImport defines the remote ServiceImport
+                        (for type: remote)'
+                      properties:
+                        name:
+                          description: Name of the ServiceImport
+                          minLength: 1
+                          type: string
+                        namespace:
+                          description: |-
+                            Namespace of the ServiceImport
+                            If empty, defaults to the same namespace as SliceNSGateway
+                          type: string
+                        port:
+                          description: Port is the port number of the service
+                          format: int32
+                          maximum: 65535
+                          minimum: 1
+                          type: integer
+                      required:
+                      - name
+                      - port
+                      type: object
+                    type:
+                      description: Type specifies whether this is a local or remote
+                        backend
+                      enum:
+                      - local
+                      - remote
+                      type: string
+                    weight:
+                      default: 100
+                      description: |-
+                        Weight defines the relative weight for load balancing
+                        Weights are relative (e.g., 70:30, 1:1:100)
+                        If not specified, defaults to 100
+                        Only used when LoadBalancingMode is Weighted (or not specified, defaulting to Weighted)
+                        Ignored when LoadBalancingMode is RR (all endpoints get equal weight)
+                      format: int32
+                      minimum: 0
+                      type: integer
+                  required:
+                  - name
+                  - type
+                  type: object
+                minItems: 1
+                type: array
+              fqdn:
+                description: FQDN is the fully qualified domain name for external
+                  access
+                items:
+                  type: string
+                minItems: 1
+                type: array
+              gatewayRef:
+                description: |-
+                  GatewayRef references the Gateway resource (gateway.networking.k8s.io/v1) to use
+                  The Gateway CR can be created by operators directly or auto-created by SliceNSGateway reconciler (via autoCreate: true)
+                properties:
+                  autoCreate:
+                    description: |-
+                      AutoCreate enables automatic Gateway creation if not found
+                      Defaults to false
+                    type: boolean
+                  gatewayClassName:
+                    description: GatewayClassName specifies the GatewayClass to use
+                      when auto-creating
+                    type: string
+                  name:
+                    description: Name of the Gateway resource
+                    minLength: 1
+                    type: string
+                  namespace:
+                    description: |-
+                      Namespace of the Gateway resource
+                      If empty, defaults to the same namespace as SliceNSGateway
+                    type: string
+                required:
+                - name
+                type: object
+              ports:
+                description: |-
+                  Ports defines the ports exposed by the service gateway
+                  Defaults to port 8080 if not specified
+                items:
+                  description: PortConfig defines port configuration
+                  properties:
+                    name:
+                      description: Name is the name of the port
+                      type: string
+                    port:
+                      description: Port is the port number
+                      format: int32
+                      maximum: 65535
+                      minimum: 1
+                      type: integer
+                    protocol:
+                      default: HTTP
+                      description: Protocol is the protocol (HTTP, HTTPS, TCP, TLS,
+                        GRPC)
+                      enum:
+                      - HTTP
+                      - HTTPS
+                      - TCP
+                      - TLS
+                      - GRPC
+                      maxLength: 255
+                      minLength: 1
+                      pattern: ^[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?$|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9]+$
+                      type: string
+                  required:
+                  - port
+                  type: object
+                type: array
+              routingRules:
+                description: RoutingRules defines advanced routing rules (header-based,
+                  path-based)
+                items:
+                  description: RoutingRule defines advanced routing rules
+                  properties:
+                    backends:
+                      description: Backends defines the backends to use when this
+                        rule matches
+                      items:
+                        description: BackendConfig defines a backend service configuration
+                        properties:
+                          cluster:
+                            description: Cluster identifies the cluster name for remote
+                              backends (optional, for documentation)
+                            type: string
+                          loadBalancingMode:
+                            allOf:
+                            - enum:
+                              - RR
+                              - Weighted
+                            - enum:
+                              - RR
+                              - Weighted
+                            default: Weighted
+                            description: |-
+                              LoadBalancingMode defines how to distribute traffic for this backend
+                              RR: Round-robin across all endpoints (equal weight) - single backend with all ServiceImport endpoints
+                              Weighted: Use weights to distribute traffic - multiple backends with different weights
+                              If not specified, defaults to Weighted for backward compatibility
+                            type: string
+                          name:
+                            description: Name is a unique identifier for this backend
+                            minLength: 1
+                            type: string
+                          nsmIP:
+                            description: |-
+                              NSMIP defines the NSM IP address of the remote gateway pod (for type: remote)
+                              Alternative to ServiceImport for direct NSM IP specification
+                            format: ipv4
+                            type: string
+                          service:
+                            description: 'Service defines the local Kubernetes Service
+                              (for type: local)'
+                            properties:
+                              name:
+                                description: Name of the Kubernetes Service
+                                minLength: 1
+                                type: string
+                              namespace:
+                                description: |-
+                                  Namespace of the Kubernetes Service
+                                  If empty, defaults to the same namespace as SliceNSGateway
+                                type: string
+                              port:
+                                description: Port is the port number of the service
+                                format: int32
+                                maximum: 65535
+                                minimum: 1
+                                type: integer
+                            required:
+                            - name
+                            - port
+                            type: object
+                          serviceImport:
+                            description: 'ServiceImport defines the remote ServiceImport
+                              (for type: remote)'
+                            properties:
+                              name:
+                                description: Name of the ServiceImport
+                                minLength: 1
+                                type: string
+                              namespace:
+                                description: |-
+                                  Namespace of the ServiceImport
+                                  If empty, defaults to the same namespace as SliceNSGateway
+                                type: string
+                              port:
+                                description: Port is the port number of the service
+                                format: int32
+                                maximum: 65535
+                                minimum: 1
+                                type: integer
+                            required:
+                            - name
+                            - port
+                            type: object
+                          type:
+                            description: Type specifies whether this is a local or
+                              remote backend
+                            enum:
+                            - local
+                            - remote
+                            type: string
+                          weight:
+                            default: 100
+                            description: |-
+                              Weight defines the relative weight for load balancing
+                              Weights are relative (e.g., 70:30, 1:1:100)
+                              If not specified, defaults to 100
+                              Only used when LoadBalancingMode is Weighted (or not specified, defaulting to Weighted)
+                              Ignored when LoadBalancingMode is RR (all endpoints get equal weight)
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        required:
+                        - name
+                        - type
+                        type: object
+                      minItems: 1
+                      type: array
+                    match:
+                      description: Match defines the matching criteria for this rule
+                      properties:
+                        headers:
+                          description: Headers defines HTTP header matching criteria
+                          items:
+                            description: HeaderMatch defines HTTP header matching
+                            properties:
+                              name:
+                                description: Name is the HTTP header name
+                                type: string
+                              type:
+                                default: exact
+                                description: Type defines the matching type (exact,
+                                  prefix, regex)
+                                enum:
+                                - exact
+                                - prefix
+                                - regex
+                                type: string
+                              value:
+                                description: Value is the HTTP header value to match
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          type: array
+                        path:
+                          description: Path defines path matching criteria
+                          properties:
+                            type:
+                              default: prefix
+                              description: Type defines the matching type (exact,
+                                prefix, regex)
+                              enum:
+                              - exact
+                              - prefix
+                              - regex
+                              type: string
+                            value:
+                              description: Value is the path to match
+                              type: string
+                          required:
+                          - value
+                          type: object
+                      type: object
+                    priority:
+                      default: 0
+                      description: |-
+                        Priority defines the order in which rules are evaluated (higher = first)
+                        Defaults to 0 if not specified
+                      format: int32
+                      minimum: 0
+                      type: integer
+                  required:
+                  - backends
+                  - match
+                  type: object
+                type: array
+              sliceName:
+                description: SliceName defines the name of the slice (workspace) for
+                  this service gateway
+                minLength: 1
+                type: string
+            required:
+            - backends
+            - gatewayRef
+            - sliceName
+            type: object
+          status:
+            description: SliceNSGatewayStatus defines the observed state of SliceNSGateway
+            properties:
+              backends:
+                description: Backends represents the status of each backend
+                items:
+                  description: BackendStatus represents the status of a backend
+                  properties:
+                    message:
+                      description: Message provides additional information about the
+                        status
+                      type: string
+                    name:
+                      description: Name of the backend
+                      type: string
+                    nsmIP:
+                      description: NSMIP is the resolved NSM IP (for remote backends)
+                      type: string
+                    status:
+                      description: Status indicates the backend status (Ready, Pending,
+                        Error)
+                      enum:
+                      - Ready
+                      - Pending
+                      - Error
+                      type: string
+                    type:
+                      description: Type of the backend (local or remote)
+                      enum:
+                      - local
+                      - remote
+                      type: string
+                  required:
+                  - name
+                  - status
+                  - type
+                  type: object
+                type: array
+              conditions:
+                description: Conditions represent the latest available observations
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              gatewayRef:
+                description: GatewayRef is the resolved gateway reference
+                properties:
+                  name:
+                    description: Name of the Gateway
+                    type: string
+                  namespace:
+                    description: Namespace of the Gateway
+                    type: string
+                  ready:
+                    description: Ready indicates whether the Gateway is ready
+                    type: boolean
+                required:
+                - name
+                - namespace
+                - ready
+                type: object
+              httpRoute:
+                description: HTTPRoute is the name of the created HTTPRoute
+                type: string
+              loadBalancerIP:
+                description: LoadBalancerIP is the external IP of the LoadBalancer
+                  service (if applicable)
+                type: string
+              observedGeneration:
+                description: ObservedGeneration is the generation last observed by
+                  the controller
+                format: int64
+                type: integer
+              phase:
+                description: Phase represents the current phase of the service gateway
+                enum:
+                - Pending
+                - Ready
+                - Error
+                type: string
+            required:
+            - phase
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

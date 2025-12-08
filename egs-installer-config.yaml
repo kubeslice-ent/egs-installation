@@ -406,7 +406,7 @@ additional_apps:
         database: "postgres"                  # Default database to create
       primary:
         persistence:
-          enabled: false                      # Disable persistent storage for PostgreSQL
+          enabled: true                      # Disable persistent storage for PostgreSQL
           size: 10Gi                          # Size of the Persistent Volume Claim
     helm_flags: "--wait --debug"                       # Additional Helm flags for this application's installation
     verify_install: true                       # Verify the installation of PostgreSQL
@@ -521,4 +521,4 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: true                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.15.4"
+version: "1.15.5"

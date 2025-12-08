@@ -63,7 +63,7 @@ spec:
       {{ toYaml .Values.kubeslice.uiv2.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image: {{ include "component.image" (dict "component" .Values.kubeslice.uiv2 "global" .Values.global "context" .) }}
+        - image: {{ include "component.image" (dict "component" .Values.kubeslice.uiv2 "global" .Values.dev "context" .) }}
           imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" .Values.kubeslice.uiv2 "global" .Values.global "context" .) }}
           name: kubeslice-ui-v2
           securityContext:

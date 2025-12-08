@@ -1,3 +1,6 @@
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
 global:
   # Centralized image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
@@ -31,8 +34,8 @@ global:
     openshift: false
 
 operator:
-  image: worker-operator-ent-egs
-  tag: 1.15.4
+  image: aveshadev/worker-operator-ent-egs
+  tag: 1.16.0-RELEASE-8cc9fefd
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -229,7 +232,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.15.3
+  tag: 1.16.0-RELEASE-04478653
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -241,10 +244,10 @@ aiops:
   resources:
     limits:
       cpu: 500m
-      memory: 128Mi
+      memory: 1Gi
     requests:
-      cpu: 5m
-      memory: 64Mi
+      cpu: 20m
+      memory: 256Mi
   containerSecurityContext:
     runAsUser: 65536
     runAsGroup: 65536
