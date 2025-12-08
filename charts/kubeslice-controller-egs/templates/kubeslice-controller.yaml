@@ -6418,6 +6418,8 @@ rules:
       - gprtemplates
       - gprtemplatebindings
       - workspacepolicies
+      - workloadplacements
+      - workloadtemplates
     verbs:
       - create
       - delete
@@ -6432,6 +6434,8 @@ rules:
       - gprtemplates/status
       - gprtemplatebindings/status
       - gpuprovisioningrequests/status
+      - workloadtemplates/status
+      - workloadplacements/status
     verbs:
       - get
       - list
