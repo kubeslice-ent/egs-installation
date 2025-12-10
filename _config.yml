@@ -5,11 +5,6 @@ description: "Streamline installation, upgrade, and configuration of EGS compone
 url: "https://repo.egs.avesha.io"
 baseurl: ""
 
-# Author information
-author:
-  name: "Avesha Systems"
-  email: "support@aveshasystems.com"
-
 # GitHub repository info
 github:
   repository_url: "https://github.com/kubeslice-ent/egs-installation"
@@ -28,31 +23,8 @@ kramdown:
   input: GFM
   syntax_highlighter: rouge
 
-# Collections (for organizing docs)
-collections:
-  docs:
-    output: true
-    permalink: /:collection/:name/
-
-# Navigation
-navigation:
-  - title: "Home"
-    url: "/"
-  - title: "Quick Install"
-    url: "/docs/Quick-Install-README"
-  - title: "Documentation"
-    url: "/#-egs-documents"
-  - title: "Getting Started"
-    url: "/#getting-started"
-  - title: "GitHub"
-    url: "https://github.com/kubeslice-ent/egs-installation"
-
-# SEO and social
-social:
-  - platform: github
-    user_url: "https://github.com/kubeslice-ent"
-  - platform: email
-    user_url: "mailto:support@aveshasystems.com"
+# Disable header pages to remove auto-generated navigation
+header_pages: []
 
 # Exclude files from Jekyll processing
 exclude:
@@ -65,3 +37,4 @@ exclude:
   - installation-files/
   - "*.kubeconfig"
   - "*-kubeconfig.yaml"
+  - docs/
