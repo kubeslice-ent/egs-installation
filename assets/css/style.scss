@@ -350,10 +350,9 @@ hr {
   margin: 32px 0;
 }
 
-/* Footer enhancement */
+/* Hide the footer completely */
 .site-footer {
-  border-top: 2px solid var(--primary-color);
-  background: linear-gradient(135deg, var(--bg-light), #ffffff);
+  display: none !important;
 }
 
 /* Responsive adjustments */
