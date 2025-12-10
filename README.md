@@ -8,7 +8,7 @@
 > **New to EGS?** Use our **single-command Quick Installer** to deploy EGS with minimal configuration!
 > 
 > ```bash
-> curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \
+> curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 >   --license-file egs-license.yaml --kubeconfig ~/.kube/config
 > ```
 > 
