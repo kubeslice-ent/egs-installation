@@ -1,0 +1,19 @@
+# Site settings
+title: EGS Installer Documentation
+description: The EGS Installer Script - streamline installation, upgrade, and configuration of EGS components in Kubernetes clusters.
+baseurl: ""
+url: "https://repo.egs.avesha.io"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# Navigation
+header_pages:
+  - index.md
