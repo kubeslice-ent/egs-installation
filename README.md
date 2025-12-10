@@ -3,22 +3,18 @@
 > ### **[🚀 EGS Installer Documentation](https://repo.egs.avesha.io/) 🚀**
 > *The online documentation provides enhanced navigation, better formatting, and the latest updates.*
 
-## ⚡ Quick Install (Recommended for New Users)
-
-> **New to EGS?** Use our **single-command Quick Installer** to deploy EGS with minimal configuration!
-> 
-> ```bash
-> curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
->   --license-file egs-license.yaml --kubeconfig ~/.kube/config
-> ```
-> 
-> 📖 **[View Complete Quick Install Guide →](docs/Quick-Install-README.md)** - Covers single-cluster, multi-cluster, skip flags, and worker registration.
-
 ---
 
 ## 🚀 Overview
 
-The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
+The EGS Installer provides multiple installation methods for deploying EGS components into Kubernetes clusters:
+
+| Method | Best For | Description |
+|--------|----------|-------------|
+| **⚡ Quick Installer** (`install-egs.sh`) | New users, PoC environments, simple single/multi-cluster setups | Single-command installer that automatically generates config, applies intelligent defaults, and supports skip flags and multi-cluster registration |
+| **📋 Config-Based Installer** (`egs-installer.sh` + `egs-installer-config.yaml`) | Production environments, teams managing multiple config files | Uses a version-controlled YAML configuration for repeatable, auditable installs across environments |
+
+All methods leverage **Helm** for package management, **kubectl** for interacting with Kubernetes clusters, and **yq** for parsing YAML files. They provide automated validation of cluster access, installation of required binaries, and creation of Kubernetes namespaces and resources.
 
 ---
 
@@ -27,15 +23,13 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🌐 **📚 For the complete EGS Installer documentation website, visit:** [**🚀 EGS Installer Documentation**](https://repo.egs.avesha.io/) **🚀**  
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
 - 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
-- ⚡ **[Quick Install Guide](docs/Quick-Install-README.md)** - Single-command installer with auto-configuration, skip flags, and multi-cluster support 🚀  
+- ⚡ Single-command installer with auto-configuration, skip flags, and multi-cluster support 🚀 — **[Quick Install Guide](docs/Quick-Install-README.md)**  
 - 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
 - ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README.md) 🔍  
 - 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](docs/Slice-Admin-Token-README.md) 🔒  
 - 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](docs/Namespace-Creation-README.md) 🗂️  
 - 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
 - ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
-- 🌐 **⚠️ IMPORTANT:** For networking in worker clusters, ensure at least some nodes are labeled as gateway nodes: `kubectl get no -l kubeslice.io/node-type=gateway` 🏷️
-- 🔗 **KubeSlice Networking Configuration:** KubeSlice networking is disabled by default in the EGS worker configuration (`kubesliceNetworking: enabled: false`). If enabled, ensure proper node labeling for gateway functionality. The installer script can automatically label nodes when `add_node_label: true` is set. 🌐
 - 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README.md) 📋  
 - 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰  
 - 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
@@ -44,6 +38,35 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 ---
 
 ## Getting Started
+
+### ⚡ Quick Installer (Recommended for New Users)
+
+Use the single-command Quick Installer to deploy EGS with minimal configuration:
+
+```bash
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --license-file egs-license.yaml --kubeconfig ~/.kube/config
+```
+
+**📝 Registration Required:** Complete the registration process at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive your license file (`egs-license.yaml`).
+
+📖 Single-command installer with auto-configuration, skip flags, and multi-cluster support 🚀 — see **[Quick Install Guide](docs/Quick-Install-README.md)**
+
+---
+
+### 📋 Config-Based Installer (Production / Advanced)
+
+For production environments or when you need to manage multiple configuration files, use the **Config-Based Installer**:
+
+- Uses `egs-installer.sh` script together with a managed `egs-installer-config.yaml` file
+- Recommended when you need to:
+  - Maintain **multiple config files** (per environment, per customer, etc.)
+  - Apply **fine-grained control** over prerequisites, components, and multi-cluster topology
+  - Have **version-controlled, auditable** installation configurations
+
+For full configuration details, see **[Configuration Documentation](docs/Configuration-README.md)**
+
+---
 
 ### Prerequisites
 
@@ -70,7 +93,16 @@ Before you begin, ensure the following steps are completed:
      cd egs-installation
      ```
 
-5. **✅ Run EGS Preflight Check Script (Optional):**
+5. **🔗 KubeSlice Networking (Worker Clusters - Optional):**
+   - KubeSlice networking is **disabled by default** in the EGS worker configuration (`kubesliceNetworking: enabled: false`).
+   - **If you plan to enable KubeSlice networking**, ensure at least some nodes are labeled as gateway nodes:
+     ```bash
+     kubectl get nodes -l kubeslice.io/node-type=gateway
+     ```
+   - The installer script can automatically label nodes when `add_node_label: true` is set in the configuration.
+   - Skip this step if you are not using KubeSlice networking features.
+
+6. **✅ Run EGS Preflight Check Script (Optional):**
    - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
      - Refer to the [EGS Preflight Check Guide](docs/EGS-Preflight-Check-README.md) for detailed instructions.
      - Example command:
@@ -81,7 +113,7 @@ Before you begin, ensure the following steps are completed:
        ```
      - This step validates namespaces, permissions, PVCs, and services, helping to identify and resolve potential issues before installation.
 
-6. **🗂️ Pre-create Required Namespaces (Optional):**
+7. **🗂️ Pre-create Required Namespaces (Optional):**
    - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
      - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
        - Refer to the [Namespace Creation Guide](docs/Namespace-Creation-README.md) for details.
@@ -94,7 +126,7 @@ Before you begin, ensure the following steps are completed:
        ```
      - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
 
-7. **⚙️ Configure EGS Installer for Prerequisites Installation:**
+8. **⚙️ Configure EGS Installer for Prerequisites Installation:**
 
    **⚠️ IMPORTANT: Choose ONE approach - do NOT use both simultaneously**
 
@@ -265,7 +297,7 @@ Before you begin, ensure the following steps are completed:
    - **Verify that your existing components** are properly configured to scrape EGS metrics
    - **Ensure proper RBAC permissions** and network policies are in place
 
-8. **🚀 Install Prerequisites (After Configuration):**
+9. **🚀 Install Prerequisites (After Configuration):**
    - After configuring the YAML file (refer to [egs-installer-config.yaml](egs-installer-config.yaml) for examples), run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
    ```bash
    ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
