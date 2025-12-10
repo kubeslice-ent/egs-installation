@@ -35,7 +35,7 @@ global:
 
 operator:
   image: worker-operator-ent-egs
-  tag: 1.16.0-RELEASE-580fbecd
+  tag: 1.16.0-RELEASE-28e61bef
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
