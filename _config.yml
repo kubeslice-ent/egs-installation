@@ -1,19 +1,67 @@
-# Site settings
-title: EGS Installer Documentation
-description: The EGS Installer Script - streamline installation, upgrade, and configuration of EGS components in Kubernetes clusters.
-baseurl: ""
-url: "https://repo.egs.avesha.io"
-
-# Build settings
-markdown: kramdown
-highlighter: rouge
+# Jekyll configuration for GitHub Pages
 theme: minima
+title: "EGS Installer Script"
+description: "Streamline installation, upgrade, and configuration of EGS components in Kubernetes clusters"
+url: "https://repo.egs.avesha.io"
+baseurl: ""
 
-# Plugins
+# Author information
+author:
+  name: "Avesha Systems"
+  email: "support@aveshasystems.com"
+
+# GitHub repository info
+github:
+  repository_url: "https://github.com/kubeslice-ent/egs-installation"
+  repository_name: "egs-installation"
+
+# Enable plugins
 plugins:
   - jekyll-feed
   - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Markdown settings
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Collections (for organizing docs)
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:name/
 
 # Navigation
-header_pages:
-  - index.md
+navigation:
+  - title: "Home"
+    url: "/"
+  - title: "Quick Install"
+    url: "/docs/Quick-Install-README"
+  - title: "Documentation"
+    url: "/#-egs-documents"
+  - title: "Getting Started"
+    url: "/#getting-started"
+  - title: "GitHub"
+    url: "https://github.com/kubeslice-ent/egs-installation"
+
+# SEO and social
+social:
+  - platform: github
+    user_url: "https://github.com/kubeslice-ent"
+  - platform: email
+    user_url: "mailto:support@aveshasystems.com"
+
+# Exclude files from Jekyll processing
+exclude:
+  - vendor/
+  - Gemfile.lock
+  - node_modules/
+  - "*.log"
+  - "*.tgz"
+  - charts/
+  - installation-files/
+  - "*.kubeconfig"
+  - "*-kubeconfig.yaml"
