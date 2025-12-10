@@ -64,7 +64,7 @@ kubeslice:
 
   ui:
     image: kubeslice-ui-ent-egs
-    tag: 1.16.0-RELEASE-b22bf2e7
+    tag: 1.16.0-RELEASE-35c67653
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -104,7 +104,7 @@ kubeslice:
                     operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.16.0-RELEASE-9cdad521
+    tag: 1.16.0-RELEASE-9c9ae75e
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
