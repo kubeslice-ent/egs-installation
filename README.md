@@ -1,10 +1,7 @@
----
 # 🌐 EGS Installer Script
-> 
+
 > ### **[🚀 EGS Installer Documentation](https://repo.egs.avesha.io/) 🚀**
 > *The online documentation provides enhanced navigation, better formatting, and the latest updates.*
-
----
 
 ## ⚡ Quick Install (Recommended for New Users)
 
