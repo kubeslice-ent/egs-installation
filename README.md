@@ -6,6 +6,19 @@
 
 ---
 
+## ⚡ Quick Install (Recommended for New Users)
+
+> **New to EGS?** Use our **single-command Quick Installer** to deploy EGS with minimal configuration!
+> 
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/install-egs.sh | bash -s -- \
+>   --license-file egs-license.yaml --kubeconfig ~/.kube/config
+> ```
+> 
+> 📖 **[View Complete Quick Install Guide →](docs/Quick-Install-README.md)** - Covers single-cluster, multi-cluster, skip flags, and worker registration.
+
+---
+
 ## 🚀 Overview
 
 The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
@@ -17,7 +30,7 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 - 🌐 **📚 For the complete EGS Installer documentation website, visit:** [**🚀 EGS Installer Documentation**](https://repo.egs.avesha.io/) **🚀**  
 - 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
 - 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
-- ⚡ **For Quick Installation**, please see the [**Quick Install Guide**](docs/Quick-Install-README.md) 🚀  
+- ⚡ **[Quick Install Guide](docs/Quick-Install-README.md)** - Single-command installer with auto-configuration, skip flags, and multi-cluster support 🚀  
 - 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
 - ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README.md) 🔍  
 - 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](docs/Slice-Admin-Token-README.md) 🔒  

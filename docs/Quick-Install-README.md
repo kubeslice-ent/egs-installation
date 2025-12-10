@@ -135,7 +135,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash [OPTIONS]
 | `--register-project-name NAME` | Project name | `avesha` | No |
 | `--telemetry-endpoint URL` | Prometheus endpoint URL | Auto-detected | No |
 | `--telemetry-provider NAME` | Telemetry provider | `prometheus` | No |
-| `--cloud-provider NAME` | Cloud provider name | Auto-detected | No |
+| `--cloud-provider NAME` | Cloud provider name (overrides auto-detection) | Auto-detected | No |
 | `--cloud-region NAME` | Cloud region | - | No |
 | `--controller-namespace NAME` | Controller namespace | `kubeslice-controller` | No |
 
@@ -358,8 +358,10 @@ kubectl get nodes -o jsonpath='{.items[0].spec.providerID}'
 ```
 
 **Special Handling**:
-- **Linode**: `cloudProvider` field is left empty (Linode-specific requirement)
+- **User Override**: If `--cloud-provider` is provided, it takes precedence over auto-detection
+- **Linode**: If auto-detected as Linode, `cloudProvider` field is left empty (Linode-specific requirement)
 - **Other providers**: Sets `cloudProvider` to detected value (e.g., `gcp`, `aws`, `azure`)
+- **Cloud Region**: Use `--cloud-region` to set the region (e.g., `us-west1`, `us-east-1`)
 
 ### Node Labeling
 
@@ -893,8 +895,8 @@ The `--register-worker` feature allows you to register a worker cluster with an 
 - `--register-project-name NAME`: Project name (default: `avesha`)
 - `--telemetry-endpoint URL`: Prometheus endpoint URL
 - `--telemetry-provider NAME`: Telemetry provider (default: `prometheus`)
-- `--cloud-provider NAME`: Cloud provider name (auto-detected if worker kubeconfig provided)
-- `--cloud-region NAME`: Cloud region
+- `--cloud-provider NAME`: Cloud provider name (overrides auto-detection)
+- `--cloud-region NAME`: Cloud region (e.g., `us-west1`, `us-east-1`)
 - `--controller-namespace NAME`: Controller namespace (default: `kubeslice-controller`)
 - `--skip-worker`: Skip worker installation (even if `--worker-kubeconfig` is provided)
 

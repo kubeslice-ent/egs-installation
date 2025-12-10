@@ -1086,14 +1086,17 @@ else
 fi
 
 # Set cloud provider in config (exclude Linode - keep it empty for Linode clusters)
-if [ "$CLOUD_PROVIDER_DETECTED" = "linode" ]; then
-    CLOUD_PROVIDER=""  # Keep empty for Linode
-    print_success "Detected cloud provider: linode (will be left empty in config)"
-elif [ -n "$CLOUD_PROVIDER_DETECTED" ]; then
-    CLOUD_PROVIDER="$CLOUD_PROVIDER_DETECTED"
-    print_success "Detected cloud provider: $CLOUD_PROVIDER"
+# Only auto-detect if user didn't provide --cloud-provider flag
+if [ -z "$CLOUD_PROVIDER" ]; then
+    if [ "$CLOUD_PROVIDER_DETECTED" = "linode" ]; then
+        CLOUD_PROVIDER=""  # Keep empty for Linode
+        print_success "Detected cloud provider: linode (will be left empty in config)"
+    elif [ -n "$CLOUD_PROVIDER_DETECTED" ]; then
+        CLOUD_PROVIDER="$CLOUD_PROVIDER_DETECTED"
+        print_success "Detected cloud provider: $CLOUD_PROVIDER"
+    fi
 else
-    CLOUD_PROVIDER=""
+    print_success "Using user-provided cloud provider: $CLOUD_PROVIDER"
 fi
 
 # Update egs-installer-config.yaml with detected values
@@ -1426,8 +1429,9 @@ else
         yq eval ".cluster_registration[0].cluster_name = \"$FIRST_WORKER_NAME\"" -i egs-installer-config.yaml
     fi
     
-    # Update cloud provider for the first entry
+    # Update cloud provider and region for the first entry
     yq eval ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" -i egs-installer-config.yaml
+    yq eval ".cluster_registration[0].geoLocation.cloudRegion = \"$CLOUD_REGION\"" -i egs-installer-config.yaml
 fi
 
 # Update image registry
