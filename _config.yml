@@ -38,6 +38,6 @@ exclude:
   - "*.kubeconfig"
   - "*-kubeconfig.yaml"
 
-# Include docs/images for UI screenshots
+# Include docs folder for documentation and UI screenshots
 include:
-  - docs/images/
+  - docs/
