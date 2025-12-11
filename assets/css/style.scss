@@ -191,8 +191,8 @@ p:has(> a img[src*="shields.io"]) {
 
 /* Code styling */
 pre {
-  background-color: #1e1e1e;
-  color: #d4d4d4;
+  background-color: #f6f8fa;
+  color: #24292e;
   border-radius: 8px;
   padding: 16px;
   overflow: auto;
@@ -200,11 +200,11 @@ pre {
   font-size: 14px;
   margin: 16px 0;
   position: relative;
-  border: 1px solid #333;
+  border: 1px solid #e1e4e8;
 }
 
 pre:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Inline code styling - light background, readable text */
@@ -218,64 +218,67 @@ code {
   color: #24292e !important;  /* Dark text on light background */
 }
 
-/* Code inside pre blocks - light text on dark background */
+/* Code inside pre blocks - dark text on light background */
 pre code,
 .highlighter-rouge code,
 .highlight code {
   border: none !important;
   background: transparent !important;
   padding: 0;
-  color: #d4d4d4 !important;  /* Light text on dark background */
+  color: #24292e !important;  /* Dark text on light background */
 }
 
-/* Syntax highlighting for dark code blocks - Override minima/rouge */
-pre .keyword { color: #569cd6; }
-pre .string { color: #ce9178; }
-pre .comment { color: #6a9955; }
-pre .function { color: #dcdcaa; }
-pre .number { color: #b5cea8; }
+/* Syntax highlighting for light code blocks - GitHub style */
+pre .keyword { color: #d73a49; }
+pre .string { color: #032f62; }
+pre .comment { color: #6a737d; }
+pre .function { color: #6f42c1; }
+pre .number { color: #005cc5; }
 
-/* Fix code block visibility - Override Rouge highlighter */
+/* Fix code block visibility - Override Rouge highlighter - LIGHT THEME */
 .highlighter-rouge,
 .highlight,
 div.highlighter-rouge {
-  background: #1e1e1e !important;
+  background: #f6f8fa !important;
   border-radius: 8px;
   margin: 16px 0;
+  border: 1px solid #e1e4e8;
 }
 
 .highlighter-rouge pre,
 .highlight pre,
 div.highlighter-rouge pre.highlight {
-  background: #1e1e1e !important;
-  color: #d4d4d4 !important;
+  background: #f6f8fa !important;
+  color: #24292e !important;
   padding: 16px;
   margin: 0;
   overflow-x: auto;
+  border: none !important;
 }
 
 .highlighter-rouge code,
 .highlight code,
 pre.highlight code {
   background: transparent !important;
-  color: #d4d4d4 !important;
+  color: #24292e !important;
   border: none !important;
   padding: 0 !important;
 }
 
-/* Rouge syntax highlighting - VS Code dark theme colors */
-.highlight .c, .highlight .c1, .highlight .cm { color: #6a9955 !important; } /* comments */
-.highlight .s, .highlight .s1, .highlight .s2, .highlight .sr { color: #ce9178 !important; } /* strings */
-.highlight .k, .highlight .kd, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kt { color: #569cd6 !important; } /* keywords */
-.highlight .n, .highlight .na, .highlight .nb, .highlight .nc, .highlight .nd, .highlight .ne, .highlight .nf, .highlight .ni, .highlight .nl, .highlight .nn, .highlight .no, .highlight .nt, .highlight .nv { color: #9cdcfe !important; } /* names */
-.highlight .o, .highlight .ow { color: #d4d4d4 !important; } /* operators */
-.highlight .p { color: #d4d4d4 !important; } /* punctuation */
-.highlight .m, .highlight .mf, .highlight .mh, .highlight .mi, .highlight .mo { color: #b5cea8 !important; } /* numbers */
-.highlight .gh, .highlight .gp { color: #4ec9b0 !important; } /* generic heading/prompt */
-.highlight .gi { color: #a6e22e !important; } /* generic inserted */
-.highlight .gd { color: #f92672 !important; } /* generic deleted */
-.highlight .err { color: #f44747 !important; background: transparent !important; } /* error */
-.highlight .w { color: #d4d4d4 !important; } /* whitespace */
+/* Rouge syntax highlighting - GitHub light theme colors */
+.highlight .c, .highlight .c1, .highlight .cm { color: #6a737d !important; } /* comments - gray */
+.highlight .s, .highlight .s1, .highlight .s2, .highlight .sr { color: #032f62 !important; } /* strings - dark blue */
+.highlight .k, .highlight .kd, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kt { color: #d73a49 !important; } /* keywords - red */
+.highlight .n, .highlight .nc, .highlight .nf { color: #6f42c1 !important; } /* class/function names - purple */
+.highlight .na, .highlight .nb, .highlight .ni, .highlight .nl, .highlight .nn, .highlight .no, .highlight .nt, .highlight .nv { color: #005cc5 !important; } /* other names - blue */
+.highlight .o, .highlight .ow { color: #d73a49 !important; } /* operators - red */
+.highlight .p { color: #24292e !important; } /* punctuation - dark */
+.highlight .m, .highlight .mf, .highlight .mh, .highlight .mi, .highlight .mo { color: #005cc5 !important; } /* numbers - blue */
+.highlight .gh, .highlight .gp { color: #005cc5 !important; } /* generic heading/prompt */
+.highlight .gi { color: #22863a !important; } /* generic inserted - green */
+.highlight .gd { color: #b31d28 !important; } /* generic deleted - red */
+.highlight .err { color: #b31d28 !important; background: transparent !important; } /* error */
+.highlight .w { color: #24292e !important; } /* whitespace */
 
 /* Copy button */
 .copy-btn-simple {
