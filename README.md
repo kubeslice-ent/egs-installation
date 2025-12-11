@@ -124,10 +124,10 @@ Confirm administrative access to target clusters with appropriate `kubeconfig` f
 
 #### 4. 📂 Clone Repository
 
-     ```bash
-     git clone https://github.com/kubeslice-ent/egs-installation
-     cd egs-installation
-     ```
+```bash
+git clone https://github.com/kubeslice-ent/egs-installation
+cd egs-installation
+```
 
 #### 5. 🔗 KubeSlice Networking (Optional)
 
