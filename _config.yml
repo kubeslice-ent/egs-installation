@@ -1,5 +1,6 @@
 # Jekyll configuration for GitHub Pages
-theme: minima
+# Using remote theme for cleaner look without navigation clutter
+remote_theme: pages-themes/minimal@v0.2.0
 title: "EGS Installer Script"
 description: "Streamline installation, upgrade, and configuration of EGS components in Kubernetes clusters"
 url: "https://repo.egs.avesha.io"
@@ -12,8 +13,7 @@ github:
 
 # Enable plugins
 plugins:
-  - jekyll-feed
-  - jekyll-sitemap
+  - jekyll-remote-theme
   - jekyll-seo-tag
 
 # Markdown settings
@@ -22,9 +22,6 @@ highlighter: rouge
 kramdown:
   input: GFM
   syntax_highlighter: rouge
-
-# Disable header pages to remove auto-generated navigation
-header_pages: []
 
 # Exclude files from Jekyll processing
 exclude:
