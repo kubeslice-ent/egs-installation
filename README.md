@@ -20,7 +20,7 @@
 | **🔧 Operations** | [Slice & Admin Token](docs/Slice-Admin-Token-README.html) | Token retrieval guide |
 | **💰 Operations** | [Custom Pricing](docs/Custom-Pricing-README.html) | Custom pricing configuration |
 | **🔐 Security** | [Prometheus TLS Authentication](docs/Prometheus-TLS-Authentication.html) | TLS setup for Prometheus |
-| **📦 Airgap** | [Airgap Image Management](airgap-image-push/README-airgap-images.md) | Airgap image pull and push |
+| **📦 Airgap** | [Airgap Image Management](airgap-image-push/README-airgap-images.html) | Airgap image pull and push |
 
 📚 **User Guide:** [docs.avesha.io/documentation/enterprise-egs](https://docs.avesha.io/documentation/enterprise-egs)
 
@@ -798,6 +798,6 @@ For airgap/offline deployments where clusters don't have internet access, EGS pr
 
 The scripts support both Docker Hub and private registries like Nexus, with auto-detection of registry type.
 
-👉 **For detailed instructions, see [Airgap Image Management Documentation](airgap-image-push/README-airgap-images.md)**
+👉 **For detailed instructions, see [Airgap Image Management Documentation](airgap-image-push/README-airgap-images.html)**
 
 ---

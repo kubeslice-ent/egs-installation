@@ -350,26 +350,55 @@ hr {
   margin: 32px 0;
 }
 
-/* Hide navigation and footer completely */
+/* HIDE ALL NAVIGATION - More aggressive approach */
 .site-nav,
+.site-nav *,
 .trigger,
+.trigger *,
 .page-link,
-nav ul,
-nav li a,
-.site-footer {
+nav,
+nav *,
+header nav,
+header .trigger,
+.site-header nav,
+.site-header .site-nav,
+.site-header .trigger,
+.menu-icon,
+label[for="nav-trigger"],
+input#nav-trigger,
+.site-footer,
+.site-footer * {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
 }
 
 /* Keep only the site title visible */
 .site-header {
   border-bottom: 2px solid var(--primary-color) !important;
   padding: 15px 0 !important;
+  min-height: auto !important;
+}
+
+.site-header .wrapper {
+  display: flex !important;
+  justify-content: flex-start !important;
 }
 
 .site-title {
   font-size: 24px !important;
   font-weight: 700 !important;
   color: var(--primary-color) !important;
+  position: relative !important;
+  left: 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  height: auto !important;
 }
 
 /* Responsive adjustments */
