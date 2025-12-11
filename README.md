@@ -210,24 +210,30 @@ If you have Prometheus, GPU Operator, or PostgreSQL already running:
 
 ```yaml
 kubeslice_controller_egs:
-  skip_installation: false
-  use_global_kubeconfig: true
-  namespace: "kubeslice-controller"
-  release: "egs-controller"
-  chart: "kubeslice-controller-egs"
+  skip_installation: false                     # Do not skip the installation of the controller
+  use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
+  specific_use_local_charts: true              # Override to use local charts for the controller
+  kubeconfig: ""                               # Path to kubeconfig (empty = uses global_kubeconfig)
+  kubecontext: ""                              # Kubecontext (empty = uses global_kubecontext)
+  namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
+  release: "egs-controller"                    # Helm release name for the controller
+  chart: "kubeslice-controller-egs"            # Helm chart name for the controller
   inline_values:
     global:
       imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
       kubeTally:
         enabled: true
-      postgresSecretName: kubetally-db-credentials
-      postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"
-      postgresPort: 5432
-      postgresUser: "postgres"
-      postgresPassword: "postgres"
-      postgresDB: "postgres"
-      postgresSslmode: disable
-      prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090
+        postgresSecretName: kubetally-db-credentials
+        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"
+        postgresPort: 5432
+        postgresUser: "postgres"
+        postgresPassword: "postgres"
+        postgresDB: "postgres"
+        postgresSslmode: disable
+        prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090
+  helm_flags: "--wait --timeout 5m --debug"
+  verify_install: false
+  verify_install_timeout: 30
 ```
 
 📖 See **[egs-installer-config.yaml](egs-installer-config.yaml#L75-L113)** for complete example.
@@ -240,11 +246,16 @@ The UI typically requires **no changes** from defaults.
 
 ```yaml
 kubeslice_ui_egs:
-  skip_installation: false
-  use_global_kubeconfig: true
-  namespace: "kubeslice-controller"
-  release: "egs-ui"
-  chart: "kubeslice-ui-egs"
+  skip_installation: false                     # Do not skip the installation of the UI
+  use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
+  kubeconfig: ""                               # Path to kubeconfig (empty = uses global_kubeconfig)
+  kubecontext: ""                              # Kubecontext (empty = uses global_kubecontext)
+  namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
+  release: "egs-ui"                            # Helm release name for the UI
+  chart: "kubeslice-ui-egs"                    # Helm chart name for the UI
+  specific_use_local_charts: true              # Override to use local charts for the UI
+  helm_flags: "--wait --timeout 5m --debug"
+  verify_install: false
 ```
 
 📖 See **[egs-installer-config.yaml](egs-installer-config.yaml#L117-L178)** for complete example.
@@ -255,12 +266,15 @@ kubeslice_ui_egs:
 
 ```yaml
 kubeslice_worker_egs:
-  - name: "worker-1"
-    use_global_kubeconfig: true
-    skip_installation: false
-    namespace: "kubeslice-system"
-    release: "egs-worker"
-    chart: "kubeslice-worker-egs"
+  - name: "worker-1"                           # Worker name (must match cluster_registration)
+    use_global_kubeconfig: true                # Use global kubeconfig for this worker
+    kubeconfig: ""                             # Path to kubeconfig (empty = uses global_kubeconfig)
+    kubecontext: ""                            # Kubecontext (empty = uses global_kubecontext)
+    skip_installation: false                   # Do not skip the installation of the worker
+    specific_use_local_charts: true            # Override to use local charts for this worker
+    namespace: "kubeslice-system"              # Kubernetes namespace for this worker
+    release: "egs-worker"                      # Helm release name for the worker
+    chart: "kubeslice-worker-egs"              # Helm chart name for the worker
     inline_values:
       global:
         imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
@@ -273,6 +287,9 @@ kubeslice_worker_egs:
         grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
       kubesliceNetworking:
         enabled: false
+    helm_flags: "--wait --timeout 5m --debug"
+    verify_install: true
+    verify_install_timeout: 60
 ```
 
 📖 See **[egs-installer-config.yaml](egs-installer-config.yaml#L181-L240)** for complete example.
@@ -305,34 +322,47 @@ If you set `enable_install_additional_apps: true`, configure the `additional_app
 ```yaml
 additional_apps:
   # GPU Operator - Required for GPU workloads
-  - name: "gpu-operator"
-    skip_installation: false
-    use_global_kubeconfig: true
-    namespace: "egs-gpu-operator"
-    release: "gpu-operator"
-    chart: "gpu-operator"
+  - name: "gpu-operator"                       # Name of the application
+    skip_installation: false                   # Do not skip the installation
+    use_global_kubeconfig: true                # Use global kubeconfig
+    kubeconfig: ""                             # Path to kubeconfig (empty = uses global)
+    kubecontext: ""                            # Kubecontext (empty = uses global)
+    namespace: "egs-gpu-operator"              # Namespace where GPU operator will be installed
+    release: "gpu-operator"                    # Helm release name
+    chart: "gpu-operator"                      # Helm chart name
     repo_url: "https://helm.ngc.nvidia.com/nvidia"
     version: "v24.9.1"
+    specific_use_local_charts: true
     inline_values:
-      driver:
-        enabled: false                    # Set true if nodes need NVIDIA drivers
+      hostPaths:
+        driverInstallDir: "/home/kubernetes/bin/nvidia"
       toolkit:
         installDir: "/home/kubernetes/bin/nvidia"
       cdi:
         enabled: true
         default: true
+      driver:
+        enabled: false                         # Set true if nodes need NVIDIA drivers
+    helm_flags: "--debug"
+    verify_install: false
+    verify_install_timeout: 600
 
   # Prometheus - Required for monitoring
-  - name: "prometheus"
-    skip_installation: false
-    use_global_kubeconfig: true
-    namespace: "egs-monitoring"
-    release: "prometheus"
-    chart: "kube-prometheus-stack"
+  - name: "prometheus"                         # Name of the application
+    skip_installation: false                   # Do not skip the installation
+    use_global_kubeconfig: true                # Use global kubeconfig
+    kubeconfig: ""                             # Path to kubeconfig (empty = uses global)
+    kubecontext: ""                            # Kubecontext (empty = uses global)
+    namespace: "egs-monitoring"                # Namespace where Prometheus will be installed
+    release: "prometheus"                      # Helm release name
+    chart: "kube-prometheus-stack"             # Helm chart name
     repo_url: "https://prometheus-community.github.io/helm-charts"
     version: "v45.0.0"
+    specific_use_local_charts: true
     inline_values:
       prometheus:
+        service:
+          type: ClusterIP
         prometheusSpec:
           additionalScrapeConfigs:
             - job_name: gpu-metrics
@@ -345,16 +375,23 @@ additional_apps:
                       - egs-gpu-operator
       grafana:
         enabled: true
+    helm_flags: "--debug"
+    verify_install: false
 
   # PostgreSQL - Required for KubeTally
-  - name: "postgresql"
-    skip_installation: false
-    use_global_kubeconfig: true
-    namespace: "kt-postgresql"
-    release: "kt-postgresql"
-    chart: "postgresql"
+  - name: "postgresql"                         # Name of the application
+    skip_installation: false                   # Do not skip the installation
+    use_global_kubeconfig: true                # Use global kubeconfig
+    kubeconfig: ""                             # Path to kubeconfig (empty = uses global)
+    kubecontext: ""                            # Kubecontext (empty = uses global)
+    namespace: "kt-postgresql"                 # Namespace where PostgreSQL will be installed
+    release: "kt-postgresql"                   # Helm release name
+    chart: "postgresql"                        # Helm chart name
     repo_url: "https://charts.bitnami.com/bitnami"
     version: "16.7.27"
+    specific_use_local_charts: true
+    helm_flags: "--debug"
+    verify_install: false
 ```
 
 📖 See **[egs-installer-config.yaml](egs-installer-config.yaml#L255-L380)** for complete additional_apps configuration.
@@ -488,17 +525,35 @@ For multi-cluster deployments with workers in different clusters:
 
 ```yaml
 kubeslice_worker_egs:
-  - name: "worker-1"
-    use_global_kubeconfig: false
-    kubeconfig: "path/to/worker-1-kubeconfig.yaml"
-    kubecontext: "worker-1-context"
-    # ...
+  - name: "worker-1"                           # Worker name (must match cluster_registration)
+    use_global_kubeconfig: false               # Do NOT use global kubeconfig
+    kubeconfig: "worker-1-kubeconfig.yaml"     # Path to worker-1 specific kubeconfig
+    kubecontext: "worker-1-context"            # Context name in the kubeconfig file
+    skip_installation: false
+    specific_use_local_charts: true
+    namespace: "kubeslice-system"
+    release: "egs-worker"
+    chart: "kubeslice-worker-egs"
+    inline_values:
+      egs:
+        prometheusEndpoint: "http://<worker-1-prometheus-lb>:9090"  # External endpoint
+        grafanaDashboardBaseUrl: "http://<worker-1-grafana-lb>/d/Oxed_c6Wz"
+    # ... other values
 
-  - name: "worker-2"
-    use_global_kubeconfig: false
-    kubeconfig: "path/to/worker-2-kubeconfig.yaml"
-    kubecontext: "worker-2-context"
-    # ...
+  - name: "worker-2"                           # Worker name (must match cluster_registration)
+    use_global_kubeconfig: false               # Do NOT use global kubeconfig
+    kubeconfig: "worker-2-kubeconfig.yaml"     # Path to worker-2 specific kubeconfig
+    kubecontext: "worker-2-context"            # Context name in the kubeconfig file
+    skip_installation: false
+    specific_use_local_charts: true
+    namespace: "kubeslice-system"
+    release: "egs-worker-2"                    # Unique release name
+    chart: "kubeslice-worker-egs"
+    inline_values:
+      egs:
+        prometheusEndpoint: "http://<worker-2-prometheus-lb>:9090"  # External endpoint
+        grafanaDashboardBaseUrl: "http://<worker-2-grafana-lb>/d/Oxed_c6Wz"
+    # ... other values
 ```
 
 ⚠️ **Critical:** For multi-cluster, Prometheus endpoints must be externally accessible (LoadBalancer/NodePort), not `*.svc.cluster.local`.
