@@ -174,8 +174,8 @@ For clusters with namespace policies:
 #### Option A: EGS-Managed Prerequisites (Recommended)
 
 Let EGS install Prometheus, GPU Operator, and PostgreSQL:
-   
-   ```yaml
+
+```yaml
 # egs-installer-config.yaml
 global_kubeconfig: "path/to/kubeconfig"    # Required
 global_kubecontext: "your-context"         # Required
@@ -207,8 +207,8 @@ If you have Prometheus, GPU Operator, or PostgreSQL already running:
 ---
 
 ### Step 2: Configure Controller
-   
-      ```yaml
+
+```yaml
 kubeslice_controller_egs:
   skip_installation: false
   use_global_kubeconfig: true
@@ -216,7 +216,7 @@ kubeslice_controller_egs:
   release: "egs-controller"
   chart: "kubeslice-controller-egs"
   inline_values:
-        global:
+    global:
       imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
       kubeTally:
         enabled: true
@@ -238,7 +238,7 @@ kubeslice_controller_egs:
 
 The UI typically requires **no changes** from defaults.
 
-   ```yaml
+```yaml
 kubeslice_ui_egs:
   skip_installation: false
   use_global_kubeconfig: true
@@ -252,25 +252,25 @@ kubeslice_ui_egs:
 ---
 
 ### Step 4: Configure Workers
-   
-   ```yaml
-   kubeslice_worker_egs:
-     - name: "worker-1"
-       use_global_kubeconfig: true
-       skip_installation: false
-       namespace: "kubeslice-system"
+
+```yaml
+kubeslice_worker_egs:
+  - name: "worker-1"
+    use_global_kubeconfig: true
+    skip_installation: false
+    namespace: "kubeslice-system"
     release: "egs-worker"
-       chart: "kubeslice-worker-egs"
-       inline_values:
-         global:
-           imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
-         operator:
-           env:
-             - name: DCGM_EXPORTER_JOB_NAME
-               value: gpu-metrics
-         egs:
-           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
-           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
+    chart: "kubeslice-worker-egs"
+    inline_values:
+      global:
+        imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+      operator:
+        env:
+          - name: DCGM_EXPORTER_JOB_NAME
+            value: gpu-metrics
+      egs:
+        prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+        grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
       kubesliceNetworking:
         enabled: false
 ```
@@ -280,16 +280,16 @@ kubeslice_ui_egs:
 ---
 
 ### Step 5: Configure Cluster Registration
-   
-   ```yaml
-   cluster_registration:
+
+```yaml
+cluster_registration:
   - cluster_name: "worker-1"
-       project_name: "avesha"
-       telemetry:
-         enabled: true
-         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
-         telemetryProvider: "prometheus"
-       geoLocation:
+    project_name: "avesha"
+    telemetry:
+      enabled: true
+      endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+      telemetryProvider: "prometheus"
+    geoLocation:
       cloudProvider: ""
       cloudRegion: ""
 ```
@@ -301,8 +301,8 @@ kubeslice_ui_egs:
 ### Step 6: Configure Additional Applications (When `enable_install_additional_apps: true`)
 
 If you set `enable_install_additional_apps: true`, configure the `additional_apps` section for PostgreSQL, Prometheus, and GPU Operator:
-   
-   ```yaml
+
+```yaml
 additional_apps:
   # GPU Operator - Required for GPU workloads
   - name: "gpu-operator"
@@ -344,7 +344,7 @@ additional_apps:
                     names:
                       - egs-gpu-operator
       grafana:
-         enabled: true
+        enabled: true
 
   # PostgreSQL - Required for KubeTally
   - name: "postgresql"
