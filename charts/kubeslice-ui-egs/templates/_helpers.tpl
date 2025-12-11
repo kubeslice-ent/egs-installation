@@ -127,3 +127,103 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+*************************GLOBAL HELPERS*********************************
+
+{{/*
+Global image registry helper
+Returns the global image registry with fallback to empty string
+*/}}
+{{- define "global.imageRegistry" -}}
+{{- if .Values.global.imageRegistry -}}
+{{- .Values.global.imageRegistry -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Global image pull policy helper
+Returns the global image pull policy with fallback to IfNotPresent
+*/}}
+{{- define "global.imagePullPolicy" -}}
+{{- .Values.global.imagePullPolicy | default "IfNotPresent" -}}
+{{- end -}}
+
+{{/*
+Generate full image name with registry
+Usage: {{ include "global.image" (dict "registry" .Values.global.imageRegistry "repository" "my-app" "tag" "v1.0.0" "context" .) }}
+*/}}
+{{- define "global.image" -}}
+{{- $registry := .registry | default "" -}}
+{{- $repository := .repository | required "Repository is required" -}}
+{{- $tag := .tag | default "latest" -}}
+{{- if $registry -}}
+{{- printf "%s/%s:%s" $registry $repository $tag -}}
+{{- else -}}
+{{- printf "%s:%s" $repository $tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Generate image pull secrets
+Returns a list of image pull secrets based on global configuration
+*/}}
+{{- define "global.imagePullSecrets" -}}
+{{- if .Values.global.imagePullSecrets.enabled -}}
+{{- if .Values.global.imagePullSecrets.name -}}
+- name: {{ .Values.global.imagePullSecrets.name }}
+{{- end -}}
+{{- range .Values.global.imagePullSecrets.additional -}}
+- name: {{ .name }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Check if image pull secrets should be rendered
+Returns true if global image pull secrets are enabled and at least one secret is configured
+*/}}
+{{- define "global.hasImagePullSecrets" -}}
+{{- if and .Values.global.imagePullSecrets.enabled (or .Values.global.imagePullSecrets.name .Values.global.imagePullSecrets.additional) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Generate image pull secrets with fallback to legacy configuration
+This provides backward compatibility while encouraging migration to global config
+*/}}
+{{- define "global.imagePullSecretsWithFallback" -}}
+{{- if include "global.hasImagePullSecrets" . -}}
+{{- include "global.imagePullSecrets" . -}}
+{{- else if .Values.imagePullSecretsName -}}
+- name: {{ .Values.imagePullSecretsName }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Component-specific image helper
+Generates full image name for a component with global registry fallback
+Usage: {{ include "component.image" (dict "component" .Values.kubeslice.ui "global" .Values.global "context" .) }}
+*/}}
+{{- define "component.image" -}}
+{{- $component := .component | required "Component configuration is required" -}}
+{{- $global := .global | required "Global configuration is required" -}}
+{{- $registry := $global.imageRegistry | default "" -}}
+{{- $repository := $component.image | required "Component image is required" -}}
+{{- $tag := $component.tag | default "latest" -}}
+{{- if $registry -}}
+{{- printf "%s/%s:%s" $registry $repository $tag -}}
+{{- else -}}
+{{- printf "%s:%s" $repository $tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Component-specific image pull policy helper
+Returns component-specific pull policy with fallback to global, then to IfNotPresent
+*/}}
+{{- define "component.imagePullPolicy" -}}
+{{- $component := .component | required "Component configuration is required" -}}
+{{- $global := .global | required "Global configuration is required" -}}
+{{- $component.pullPolicy | default $global.imagePullPolicy | default "IfNotPresent" -}}
+{{- end -}}

@@ -75,17 +75,32 @@
           }
         }
       },
-      "imagePullSecrets": {
-        "type": "object",
-        "properties": {
-          "repository": {"type": [ "string", "null" ]},
-          "username": {"type": [ "string", "null" ]},
-          "password": {"type": [ "string", "null" ]},
-          "email": {"type": [ "string", "null" ]}
-        }
-      },"global": {
+      "global": {
         "type": "object",
         "properties":{
+          "imageRegistry": {"type": "string"},
+          "imagePullPolicy": {"type": "string"},
+          "imagePullSecrets": {
+            "type": "object",
+            "properties": {
+              "enabled": {"type": "boolean"},
+              "name": {"type": "string"},
+              "additional": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"type": "string"}
+                  }
+                }
+              },
+              "registry": {"type": [ "string", "null" ]},
+              "username": {"type": [ "string", "null" ]},
+              "password": {"type": [ "string", "null" ]},
+              "email": {"type": [ "string", "null" ]},
+              "dockerconfigjson": {"type": [ "string", "null" ]}
+            }
+          },
           "profile": {
             "type": "object",
             "properties": {
@@ -95,7 +110,8 @@
             }
           }
         }
-      }
+      },
+      "imagePullSecretsName": {"type": "string"}
     },
-    "required": ["kubeslice", "imagePullSecrets"]
+    "required": ["kubeslice", "global"]
   }

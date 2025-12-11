@@ -68,9 +68,23 @@ Create the name of the service account to use
 {{- if .Values.serviceAccount.create }}
 {{- default (include "spiffe-csi-driver.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
-{{- default "default" .Values.serviceAccount.name }}
+{{- "default" }}
 {{- end }}
 {{- end }}
+
+{{/*
+Return the image registry to use
+Priority: Parent global config > Local config > default
+*/}}
+{{- define "spiffe-csi-driver.imageRegistry" -}}
+    {{- if and .Values.global .Values.global.imageRegistry -}}
+        {{- printf "%s" .Values.global.imageRegistry -}}
+    {{- else if .Values.image.registry -}}
+        {{- printf "%s" .Values.image.registry -}}
+    {{- else -}}
+        {{- printf "harbor.saas1.smart-scaler.io/avesha/aveshasystems" -}}
+    {{- end -}}
+{{- end -}}
 
 {{- define "spiffe-csi-driver.agent-socket-path" -}}
 {{- print .Values.agentSocketPath }}

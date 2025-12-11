@@ -78,7 +78,7 @@ spec:
           # This is a small image with wait-for-it, choose whatever image
           # you prefer that waits for a service to be up. This image is built
           # from https://github.com/lqhl/wait-for-it
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.nsmgr.waitForItImageRegistry }}:{{ .Values.nsmgr.waitForItImageTag }}'
+          image: '{{ include "nsm.imageRegistry" . }}/{{ .Values.nsmgr.waitForItImageRegistry }}:{{ .Values.nsmgr.waitForItImageTag }}'
           imagePullPolicy: IfNotPresent
           args: [ "-t", "120", "spire-server.spire:8081" ]
           #command: ['sh', '-c', 'sleep 120']
@@ -92,7 +92,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          image: "{{ .Values.global.imageRegistry }}/alpine-k8s:1.0.1"
+          image: "{{ include "nsm.imageRegistry" . }}/alpine-k8s:1.0.1"
           imagePullPolicy: IfNotPresent
           name: nsmgr-init-svc-creator
           command:
@@ -101,10 +101,10 @@ spec:
           volumeMounts:
           - mountPath: /tmp/
             name: nsm-svc-config-volume
-      imagePullSecrets:
-      - name: {{ template "imagePullSecrets.secretName" . }}
+      # imagePullSecrets:
+      # - name: {{ template "imagePullSecrets.secretName" . }}
       containers:
-        - image: '{{ .Values.global.imageRegistry }}/{{ .Values.nsmgr.imageRegistry }}:{{ .Values.nsmgr.imageTag }}'
+        - image: '{{ include "nsm.imageRegistry" . }}/{{ .Values.nsmgr.imageRegistry }}:{{ .Values.nsmgr.imageTag }}'
           imagePullPolicy: IfNotPresent
           securityContext: 
           {{- if .Values.nsmgr.containerSecurityContext }}

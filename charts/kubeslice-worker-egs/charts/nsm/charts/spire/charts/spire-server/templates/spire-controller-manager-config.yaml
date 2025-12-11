@@ -5,7 +5,7 @@ metadata:
   name: spire-controller-manager-config
   namespace: spire
 data:
-   spire-controller-manager-config.yaml: |
+  spire-controller-manager-config.yaml: |
      apiVersion: spire.spiffe.io/v1alpha1
      kind: ControllerManagerConfig
      metrics:

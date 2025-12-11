@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the script version
-SCRIPT_VERSION="1.15.3"
+SCRIPT_VERSION="1.15.4"
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
@@ -709,7 +709,7 @@ parse_yaml() {
     READD_HELM_REPOS=$(yq e '.readd_helm_repos' "$yaml_file")
 
     # Extract global imagePullSecrets settings
-    GLOBAL_IMAGE_PULL_SECRET_REPO=$(yq e '.global_image_pull_secret.repository' "$yaml_file")
+    GLOBAL_IMAGE_PULL_SECRET_REPO=$(yq e '.global_image_pull_secret.registry' "$yaml_file")
     GLOBAL_IMAGE_PULL_SECRET_USERNAME=$(yq e '.global_image_pull_secret.username' "$yaml_file")
     GLOBAL_IMAGE_PULL_SECRET_PASSWORD=$(yq e '.global_image_pull_secret.password' "$yaml_file")
     GLOBAL_IMAGE_PULL_SECRET_EMAIL=$(yq e '.global_image_pull_secret.email' "$yaml_file")

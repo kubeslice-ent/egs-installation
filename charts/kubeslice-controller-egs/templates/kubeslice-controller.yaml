@@ -273,11 +273,11 @@ spec:
             properties:
               dashboardBaseUrl:
                 type: string
-              gprName:
-                type: string
               workloadDetails:
                 items:
                   properties:
+                    gprName:
+                      type: string
                     gpuDetails:
                       properties:
                         gpuIds:
@@ -6332,6 +6332,7 @@ rules:
       - workerslicegpuprovisioningrequests  
       - gpuworkloads
       - workerclustergpuallocations
+      - workloadplacements
     verbs:
       - create
       - delete
@@ -6355,6 +6356,7 @@ rules:
       - workersliceappserviceresourceusages/finalizers
       - workerslicegpuprovisioningrequests/finalizers
       - gpuworkloads/finalizers
+      - workloadplacements/finalizers
     verbs:
       - update
   - apiGroups:
@@ -6372,6 +6374,7 @@ rules:
       - workersliceappserviceresourceusages/status
       - workerslicegpuprovisioningrequests/status
       - gpuworkloads/status
+      - workloadplacements/status
     verbs:
       - get
       - list

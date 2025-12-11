@@ -1,13 +1,5 @@
-global:
-  netop_docker_existingImagePullSecret: "kubeslice-image-pull-secret"
-  # IF You dont have existing secret then pass all below values it will create new secret "avesha-docker-ips"
-  ## MANDOTORY FIELDS IF EXISTING SECRET NOT PRESENT ##
-  netop_docker_imagePullSecrets:
-    repository: 
-    username: ''
-    password: ''
-    email: ''
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+# Global values are automatically inherited from parent chart
+# No need to duplicate them here
 netop:
   networkInterface: eth0
   image: netops
@@ -44,6 +36,24 @@ netop:
     - key: "kubernetes.io/arch"
       operator: "Equal"
       value: "arm64"
+      effect: "NoSchedule"
+    - key: "kubeslice.io/egs"
+      operator: "Equal"
+      value: "dedicated-node"
+      effect: "NoSchedule"
+    - key: "node.kubernetes.io/not-ready"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/unreachable"
+      operator: "Exists"
+      effect: "NoExecute"
+      tolerationSeconds: 300
+    - key: "node.kubernetes.io/memory-pressure"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
       effect: "NoSchedule"
   affinity:
     nodeAffinity:

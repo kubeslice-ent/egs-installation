@@ -44,6 +44,10 @@ spec:
                 type: string
               template:
                 properties:
+                  enableAutoGpuSelection:
+                    description: EnableAutoGpuSelection is a flag to enable auto gpu
+                      selection
+                    type: boolean
                   enableEviction:
                     description: EnableEviction is a boolean that is a flag to enable
                       eviction

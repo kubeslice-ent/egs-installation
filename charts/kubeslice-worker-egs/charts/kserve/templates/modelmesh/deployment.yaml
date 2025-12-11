@@ -31,9 +31,9 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.kserve.modelmesh.controller.tolerations }}
+      {{- if .Values.kserve.modelmesh.controller.tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml .Values.kserve.modelmesh.controller.tolerations | nindent 8 }}
       {{- end }}
       {{- with .Values.kserve.modelmesh.controller.topologySpreadConstraints }}
       topologySpreadConstraints:

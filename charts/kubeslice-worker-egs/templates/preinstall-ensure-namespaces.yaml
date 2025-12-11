@@ -1,0 +1,83 @@
+# Ensure required namespaces exist before resources are created
+# This hook creates namespaces if they don't exist (idempotent)
+# Subcharts will also create these namespaces, but this ensures they exist
+# before image pull secrets are created (hook-weight -20)
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-ensure-namespaces
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    spec:
+      {{- if .Values.operator.tolerations }}
+      tolerations: {{ toYaml .Values.operator.tolerations | nindent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      serviceAccountName: kubeslice-preinstall
+      containers:
+        - name: ensure-namespaces
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.alpine.image }}:{{ .Values.alpine.tag }}"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Ensuring required namespaces exist..."
+              
+              # Function to create namespace if it doesn't exist
+              ensure_namespace() {
+                local ns=$1
+                if kubectl get namespace "$ns" >/dev/null 2>&1; then
+                  echo "Namespace '$ns' already exists, skipping creation"
+                else
+                  echo "Creating namespace '$ns'..."
+                  kubectl create namespace "$ns" || {
+                    # If creation fails, check if it was created by another process
+                    sleep 2
+                    if kubectl get namespace "$ns" >/dev/null 2>&1; then
+                      echo "Namespace '$ns' was created by another process"
+                    else
+                      echo "Failed to create namespace '$ns'"
+                      exit 1
+                    fi
+                  }
+                fi
+              }
+              
+              # Ensure required namespaces
+              ensure_namespace "spire"
+              ensure_namespace "kubeslice-nsm-webhook-system"
+              
+              {{- if and .Values.kserve .Values.kserve.localmodel .Values.kserve.localmodel.enabled }}
+              ensure_namespace "{{ .Values.kserve.localmodel.jobNamespace | default "kserve-localmodel-jobs" }}"
+              {{- end }}
+              
+              echo "All required namespaces are ready"
+      {{- $imagePullSecretName := "" }}
+      {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.secretName }}
+        {{- $imagePullSecretName = .Values.global.imagePullSecrets.secretName }}
+      {{- else if .Values.imagePullSecretsName }}
+        {{- $imagePullSecretName = .Values.imagePullSecretsName }}
+      {{- end }}
+      {{- if $imagePullSecretName }}
+      imagePullSecrets:
+        - name: {{ $imagePullSecretName }}
+      {{- end }}
+

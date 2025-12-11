@@ -30,6 +30,9 @@ spec:
       {{ toYaml .Values.egsAgent.labels | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.egsAgent.tolerations }}
+      tolerations: {{ toYaml .Values.egsAgent.tolerations | nindent 8 }}
+      {{- end }}
       {{- if .Values.egsAgent.affinity }}
       affinity:
       {{ toYaml .Values.egsAgent.affinity | nindent 8 }}
@@ -38,7 +41,7 @@ spec:
         - name: tmp-volume
           emptyDir: {} # Creates a temporary, writable directory
       containers:
-      - image: '{{ .Values.global.imageRegistry }}/{{ .Values.egsAgent.image }}:{{ .Values.egsAgent.tag }}'
+      - image: {{ include "kubeslice.image" (dict "imageRoot" .Values.egsAgent "global" .Values.global) }}
         volumeMounts: # Add this section
           - name: tmp-volume
             mountPath: /tmp # Mounts the writable volume at /tmp      
@@ -46,7 +49,7 @@ spec:
         {{- if .Values.egsAgent.containerSecurityContext }}
         {{ toYaml .Values.egsAgent.containerSecurityContext | nindent 10 }}
         {{- end }}
-        imagePullPolicy: "{{ .Values.egsAgent.pullPolicy }}"
+        imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.egsAgent.pullPolicy "global" .Values.global) }}
         env:
           - name: LOG_LEVEL
             value: "{{ .Values.egsAgent.logLevel }}"
@@ -82,14 +85,10 @@ spec:
       serviceAccountName: {{ .Values.egsAgent.secretName }}
       terminationGracePeriodSeconds: 10
       imagePullSecrets:
-        - name: kubeslice-image-pull-secret
+        - name: {{ include "kubeslice.imagePullSecrets" . }}
         # - name: kubeslice-aveshadev-secret
         # Allow this pod to be scheduled on nodes with any taints, as it is a critical component
         # and needs to tolerate all taints to ensure it can run on any available node.
-      {{- if .Values.egsAgent.tolerations }}
-      tolerations: 
-      {{ toYaml .Values.egsAgent.tolerations | nindent 8 }}
-      {{- end }}
 
 ---
 apiVersion: v1
@@ -122,6 +121,27 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+    - ""
+    - apps
+    - batch
+    resources:
+    - '*'
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - events
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -146,7 +166,7 @@ metadata:
   namespace: kubeslice-system
 data:
   {{- with .Values.egsAgent.agentSecret }}
-    API_GW_ENDPOINT: {{ .endpoint | default "" | b64enc | quote }}
-    API_GW_KEY: {{ .key | default "" | b64enc | quote }}
-    API_GW_CA_CRT: {{ get . "ca.crt" | default "" | b64enc | quote }}
+  API_GW_ENDPOINT: {{ .endpoint | default "" | b64enc | quote }}
+  API_GW_KEY: {{ .key | default "" | b64enc | quote }}
+  API_GW_CA_CRT: {{ get . "ca.crt" | default "" | b64enc | quote }}
   {{- end }}

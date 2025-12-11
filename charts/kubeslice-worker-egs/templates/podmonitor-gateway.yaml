@@ -1,0 +1,23 @@
+{{- if .Values.monitoring.podMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: gateway-pods-podmonitor
+  namespace: {{ .Values.monitoring.podMonitor.namespace }}
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - kubeslice-system
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scheme: http
+  selector:
+    matchLabels:
+      kubeslice.io/pod-type: slicegateway
+{{- end }}
+

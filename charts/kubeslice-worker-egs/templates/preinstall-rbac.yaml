@@ -57,10 +57,12 @@ rules:
       - pods
       - nodes/metrics
       - configmaps
+      - namespaces
     verbs:
       - get
       - list
       - watch
+      - create
   - apiGroups:
       - "authentication.k8s.io"
     resources:

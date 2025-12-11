@@ -109,10 +109,15 @@ spec:
       name: spire-install-clusterid-cr
       namespace: {{ .Release.Namespace }}
     spec:
+      tolerations:
+        - key: "kubeslice.io/egs"
+          operator: "Equal"
+          value: "dedicated-node"
+          effect: "NoSchedule"
       serviceAccountName: spire-install-clusterid-cr
       containers:
         - name: kubectl
-          image: "{{ .Values.global.imageRegistry }}/alpine-k8s:1.0.1"
+          image: "{{ include "spire.imageRegistry" . }}/alpine-k8s:1.0.1"
           command:
             - /bin/sh
             - -c

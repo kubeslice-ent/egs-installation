@@ -414,7 +414,7 @@ spec:
       serviceAccountName: spire-install-crds
       containers:
         - name: kubectl
-          image: "{{ .Values.global.imageRegistry }}/alpine-k8s:1.0.1"
+          image: "{{ include "spire.imageRegistry" . }}/alpine-k8s:1.0.1"
           command:
             - /bin/sh
             - -c
@@ -430,3 +430,30 @@ spec:
             - key: "crds.yaml"
               path: "crds.yaml"
       restartPolicy: OnFailure
+      tolerations:
+      - key: "kubeslice.io/node-type"
+        operator: "Equal"
+        value: "gateway"
+        effect: "NoSchedule"
+      - key: "kubeslice.io/node-type"
+        operator: "Equal"
+        value: "gateway"
+        effect: "NoExecute"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      - key: "node.kubernetes.io/memory-pressure"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"

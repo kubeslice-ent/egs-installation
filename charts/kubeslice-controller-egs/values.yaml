@@ -2,7 +2,23 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  # Global image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+  
+  # Global image pull secrets configuration
+  imagePullSecrets:
+    # Name of the image pull secret to create/use
+    name: "kubeslice-image-pull-secret"
+    # Create the secret from provided credentials (set to false if using external secret)
+    create: true
+    # Registry credentials (only used if create: true)
+    registry: https://index.docker.io/v1/
+    username: ""
+    password: ""
+    email: ""
+    # Pre-encoded dockerconfigjson (alternative to username/password, used if create: false)
+    dockerconfigjson: ""
+  
   # user can configure labels or annotations that EGS Controller namespaces should have
   namespaceConfig:
     labels: {}
@@ -83,7 +99,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.15.3
+    tag: 1.15.4
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -111,7 +127,7 @@ kubeslice:
           # minio service type
           type: "LoadBalancer"
           # minio service annotations
-          annotations: { }
+          annotations: {}
         labels:
           app: minio
     labels:
@@ -145,9 +161,13 @@ kubeslice:
         cpu: 250m
         memory: 256Mi
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
-        nodeAffinity:
+      nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -166,7 +186,7 @@ egs:
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: 1.14.2
+    tag: 1.14.3
     imagePullPolicy: IfNotPresent
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60
@@ -203,9 +223,13 @@ egs:
         cpu: 10m
         memory: 64Mi
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
-        nodeAffinity:
+      nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -217,7 +241,7 @@ egs:
     # Image name for the queue-manager
     image: queue-manager
     # Image tag for the queue-manager
-    tag: 1.13.2
+    tag: 1.13.3
     imagePullPolicy: IfNotPresent
     service:
       name: egs-queue-manager
@@ -246,9 +270,13 @@ egs:
         type: RuntimeDefault
     resources: {}
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
-        nodeAffinity:
+      nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -260,7 +288,7 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.14.2
+    tag: 1.14.3
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
@@ -295,9 +323,13 @@ egs:
         cpu: 10m
         memory: 64Mi
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
-        nodeAffinity:
+      nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -305,11 +337,12 @@ egs:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"                    
 
-imagePullSecretsName: "kubeslice-image-pull-secret"
-# leave the below fields empty if secrets are managed externally.
-imagePullSecrets:
-  repository: https://index.docker.io/v1/ ## Value to be used incase using the docker hub images-  https://index.docker.io/v1/
-  username:
-  password:
-  email:
-  dockerconfigjson: ## Value to be used if using external secret managers
+# ServiceMonitor configuration for Prometheus monitoring
+serviceMonitor:
+  # Enable or disable ServiceMonitor deployment
+  enabled: false
+  # Namespace where ServiceMonitor will be deployed
+  namespace: egs-monitoring
+
+# Legacy configuration has been moved to global.imagePullSecrets above
+# All templates now use the global configuration for consistency

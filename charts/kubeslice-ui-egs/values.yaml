@@ -2,7 +2,32 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates. 
 global:
+  # Global image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+  
+  # Global image pull policy - can be overridden per component
+  imagePullPolicy: IfNotPresent
+  
+  # Global image pull secrets configuration
+  imagePullSecrets:
+    # Enable/disable global image pull secrets
+    enabled: true
+    # Name of the secret to use globally
+    name: "kubeslice-ui-image-pull-secret"
+    # Additional secrets (useful for multi-registry setups)
+    additional: []
+    # Example:
+    # additional:
+    #   - name: "additional-registry-secret"
+    #   - name: "another-registry-secret"
+    
+    # Secret creation configuration (leave empty if secrets are managed externally)
+    registry: https://index.docker.io/v1/ ## Value to be used incase using the docker hub images
+    username:
+    password:
+    email:
+    dockerconfigjson: ## Value to be used if using external secret managers
+
   profile:
     openshift: false
   gpr:
@@ -26,6 +51,9 @@ global:
       maxGprPerWorkspace:
         max: 10000
 
+# Legacy configuration - kept for backward compatibility with existing secret creation templates  
+imagePullSecretsName: "kubeslice-ui-image-pull-secret"
+
 kubeTally:
   costApiUrl: http://kubetally-pricing-service:30001
 kubeslice:
@@ -33,7 +61,7 @@ kubeslice:
 
   ui:
     image: kubeslice-ui-ent-egs
-    tag: 1.15.3
+    tag: 1.15.4
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -58,7 +86,11 @@ kubeslice:
       seccompProfile:
         type: RuntimeDefault
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -69,7 +101,7 @@ kubeslice:
                     operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.15.3
+    tag: 1.15.4
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -94,7 +126,11 @@ kubeslice:
       seccompProfile:
         type: RuntimeDefault
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -197,7 +233,11 @@ kubeslice:
       seccompProfile:
         type: RuntimeDefault
     tolerations:
-    - operator: "Exists"
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -209,7 +249,7 @@ kubeslice:
 
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 1.15.3
+    tag: 1.15.4
     pullPolicy: IfNotPresent
     env:
       - name: DCGM_METRIC_JOB_VALUE
@@ -245,6 +285,10 @@ kubeslice:
         memory: 256Mi
     tolerations:
       - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -257,7 +301,7 @@ kubeslice:
   egsCoreApis:
     enabled: true
     image: egs-core-apis
-    tag: 1.14.3
+    tag: 1.14.4
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -289,6 +333,12 @@ kubeslice:
       runAsNonRoot: true             # Ensure the container does not run as root
       seccompProfile:
         type: RuntimeDefault
+    tolerations:
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -300,7 +350,7 @@ kubeslice:
 
   workerinstaller:
     image: worker-installer
-    tag: 1.9.0
+    tag: 1.10.0
     pullPolicy: IfNotPresent
 
   prometheus:
@@ -314,12 +364,3 @@ egs:
   ControllerPrometheusTlsCert: ""
   ControllerPrometheusTlsKey: ""
   ControllerPrometheusTlsCa: ""
-
-imagePullSecretsName: "kubeslice-ui-image-pull-secret"
-# leave the below fields empty if secrets are managed externally.
-imagePullSecrets:
-  repository: https://index.docker.io/v1/ ## Value to be used incase using the docker hub images-  https://index.docker.io/v1/
-  username:
-  password:
-  email:
-  dockerconfigjson: ## Value to be used if using external secret managers

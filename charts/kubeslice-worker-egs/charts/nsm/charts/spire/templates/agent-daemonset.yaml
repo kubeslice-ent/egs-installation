@@ -16,23 +16,37 @@ spec:
       labels:
         app: spire-agent
     spec:
+      tolerations:
+        - key: "kubeslice.io/egs"
+          operator: "Equal"
+          value: "dedicated-node"
+          effect: "NoSchedule"
+        - operator: "Exists"
       hostPID: true
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: spire-agent
+      {{- $imagePullSecretName := "" }}
+      {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.secretName }}
+        {{- $imagePullSecretName = .Values.global.imagePullSecrets.secretName }}
+      {{- end }}
+      {{- if $imagePullSecretName }}
+      imagePullSecrets:
+        - name: {{ $imagePullSecretName }}
+      {{- end }}
       initContainers:
         - name: init
           # This is a small image with wait-for-it, choose whatever image
           # you prefer that waits for a service to be up. This image is built
           # from https://github.com/lqhl/wait-for-it
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.spireAgent.waitForItImageRegistry }}:{{ .Values.spireAgent.waitForItImageTag }}'
+          image: '{{ include "spire.imageRegistry" . }}/{{ .Values.spireAgent.waitForItImageRegistry }}:{{ .Values.spireAgent.waitForItImageTag }}'
           imagePullPolicy: IfNotPresent
           args: ["-t", "30", "spire-server:8081"]
         - name: init-bundle
           # Additional init container with the same wait-for-it image to
           # provide workaround for https://github.com/spiffe/spire/issues/3032
           # It checks if the bundle is in place and ready to be parsed or not.
-          image: '{{ .Values.global.imageRegistry }}/{{ .Values.spireAgent.waitForItImageRegistry }}:{{ .Values.spireAgent.waitForItImageTag }}'
+          image: '{{ include "spire.imageRegistry" . }}/{{ .Values.spireAgent.waitForItImageRegistry }}:{{ .Values.spireAgent.waitForItImageTag }}'
           imagePullPolicy: IfNotPresent
           command: ['bash', '-c', "t=0; until [ -f /run/spire/bundle/bundle.crt 2>&1 ] || [ $t -eq 60 ]; do t=`expr $t + 1`; sleep 1; done"]
           volumeMounts:
@@ -43,7 +57,7 @@ spec:
       {{- end }}
       containers:
         - name: spire-agent
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.spireAgent.imageRegistry }}:{{ .Values.spireAgent.imageTag }}
+          image: {{ include "spire.imageRegistry" . }}/{{ .Values.spireAgent.imageRegistry }}:{{ .Values.spireAgent.imageTag }}
           args: ["-config", "/run/spire/config/agent.conf"]
           volumeMounts:
             - name: spire-config
@@ -93,5 +107,3 @@ spec:
                   path: spire-agent
                   expirationSeconds: 7200
                   audience: spire-server
-      tolerations:
-      - operator: "Exists"

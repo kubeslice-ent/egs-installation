@@ -1,8 +1,24 @@
+{{- $secretName := "kubeslice-admission-webhook-certs" }}
+{{- $existingSecret := lookup "v1" "Secret" .Release.Namespace $secretName }}
+{{- $caCertEnc := "" -}}
+{{- $tlsCertEnc := "" -}}
+{{- $tlsKeyEnc := "" -}}
+{{- if not $existingSecret }}
+# generate a new ca & certificate
 {{- $ca := genCA "admission-controller-ca" 3650 -}}
+{{- $caCertEnc = $ca.Cert | b64enc -}}
 {{- $cn := printf "kubeslice-webhook-service" -}}
 {{- $altName1 := printf "%s.%s.svc" $cn .Release.Namespace }}
 {{- $altName2 := printf "%s.%s.svc.cluster.local" $cn .Release.Namespace }}
 {{- $cert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca -}}
+{{- $tlsCertEnc = $cert.Cert | b64enc -}}
+{{- $tlsKeyEnc = $cert.Key | b64enc -}}
+{{- else }}
+# Reuse existing certificates from the secret
+{{- $caCertEnc = index $existingSecret.data "ca.crt" -}}
+{{- $tlsCertEnc = index $existingSecret.data "tls.crt" -}}
+{{- $tlsKeyEnc = index $existingSecret.data "tls.key" -}}
+{{- end }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -10,8 +26,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
 type: Opaque
 data:
-  tls.crt: {{ $cert.Cert | b64enc }}
-  tls.key: {{ $cert.Key | b64enc }}
+  ca.crt: {{ $caCertEnc }}
+  tls.crt: {{ $tlsCertEnc }}
+  tls.key: {{ $tlsKeyEnc }}
 ---
 apiVersion: v1
 kind: Service
@@ -48,7 +65,7 @@ webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
-    caBundle: {{ $ca.Cert | b64enc }}
+    caBundle: {{ $caCertEnc }}
     service:
       name: kubeslice-webhook-service
       namespace: {{ .Release.Namespace }}
@@ -98,7 +115,7 @@ webhooks:
 - admissionReviewVersions:
     - v1
   clientConfig:
-    caBundle: {{ $ca.Cert | b64enc }}
+    caBundle: {{ $caCertEnc }}
     service:
       name: kubeslice-webhook-service
       namespace: {{ .Release.Namespace }}
@@ -140,7 +157,7 @@ webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
-    caBundle: {{ $ca.Cert | b64enc }}
+    caBundle: {{ $caCertEnc }}
     service:
       name: kubeslice-webhook-service
       namespace: {{ .Release.Namespace }}

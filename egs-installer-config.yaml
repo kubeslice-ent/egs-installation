@@ -31,7 +31,7 @@ run_commands: false
 
 # Global image pull secret settings for AirGap Installations
 global_image_pull_secret:
-  repository: "https://index.docker.io/v1/"   # Docker registry URL
+  registry: "https://index.docker.io/v1/"   # Docker registry URL
   username: ""                                # Global Docker registry username
   password: ""                                # Global Docker registry password
 
@@ -105,6 +105,27 @@ kubeslice_controller_egs:
     kubeslice:
       controller:
         endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
+        replication:
+          minio:
+            # Whether to install MinIO
+            install: "true"
+            # Storage size for MinIO
+            storage: 1Gi
+            # Username for MinIO
+            username: minioadmin
+            # Password for MinIO
+            password: minioadmin
+            # service options
+            service:
+              # minio service type
+              type: "LoadBalancer"
+    # ServiceMonitor configuration for Prometheus monitoring
+    serviceMonitor:
+      # Enable or disable ServiceMonitor deployment
+      enabled: true
+      # Namespace where ServiceMonitor will be deployed
+      namespace: egs-monitoring
+
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
   verify_install: false                        # Verify the installation of the controller
@@ -223,6 +244,10 @@ kubeslice_worker_egs:
             value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
           - name: HEALTH_CHECK_INTERVAL
             value: "15m"
+      monitoring:
+        podMonitor:
+          enabled: true
+          namespace: egs-monitoring
 #### Helm Flags and Verification Settings ####
     helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
     verify_install: true                       # Verify the installation of the worker
@@ -271,7 +296,7 @@ additional_apps:
     release: "gpu-operator"                    # Helm release name for the GPU operator
     chart: "gpu-operator"                      # Helm chart name for the GPU operator
     repo_url: "https://helm.ngc.nvidia.com/nvidia" # Helm repository URL for the GPU operator
-    version: "v24.9.1"                         # Version of the GPU operator to install
+    version: "v25.3.4"                         # Version of the GPU operator to install
     specific_use_local_charts: true            # Use local charts for this application
     #### Inline Helm Values for GPU Operator ####
     inline_values:
@@ -316,14 +341,14 @@ additional_apps:
         prometheusSpec:
           storageSpec: {}                     # Placeholder for storage configuration
           additionalScrapeConfigs:
-          - job_name: nvidia-dcgm-exporter
-            kubernetes_sd_configs:
-            - role: endpoints
-            relabel_configs:
-            - source_labels: [__meta_kubernetes_pod_name]
-              target_label: pod_name
-            - source_labels: [__meta_kubernetes_pod_container_name]
-              target_label: container_name
+          # - job_name: nvidia-dcgm-exporter
+          #   kubernetes_sd_configs:
+          #   - role: endpoints
+          #   relabel_configs:
+          #   - source_labels: [__meta_kubernetes_pod_name]
+          #     target_label: pod_name
+          #   - source_labels: [__meta_kubernetes_pod_container_name]
+          #     target_label: container_name
           - job_name: gpu-metrics
             scrape_interval: 1s
             metrics_path: /metrics
@@ -369,7 +394,7 @@ additional_apps:
     release: "kt-postgresql"                  # Helm release name for PostgreSQL
     chart: "postgresql"                       # Helm chart name for PostgreSQL
     repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql" # Helm repository URL for PostgreSQL
-    version: "16.2.1"                         # Version of the PostgreSQL chart to install
+    version: "16.7.27"                         # Version of the PostgreSQL chart to install
     specific_use_local_charts: true           # Use local charts for this application
     values_file: ""                            # Path to an external values file, if any
     #### Inline Helm Values for PostgreSQL ####
@@ -496,4 +521,4 @@ required_binaries:
 #### Node Labeling Settings ####
 add_node_label: true                        # Enable node labeling during installation
 # Version of the input configuration file
-version: "1.15.3"
+version: "1.15.4"

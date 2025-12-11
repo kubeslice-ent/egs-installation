@@ -20,6 +20,7 @@
 | **🔧 Operations** | [Slice & Admin Token](docs/Slice-Admin-Token-README.md) | Token retrieval guide |
 | **💰 Operations** | [Custom Pricing](docs/Custom-Pricing-README.md) | Custom pricing configuration |
 | **🔐 Security** | [Prometheus TLS Authentication](docs/Prometheus-TLS-Authentication.md) | TLS setup for Prometheus |
+| **📦 Airgap** | [Airgap Image Management](airgap-image-push/README-airgap-images.md) | Airgap image pull and push |
 
 📚 **User Guide:** [docs.avesha.io/documentation/enterprise-egs](https://docs.avesha.io/documentation/enterprise-egs)
 
@@ -678,5 +679,18 @@ cluster_registration:
 | Prerequisites only | `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml` |
 | Uninstall | `./egs-uninstall.sh --input-yaml egs-installer-config.yaml` |
 | Preflight check | `./egs-preflight-check.sh --kubeconfig ~/.kube/config` |
+
+---
+
+## 📦 Airgap Deployment
+
+For airgap/offline deployments where clusters don't have internet access, EGS provides scripts to manage container images:
+
+1. **Extract Images**: Use `airgap-image-pull.sh` to extract all container images from EGS Helm charts
+2. **Push to Private Registry**: Use `airgap-image-push.sh` to push images to your private registry (Docker Hub, Nexus, etc.)
+
+The scripts support both Docker Hub and private registries like Nexus, with auto-detection of registry type.
+
+👉 **For detailed instructions, see [Airgap Image Management Documentation](airgap-image-push/README-airgap-images.md)**
 
 ---

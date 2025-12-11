@@ -25,6 +25,9 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
         helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     spec:
+      {{- if .Values.kserve.controller.tolerations }}
+      tolerations: {{ toYaml .Values.kserve.controller.tolerations | nindent 8 }}
+      {{- end }}
       restartPolicy: Never
       serviceAccountName: kserve-preinstall-sa
       containers:
@@ -46,16 +49,16 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /opt/scripts
-      {{- if .Values.imagePullSecretsName }}
-      imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
+      {{- $imagePullSecretName := "" }}
+      {{- if and .Values.global .Values.global.imagePullSecrets .Values.global.imagePullSecrets.secretName }}
+        {{- $imagePullSecretName = .Values.global.imagePullSecrets.secretName }}
+      {{- else if .Values.imagePullSecretsName }}
+        {{- $imagePullSecretName = .Values.imagePullSecretsName }}
       {{- end }}
-      securityContext:
-        runAsUser: 65536               # Non-root user
-        runAsGroup: 65536              # Non-root group
-        runAsNonRoot: true             # Ensure the container does not run as root
-        seccompProfile:
-          type: RuntimeDefault
+      {{- if $imagePullSecretName }}
+      imagePullSecrets:
+        - name: {{ $imagePullSecretName }}
+      {{- end }}
       volumes:
         - name: config-volume
           configMap:
