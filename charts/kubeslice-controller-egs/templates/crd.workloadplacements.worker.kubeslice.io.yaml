@@ -42,10 +42,10 @@ spec:
               burstDuration:
                 description: |-
                   BurstDuration is the duration for which the workload will be bursted
-                  Must be in time duration format (e.g., "1m", "1h", "30s", "2h30m", "1h30m45s", "1.5h", "300ms")
-                  Valid time units: ns, us (or µs), ms, s, m, h
+                  Must be in time duration format (e.g., "1m", "1h", "30s", "2h30m", "1h30m45s", "1.5h", "300ms", "365d", "2d5h", "2d5h30m")
+                  Valid time units: ns, us (or µs), ms, s, m, h, d
                 maxLength: 100
-                pattern: ^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$
+                pattern: ^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h|d))+$
                 type: string
               clusterName:
                 description: ClusterName is the name of the cluster to deploy the
@@ -83,9 +83,8 @@ spec:
                       description: Chart is the name of the Helm chart to be deployed
                       type: string
                     helmFlags:
-                      description: |-
-                        Additional Helm flags as a string (e.g., "--debug --dry-run --wait --atomic --timeout 5m")
-                        These flags will be appended to the helm command
+                      description: HelmFlags contains Helm configuration options that
+                        map to ChartSpec fields
                       properties:
                         atomic:
                           description: |-

@@ -46,10 +46,10 @@ spec:
               burstDuration:
                 description: |-
                   BurstDuration is the duration for which the workload will be bursted
-                  Must be in time duration format (e.g., "1m", "1h", "30s", "2h30m", "1h30m45s", "1.5h", "300ms")
-                  Valid time units: ns, us (or µs), ms, s, m, h
+                  Must be in time duration format (e.g., "1m", "1h", "30s", "2h30m", "1h30m45s", "1.5h", "300ms", "365d", "2d5h", "2d5h30m")
+                  Valid time units: ns, us (or µs), ms, s, m, h, d
                 maxLength: 100
-                pattern: ^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$
+                pattern: ^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h|d))+$
                 type: string
               clusterNames:
                 description: cluster names to place the workload
