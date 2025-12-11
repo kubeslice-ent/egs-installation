@@ -1,6 +1,6 @@
 # Jekyll configuration for GitHub Pages
-# Using remote theme for cleaner look without navigation clutter
-remote_theme: pages-themes/minimal@v0.2.0
+# Using minima theme with custom layout that removes navigation
+theme: minima
 title: "EGS Installer Script"
 description: "Streamline installation, upgrade, and configuration of EGS components in Kubernetes clusters"
 url: "https://repo.egs.avesha.io"
@@ -11,9 +11,11 @@ github:
   repository_url: "https://github.com/kubeslice-ent/egs-installation"
   repository_name: "egs-installation"
 
+# Disable header pages/navigation
+header_pages: []
+
 # Enable plugins
 plugins:
-  - jekyll-remote-theme
   - jekyll-seo-tag
 
 # Markdown settings
@@ -35,6 +37,7 @@ exclude:
   - "*.kubeconfig"
   - "*-kubeconfig.yaml"
 
-# Include docs folder for documentation and UI screenshots
+# Include these folders for GitHub Pages processing
 include:
   - docs/
+  - _layouts/
