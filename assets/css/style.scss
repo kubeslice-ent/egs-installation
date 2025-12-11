@@ -350,9 +350,26 @@ hr {
   margin: 32px 0;
 }
 
-/* Hide the footer completely */
+/* Hide navigation and footer completely */
+.site-nav,
+.trigger,
+.page-link,
+nav ul,
+nav li a,
 .site-footer {
   display: none !important;
+}
+
+/* Keep only the site title visible */
+.site-header {
+  border-bottom: 2px solid var(--primary-color) !important;
+  padding: 15px 0 !important;
+}
+
+.site-title {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  color: var(--primary-color) !important;
 }
 
 /* Responsive adjustments */
