@@ -608,72 +608,62 @@ After logging in, you'll have access to the following screens:
 
 <details>
 <summary><b>🔐 Login Page</b> - Enter your service account token to access EGS</summary>
-
-![EGS Login Page](docs/images/01-egs-login.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/01-egs-login.png" alt="EGS Login Page" width="100%">
 </details>
 
 <details>
 <summary><b>📊 Dashboard Overview</b> - GPU allocation and utilization at a glance</summary>
-
-![Dashboard Overview](docs/images/02-dashboard-overview.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/02-dashboard-overview.png" alt="Dashboard Overview" width="100%">
 </details>
 
 <details>
 <summary><b>💰 Cost Analysis</b> - GPU cost breakdown and utilization costs</summary>
-
-![Cost Analysis](docs/images/03-dashboard-cost-analysis.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/03-dashboard-cost-analysis.png" alt="Cost Analysis" width="100%">
 </details>
 
 <details>
 <summary><b>🔧 GPU Infrastructure Health</b> - Power usage, temperature, and memory trends</summary>
-
-![GPU Infrastructure Health](docs/images/04-dashboard-gpu-health.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/04-dashboard-gpu-health.png" alt="GPU Infrastructure Health" width="100%">
 </details>
 
 <details>
 <summary><b>📈 Dashboard Metrics</b> - Workspace metrics and cluster visualization</summary>
-
-![Dashboard Metrics](docs/images/05-dashboard-metrics.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/05-dashboard-metrics.png" alt="Dashboard Metrics" width="100%">
 </details>
 
 <details>
 <summary><b>🖥️ Clusters</b> - Registered clusters with status and health</summary>
-
-![Clusters](docs/images/06-clusters.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/06-clusters.png" alt="Clusters" width="100%">
 </details>
 
 <details>
 <summary><b>📦 Inventory</b> - Managed GPU nodes across clusters</summary>
-
-![Inventory](docs/images/07-inventory.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/07-inventory.png" alt="Inventory" width="100%">
 </details>
 
 <details>
 <summary><b>🗂️ Workspaces</b> - Application workspaces and configurations</summary>
-
-![Workspaces](docs/images/08-workspaces.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/08-workspaces.png" alt="Workspaces" width="100%">
 </details>
 
 <details>
 <summary><b>👥 RBAC</b> - Role-based access control for workspaces</summary>
-
-![RBAC](docs/images/09-rbac.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/09-rbac.png" alt="RBAC" width="100%">
 </details>
 
 <details>
 <summary><b>📋 Resource Quotas</b> - Workspace resource limits and allocations</summary>
-
-![Resource Quotas](docs/images/10-resource-quotas.png)
-
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/10-resource-quotas.png" alt="Resource Quotas" width="100%">
 </details>
 
 ---
