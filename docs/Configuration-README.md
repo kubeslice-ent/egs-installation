@@ -10,12 +10,6 @@ The script requires a YAML configuration file to define various parameters and s
 ```yaml
 ########################### MANDATORY PARAMETERS ####################################################################
 
-# Global image pull secret settings
-global_image_pull_secret:
-  repository: "https://index.docker.io/v1/"   # Docker registry URL
-  username: ""                                # Global Docker registry username
-  password: ""                                # Global Docker registry password
-
 # Kubeconfig settings
 global_kubeconfig: ""                         # Relative path to the global kubeconfig file (must be in the script directory) - Mandatory
 global_kubecontext: ""                        # Global kubecontext to use - Mandatory
@@ -47,6 +41,12 @@ enable_project_creation: true                   # Enable project creation in Kub
 enable_cluster_registration: true               # Enable cluster registration in Kubeslice
 enable_prepare_worker_values_file: true         # Prepare the worker values file for Helm charts
 enable_autofetch_egsagent_endpoint_and_token: true # if False then, skip update values of egsAgent token and endpoint in values file. 
+
+# Global image pull secret settings for AirGap Installations
+global_image_pull_secret:
+  registry: "https://index.docker.io/v1/"      # Docker registry URL
+  username: ""                                  # Global Docker registry username
+  password: ""                                  # Global Docker registry password
 
 # Global monitoring endpoint settings
 global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
@@ -111,6 +111,17 @@ kubeslice_controller_egs:
     kubeslice:
       controller:
         endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
+        replication:
+          minio:
+            install: "true"                    # Whether to install MinIO for replication
+            storage: 1Gi                       # Storage size for MinIO
+            username: minioadmin               # Username for MinIO
+            password: minioadmin               # Password for MinIO
+            service:
+              type: "LoadBalancer"             # MinIO service type
+    serviceMonitor:
+      enabled: true                            # Enable ServiceMonitor for Prometheus monitoring
+      namespace: egs-monitoring                # Namespace where ServiceMonitor will be deployed
 #### Helm Flags and Verification Settings ####
   helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
   verify_install: false                        # Verify the installation of the controller
@@ -137,7 +148,7 @@ kubeslice_ui_egs:
         url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
       uiproxy:
         service:
-          type: ClusterIP                  # Service type for the UI proxy
+          type: LoadBalancer                  # Service type for the UI proxy
           ## if type selected to NodePort then set nodePort value if required
           # nodePort:
           # port: 443
@@ -198,6 +209,8 @@ kubeslice_worker_egs:
     inline_values:
       global:
         imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
+      kubesliceNetworking:
+        enabled: true                          # Enable/disable network component installation
       operator:
         env:
           - name: DCGM_EXPORTER_JOB_NAME
@@ -220,6 +233,16 @@ kubeslice_worker_egs:
               domain: kubeslice.com
               ingressGateway:
                 className: "nginx"            # Ingress class name for the KServe gateway
+      egsGpuAgent:
+        env:
+          - name: REMOTE_HE_INFO
+            value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
+          - name: HEALTH_CHECK_INTERVAL
+            value: "15m"
+      monitoring:
+        podMonitor:
+          enabled: true                       # Enable PodMonitor for Prometheus monitoring
+          namespace: egs-monitoring           # Namespace where PodMonitor will be deployed
 #### Helm Flags and Verification Settings ####
     helm_flags: "--wait --timeout 5m --debug"          # Additional Helm flags for the worker installation
     verify_install: true                       # Verify the installation of the worker
@@ -266,7 +289,7 @@ additional_apps:
     release: "gpu-operator"                    # Helm release name for the GPU operator
     chart: "gpu-operator"                      # Helm chart name for the GPU operator
     repo_url: "https://helm.ngc.nvidia.com/nvidia" # Helm repository URL for the GPU operator
-    version: "v24.9.1"                         # Version of the GPU operator to install
+    version: "v25.3.4"                         # Version of the GPU operator to install
     specific_use_local_charts: true            # Use local charts for this application
     #### Inline Helm Values for GPU Operator ####
     inline_values:
@@ -309,22 +332,8 @@ additional_apps:
         service:
           type: ClusterIP                     # Service type for Prometheus
         prometheusSpec:
-          storageSpec:
-            volumeClaimTemplate:
-              spec:
-                accessModes: ["ReadWriteOnce"]
-                resources:
-                  requests:
-                    storage: 50Gi
+          storageSpec: {}                     # Placeholder for storage configuration
           additionalScrapeConfigs:
-          - job_name: nvidia-dcgm-exporter
-            kubernetes_sd_configs:
-            - role: endpoints
-            relabel_configs:
-            - source_labels: [__meta_kubernetes_pod_name]
-              target_label: pod_name
-            - source_labels: [__meta_kubernetes_pod_container_name]
-              target_label: container_name
           - job_name: gpu-metrics
             scrape_interval: 1s
             metrics_path: /metrics
@@ -353,7 +362,7 @@ additional_apps:
         service:
           type: ClusterIP                  # Service type for Grafana
         persistence:
-          enabled: true                       # Enable persistence
+          enabled: false                      # Disable persistence
           size: 1Gi                           # Default persistence size
     helm_flags: "--debug"                             # Additional Helm flags for this application's installation
     verify_install: false                      # Verify the installation of Prometheus
@@ -370,7 +379,7 @@ additional_apps:
     release: "kt-postgresql"                  # Helm release name for PostgreSQL
     chart: "postgresql"                       # Helm chart name for PostgreSQL
     repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql" # Helm repository URL for PostgreSQL
-    version: "16.2.1"                         # Version of the PostgreSQL chart to install
+    version: "16.7.27"                         # Version of the PostgreSQL chart to install
     specific_use_local_charts: true           # Use local charts for this application
     values_file: ""                            # Path to an external values file, if any
     #### Inline Helm Values for PostgreSQL ####
@@ -494,42 +503,56 @@ required_binaries:
 add_node_label: false                        # Enable node labeling during installation
 
 # Version of the input configuration file
-version: "1.15.0"
+version: "1.15.4"
+```
 
-## Key Updates in Version 1.15.0
+---
 
-### 🆕 New Features and Sections
+## 🆕 Key Updates in Version 1.15.4
 
-#### **API Gateway Configuration (`apigw`)**
-- **DCGM Metric Job Value**: Configure the DCGM exporter job name for metrics collection
-- **Environment Variables**: Set custom environment variables for the API gateway
+### New Features
 
-#### **Enhanced Worker Configuration**
-- **Operator Environment Variables**: Configure DCGM exporter job name for GPU metrics
-- **Updated Image Registry**: Changed to `harbor.saas1.smart-scaler.io/avesha/aveshasystems`
+#### **MinIO Replication Configuration**
+- **Purpose**: Enables data replication for disaster recovery
+- **Location**: `kubeslice_controller_egs.inline_values.kubeslice.controller.replication.minio`
+- **Options**:
+  - `install`: Whether to install MinIO (`"true"` or `"false"`)
+  - `storage`: Storage size for MinIO (default: `1Gi`)
+  - `username`/`password`: MinIO credentials
+  - `service.type`: Service type (`LoadBalancer`, `ClusterIP`, `NodePort`)
 
-#### **Updated Prometheus Configuration**
-- **NVIDIA DCGM Exporter Job**: Added dedicated scrape configuration for NVIDIA DCGM metrics
-- **Enhanced GPU Metrics Collection**: Improved monitoring for GPU operator deployments
-- **Job Naming**: Consistent naming convention for GPU monitoring jobs
+#### **ServiceMonitor for Controller**
+- **Purpose**: Enables Prometheus monitoring via ServiceMonitor CRD
+- **Location**: `kubeslice_controller_egs.inline_values.serviceMonitor`
+- **Options**:
+  - `enabled`: Enable/disable ServiceMonitor
+  - `namespace`: Namespace for ServiceMonitor deployment
 
-### 🔄 Updated Configurations
+#### **PodMonitor for Worker**
+- **Purpose**: Enables Prometheus monitoring via PodMonitor CRD
+- **Location**: `kubeslice_worker_egs[].inline_values.monitoring.podMonitor`
+- **Options**:
+  - `enabled`: Enable/disable PodMonitor
+  - `namespace`: Namespace for PodMonitor deployment
 
-#### **Image Registry Changes**
-- **Controller**: `harbor.saas1.smart-scaler.io/avesha/aveshasystems`
-- **UI**: `harbor.saas1.smart-scaler.io/avesha/aveshasystems`
-- **Worker**: `harbor.saas1.smart-scaler.io/avesha/aveshasystems`
+#### **EGS GPU Agent Configuration**
+- **Purpose**: Configures GPU agent for health checks
+- **Location**: `kubeslice_worker_egs[].inline_values.egsGpuAgent`
+- **Options**:
+  - `REMOTE_HE_INFO`: DCGM endpoint for GPU health checks
+  - `HEALTH_CHECK_INTERVAL`: Interval for health checks
 
-#### **PostgreSQL Configuration**
-- **Removed Duplicate Fields**: Cleaned up redundant chart specifications
-- **Improved Structure**: Better organization of database configuration options
+### Updated Versions
 
-### 📊 Monitoring Enhancements
+| Component | Previous Version | Current Version |
+|-----------|-----------------|-----------------|
+| GPU Operator | v24.9.1 | v25.3.4 |
+| PostgreSQL | 16.2.1 | 16.7.27 |
 
-#### **GPU Metrics Collection**
-- **DCGM Exporter Integration**: Dedicated job for NVIDIA DCGM metrics
-- **Enhanced Scraping**: Improved configuration for GPU-related metrics collection
-- **Job Naming**: Consistent naming convention for GPU monitoring jobs
+### Configuration Changes
+
+#### **Global Image Pull Secret**
+- Field renamed from `repository` to `registry` for clarity
 
 ---
 
@@ -552,7 +575,7 @@ This section provides detailed explanations of all configuration fields availabl
 | `global_helm_password`              | Password for accessing the global Helm repository, if required.                                                   | `""`                                                                                                |
 | `readd_helm_repos`                  | Re-add Helm repositories if they already exist to ensure the latest repository configuration is used.             | `true`                                                                                              |
 | `required_binaries`                 | List of binaries that are required for the installation process. The script will check for these binaries and exit if any are missing. | `yq`, `helm`, `jq`, `kubectl`                                                                      |
-| `global_image_pull_secret`          | Global Docker registry credentials for pulling images.                                                             | `repository: "https://index.docker.io/v1/", username: "", password: ""`                              |
+| `global_image_pull_secret`          | Global Docker registry credentials for pulling images.                                                             | `registry: "https://index.docker.io/v1/", username: "", password: ""`                              |
 | `global_kubeconfig`                 | Relative path to the global kubeconfig file (must be in the script directory) - Mandatory.                         | `""` (empty string)                                                                                 |
 | `global_kubecontext`                | Global kubecontext to use - Mandatory.                                                                             | `""` (empty string)                                                                                 |
 | `use_global_context`                | Use the global kubecontext for all operations by default.                                                          | `true`                                                                                              |
@@ -576,7 +599,7 @@ This section provides detailed explanations of all configuration fields availabl
 | `use_local_charts`                  | Use local Helm charts instead of fetching them from a repository.                                                  | `true`                                                                                              |
 | `local_charts_path`                 | Path to the directory containing local Helm charts.                                                                | `"charts"`                                                                                          |
 | `add_node_label`                    | Enable node labeling during installation.                                                                           | `false`                                                                                             |
-| `version`                           | Version of the input configuration file.                                                                           | `"1.15.0"`                                                                                          |
+| `version`                           | Version of the input configuration file.                                                                           | `"1.15.4"`                                                                                          |
 
 ### Kubeslice Controller Configuration (`kubeslice_controller_egs`)
 
@@ -648,7 +671,7 @@ This section provides detailed explanations of all configuration fields availabl
 | `release`                   | Helm release name for the application.                                                                  | `"gpu-operator"`                                                               |
 | `chart`                     | Helm chart name for the application.                                                                    | `"gpu-operator"`                                                               |
 | `repo_url`                  | Helm repository URL for the application.                                                                | `"https://helm.ngc.nvidia.com/nvidia"`                                        |
-| `version`                   | Version of the application to install.                                                                 | `"v24.9.1"`                                                                   |
+| `version`                   | Version of the application to install.                                                                 | `"v25.3.4"`                                                                   |
 | `specific_use_local_charts` | Use local charts for this application.                                                                 | `true`                                                                        |
 | `values_file`               | Path to an external values file, if any.                                                               | `""`                                                                           |
 | `inline_values`             | Inline values passed to the Helm chart during installation.                                              | See inline values section below                                                |
@@ -670,7 +693,13 @@ This section provides detailed explanations of all configuration fields availabl
 | `manifests[].use_global_kubeconfig` | Determines whether the global kubeconfig and context should be used. If `false`, specific kubeconfig and context must be provided. | `boolean`        | Yes          | `true`                                                                                                              |
 | `manifests[].kubeconfig`        | Path to a specific Kubernetes configuration file to be used instead of the global kubeconfig.                           | `string`          | No           | `/path/to/specific/kubeconfig`                                                                                      |
 | `manifests[].kubecontext`       | The context name in the specific Kubernetes configuration file to be used for this manifest.                            | `string`          | No           | `specific-context`                                                                                                  |
-| `
+| `manifests[].namespace`         | The Kubernetes namespace where the manifest should be applied.                                                           | `string`          | Yes          | `egs-gpu-operator`                                                                                                  |
+| `manifests[].skip_installation` | Whether to skip applying this manifest.                                                                                  | `boolean`         | No           | `false`                                                                                                             |
+| `manifests[].verify_install`    | Whether to verify the application of this manifest.                                                                      | `boolean`         | No           | `false`                                                                                                             |
+| `manifests[].verify_install_timeout` | Timeout for verification in seconds.                                                                                | `integer`         | No           | `30`                                                                                                                |
+| `manifests[].skip_on_verify_fail` | Whether to skip if verification fails.                                                                                 | `boolean`         | No           | `true`                                                                                                              |
+
+---
 
 ## Accessing Grafana Dashboard
 
