@@ -561,6 +561,123 @@ These optional settings are available in `egs-installer-config.yaml`:
 
 ---
 
+### Step 12: Access the EGS UI
+
+After successful installation, access the EGS UI:
+
+#### 1. Get the UI URL
+
+```bash
+# Get the UI service external IP/hostname
+kubectl get svc kubeslice-ui-proxy -n kubeslice-controller
+
+# Example output:
+# NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)
+# kubeslice-ui-proxy   LoadBalancer   10.x.x.x       <EXTERNAL-IP>    443:xxxxx/TCP
+```
+
+Access the UI at: `https://<EXTERNAL-IP>`
+
+#### 2. Get the Admin Token
+
+```bash
+# Get the admin token for login (use absolute path to kubeconfig)
+./fetch_egs_slice_token.sh -k /path/to/kubeconfig -p avesha -a -u admin
+```
+
+The script will output the admin token. Copy and paste it into the UI login screen.
+
+**Parameters:**
+- `-k /path/to/kubeconfig`: Absolute path to your kubeconfig file
+- `-p avesha`: Project name (default: `avesha`)
+- `-a`: Fetch admin token
+- `-u admin`: Username for the admin token
+
+#### 3. Quick Token Retrieval (Alternative)
+
+```bash
+# Direct token retrieval using kubectl
+kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.data.token}' | base64 -d
+```
+
+📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](docs/Slice-Admin-Token-README.md)**
+
+#### 4. EGS UI Screenshots
+
+After logging in, you'll have access to the following screens:
+
+<details>
+<summary><b>🔐 Login Page</b> - Enter your service account token to access EGS</summary>
+
+![EGS Login Page](docs/images/01-egs-login.png)
+
+</details>
+
+<details>
+<summary><b>📊 Dashboard Overview</b> - GPU allocation and utilization at a glance</summary>
+
+![Dashboard Overview](docs/images/02-dashboard-overview.png)
+
+</details>
+
+<details>
+<summary><b>💰 Cost Analysis</b> - GPU cost breakdown and utilization costs</summary>
+
+![Cost Analysis](docs/images/03-dashboard-cost-analysis.png)
+
+</details>
+
+<details>
+<summary><b>🔧 GPU Infrastructure Health</b> - Power usage, temperature, and memory trends</summary>
+
+![GPU Infrastructure Health](docs/images/04-dashboard-gpu-health.png)
+
+</details>
+
+<details>
+<summary><b>📈 Dashboard Metrics</b> - Workspace metrics and cluster visualization</summary>
+
+![Dashboard Metrics](docs/images/05-dashboard-metrics.png)
+
+</details>
+
+<details>
+<summary><b>🖥️ Clusters</b> - Registered clusters with status and health</summary>
+
+![Clusters](docs/images/06-clusters.png)
+
+</details>
+
+<details>
+<summary><b>📦 Inventory</b> - Managed GPU nodes across clusters</summary>
+
+![Inventory](docs/images/07-inventory.png)
+
+</details>
+
+<details>
+<summary><b>🗂️ Workspaces</b> - Application workspaces and configurations</summary>
+
+![Workspaces](docs/images/08-workspaces.png)
+
+</details>
+
+<details>
+<summary><b>👥 RBAC</b> - Role-based access control for workspaces</summary>
+
+![RBAC](docs/images/09-rbac.png)
+
+</details>
+
+<details>
+<summary><b>📋 Resource Quotas</b> - Workspace resource limits and allocations</summary>
+
+![Resource Quotas](docs/images/10-resource-quotas.png)
+
+</details>
+
+---
+
 ## 🌐 Multi-Cluster Setup
 
 For multi-cluster deployments with workers in different clusters:

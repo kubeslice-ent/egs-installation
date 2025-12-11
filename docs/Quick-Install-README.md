@@ -975,6 +975,28 @@ kubectl get svc -n kubeslice-controller kubeslice-ui-proxy
 
 The installer displays your project access token. Copy and paste this token in the UI login screen.
 
+#### Manual Token Retrieval
+
+If you need to retrieve the token manually:
+
+```bash
+# Option 1: Using the token retrieval script (recommended)
+./fetch_egs_slice_token.sh -k /path/to/kubeconfig -p avesha -a -u admin
+```
+
+**Parameters:**
+- `-k /path/to/kubeconfig`: Absolute path to your kubeconfig file
+- `-p avesha`: Project name (default: `avesha`)
+- `-a`: Fetch admin token
+- `-u admin`: Username for the admin token
+
+```bash
+# Option 2: Direct kubectl command
+kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.data.token}' | base64 -d
+```
+
+📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](Slice-Admin-Token-README.md)**
+
 ---
 
 ## 🐛 Troubleshooting
