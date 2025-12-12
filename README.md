@@ -87,10 +87,10 @@ Confirm administrative access to target clusters with appropriate `kubeconfig` f
 
 #### 4. 📂 Clone Repository
 
-     ```bash
-     git clone https://github.com/kubeslice-ent/egs-installation
-     cd egs-installation
-     ```
+```bash
+git clone https://github.com/kubeslice-ent/egs-installation
+cd egs-installation
+```
 
 #### 5. 🔗 KubeSlice Networking (Optional)
 
@@ -132,7 +132,7 @@ For clusters with namespace policies:
 
 ### Basic Installation
 
-       ```bash
+```bash
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --license-file egs-license.yaml --kubeconfig ~/.kube/config
 ```
@@ -200,7 +200,7 @@ add_node_label: true                       # Auto-label gateway nodes
 
 Run prerequisites installer:
 
-       ```bash
+```bash
 ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
 ```
 
@@ -280,7 +280,7 @@ kubeslice_controller_egs:
 
 The UI typically requires **no changes** from defaults.
 
-     ```yaml
+```yaml
 kubeslice_ui_egs:
   skip_installation: false
   use_global_kubeconfig: true
@@ -315,7 +315,7 @@ kubeslice_ui_egs:
 
 ### Step 4: Configure Workers
 
-     ```yaml
+```yaml
 kubeslice_worker_egs:
   - name: "worker-1"                           # Must match cluster_registration
     use_global_kubeconfig: true
@@ -380,8 +380,8 @@ cluster_registration:
 
 If you set `enable_install_additional_apps: true`, configure the `additional_apps` section for PostgreSQL, Prometheus, and GPU Operator:
 
-     ```yaml
-     additional_apps:
+```yaml
+additional_apps:
   # GPU Operator - Required for GPU workloads
   - name: "gpu-operator"
     skip_installation: false
@@ -474,8 +474,8 @@ If you set `enable_install_additional_apps: true`, configure the `additional_app
 ### Step 7: Configure Projects (Optional)
 
 Projects provide logical grouping for clusters. Default project `avesha` is created automatically:
-   
-   ```yaml
+
+```yaml
 projects:
   - name: "avesha"
     username: "admin"
@@ -534,9 +534,9 @@ commands:
 ### Step 9: Configure Monitoring Endpoints (Multi-Cluster)
 
 For multi-cluster setups, configure automatic endpoint fetching:
-      
-      ```yaml
-      # Global monitoring endpoint settings
+
+```yaml
+# Global monitoring endpoint settings
 global_auto_fetch_endpoint: true               # Auto-fetch Prometheus/Grafana endpoints
 global_grafana_namespace: egs-monitoring
 global_grafana_service_type: ClusterIP         # Use LoadBalancer for multi-cluster
@@ -628,8 +628,8 @@ Simply copy the **Access URL** and **Token** from the script output to access th
 If you need to retrieve the UI access details manually (e.g., after the script has finished), follow these steps:
 
 #### 1. Get the UI URL
-   
-      ```bash
+
+```bash
 # Get the UI service external IP/hostname
 kubectl get svc kubeslice-ui-proxy -n kubeslice-controller
 
@@ -697,34 +697,34 @@ For multi-cluster deployments with workers in different clusters:
 | Grafana endpoint | `*.svc.cluster.local` | LoadBalancer/NodePort IP |
 
 ### Multi-Cluster Worker Configuration
-   
-   ```yaml
-   kubeslice_worker_egs:
-     - name: "worker-1"
+
+```yaml
+kubeslice_worker_egs:
+  - name: "worker-1"
     use_global_kubeconfig: false               # Do NOT use global kubeconfig
     kubeconfig: "worker-1-kubeconfig.yaml"     # Path to worker-1 specific kubeconfig
     kubecontext: "worker-1-context"            # Context name in the kubeconfig file
-       skip_installation: false
-       specific_use_local_charts: true
-       namespace: "kubeslice-system"
+    skip_installation: false
+    specific_use_local_charts: true
+    namespace: "kubeslice-system"
     release: "egs-worker"
-       chart: "kubeslice-worker-egs"
-       inline_values:
+    chart: "kubeslice-worker-egs"
+    inline_values:
       egs:
         prometheusEndpoint: "http://<worker-1-prometheus-lb>:9090"  # External endpoint
         grafanaDashboardBaseUrl: "http://<worker-1-grafana-lb>/d/Oxed_c6Wz"
     # ... other values
 
-     - name: "worker-2"
+  - name: "worker-2"
     use_global_kubeconfig: false               # Do NOT use global kubeconfig
     kubeconfig: "worker-2-kubeconfig.yaml"     # Path to worker-2 specific kubeconfig
     kubecontext: "worker-2-context"            # Context name in the kubeconfig file
-       skip_installation: false
-       specific_use_local_charts: true
-       namespace: "kubeslice-system"
-       release: "egs-worker-2"                    # Unique release name
-       chart: "kubeslice-worker-egs"
-       inline_values:
+    skip_installation: false
+    specific_use_local_charts: true
+    namespace: "kubeslice-system"
+    release: "egs-worker-2"                    # Unique release name
+    chart: "kubeslice-worker-egs"
+    inline_values:
       egs:
         prometheusEndpoint: "http://<worker-2-prometheus-lb>:9090"  # External endpoint
         grafanaDashboardBaseUrl: "http://<worker-2-grafana-lb>/d/Oxed_c6Wz"
@@ -741,29 +741,29 @@ To add more workers, follow these steps:
 - Correct monitoring endpoints
 
 **Step 2:** Add corresponding `cluster_registration` entry:
-   
-   ```yaml
-   cluster_registration:
+
+```yaml
+cluster_registration:
   - cluster_name: "worker-1"
-       project_name: "avesha"
-       telemetry:
-         enabled: true
+    project_name: "avesha"
+    telemetry:
+      enabled: true
       endpoint: "http://<worker-1-prometheus-lb>:9090"  # Must be accessible from controller
-         telemetryProvider: "prometheus"
-       geoLocation:
-         cloudProvider: "GCP"
-         cloudRegion: "us-west1"
-     
+      telemetryProvider: "prometheus"
+    geoLocation:
+      cloudProvider: "GCP"
+      cloudRegion: "us-west1"
+      
   - cluster_name: "worker-2"
-       project_name: "avesha"
-       telemetry:
-         enabled: true
+    project_name: "avesha"
+    telemetry:
+      enabled: true
       endpoint: "http://<worker-2-prometheus-lb>:9090"  # Must be accessible from controller
-         telemetryProvider: "prometheus"
-       geoLocation:
-         cloudProvider: "AWS"
-         cloudRegion: "us-east-1"
-   ```
+      telemetryProvider: "prometheus"
+    geoLocation:
+      cloudProvider: "AWS"
+      cloudRegion: "us-east-1"
+```
 
 ⚠️ **Critical:** For multi-cluster, Prometheus endpoints must be externally accessible (LoadBalancer/NodePort), not `*.svc.cluster.local`.
 
