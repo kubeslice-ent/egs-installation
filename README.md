@@ -5,6 +5,23 @@
 
 ---
 
+## 📑 Table of Contents
+
+| Section | Description |
+|---------|-------------|
+| [📚 Documentation](#-documentation) | All documentation links and guides |
+| [🚀 Overview](#-overview) | Installation methods comparison |
+| [Getting Started](#getting-started) | Prerequisites and initial setup |
+| [⚡ Quick Installer](#-quick-installer) | Single-command installation |
+| [📋 Config-Based Installer](#-config-based-installer) | YAML configuration-based installation |
+| [🛠️ Config-Based Installation Steps](#️-config-based-installation-steps) | Step-by-step configuration guide |
+| [🌐 Multi-Cluster Setup](#-multi-cluster-setup) | Multi-cluster deployment guide |
+| [🗑️ Uninstallation](#️-uninstallation) | How to uninstall EGS |
+| [📋 Quick Reference](#-quick-reference) | Commands and operations summary |
+| [📦 Airgap Deployment](#-airgap-deployment) | Offline/airgap installation |
+
+---
+
 ## 📚 Documentation
 
 | Category | Document | Description |
@@ -563,7 +580,52 @@ These optional settings are available in `egs-installer-config.yaml`:
 
 ### Step 12: Access the EGS UI
 
-After successful installation, access the EGS UI:
+After successful installation, access the EGS UI.
+
+> **📝 Note:** The installer script output will display the UI URL and access token automatically at the end of installation. The steps below are for **manual access** if you need to retrieve these details later.
+
+#### Script Output Example
+
+At the end of installation, the script displays access information like this:
+
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         🌐 KUBESLICE UI ACCESS INFORMATION                          │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ Service Type: ⚖️  LoadBalancer                                                      │
+│ Access URL  : 🔗 https://&lt;EXTERNAL-IP&gt;                                              │
+│ Status      : ✅ Ready for external access via LoadBalancer                         │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                        🔐 KUBESLICE PROJECT ACCESS TOKENS                           │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔑 TOKEN: ✅ Available                                                              │
+│                                                                                     │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+eyJhbGciOiJSUzI1NiIsImtpZCI6....&lt;TOKEN&gt;....                                           │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ 💡 USAGE: 📋 COPY THE ABOVE TOKEN AND PASTE IT ON PLACE OF ENTER SERVICE            │
+│              ACCOUNT TOKEN IN BROWSER                                               │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                          🏁 INSTALLATION SUMMARY COMPLETE                           │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ ✅ All configured components have been processed.                                   │
+│ 📋 Access information displayed above for quick reference.                          │
+│ 🔧 For troubleshooting, check logs in file egs-installer-output.log                 │
+│ 📚 Refer to documentation https://docs.avesha.io/documentation/enterprise-egs       │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+</pre>
+
+Simply copy the **Access URL** and **Token** from the script output to access the UI.
+
+---
+
+#### Manual Access (If Needed)
+
+If you need to retrieve the UI access details manually (e.g., after the script has finished), follow these steps:
 
 #### 1. Get the UI URL
 
@@ -604,67 +666,20 @@ kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.da
 
 #### 4. EGS UI Screenshots
 
-After logging in, you'll have access to the following screens:
+After logging in, you'll have access to the following screens. **Click on any screenshot to expand:**
 
-<details>
-<summary><b>🔐 Login Page</b> - Enter your service account token to access EGS</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/01-egs-login.png" alt="EGS Login Page" width="100%">
-</details>
-
-<details>
-<summary><b>📊 Dashboard Overview</b> - GPU allocation and utilization at a glance</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/02-dashboard-overview.png" alt="Dashboard Overview" width="100%">
-</details>
-
-<details>
-<summary><b>💰 Cost Analysis</b> - GPU cost breakdown and utilization costs</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/03-dashboard-cost-analysis.png" alt="Cost Analysis" width="100%">
-</details>
-
-<details>
-<summary><b>🔧 GPU Infrastructure Health</b> - Power usage, temperature, and memory trends</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/04-dashboard-gpu-health.png" alt="GPU Infrastructure Health" width="100%">
-</details>
-
-<details>
-<summary><b>📈 Dashboard Metrics</b> - Workspace metrics and cluster visualization</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/05-dashboard-metrics.png" alt="Dashboard Metrics" width="100%">
-</details>
-
-<details>
-<summary><b>🖥️ Clusters</b> - Registered clusters with status and health</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/06-clusters.png" alt="Clusters" width="100%">
-</details>
-
-<details>
-<summary><b>📦 Inventory</b> - Managed GPU nodes across clusters</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/07-inventory.png" alt="Inventory" width="100%">
-</details>
-
-<details>
-<summary><b>🗂️ Workspaces</b> - Application workspaces and configurations</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/08-workspaces.png" alt="Workspaces" width="100%">
-</details>
-
-<details>
-<summary><b>👥 RBAC</b> - Role-based access control for workspaces</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/09-rbac.png" alt="RBAC" width="100%">
-</details>
-
-<details>
-<summary><b>📋 Resource Quotas</b> - Workspace resource limits and allocations</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/10-resource-quotas.png" alt="Resource Quotas" width="100%">
-</details>
+| 🖼️ Screenshot | Description | Click to View |
+|---------------|-------------|---------------|
+| 🔐 **Login Page** | Enter your service account token to access EGS | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/01-egs-login.png" alt="EGS Login Page" width="100%"></details> |
+| 📊 **Dashboard Overview** | GPU allocation and utilization at a glance | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/02-dashboard-overview.png" alt="Dashboard Overview" width="100%"></details> |
+| 💰 **Cost Analysis** | GPU cost breakdown and utilization costs | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/03-dashboard-cost-analysis.png" alt="Cost Analysis" width="100%"></details> |
+| 🔧 **GPU Health** | Power usage, temperature, and memory trends | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/04-dashboard-gpu-health.png" alt="GPU Infrastructure Health" width="100%"></details> |
+| 📈 **Metrics** | Workspace metrics and cluster visualization | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/05-dashboard-metrics.png" alt="Dashboard Metrics" width="100%"></details> |
+| 🖥️ **Clusters** | Registered clusters with status and health | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/06-clusters.png" alt="Clusters" width="100%"></details> |
+| 📦 **Inventory** | Managed GPU nodes across clusters | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/07-inventory.png" alt="Inventory" width="100%"></details> |
+| 🗂️ **Workspaces** | Application workspaces and configurations | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/08-workspaces.png" alt="Workspaces" width="100%"></details> |
+| 👥 **RBAC** | Role-based access control for workspaces | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/09-rbac.png" alt="RBAC" width="100%"></details> |
+| 📋 **Resource Quotas** | Workspace resource limits and allocations | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/10-resource-quotas.png" alt="Resource Quotas" width="100%"></details> |
 
 ---
 
@@ -774,18 +789,18 @@ cluster_registration:
 |---------|-----------------|--------------|
 | Setup Time | Minutes | Varies |
 | Configuration | Flags | YAML file |
-| Multi-cluster | ✅ Supported | ✅ Supported |
+| Multi-cluster | Supported | Supported |
 | Version Control | Generated config | Full control |
 | Best For | PoC, new users | Production |
 
 ### Common Operations
 
-| Operation | Command |
-|-----------|---------|
-| Full installation | `./egs-installer.sh --input-yaml egs-installer-config.yaml` |
-| Prerequisites only | `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml` |
-| Uninstall | `./egs-uninstall.sh --input-yaml egs-installer-config.yaml` |
-| Preflight check | `./egs-preflight-check.sh --kubeconfig ~/.kube/config` |
+| # | Operation | Command |
+|---|-----------|---------|
+| 1 | **Preflight check** | `./egs-preflight-check.sh --kubeconfig ~/.kube/config` |
+| 2 | **Prerequisites only** | `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml` |
+| 3 | **Full installation** | `./egs-installer.sh --input-yaml egs-installer-config.yaml` |
+| 4 | **Uninstall** | `./egs-uninstall.sh --input-yaml egs-installer-config.yaml` |
 
 ---
 
