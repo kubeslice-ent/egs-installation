@@ -5,6 +5,23 @@
 
 ---
 
+## 📑 Table of Contents
+
+| Section | Description |
+|---------|-------------|
+| [📚 Documentation](#-documentation) | All documentation links and guides |
+| [🚀 Overview](#-overview) | Installation methods comparison |
+| [Getting Started](#getting-started) | Prerequisites and initial setup |
+| [⚡ Quick Installer](#-quick-installer) | Single-command installation |
+| [📋 Config-Based Installer](#-config-based-installer) | YAML configuration-based installation |
+| [🛠️ Config-Based Installation Steps](#️-config-based-installation-steps) | Step-by-step configuration guide |
+| [🌐 Multi-Cluster Setup](#-multi-cluster-setup) | Multi-cluster deployment guide |
+| [🗑️ Uninstallation](#️-uninstallation) | How to uninstall EGS |
+| [📋 Quick Reference](#-quick-reference) | Commands and operations summary |
+| [📦 Airgap Deployment](#-airgap-deployment) | Offline/airgap installation |
+
+---
+
 ## 📚 Documentation
 
 | Category | Document | Description |
@@ -70,10 +87,10 @@ Confirm administrative access to target clusters with appropriate `kubeconfig` f
 
 #### 4. 📂 Clone Repository
 
-```bash
-git clone https://github.com/kubeslice-ent/egs-installation
-cd egs-installation
-```
+     ```bash
+     git clone https://github.com/kubeslice-ent/egs-installation
+     cd egs-installation
+     ```
 
 #### 5. 🔗 KubeSlice Networking (Optional)
 
@@ -115,7 +132,7 @@ For clusters with namespace policies:
 
 ### Basic Installation
 
-```bash
+       ```bash
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --license-file egs-license.yaml --kubeconfig ~/.kube/config
 ```
@@ -183,7 +200,7 @@ add_node_label: true                       # Auto-label gateway nodes
 
 Run prerequisites installer:
 
-```bash
+       ```bash
 ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
 ```
 
@@ -263,7 +280,7 @@ kubeslice_controller_egs:
 
 The UI typically requires **no changes** from defaults.
 
-```yaml
+     ```yaml
 kubeslice_ui_egs:
   skip_installation: false
   use_global_kubeconfig: true
@@ -298,7 +315,7 @@ kubeslice_ui_egs:
 
 ### Step 4: Configure Workers
 
-```yaml
+     ```yaml
 kubeslice_worker_egs:
   - name: "worker-1"                           # Must match cluster_registration
     use_global_kubeconfig: true
@@ -363,8 +380,8 @@ cluster_registration:
 
 If you set `enable_install_additional_apps: true`, configure the `additional_apps` section for PostgreSQL, Prometheus, and GPU Operator:
 
-```yaml
-additional_apps:
+     ```yaml
+     additional_apps:
   # GPU Operator - Required for GPU workloads
   - name: "gpu-operator"
     skip_installation: false
@@ -377,15 +394,15 @@ additional_apps:
     repo_url: "https://helm.ngc.nvidia.com/nvidia"
     version: "v25.3.4"
     specific_use_local_charts: true
-    inline_values:
-      hostPaths:
-        driverInstallDir: "/home/kubernetes/bin/nvidia"
-      toolkit:
-        installDir: "/home/kubernetes/bin/nvidia"
-      cdi:
-        enabled: true
-        default: true
-      driver:
+         inline_values:
+           hostPaths:
+             driverInstallDir: "/home/kubernetes/bin/nvidia"
+           toolkit:
+             installDir: "/home/kubernetes/bin/nvidia"
+           cdi:
+             enabled: true
+             default: true
+           driver:
         enabled: false                         # Set true if nodes need NVIDIA drivers
     helm_flags: "--debug"
     verify_install: false
@@ -403,21 +420,21 @@ additional_apps:
     repo_url: "https://prometheus-community.github.io/helm-charts"
     version: "v45.0.0"
     specific_use_local_charts: true
-    inline_values:
-      prometheus:
-        service:
+         inline_values:
+           prometheus:
+             service:
           type: ClusterIP
-        prometheusSpec:
-          additionalScrapeConfigs:
-            - job_name: gpu-metrics
-              scrape_interval: 1s
-              metrics_path: /metrics
-              kubernetes_sd_configs:
-                - role: endpoints
-                  namespaces:
-                    names:
-                      - egs-gpu-operator
-      grafana:
+             prometheusSpec:
+               additionalScrapeConfigs:
+               - job_name: gpu-metrics
+                 scrape_interval: 1s
+                 metrics_path: /metrics
+                 kubernetes_sd_configs:
+                 - role: endpoints
+                   namespaces:
+                     names:
+                     - egs-gpu-operator
+           grafana:
         enabled: true
     helm_flags: "--debug"
     verify_install: false
@@ -435,14 +452,14 @@ additional_apps:
     version: "16.7.27"
     specific_use_local_charts: true
     inline_values:
-      auth:
+               auth:
         postgresPassword: "postgres"
         username: "postgres"
         password: "postgres"
         database: "postgres"
       primary:
         persistence:
-          enabled: true
+                 enabled: true
           size: 10Gi
     helm_flags: "--debug"
     verify_install: false
@@ -457,8 +474,8 @@ additional_apps:
 ### Step 7: Configure Projects (Optional)
 
 Projects provide logical grouping for clusters. Default project `avesha` is created automatically:
-
-```yaml
+   
+   ```yaml
 projects:
   - name: "avesha"
     username: "admin"
@@ -517,9 +534,9 @@ commands:
 ### Step 9: Configure Monitoring Endpoints (Multi-Cluster)
 
 For multi-cluster setups, configure automatic endpoint fetching:
-
-```yaml
-# Global monitoring endpoint settings
+      
+      ```yaml
+      # Global monitoring endpoint settings
 global_auto_fetch_endpoint: true               # Auto-fetch Prometheus/Grafana endpoints
 global_grafana_namespace: egs-monitoring
 global_grafana_service_type: ClusterIP         # Use LoadBalancer for multi-cluster
@@ -563,11 +580,56 @@ These optional settings are available in `egs-installer-config.yaml`:
 
 ### Step 12: Access the EGS UI
 
-After successful installation, access the EGS UI:
+After successful installation, access the EGS UI.
+
+> **📝 Note:** The installer script output will display the UI URL and access token automatically at the end of installation. The steps below are for **manual access** if you need to retrieve these details later.
+
+#### Script Output Example
+
+At the end of installation, the script displays access information like this:
+
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         🌐 KUBESLICE UI ACCESS INFORMATION                          │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ Service Type: ⚖️  LoadBalancer                                                      │
+│ Access URL  : 🔗 https://&lt;EXTERNAL-IP&gt;                                              │
+│ Status      : ✅ Ready for external access via LoadBalancer                         │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                        🔐 KUBESLICE PROJECT ACCESS TOKENS                           │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔑 TOKEN: ✅ Available                                                              │
+│                                                                                     │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+eyJhbGciOiJSUzI1NiIsImtpZCI6....&lt;TOKEN&gt;....                                           │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ 💡 USAGE: 📋 COPY THE ABOVE TOKEN AND PASTE IT ON PLACE OF ENTER SERVICE            │
+│              ACCOUNT TOKEN IN BROWSER                                               │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                          🏁 INSTALLATION SUMMARY COMPLETE                           │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ ✅ All configured components have been processed.                                   │
+│ 📋 Access information displayed above for quick reference.                          │
+│ 🔧 For troubleshooting, check logs in file egs-installer-output.log                 │
+│ 📚 Refer to documentation https://docs.avesha.io/documentation/enterprise-egs       │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+</pre>
+
+Simply copy the **Access URL** and **Token** from the script output to access the UI.
+
+---
+
+#### Manual Access (If Needed)
+
+If you need to retrieve the UI access details manually (e.g., after the script has finished), follow these steps:
 
 #### 1. Get the UI URL
-
-```bash
+   
+      ```bash
 # Get the UI service external IP/hostname
 kubectl get svc kubeslice-ui-proxy -n kubeslice-controller
 
@@ -604,67 +666,20 @@ kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.da
 
 #### 4. EGS UI Screenshots
 
-After logging in, you'll have access to the following screens:
+After logging in, you'll have access to the following screens. **Click on any screenshot to expand:**
 
-<details>
-<summary><b>🔐 Login Page</b> - Enter your service account token to access EGS</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/01-egs-login.png" alt="EGS Login Page" width="100%">
-</details>
-
-<details>
-<summary><b>📊 Dashboard Overview</b> - GPU allocation and utilization at a glance</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/02-dashboard-overview.png" alt="Dashboard Overview" width="100%">
-</details>
-
-<details>
-<summary><b>💰 Cost Analysis</b> - GPU cost breakdown and utilization costs</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/03-dashboard-cost-analysis.png" alt="Cost Analysis" width="100%">
-</details>
-
-<details>
-<summary><b>🔧 GPU Infrastructure Health</b> - Power usage, temperature, and memory trends</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/04-dashboard-gpu-health.png" alt="GPU Infrastructure Health" width="100%">
-</details>
-
-<details>
-<summary><b>📈 Dashboard Metrics</b> - Workspace metrics and cluster visualization</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/05-dashboard-metrics.png" alt="Dashboard Metrics" width="100%">
-</details>
-
-<details>
-<summary><b>🖥️ Clusters</b> - Registered clusters with status and health</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/06-clusters.png" alt="Clusters" width="100%">
-</details>
-
-<details>
-<summary><b>📦 Inventory</b> - Managed GPU nodes across clusters</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/07-inventory.png" alt="Inventory" width="100%">
-</details>
-
-<details>
-<summary><b>🗂️ Workspaces</b> - Application workspaces and configurations</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/08-workspaces.png" alt="Workspaces" width="100%">
-</details>
-
-<details>
-<summary><b>👥 RBAC</b> - Role-based access control for workspaces</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/09-rbac.png" alt="RBAC" width="100%">
-</details>
-
-<details>
-<summary><b>📋 Resource Quotas</b> - Workspace resource limits and allocations</summary>
-<br>
-<img src="https://repo.egs.avesha.io/docs/images/10-resource-quotas.png" alt="Resource Quotas" width="100%">
-</details>
+| 🖼️ Screenshot | Description | Click to View |
+|---------------|-------------|---------------|
+| 🔐 **Login Page** | Enter your service account token to access EGS | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/01-egs-login.png" alt="EGS Login Page" width="100%"></details> |
+| 📊 **Dashboard Overview** | GPU allocation and utilization at a glance | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/02-dashboard-overview.png" alt="Dashboard Overview" width="100%"></details> |
+| 💰 **Cost Analysis** | GPU cost breakdown and utilization costs | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/03-dashboard-cost-analysis.png" alt="Cost Analysis" width="100%"></details> |
+| 🔧 **GPU Health** | Power usage, temperature, and memory trends | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/04-dashboard-gpu-health.png" alt="GPU Infrastructure Health" width="100%"></details> |
+| 📈 **Metrics** | Workspace metrics and cluster visualization | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/05-dashboard-metrics.png" alt="Dashboard Metrics" width="100%"></details> |
+| 🖥️ **Clusters** | Registered clusters with status and health | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/06-clusters.png" alt="Clusters" width="100%"></details> |
+| 📦 **Inventory** | Managed GPU nodes across clusters | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/07-inventory.png" alt="Inventory" width="100%"></details> |
+| 🗂️ **Workspaces** | Application workspaces and configurations | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/08-workspaces.png" alt="Workspaces" width="100%"></details> |
+| 👥 **RBAC** | Role-based access control for workspaces | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/09-rbac.png" alt="RBAC" width="100%"></details> |
+| 📋 **Resource Quotas** | Workspace resource limits and allocations | <details><summary>👁️ <u>View Screenshot</u></summary><br><img src="https://repo.egs.avesha.io/docs/images/10-resource-quotas.png" alt="Resource Quotas" width="100%"></details> |
 
 ---
 
@@ -682,34 +697,34 @@ For multi-cluster deployments with workers in different clusters:
 | Grafana endpoint | `*.svc.cluster.local` | LoadBalancer/NodePort IP |
 
 ### Multi-Cluster Worker Configuration
-
-```yaml
-kubeslice_worker_egs:
-  - name: "worker-1"
+   
+   ```yaml
+   kubeslice_worker_egs:
+     - name: "worker-1"
     use_global_kubeconfig: false               # Do NOT use global kubeconfig
     kubeconfig: "worker-1-kubeconfig.yaml"     # Path to worker-1 specific kubeconfig
     kubecontext: "worker-1-context"            # Context name in the kubeconfig file
-    skip_installation: false
-    specific_use_local_charts: true
-    namespace: "kubeslice-system"
+       skip_installation: false
+       specific_use_local_charts: true
+       namespace: "kubeslice-system"
     release: "egs-worker"
-    chart: "kubeslice-worker-egs"
-    inline_values:
+       chart: "kubeslice-worker-egs"
+       inline_values:
       egs:
         prometheusEndpoint: "http://<worker-1-prometheus-lb>:9090"  # External endpoint
         grafanaDashboardBaseUrl: "http://<worker-1-grafana-lb>/d/Oxed_c6Wz"
     # ... other values
 
-  - name: "worker-2"
+     - name: "worker-2"
     use_global_kubeconfig: false               # Do NOT use global kubeconfig
     kubeconfig: "worker-2-kubeconfig.yaml"     # Path to worker-2 specific kubeconfig
     kubecontext: "worker-2-context"            # Context name in the kubeconfig file
-    skip_installation: false
-    specific_use_local_charts: true
-    namespace: "kubeslice-system"
-    release: "egs-worker-2"                    # Unique release name
-    chart: "kubeslice-worker-egs"
-    inline_values:
+       skip_installation: false
+       specific_use_local_charts: true
+       namespace: "kubeslice-system"
+       release: "egs-worker-2"                    # Unique release name
+       chart: "kubeslice-worker-egs"
+       inline_values:
       egs:
         prometheusEndpoint: "http://<worker-2-prometheus-lb>:9090"  # External endpoint
         grafanaDashboardBaseUrl: "http://<worker-2-grafana-lb>/d/Oxed_c6Wz"
@@ -726,29 +741,29 @@ To add more workers, follow these steps:
 - Correct monitoring endpoints
 
 **Step 2:** Add corresponding `cluster_registration` entry:
-
-```yaml
-cluster_registration:
+   
+   ```yaml
+   cluster_registration:
   - cluster_name: "worker-1"
-    project_name: "avesha"
-    telemetry:
-      enabled: true
+       project_name: "avesha"
+       telemetry:
+         enabled: true
       endpoint: "http://<worker-1-prometheus-lb>:9090"  # Must be accessible from controller
-      telemetryProvider: "prometheus"
-    geoLocation:
-      cloudProvider: "GCP"
-      cloudRegion: "us-west1"
-      
+         telemetryProvider: "prometheus"
+       geoLocation:
+         cloudProvider: "GCP"
+         cloudRegion: "us-west1"
+     
   - cluster_name: "worker-2"
-    project_name: "avesha"
-    telemetry:
-      enabled: true
+       project_name: "avesha"
+       telemetry:
+         enabled: true
       endpoint: "http://<worker-2-prometheus-lb>:9090"  # Must be accessible from controller
-      telemetryProvider: "prometheus"
-    geoLocation:
-      cloudProvider: "AWS"
-      cloudRegion: "us-east-1"
-```
+         telemetryProvider: "prometheus"
+       geoLocation:
+         cloudProvider: "AWS"
+         cloudRegion: "us-east-1"
+   ```
 
 ⚠️ **Critical:** For multi-cluster, Prometheus endpoints must be externally accessible (LoadBalancer/NodePort), not `*.svc.cluster.local`.
 
@@ -774,18 +789,18 @@ cluster_registration:
 |---------|-----------------|--------------|
 | Setup Time | Minutes | Varies |
 | Configuration | Flags | YAML file |
-| Multi-cluster | ✅ Supported | ✅ Supported |
+| Multi-cluster | Supported | Supported |
 | Version Control | Generated config | Full control |
 | Best For | PoC, new users | Production |
 
 ### Common Operations
 
-| Operation | Command |
-|-----------|---------|
-| Full installation | `./egs-installer.sh --input-yaml egs-installer-config.yaml` |
-| Prerequisites only | `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml` |
-| Uninstall | `./egs-uninstall.sh --input-yaml egs-installer-config.yaml` |
-| Preflight check | `./egs-preflight-check.sh --kubeconfig ~/.kube/config` |
+| # | Operation | Command |
+|---|-----------|---------|
+| 1 | **Preflight check** | `./egs-preflight-check.sh --kubeconfig ~/.kube/config` |
+| 2 | **Prerequisites only** | `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml` |
+| 3 | **Full installation** | `./egs-installer.sh --input-yaml egs-installer-config.yaml` |
+| 4 | **Uninstall** | `./egs-uninstall.sh --input-yaml egs-installer-config.yaml` |
 
 ---
 
