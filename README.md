@@ -394,15 +394,15 @@ additional_apps:
     repo_url: "https://helm.ngc.nvidia.com/nvidia"
     version: "v25.3.4"
     specific_use_local_charts: true
-         inline_values:
-           hostPaths:
-             driverInstallDir: "/home/kubernetes/bin/nvidia"
-           toolkit:
-             installDir: "/home/kubernetes/bin/nvidia"
-           cdi:
-             enabled: true
-             default: true
-           driver:
+    inline_values:
+      hostPaths:
+        driverInstallDir: "/home/kubernetes/bin/nvidia"
+      toolkit:
+        installDir: "/home/kubernetes/bin/nvidia"
+      cdi:
+        enabled: true
+        default: true
+      driver:
         enabled: false                         # Set true if nodes need NVIDIA drivers
     helm_flags: "--debug"
     verify_install: false
@@ -420,21 +420,21 @@ additional_apps:
     repo_url: "https://prometheus-community.github.io/helm-charts"
     version: "v45.0.0"
     specific_use_local_charts: true
-         inline_values:
-           prometheus:
-             service:
+    inline_values:
+      prometheus:
+        service:
           type: ClusterIP
-             prometheusSpec:
-               additionalScrapeConfigs:
-               - job_name: gpu-metrics
-                 scrape_interval: 1s
-                 metrics_path: /metrics
-                 kubernetes_sd_configs:
-                 - role: endpoints
-                   namespaces:
-                     names:
-                     - egs-gpu-operator
-           grafana:
+        prometheusSpec:
+          additionalScrapeConfigs:
+            - job_name: gpu-metrics
+              scrape_interval: 1s
+              metrics_path: /metrics
+              kubernetes_sd_configs:
+                - role: endpoints
+                  namespaces:
+                    names:
+                      - egs-gpu-operator
+      grafana:
         enabled: true
     helm_flags: "--debug"
     verify_install: false
@@ -452,14 +452,14 @@ additional_apps:
     version: "16.7.27"
     specific_use_local_charts: true
     inline_values:
-               auth:
+      auth:
         postgresPassword: "postgres"
         username: "postgres"
         password: "postgres"
         database: "postgres"
       primary:
         persistence:
-                 enabled: true
+          enabled: true
           size: 10Gi
     helm_flags: "--debug"
     verify_install: false
