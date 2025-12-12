@@ -1088,37 +1088,74 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 ## 🔍 Accessing Your Installation
 
-### UI Access
+After successful installation, access the EGS UI.
 
-After successful installation, you'll see:
+> **📝 Note:** The installer script output will display the UI URL and access token automatically at the end of installation. The steps below are for **manual access** if you need to retrieve these details later.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                   🌐 KUBESLICE UI ACCESS INFORMATION                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Service Type: ⚖️  LoadBalancer                                              │
-│ Access URL  : 🔗 https://xxx-xxx-xxx-xxx.ip.linodeusercontent.com          │
-│ Status      : ✅ Ready for external access via LoadBalancer                │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+### Script Output Example
 
-**To get UI access details:**
+At the end of installation, the script displays access information like this:
+
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         🌐 KUBESLICE UI ACCESS INFORMATION                          │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ Service Type: ⚖️  LoadBalancer                                                      │
+│ Access URL  : 🔗 https://&lt;EXTERNAL-IP&gt;                                              │
+│ Status      : ✅ Ready for external access via LoadBalancer                         │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                        🔐 KUBESLICE PROJECT ACCESS TOKENS                           │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ 🔑 TOKEN: ✅ Available                                                              │
+│                                                                                     │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+eyJhbGciOiJSUzI1NiIsImtpZCI6....&lt;TOKEN&gt;....                                           │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ 💡 USAGE: 📋 COPY THE ABOVE TOKEN AND PASTE IT ON PLACE OF ENTER SERVICE            │
+│              ACCOUNT TOKEN IN BROWSER                                               │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                          🏁 INSTALLATION SUMMARY COMPLETE                           │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│ ✅ All configured components have been processed.                                   │
+│ 📋 Access information displayed above for quick reference.                          │
+│ 🔧 For troubleshooting, check logs in file egs-installer-output.log                 │
+│ 📚 Refer to documentation https://docs.avesha.io/documentation/enterprise-egs       │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+</pre>
+
+Simply copy the **Access URL** and **Token** from the script output to access the UI.
+
+---
+
+### Manual Access (If Needed)
+
+If you need to retrieve the UI access details manually (e.g., after the script has finished), follow these steps:
+
+#### 1. Get the UI URL
+
 ```bash
-kubectl get svc -n kubeslice-controller kubeslice-ui-proxy
+# Get the UI service external IP/hostname
+kubectl get svc kubeslice-ui-proxy -n kubeslice-controller
+
+# Example output:
+# NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)
+# kubeslice-ui-proxy   LoadBalancer   10.x.x.x       <EXTERNAL-IP>    443:xxxxx/TCP
 ```
 
-### Access Token
+Access the UI at: `https://<EXTERNAL-IP>`
 
-The installer displays your project access token. Copy and paste this token in the UI login screen.
-
-#### Manual Token Retrieval
-
-If you need to retrieve the token manually:
+#### 2. Get the Admin Token
 
 ```bash
-# Option 1: Using the token retrieval script (recommended)
+# Get the admin token for login (use absolute path to kubeconfig)
 ./fetch_egs_slice_token.sh -k /path/to/kubeconfig -p avesha -a -u admin
 ```
+
+The script will output the admin token. Copy and paste it into the UI login screen.
 
 **Parameters:**
 - `-k /path/to/kubeconfig`: Absolute path to your kubeconfig file
@@ -1126,8 +1163,10 @@ If you need to retrieve the token manually:
 - `-a`: Fetch admin token
 - `-u admin`: Username for the admin token
 
+#### 3. Quick Token Retrieval (Alternative)
+
 ```bash
-# Option 2: Direct kubectl command
+# Direct token retrieval using kubectl
 kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.data.token}' | base64 -d
 ```
 
@@ -1278,22 +1317,3 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 - 🌐 [EGS User Guide](https://docs.avesha.io/documentation/enterprise-egs) - Complete product documentation
 
 ---
-
-## 🎉 Success!
-
-If you see this message, your installation is complete:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                   🏁 INSTALLATION SUMMARY COMPLETE                         │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ ✅ All configured components have been processed.                           │
-│ 📋 Access information displayed above for quick reference.                  │
-└─────────────────────────────────────────────────────────────────────────────┘
-✅ ✅ EGS installation completed successfully!
-```
-
-**Next Steps:**
-1. Access the UI using the provided URL
-2. Login with the displayed token
-3. Start using EGS for GPU scheduling!
