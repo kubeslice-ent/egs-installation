@@ -1,35 +1,41 @@
----
-# 🌐 EGS Installer Script
-> 
+# 🌐 EGS Installer
+
 > ### **[🚀 EGS Installer Documentation](https://repo.egs.avesha.io/) 🚀**
 > *The online documentation provides enhanced navigation, better formatting, and the latest updates.*
 
 ---
 
-## 🚀 Overview
+## 📚 Documentation
 
-The EGS Installer Script is a Bash script designed to streamline the installation, upgrade, and configuration of EGS components in Kubernetes clusters. It leverages Helm for package management, kubectl for interacting with Kubernetes clusters, and yq for parsing YAML files. The script allows for automated validation of cluster access, installation of required binaries, and the creation of Kubernetes namespaces and resources.
+| Category | Document | Description |
+|----------|----------|-------------|
+| **🔑 License** | [EGS License Setup](docs/EGS-License-Setup.md) | License configuration guide |
+| **⚡ Quick Start** | [Quick Install Guide](docs/Quick-Install-README.md) | Single-command installer with all options |
+| **📋 Configuration** | [Configuration Reference](docs/Configuration-README.md) | Config-based installer detailed reference |
+| **🌐 Multi-Cluster** | [Multi-Cluster Example](multi-cluster-example.yaml) | Complete multi-cluster YAML example |
+| **📋 Prerequisites** | [Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) | Controller cluster requirements |
+| **📋 Prerequisites** | [Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) | Worker cluster requirements |
+| **🗂️ Setup** | [Namespace Creation](docs/Namespace-Creation-README.md) | Pre-create namespaces script |
+| **✅ Validation** | [Preflight Check](docs/EGS-Preflight-Check-README.md) | Pre-installation validation |
+| **🔧 Operations** | [Slice & Admin Token](docs/Slice-Admin-Token-README.md) | Token retrieval guide |
+| **💰 Operations** | [Custom Pricing](docs/Custom-Pricing-README.md) | Custom pricing configuration |
+| **🔐 Security** | [Prometheus TLS Authentication](docs/Prometheus-TLS-Authentication.md) | TLS setup for Prometheus |
+| **📦 Airgap** | [Airgap Image Management](airgap-image-push/README-airgap-images.md) | Airgap image pull and push |
+
+📚 **User Guide:** [docs.avesha.io/documentation/enterprise-egs](https://docs.avesha.io/documentation/enterprise-egs)
 
 ---
 
-## 📄 EGS Documents
+## 🚀 Overview
 
-- 🌐 **📚 For the complete EGS Installer documentation website, visit:** [**🚀 EGS Installer Documentation**](https://repo.egs.avesha.io/) **🚀**  
-- 👤 For the User guide, please see the [User Guide Documentation](https://docs.avesha.io/documentation/enterprise-egs) 📚  
-- 🛠️ For the Installation guide, please see the [Installation Guide](#getting-started) 💻  
-- 🔑 For EGS License setup, please refer to the [EGS License Setup Guide](docs/EGS-License-Setup.md) 🗝️  
-- ✅ For preflight checks, please refer to the [EGS Preflight Check Documentation](docs/EGS-Preflight-Check-README.md) 🔍  
-- 📋 For token retrieval, please refer to the [Slice & Admin Token Retrieval Script Documentation](docs/Slice-Admin-Token-README.md) 🔒  
-- 🗂️ For precreate required namespace, please refer to the [Namespace Creation Script Documentation](docs/Namespace-Creation-README.md) 🗂️  
-- 🚀 For EGS Controller prerequisites, please refer to the [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) 📋  
-- ⚙️ For EGS Worker prerequisites, please refer to the [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) 🔧  
-- 🌐 **⚠️ IMPORTANT:** For networking in worker clusters, ensure at least some nodes are labeled as gateway nodes: `kubectl get no -l kubeslice.io/node-type=gateway` 🏷️
-- 🔗 **KubeSlice Networking Configuration:** KubeSlice networking is disabled by default in the EGS worker configuration (`kubesliceNetworking: enabled: false`). If enabled, ensure proper node labeling for gateway functionality. The installer script can automatically label nodes when `add_node_label: true` is set. 🌐
-- 🛠️ For configuration details, please refer to the [Configuration Documentation](docs/Configuration-README.md) 📋  
-- 📊 For custom pricing setup, please refer to the [Custom Pricing Documentation](docs/Custom-Pricing-README.md) 💰  
-- 🌐 For multi-cluster installation examples, please refer to the [Multi-Cluster Installation Example](multi-cluster-example.yaml) 🔗
-- 🔐 For Prometheus TLS based authentication, please refer to the [Prometheus-TLS-Authentication] (docs/Prometheus-TLS-Authentication.md) 🔒
-- 📦 For airgap image management (pull and push), please refer to the [Airgap Image Management Documentation](airgap-image-push/README-airgap-images.md) 🚀
+The EGS Installer provides installation methods for deploying EGS components into Kubernetes clusters:
+
+| Method | Best For | Description | Documentation |
+|--------|----------|-------------|---------------|
+| **⚡ Quick Installer** | New users, PoC, simple setups | Single-command installer with auto-configuration, skip flags, and multi-cluster support | **[📖 Quick Install Guide](docs/Quick-Install-README.md)** |
+| **📋 Config-Based Installer** | Production, teams, advanced setups | Version-controlled YAML configuration for repeatable, auditable installs | **[📖 Configuration Reference](docs/Configuration-README.md)** |
+
+All methods leverage **Helm** for package management, **kubectl** for Kubernetes interaction, and **yq** for YAML parsing.
 
 ---
 
@@ -37,758 +43,749 @@ The EGS Installer Script is a Bash script designed to streamline the installatio
 
 ### Prerequisites
 
-Before you begin, ensure the following steps are completed:
+Before installation, ensure the following:
 
-1. **📝 Registration:**
-   - Complete the registration process at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive the required access credentials and product license for running the script.
-   - For detailed license setup instructions, refer to **[📋 EGS License Setup](docs/EGS-License-Setup.md)**.
+#### 1. 📝 Registration
 
-2. **🔧 Required Binaries:**
-   - Verify that the following binaries are installed and available in your system's `PATH`:
-     - **yq** 📄 (minimum version: 4.44.2)
-     - **helm** 🛠️ (minimum version: 3.15.0)
-     - **kubectl** ⚙️ (minimum version: 1.23.6)
-     - **jq** 📦 (minimum version: 1.6.0)
+Complete the registration at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive:
+- Access credentials
+- Product license file (`egs-license.yaml`)
 
-3. **🌐 Kubernetes Access:**
-   - Confirm that you have administrative access to the necessary Kubernetes clusters and the appropriate `kubeconfig` files are available.
+📖 See **[EGS License Setup](docs/EGS-License-Setup.md)** for detailed instructions.
 
-4. **📂 Clone the Repository:**
-   - Start by cloning the EGS installation Git repository:
-     ```bash
-     git clone https://github.com/kubeslice-ent/egs-installation
-     cd egs-installation
-     ```
+#### 2. 🔧 Required Binaries
 
-5. **✅ Run EGS Preflight Check Script (Optional):**
-   - To ensure your environment meets all installation requirements, you can optionally run the **EGS Preflight Check Script**.
-     - Refer to the [EGS Preflight Check Guide](docs/EGS-Preflight-Check-README.md) for detailed instructions.
-     - Example command:
-       ```bash
-       ./egs-preflight-check.sh \
-         --kubeconfig ~/.kube/config \
-         --kubecontext-list context1,context2
-       ```
-     - This step validates namespaces, permissions, PVCs, and services, helping to identify and resolve potential issues before installation.
+Verify these tools are installed and in your `PATH`:
 
-6. **🗂️ Pre-create Required Namespaces (Optional):**
-   - If your cluster enforces namespace creation policies, pre-create the namespaces required for installation before running the script.
-     - Use the provided namespace creation script with the appropriate configuration to create the necessary namespaces:
-       - Refer to the [Namespace Creation Guide](docs/Namespace-Creation-README.md) for details.
-     - Example command:
-       ```bash
-       ./create-namespaces.sh \
-         --input-yaml namespace-input.yaml \
-         --kubeconfig ~/.kube/config \
-         --kubecontext-list context1,context2
-       ```
-     - Ensure that all required annotations and labels for policy enforcement are correctly configured in the YAML file.
+| Binary | Minimum Version |
+|--------|-----------------|
+| **yq** | 4.44.2 |
+| **helm** | 3.15.0 |
+| **kubectl** | 1.23.6 |
+| **jq** | 1.6.0 |
 
-7. **⚙️ Configure EGS Installer for Prerequisites Installation:**
+#### 3. 🌐 Kubernetes Access
 
-   **⚠️ IMPORTANT: Choose ONE approach - do NOT use both simultaneously**
+Confirm administrative access to target clusters with appropriate `kubeconfig` files.
 
-   **Option A: Using EGS Prerequisites Script (Recommended for new installations)**
-   
-   If you want EGS to automatically install and configure Prometheus, GPU Operator, and PostgreSQL:
-   
-   **Global Kubeconfig Configuration:**
-   - Ensure your global kubeconfig is properly configured for multi-cluster access:
-     ```yaml
-     global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path (MANDATORY)
-     global_kubecontext: ""  # Global kubecontext (MANDATORY)
-     use_global_context: true  # If true, use the global kubecontext for all operations by default
-     ```
+#### 4. 📂 Clone Repository
 
-   **Configuration File Setup:**
-   - Configure the `egs-installer-config.yaml` file to enable additional applications installation. **For complete configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml)**:
-     ```yaml
-     # Enable or disable specific stages of the installation
-     enable_install_controller: true               # Enable the installation of the Kubeslice controller
-     enable_install_ui: true                       # Enable the installation of the Kubeslice UI
-     enable_install_worker: true                   # Enable the installation of Kubeslice workers
+```bash
+git clone https://github.com/kubeslice-ent/egs-installation
+cd egs-installation
+```
 
-     # Enable or disable the installation of additional applications (prometheus, gpu-operator, postgresql)
-     enable_install_additional_apps: true          # Set to true to enable additional apps installation
+#### 5. 🔗 KubeSlice Networking (Optional)
 
-     # Enable custom applications
-     # Set this to true if you want to allow custom applications to be deployed.
-     # This is specifically useful for enabling NVIDIA driver installation on your nodes.
-     enable_custom_apps: false
+> **Note:** KubeSlice networking is **disabled by default** (`kubesliceNetworking: enabled: false`).
 
-     # Command execution settings
-     # Set this to true to allow the execution of commands for configuring NVIDIA MIG.
-     # This includes modifications to the NVIDIA ClusterPolicy and applying node labels
-     # based on the MIG strategy defined in the YAML (e.g., single or mixed strategy).
-     run_commands: false
+If enabling KubeSlice networking, ensure gateway nodes are labeled:
 
-     # Node labeling automation for KubeSlice networking
-     # Set this to true to automatically label nodes with 'kubeslice.io/node-type=gateway'
-     # Priority: 1) Nodes with external IPs, 2) Any available nodes (up to 2 nodes)
-     # This is required when kubesliceNetworking is enabled in worker clusters
-     add_node_label: true
-     ```
-   
-   **Critical Configuration Steps:**
-     1. **Set `enable_install_additional_apps: true`** - This enables the installation of GPU Operator, Prometheus, and PostgreSQL
-     2. **Configure `enable_custom_apps`** - Set to `true` if you need NVIDIA driver installation on your nodes
-     3. **Set `run_commands`** - Set to `true` if you need NVIDIA MIG configuration and node labeling
-     4. **Set `add_node_label: true`** - Enable automatic node labeling for KubeSlice networking
+```bash
+kubectl get nodes -l kubeslice.io/node-type=gateway
+```
 
-   **Additional Apps Configuration for Each Worker:**
-   - **📌 IMPORTANT:** For different worker clusters, you need to add additional apps array for each component in the `kubeslice_worker_egs` section
-   - Each worker cluster requires its own instances of GPU Operator and Prometheus if `enable_install_additional_apps: true`
-   - **For complete additional apps configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L255-L380)**
-   - **📋 For comprehensive multi-cluster prerequisites setup with complete examples, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**
-   - Example structure for multiple workers with additional apps:
-     ```yaml
-     additional_apps:
-       - name: "gpu-operator-worker-1"              # Name of the application
-         skip_installation: false                   # Do not skip the installation of the GPU operator
-         use_global_kubeconfig: false               # Use specific kubeconfig for this worker
-         kubeconfig: "~/.kube/config-worker-1"      # Path to worker-1 kubeconfig file
-         kubecontext: "worker-1-context"            # Kubecontext specific to worker-1
-         namespace: "egs-gpu-operator"              # Namespace where the GPU operator will be installed
-         release: "gpu-operator-worker-1"           # Helm release name for the GPU operator
-         chart: "gpu-operator"                      # Helm chart name for the GPU operator
-         repo_url: "https://helm.ngc.nvidia.com/nvidia" # Helm repository URL for the GPU operator
-         version: "v24.9.1"                         # Version of the GPU operator to install
-         specific_use_local_charts: true            # Use local charts for this application
-         inline_values:
-           hostPaths:
-             driverInstallDir: "/home/kubernetes/bin/nvidia"
-           toolkit:
-             installDir: "/home/kubernetes/bin/nvidia"
-           cdi:
-             enabled: true
-             default: true
-           driver:
-             enabled: false
-         helm_flags: "--debug"                      # Additional Helm flags for this application's installation
-         verify_install: false                      # Verify the installation of the GPU operator
-         verify_install_timeout: 600                # Timeout for verification (in seconds)
-         skip_on_verify_fail: true                  # Skip the step if verification fails
-         enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
-       
-       - name: "prometheus-worker-1"                # Name of the application
-         skip_installation: false                   # Do not skip the installation of Prometheus
-         use_global_kubeconfig: false               # Use specific kubeconfig for this worker
-         kubeconfig: "~/.kube/config-worker-1"      # Path to worker-1 kubeconfig file
-         kubecontext: "worker-1-context"            # Kubecontext specific to worker-1
-         namespace: "egs-monitoring"                # Namespace where Prometheus will be installed
-         release: "prometheus-worker-1"             # Helm release name for Prometheus
-         chart: "kube-prometheus-stack"             # Helm chart name for Prometheus
-         repo_url: "https://prometheus-community.github.io/helm-charts" # Helm repository URL for Prometheus
-         version: "v45.0.0"                         # Version of the Prometheus stack to install
-         specific_use_local_charts: true            # Use local charts for this application
-         inline_values:
-           prometheus:
-             service:
-               type: ClusterIP                     # Service type for Prometheus
-             prometheusSpec:
-               storageSpec: {}                     # Placeholder for storage configuration
-               additionalScrapeConfigs:
-               - job_name: nvidia-dcgm-exporter
-                 kubernetes_sd_configs:
-                 - role: endpoints
-                 relabel_configs:
-                 - source_labels: [__meta_kubernetes_pod_name]
-                   target_label: pod_name
-                 - source_labels: [__meta_kubernetes_pod_container_name]
-                   target_label: container_name
-               - job_name: gpu-metrics
-                 scrape_interval: 1s
-                 metrics_path: /metrics
-                 scheme: http
-                 kubernetes_sd_configs:
-                 - role: endpoints
-                   namespaces:
-                     names:
-                     - egs-gpu-operator
-                 relabel_configs:
-                 - source_labels: [__meta_kubernetes_endpoints_name]
-                   action: drop
-                   regex: .*-node-feature-discovery-master
-                 - source_labels: [__meta_kubernetes_pod_node_name]
-                   action: replace
-                   target_label: kubernetes_node
-           grafana:
-             enabled: true                         # Enable Grafana
-             grafana.ini:
-               auth:
-                 disable_login_form: true
-                 disable_signout_menu: true
-               auth.anonymous:
-                 enabled: true
-                 org_role: Viewer
-             service:
-               type: ClusterIP                  # Service type for Grafana
-             persistence:
-               enabled: false                      # Disable persistence
-               size: 1Gi                           # Default persistence size
-         helm_flags: "--debug"                     # Additional Helm flags for this application's installation
-         verify_install: false                      # Verify the installation of Prometheus
-         verify_install_timeout: 600                # Timeout for verification (in seconds)
-         skip_on_verify_fail: true                  # Skip the step if verification fails
-         enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
-     
-     # For worker-2, repeat the same structure with different kubeconfig, kubecontext, and release names:
-     # - name: "gpu-operator-worker-2"
-     #   kubeconfig: "~/.kube/config-worker-2"
-     #   kubecontext: "worker-2-context"
-     #   release: "gpu-operator-worker-2"
-     # - name: "prometheus-worker-2"
-     #   kubeconfig: "~/.kube/config-worker-2"
-     #   kubecontext: "worker-2-context"
-     #   release: "prometheus-worker-2"
-     ```
+The installer can auto-label nodes when `add_node_label: true` is configured.
 
-   **Option B: Using Pre-existing Infrastructure**
-   
-   If you already have Prometheus, GPU Operator, or PostgreSQL running in your cluster:
-   
-   - **Set `enable_install_additional_apps: false`** in your `egs-installer-config.yaml`
-   - **Refer to the prerequisite documentation** to ensure proper configuration for metrics scraping:
-     - **[EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)** - For Prometheus and PostgreSQL configuration
-     - **[EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md)** - For GPU Operator and monitoring configuration
-   - **📋 For multi-cluster setup examples with existing infrastructure, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**
-   - **Verify that your existing components** are properly configured to scrape EGS metrics
-   - **Ensure proper RBAC permissions** and network policies are in place
+#### 6. ✅ Preflight Check (Optional)
 
-8. **🚀 Install Prerequisites (After Configuration):**
-   - After configuring the YAML file (refer to [egs-installer-config.yaml](egs-installer-config.yaml) for examples), run the prerequisites installer to set up GPU Operator, Prometheus, and PostgreSQL:
-   ```bash
-   ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
-   ```
-   - **Note:** This step installs the required infrastructure components before the main EGS installation.
+Validate your environment before installation:
+
+```bash
+./egs-preflight-check.sh --kubeconfig ~/.kube/config --kubecontext-list context1,context2
+```
+
+📖 See **[Preflight Check Guide](docs/EGS-Preflight-Check-README.md)** for details.
+
+#### 7. 🗂️ Pre-create Namespaces (Optional)
+
+For clusters with namespace policies:
+
+```bash
+./create-namespaces.sh --input-yaml namespace-input.yaml --kubeconfig ~/.kube/config
+```
+
+📖 See **[Namespace Creation Guide](docs/Namespace-Creation-README.md)** for details.
+
 ---
 
-## 🛠️ Installation Steps
+## ⚡ Quick Installer
 
-### 1. **📂 Clone the Repository:**
-   - Start by cloning the EGS installation Git repository:
-     ```bash
-     git clone https://github.com/kubeslice-ent/egs-installation
-     cd egs-installation
-     ```
+> **New to EGS?** Start here with our single-command installer!
 
-### 2. **📝 Modify the Configuration File (Mandatory):**
-   - Navigate to the cloned repository and locate the input configuration YAML file `egs-installer-config.yaml`. **For the complete configuration template, see [egs-installer-config.yaml](egs-installer-config.yaml)**.
-   - Choose your installation approach:
+### Basic Installation
 
-   **🔄 Option A: Single Cluster Installation (Simplified)**
-   
-   For single cluster setups where controller and workers are in the same cluster, you only need to update basic configuration:
-   
-   ```yaml
-   # Kubernetes Configuration (Mandatory)
-   global_kubeconfig: ""  # Relative path to global kubeconfig file from base_path default is script directory (MANDATORY)
-   global_kubecontext: ""  # Global kubecontext (MANDATORY)
-   use_global_context: true  # If true, use the global kubecontext for all operations by default
+```bash
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --license-file egs-license.yaml --kubeconfig ~/.kube/config
+```
 
-   # Installation Flags (Mandatory)
-   enable_install_controller: true               # Enable the installation of the Kubeslice controller
-   enable_install_ui: true                       # Enable the installation of the Kubeslice UI
-   enable_install_worker: true                   # Enable the installation of Kubeslice workers
-   enable_install_additional_apps: true          # Set to true to enable additional apps installation
-   enable_custom_apps: true                      # Set to true if you want to allow custom applications to be deployed
-   run_commands: false                           # Set to true to allow the execution of commands for configuring NVIDIA MIG
-   ```
-   
-   **After updating these values, you can proceed directly to Step 7 (Run Installation Script).**
-   
-   **🌐 Option B: Multi-Worker Installation (Advanced)**
-   
-   For multi-cluster setups or when you need detailed worker configuration, continue with the following sections:
-   
-   **📋 Multi-Cluster Configuration Reference:** For a complete multi-cluster installation example with detailed YAML configuration, see [Multi-Cluster Installation Example](multi-cluster-example.yaml).
-   
-   **⚙️ Global Monitoring Endpoint Settings (Optional):**
-   - Configure global monitoring endpoint settings for multi-cluster setups:
-     
-     **⚠️ IMPORTANT NOTE:** It is recommended to set `global_auto_fetch_endpoint: true` for automatic endpoint discovery. If set to `false`, you must manually provide the Prometheus endpoints in the respective worker values section or cluster definition section. Ensure that worker Prometheus endpoints are accessible from the controller cluster for proper monitoring.
-     
-     **📌 CLUSTER SETUP CONSIDERATION:** If using ClusterIP service type, this is only valid for single cluster setups. For multi-worker setups where worker and controller clusters are different, ClusterIP will NOT work as the controller cluster cannot access worker cluster services. Use NodePort, LoadBalancer, or ensure proper network connectivity between clusters.
-      
-      ```yaml
-      # Global monitoring endpoint settings
-      global_auto_fetch_endpoint: false               # Enable automatic fetching of monitoring endpoints globally
-      global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
-      global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
-      global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
-      global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
-      global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
-      global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
-      ```
-   
-   **📋 When to Use Each Approach:**
-   
-   - **🔄 Option A (Single Cluster):** Use when controller and all workers are in the same Kubernetes cluster. This is the simplest setup and requires minimal configuration.
-   
-   - **🌐 Option B (Multi-Worker):** Use when you have workers in different clusters, need custom worker configurations, or want detailed control over monitoring endpoints and worker settings. **For a complete multi-cluster configuration example, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**.
-   
-   **Continue with the following sections for detailed configuration (Option B users only):**
+### Common Commands
 
-### 3. **Kubeslice Controller Installation Settings (Mandatory)**
+| Scenario | Command |
+|----------|---------|
+| **Single-cluster (full)** | `curl -fsSL https://repo.egs.avesha.io/install-egs.sh \| bash -s -- --license-file egs-license.yaml --kubeconfig ~/.kube/config` |
+| **Skip prerequisites** | Add `--skip-postgresql --skip-prometheus --skip-gpu-operator` |
+| **Multi-cluster** | Add `--controller-kubeconfig <ctrl.yaml> --worker-kubeconfig <wkr.yaml>` |
+| **Register worker** | `--register-worker --controller-kubeconfig <ctrl.yaml> --register-cluster-name <name> --register-project-name avesha` |
 
-   **Note: This section is MANDATORY for EGS installation. Configure the controller settings according to your environment.** **For the complete controller configuration example, see [egs-installer-config.yaml](egs-installer-config.yaml#L75-L113)**.
-   
-   ```yaml
-   # Kubeslice Controller Installation Settings
-   kubeslice_controller_egs:
-     skip_installation: false                     # Do not skip the installation of the controller
-     use_global_kubeconfig: true                  # Use global kubeconfig for the controller installation
-     specific_use_local_charts: true              # Override to use local charts for the controller
-     kubeconfig: ""                               # Path to the kubeconfig file specific to the controller, if empty, uses the global kubeconfig
-     kubecontext: ""                              # Kubecontext specific to the controller; if empty, uses the global context
-     namespace: "kubeslice-controller"            # Kubernetes namespace where the controller will be installed
-     release: "egs-controller"                    # Helm release name for the controller
-     chart: "kubeslice-controller-egs"            # Helm chart name for the controller
-   
-     # Inline Helm Values for the Controller Chart
-     inline_values:
-       global:
-         imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the images
-         namespaceConfig:   # user can configure labels or annotations that EGS Controller namespaces should have
-           labels: {}
-           annotations: {}
-         kubeTally:
-           enabled: true                           # Enable KubeTally in the controller
-   
-         # PostgreSQL Connection Configuration for Kubetally
-         postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
-                                                        # then a secret will be created with specified name. 
-                                                        # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
-         existingSecret: false                 # Set to true if secret is pre-created externally
-         postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
-         postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
-         postgresUser: "postgres"               # Change this PostgreSQL username to your values
-         postgresPassword: "postgres"           # Change this PostgreSQL password to your value
-         postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
-         postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
-         prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
-       kubeslice:
-         controller:
-           endpoint: ""                           # Endpoint of the controller API server; auto-fetched if left empty
-   
-     # Helm Flags and Verification Settings
-     helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the installation
-     verify_install: false                        # Verify the installation of the controller
-     verify_install_timeout: 30                   # Timeout for the controller installation verification (in seconds)
-     skip_on_verify_fail: true                    # If verification fails, do not skip the step
-   
-     # Troubleshooting Settings
-     enable_troubleshoot: false                   # Enable troubleshooting mode for additional logs and checks
-   ```
+### 📝 Registration Required
 
-   **⚙️ PostgreSQL Connection Configuration (Mandatory - KubeTally is enabled by default)**
+Complete the registration process at [Avesha EGS Registration](https://avesha.io/egs-registration) to receive your license file (`egs-license.yaml`).
 
-   **📌 Note:** Since KubeTally is enabled by default, PostgreSQL configuration is now mandatory for EGS installation. The secret is created in the `kubeslice-controller` namespace during installation. If you prefer to use a pre-created secret, leave all values empty and specify only the secret name.
+📖 **For complete Quick Installer documentation including topology examples, multi-cluster setup, worker registration, and all options:**
 
-   **`postgresSecretName`**: The name of the Kubernetes Secret containing PostgreSQL credentials.
+### **[→ View Full Quick Install Guide](docs/Quick-Install-README.md)**
 
-   The secret must contain the following key-value pairs:
+---
 
-   | Key               | Description                                  |
-   |-------------------|----------------------------------------------|
-   | `postgresAddr`    | The PostgreSQL service endpoint              |
-   | `postgresPort`    | The PostgreSQL service port (default: 5432)  |
-   | `postgresUser`    | The PostgreSQL username                      |
-   | `postgresPassword`| The PostgreSQL password                      |
-   | `postgresDB`      | The PostgreSQL database name                 |
-   | `postgresSslmode` | The SSL mode for PostgreSQL connection       |
+## 📋 Config-Based Installer
 
-   **Example Configuration to use pre-created secret**
-   
-   ```yaml
-   postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials.
-                                                  # Created by install, all the below values must be specified.
-                                                  # Alternatively, leave all values empty and provide a pre-created secret.
-   postgresAddr: ""  # Change to your PostgreSQL endpoint
-   postgresPort: ""   # Change this to match your PostgreSQL service port
-   postgresUser: ""  # Set your PostgreSQL username
-   postgresPassword: ""  # Set your PostgreSQL password
-   postgresDB: ""  # Set your PostgreSQL database name
-   postgresSslmode: ""  # Change this based on your SSL configuration
-   ```
-   
-   **📌 Alternatively**, if you provide all values with a secret name as specified for `postgresSecretName` in the values file, using the key-value format below, it will automatically create the specified secret in the `kubeslice-controller` namespace with the provided values.
-   
-   **Example Configuration to auto-create secret with provided values**
-   
-   ```yaml
-   postgresSecretName: kubetally-db-credentials   # Secret name in kubeslice-controller namespace for PostgreSQL credentials created by install, all the below values must be specified 
-                                                  # then a secret will be created with specified name. 
-                                                  # alternatively you can make all below values empty and provide a pre-created secret name with below connection details format
-   postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local" # Change this Address to your postgresql endpoint
-   postgresPort: 5432                     # Change this Port for the PostgreSQL service to your values 
-   postgresUser: "postgres"               # Change this PostgreSQL username to your values
-   postgresPassword: "postgres"           # Change this PostgreSQL password to your value
-   postgresDB: "postgres"                 # Change this PostgreSQL database name to your value
-   postgresSslmode: disable               # Change this SSL mode for PostgreSQL connection to your value
-   ```
+> **For production environments** where you need version-controlled, auditable configurations.
 
-   **For detailed PostgreSQL setup, see [EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)**
+The Config-Based Installer uses `egs-installer.sh` with a managed `egs-installer-config.yaml` file. This approach is recommended when you need:
 
-### 4. **Kubeslice UI Installation Settings (Optional)**
+- **Multiple config files** per environment, customer, or cluster topology
+- **Fine-grained control** over all installation parameters
+- **Version-controlled, auditable** installation configurations
+- **Complex multi-cluster** setups with custom monitoring endpoints
 
-   **Note: This section is OPTIONAL and typically requires NO changes. The default configuration works for most installations.**
+📖 **Detailed configuration documentation:** **[Configuration Reference](docs/Configuration-README.md)**
 
-   The Kubeslice UI provides a web interface for managing and monitoring your EGS deployment. By default, it's configured to work out-of-the-box with minimal configuration required. **For the complete UI configuration example, see [egs-installer-config.yaml](egs-installer-config.yaml#L117-L178)**.
+---
 
-   ```yaml
-   # Kubeslice UI Installation Settings
-   kubeslice_ui_egs:
-     skip_installation: false                     # Do not skip the installation of the UI
-     use_global_kubeconfig: true                  # Use global kubeconfig for the UI installation
-     kubeconfig: ""                               # Path to the kubeconfig file specific to the UI, if empty, uses the global kubeconfig
-     kubecontext: ""                              # Kubecontext specific to the UI; if empty, uses the global context
-     namespace: "kubeslice-controller"            # Kubernetes namespace where the UI will be installed
-     release: "egs-ui"                            # Helm release name for the UI
-     chart: "kubeslice-ui-egs"                    # Helm chart name for the UI
-   
-     # Inline Helm Values for the UI Chart
-     inline_values:
-       global:
-         imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems   # Docker registry for the UI images
-       kubeslice:
-         prometheus:
-           url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
-         uiproxy:
-           service:
-             type: ClusterIP                  # Service type for the UI proxy
-             ## if type selected to NodePort then set nodePort value if required
-             # nodePort:
-             # port: 443
-             # targetPort: 8443
-           labels:
-             app: kubeslice-ui-proxy
-           annotations: {}
+## 🛠️ Config-Based Installation Steps
 
-           ingress:
-             ## If true, ui‑proxy Ingress will be created
-             enabled: false
-             ## Port on the Service to route to
-             servicePort: 443
-             ## Ingress class name (e.g. "nginx"), if you're using a custom ingress controller
-             className: ""
-             hosts:
-               - host: ui.kubeslice.com     # replace with your FQDN
-                 paths:
-                   - path: /             # base path
-                     pathType: Prefix    # Prefix | Exact
-             ## TLS configuration (you must create these Secrets ahead of time)
-             tls: []
-               # - hosts:
-               #     - ui.kubeslice.com
-               #   secretName: uitlssecret
-             annotations: []
-             ## Extra labels to add onto the Ingress object
-             extraLabels: {}
-           apigw:
-             env:
-               - name: DCGM_METRIC_JOB_VALUE
-                 value: nvidia-dcgm-exporter  # This value must match the Prometheus scrape job name for GPU metrics collection
-         
-         egsCoreApis:
-           enabled: true                         # Enable EGS core APIs for the UI
-           service:
-             type: ClusterIP                  # Service type for the EGS core APIs
-   
-     # Helm Flags and Verification Settings
-     helm_flags: "--wait --timeout 5m --debug"            # Additional Helm flags for the UI installation
-     verify_install: false                        # Verify the installation of the UI
-     verify_install_timeout: 50                   # Timeout for the UI installation verification (in seconds)
-     skip_on_verify_fail: true                    # If UI verification fails, do not skip the step
-   
-     # Chart Source Settings
-     specific_use_local_charts: true              # Override to use local charts for the UI
-   ```
+> **Using Quick Installer?** See the **[Quick Install Guide](docs/Quick-Install-README.md)** instead.
 
-   **📌 IMPORTANT NOTE:** The `DCGM_METRIC_JOB_VALUE` must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected and UI visualization will not work. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md).
+### Step 1: Configure Prerequisites
 
-### 5. **Worker Clusters: Update the Inline Values**
+**⚙️ Choose ONE approach:**
 
-   This section is **mandatory** to ensure proper configuration of monitoring and dashboard URLs. Follow the steps carefully:
-   
-   **📝 Note:** Global monitoring endpoint settings are configured in the [Modify the Configuration File](https://github.com/kubeslice-ent/egs-installation/tree/main?tab=readme-ov-file#2--modify-the-configuration-file-mandatory) section above, including `global_auto_fetch_endpoint` and related Grafana/Prometheus settings.
-   
-   **⚠️ Multi-Cluster Setup Configuration**
-   
-   If the **controller** and **worker** are in different clusters, you need to configure monitoring endpoints manually:
-   
-   1. **🗒 Fetch the Grafana & Prometheus External IP**  
-      Use the following command to get the **Grafana LoadBalancer External IP**:  
-   
-      ```bash
-      kubectl get svc prometheus-grafana -n monitoring
-      kubectl get svc prometheus-kube-prometheus-prometheus -n monitoring
-      ```
-   
-   2. **✏ Update the `egs-installer-config.yaml`**  
-      Replace `<grafana-lb>` and <prometheus-lb> with the Grafana and prometheus **LoadBalancer External IP or NodePort** in the `inline_values` section:  
-   
-      ```yaml
-      inline_values:  # Inline Helm values for the worker chart
-        global:
-          imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
-        operator:
-          env:
-            - name: DCGM_EXPORTER_JOB_NAME
-              value: gpu-metrics  # This value must match the Prometheus scrape job name for GPU metrics collection
-        egs:
-          prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-          grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
-        egsAgent:
-          secretName: egs-agent-access
-          agentSecret:
-            endpoint: ""
-            key: ""
-        metrics:
-          insecure: true                        # Allow insecure connections for metrics
-        kserve:
-          enabled: true                         # Enable KServe for the worker
-          kserve:                               # KServe chart options
-            controller:
-              gateway:
-                domain: kubeslice.com
-                ingressGateway:
-                  className: "nginx"            # Ingress class name for the KServe gateway
-      ```
+#### 🅰️ Option A: EGS-Managed Prerequisites (Recommended)
 
-   **📌 IMPORTANT NOTE:** The `DCGM_EXPORTER_JOB_NAME` value (`gpu-metrics`) must match the Prometheus scrape job name configured in your Prometheus configuration. Without proper Prometheus scrape configuration, GPU metrics will not be collected from the worker cluster and monitoring dashboards will not display GPU data. Ensure your Prometheus configuration includes the corresponding scrape job. For detailed Prometheus configuration, see [EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md).
+Let EGS install Prometheus, GPU Operator, and PostgreSQL:
 
-### 6. **Adding Additional Workers (Optional)**
+```yaml
+# egs-installer-config.yaml
+global_kubeconfig: "path/to/kubeconfig"    # Required - Path to your kubeconfig file
+global_kubecontext: "your-context"         # Required - Context to use
+use_global_context: true
 
-   To add another worker to your EGS setup, you need to make an entry in the `kubeslice_worker_egs` section of your `egs-installer-config.yaml` file. **For complete worker configuration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L181-L240)**. **For a comprehensive multi-cluster example with multiple workers, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**. Follow these steps:
+enable_install_controller: true
+enable_install_ui: true
+enable_install_worker: true
+enable_install_additional_apps: true       # Enables prerequisites (PostgreSQL, Prometheus, GPU Operator)
+enable_custom_apps: false                  # Set true for NVIDIA drivers on GKE
+run_commands: false                        # Set true for MIG configuration
+add_node_label: true                       # Auto-label gateway nodes
+```
 
-   **Step 1: Add Worker Configuration**
-   
-   Add a new worker entry to the `kubeslice_worker_egs` array in your configuration file:
-   
-   ```yaml
-   kubeslice_worker_egs:
-     - name: "worker-1"                           # Worker name
-       use_global_kubeconfig: true                # Use global kubeconfig for this worker
-       kubeconfig: ""                             # Path to the kubeconfig file specific to the worker, if empty, uses the global kubeconfig
-       kubecontext: ""                            # Kubecontext specific to the worker; if empty, uses the global context
-       skip_installation: false                   # Do not skip the installation of the worker
-       specific_use_local_charts: true            # Override to use local charts for this worker
-       namespace: "kubeslice-system"              # Kubernetes namespace for this worker
-       release: "egs-worker"                      # Helm release name for the worker
-       chart: "kubeslice-worker-egs"              # Helm chart name for the worker
-       inline_values:                             # Inline Helm values for the worker chart
-         global:
-           imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems # Docker registry for worker images
-         operator:
-           env:
-             - name: DCGM_EXPORTER_JOB_NAME
-               value: gpu-metrics  # This value must match the Prometheus scrape job name for GPU metrics collection
-         egs:
-           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"  # Prometheus endpoint
-           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz" # Grafana dashboard base URL
-         egsAgent:
-           secretName: egs-agent-access
-           agentSecret:
-             endpoint: ""
-             key: ""
-         metrics:
-           insecure: true                        # Allow insecure connections for metrics
-         kserve:
-           enabled: true                         # Enable KServe for the worker
-           kserve:                               # KServe chart options
-             controller:
-               gateway:
-                 domain: kubeslice.com
-                 ingressGateway:
-                   className: "nginx"            # Ingress class name for the KServe gateway
-         kubesliceNetworking:
-           enabled: false                        # KubeSlice networking is disabled by default
-       helm_flags: "--wait --timeout 5m --debug" # Additional Helm flags for the worker installation
-       verify_install: true                      # Verify the installation of the worker
-       verify_install_timeout: 60                # Timeout for the worker installation verification (in seconds)
-       skip_on_verify_fail: false                # Do not skip if worker verification fails
-       enable_troubleshoot: false                # Enable troubleshooting mode for additional logs and checks
-   ```
+Run prerequisites installer:
 
-   **Step 2: Add Cluster Registration**
-   
-   Add corresponding entries in the `cluster_registration` section for each new worker. **For cluster registration examples, see [egs-installer-config.yaml](egs-installer-config.yaml#L240-L270)**:
+```bash
+./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml
+```
 
-   ```yaml
+#### 🅱️ Option B: Pre-existing Infrastructure
+
+If you have Prometheus, GPU Operator, or PostgreSQL already running:
+
+- Set `enable_install_additional_apps: false`
+- See **[EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)** for Prometheus/PostgreSQL configuration
+- See **[EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md)** for GPU Operator/monitoring configuration
+
+---
+
+### Step 2: Configure Controller
+
+> **📝 PostgreSQL Note:** KubeTally is enabled by default and requires PostgreSQL. If using EGS-managed PostgreSQL (`enable_install_additional_apps: true`), the default configuration below works automatically. If using your own PostgreSQL, update the `kubeTally` section with your PostgreSQL connection details.
+
+```yaml
+kubeslice_controller_egs:
+  skip_installation: false
+  use_global_kubeconfig: true
+  specific_use_local_charts: true
+  kubeconfig: ""                               # Empty = uses global_kubeconfig
+  kubecontext: ""                              # Empty = uses global_kubecontext
+  namespace: "kubeslice-controller"
+  release: "egs-controller"
+  chart: "kubeslice-controller-egs"
+  inline_values:
+    global:
+      imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+      kubeTally:
+        enabled: true
+        # PostgreSQL Configuration - Update if using your own PostgreSQL
+        postgresSecretName: kubetally-db-credentials
+        existingSecret: false                  # Set true if using pre-created secret
+        postgresAddr: "kt-postgresql.kt-postgresql.svc.cluster.local"
+        postgresPort: 5432
+        postgresUser: "postgres"
+        postgresPassword: "postgres"
+        postgresDB: "postgres"
+        postgresSslmode: disable
+        prometheusUrl: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090
+    kubeslice:
+      controller:
+        endpoint: ""                           # Auto-fetched if empty
+        replication:
+          minio:
+            install: "true"
+            storage: 1Gi
+            username: minioadmin
+            password: minioadmin
+            service:
+              type: "LoadBalancer"
+    serviceMonitor:
+      enabled: true
+      namespace: egs-monitoring
+  helm_flags: "--wait --timeout 5m --debug"
+  verify_install: false
+  verify_install_timeout: 30
+```
+
+📖 See **[egs-installer-config.yaml](egs-installer-config.yaml#L75-L136)** for complete example.
+
+#### PostgreSQL Configuration Options
+
+| Scenario | Configuration |
+|----------|---------------|
+| **EGS-Managed PostgreSQL** | Use defaults above. PostgreSQL installed via `enable_install_additional_apps: true` |
+| **Pre-existing PostgreSQL** | Update `postgresAddr`, `postgresPort`, `postgresUser`, `postgresPassword`, `postgresDB` with your values |
+| **Pre-created Secret** | Set `existingSecret: true`, leave other postgres fields empty, ensure secret exists in `kubeslice-controller` namespace |
+
+📖 See **[EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)** for detailed PostgreSQL setup.
+
+---
+
+### Step 3: Configure UI (Optional)
+
+The UI typically requires **no changes** from defaults.
+
+```yaml
+kubeslice_ui_egs:
+  skip_installation: false
+  use_global_kubeconfig: true
+  kubeconfig: ""                               # Empty = uses global_kubeconfig
+  kubecontext: ""                              # Empty = uses global_kubecontext
+  namespace: "kubeslice-controller"
+  release: "egs-ui"
+  chart: "kubeslice-ui-egs"
+  specific_use_local_charts: true
+  inline_values:
+    global:
+      imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+    kubeslice:
+      prometheus:
+        url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090
+      uiproxy:
+        service:
+          type: LoadBalancer                   # Use NodePort if LoadBalancer unavailable
+      apigw:
+        env:
+          - name: DCGM_METRIC_JOB_VALUE
+            value: nvidia-dcgm-exporter        # Must match Prometheus scrape job name
+      egsCoreApis:
+        enabled: true
+  helm_flags: "--wait --timeout 5m --debug"
+  verify_install: false
+```
+
+📖 See **[egs-installer-config.yaml](egs-installer-config.yaml#L138-L200)** for complete example.
+
+---
+
+### Step 4: Configure Workers
+
+```yaml
+kubeslice_worker_egs:
+  - name: "worker-1"                           # Must match cluster_registration
+    use_global_kubeconfig: true
+    kubeconfig: ""                             # Empty = uses global_kubeconfig
+    kubecontext: ""                            # Empty = uses global_kubecontext
+    skip_installation: false
+    specific_use_local_charts: true
+    namespace: "kubeslice-system"
+    release: "egs-worker"
+    chart: "kubeslice-worker-egs"
+    inline_values:
+      global:
+        imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
+      kubesliceNetworking:
+        enabled: false                         # Set true if using KubeSlice networking
+      operator:
+        env:
+          - name: DCGM_EXPORTER_JOB_NAME
+            value: gpu-metrics                 # Must match Prometheus scrape job name
+      egs:
+        prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+        grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
+      egsGpuAgent:
+        env:
+          - name: REMOTE_HE_INFO
+            value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
+          - name: HEALTH_CHECK_INTERVAL
+            value: "15m"
+      monitoring:
+        podMonitor:
+          enabled: true
+          namespace: egs-monitoring
+    helm_flags: "--wait --timeout 5m --debug"
+    verify_install: true
+    verify_install_timeout: 60
+```
+
+📖 See **[egs-installer-config.yaml](egs-installer-config.yaml#L202-L266)** for complete example.
+
+---
+
+### Step 5: Configure Cluster Registration
+
+```yaml
 cluster_registration:
-     - cluster_name: "worker-1"                    # Existing cluster
-       project_name: "avesha"                      # Name of the project to associate with the cluster
-       telemetry:
-         enabled: true                             # Enable telemetry for this cluster
-         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090" # Telemetry endpoint
-         telemetryProvider: "prometheus"           # Telemetry provider (Prometheus in this case)
-       geoLocation:
-         cloudProvider: ""                         # Cloud provider for this cluster (e.g., GCP)
-         cloudRegion: ""                           # Cloud region for this cluster (e.g., us-central1)
-   ```
+  - cluster_name: "worker-1"                   # Must match worker name
+    project_name: "avesha"
+    telemetry:
+      enabled: true
+      endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
+      telemetryProvider: "prometheus"
+    geoLocation:
+      cloudProvider: ""                        # e.g., "GCP", "AWS", "azure"
+      cloudRegion: ""                          # e.g., "us-central1", "us-east-1"
+```
 
-   **⚠️ Important Notes:**
-   
-   - **🔑 Unique Release Names:** Ensure each worker has a unique `release` name to avoid conflicts during installation.
-   - **🌐 Cluster Endpoints:** Update the `prometheusEndpoint` and `grafanaDashboardBaseUrl` with the correct endpoints for the new worker cluster.
-   - **🔧 Kubeconfig:** If the new worker is in a different cluster, provide the appropriate `kubeconfig` and `kubecontext` values.
-   - **📊 Monitoring:** Ensure the monitoring endpoints (Prometheus/Grafana) are accessible from the controller cluster for proper telemetry.
-   - **🔗 Prometheus Accessibility:** **Critical:** Make sure Prometheus endpoints are accessible from the controller cluster. The controller needs to reach the Prometheus service in each worker cluster to collect metrics and telemetry data. If the worker clusters are in different networks, ensure proper network connectivity or use LoadBalancer/NodePort services for Prometheus.
-   - **🌐 KubeSlice Networking:** If you enable `kubesliceNetworking: enabled: true`, ensure at least some nodes are labeled as gateway nodes: `kubectl label node <node-name> kubeslice.io/node-type=gateway`. Verify with: `kubectl get no -l kubeslice.io/node-type=gateway`.
-
-   **📌 Note - Multiple Worker Configuration:**
-   
-   When configuring multiple workers, you can use an array structure in your `egs-installer-config.yaml`. Here's a sample snippet showing how to efficiently handle multiple workers:
-   
-   ```yaml
-   kubeslice_worker_egs:
-     # Worker 1 - Complete configuration
-     - name: "worker-1"
-       use_global_kubeconfig: true
-       kubeconfig: ""
-       kubecontext: ""
-       skip_installation: false
-       specific_use_local_charts: true
-       namespace: "kubeslice-system"
-       release: "egs-worker-1"
-       chart: "kubeslice-worker-egs"
-       inline_values:
-         global:
-           imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
-         operator:
-           env:
-             - name: DCGM_EXPORTER_JOB_NAME
-               value: gpu-metrics
-         egs:
-           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
-           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
-         # ... other worker-1 specific values
-       
-     # Worker 2 - Pattern for additional workers
-     - name: "worker-2"
-       use_global_kubeconfig: true
-       kubeconfig: ""
-       kubecontext: ""
-       skip_installation: false
-       specific_use_local_charts: true
-       namespace: "kubeslice-system"
-       release: "egs-worker-2"                    # Unique release name
-       chart: "kubeslice-worker-egs"
-       inline_values:
-         global:
-           imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
-         operator:
-           env:
-             - name: DCGM_EXPORTER_JOB_NAME
-               value: gpu-metrics
-         egs:
-           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
-           grafanaDashboardBaseUrl: "http://<grafana-lb>/d/Oxed_c6Wz"
-         # ... other worker-2 specific values
-       
-     # Worker 3 - Follow same pattern
-     - name: "worker-3"
-       # ... similar configuration with unique name, release, and endpoints
-   ```
-   
-   **💡 Key Points for Multiple Workers:**
-   - **Unique Identifiers:** Each worker must have unique `name` and `release` values
-   - **Endpoint Configuration:** Configure worker-specific monitoring endpoints if they're in different clusters
-   - **Array Structure:** Use YAML array syntax with `-` for each worker entry
-   - **Consistent Pattern:** Follow the same configuration structure for all workers
-   - **🔧 Cluster Access:** **Critical:** For workers in different clusters, ensure worker-specific `kubeconfig` and `kubecontext` values are properly specified. If using global kubeconfig, verify it has access to all worker clusters.
-
-   **📋 Cluster Registration YAML Examples:**
-
-   **⚠️ CRITICAL NOTE - Prometheus Endpoint Accessibility:**
-   
-   The examples below show **example Prometheus endpoints** for demonstration purposes. **IMPORTANT:** If your controller and worker clusters are in different Kubernetes clusters, the Kubernetes cluster service URLs (like `*.svc.cluster.local`) will **NOT work** because the controller cluster cannot reach the internal service endpoints of worker clusters.
-   
-   **For Multi-Cluster Setups, you must use:**
-   - **LoadBalancer External IPs** for Prometheus services
-   - **NodePort** services with accessible node IPs
-   - **Ingress/LoadBalancer** endpoints that are reachable from the controller cluster
-   - **External Prometheus instances** with public endpoints
-   
-   **📋 For complete multi-cluster examples with cluster registration, see [Multi-Cluster Installation Example](multi-cluster-example.yaml)**
-   
-   **Single Cluster Setup (All workers in same cluster):**
-   
-   ```yaml
-   cluster_registration:
-     - cluster_name: "egs-cluster"
-       project_name: "avesha"
-       telemetry:
-         enabled: true
-         endpoint: "http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090"
-         telemetryProvider: "prometheus"
-       geoLocation:
-         cloudProvider: "GCP"
-         cloudRegion: "us-central1"
-   ```
-
-   **Multi-Cluster Setup (Workers in different clusters):**
-   
-   ```yaml
-   cluster_registration:
-     
-     # Worker clusters - follow same pattern with unique names and endpoints
-     - cluster_name: "worker-1-cluster"
-       project_name: "avesha"
-       telemetry:
-         enabled: true
-         endpoint: "http://<worker-1-prometheus-endpoint>:9090"  # Use accessible endpoint
-         telemetryProvider: "prometheus"
-       geoLocation:
-         cloudProvider: "GCP"
-         cloudRegion: "us-west1"
-     
-     - cluster_name: "worker-2-cluster"
-       project_name: "avesha"
-       telemetry:
-         enabled: true
-         endpoint: "http://<worker-2-prometheus-endpoint>:9090"  # Use accessible endpoint
-         telemetryProvider: "prometheus"
-       geoLocation:
-         cloudProvider: "AWS"
-         cloudRegion: "us-east-1"
-   ```
-
-   **🔑 Cluster Registration Key Points:**
-   - **Unique Cluster Names:** Each cluster must have a unique `cluster_name` value
-   - **Telemetry Endpoints:** Configure cluster-specific Prometheus endpoints for each worker cluster
-   - **Geographic Distribution:** Use `geoLocation` to specify cloud provider and region for each cluster
-   - **Project Association:** All clusters should be associated with the same `project_name` for unified management
+📖 See **[Multi-Cluster Example](multi-cluster-example.yaml)** for multi-cluster registration.
 
 ---
 
-### 7. **🚀 Run the Installation Script**
+### Step 6: Configure Additional Applications (When `enable_install_additional_apps: true`)
 
-After completing all configuration changes, run the installation script to deploy EGS:
+If you set `enable_install_additional_apps: true`, configure the `additional_apps` section for PostgreSQL, Prometheus, and GPU Operator:
+
+```yaml
+additional_apps:
+  # GPU Operator - Required for GPU workloads
+  - name: "gpu-operator"
+    skip_installation: false
+    use_global_kubeconfig: true
+    kubeconfig: ""
+    kubecontext: ""
+    namespace: "egs-gpu-operator"
+    release: "gpu-operator"
+    chart: "gpu-operator"
+    repo_url: "https://helm.ngc.nvidia.com/nvidia"
+    version: "v25.3.4"
+    specific_use_local_charts: true
+    inline_values:
+      hostPaths:
+        driverInstallDir: "/home/kubernetes/bin/nvidia"
+      toolkit:
+        installDir: "/home/kubernetes/bin/nvidia"
+      cdi:
+        enabled: true
+        default: true
+      driver:
+        enabled: false                         # Set true if nodes need NVIDIA drivers
+    helm_flags: "--debug"
+    verify_install: false
+    verify_install_timeout: 600
+
+  # Prometheus - Required for monitoring
+  - name: "prometheus"
+    skip_installation: false
+    use_global_kubeconfig: true
+    kubeconfig: ""
+    kubecontext: ""
+    namespace: "egs-monitoring"
+    release: "prometheus"
+    chart: "kube-prometheus-stack"
+    repo_url: "https://prometheus-community.github.io/helm-charts"
+    version: "v45.0.0"
+    specific_use_local_charts: true
+    inline_values:
+      prometheus:
+        service:
+          type: ClusterIP
+        prometheusSpec:
+          additionalScrapeConfigs:
+            - job_name: gpu-metrics
+              scrape_interval: 1s
+              metrics_path: /metrics
+              kubernetes_sd_configs:
+                - role: endpoints
+                  namespaces:
+                    names:
+                      - egs-gpu-operator
+      grafana:
+        enabled: true
+    helm_flags: "--debug"
+    verify_install: false
+
+  # PostgreSQL - Required for KubeTally
+  - name: "postgresql"
+    skip_installation: false
+    use_global_kubeconfig: true
+    kubeconfig: ""
+    kubecontext: ""
+    namespace: "kt-postgresql"
+    release: "kt-postgresql"
+    chart: "postgresql"
+    repo_url: "oci://registry-1.docker.io/bitnamicharts/postgresql"
+    version: "16.7.27"
+    specific_use_local_charts: true
+    inline_values:
+      auth:
+        postgresPassword: "postgres"
+        username: "postgres"
+        password: "postgres"
+        database: "postgres"
+      primary:
+        persistence:
+          enabled: true
+          size: 10Gi
+    helm_flags: "--debug"
+    verify_install: false
+```
+
+📖 See **[egs-installer-config.yaml](egs-installer-config.yaml#L288-L415)** for complete additional_apps configuration.
+
+⚠️ **Multi-Cluster Note:** For multi-cluster setups, you need additional entries for each worker cluster with their specific `kubeconfig` and `kubecontext`. See **[Multi-Cluster Example](multi-cluster-example.yaml)**.
+
+---
+
+### Step 7: Configure Projects (Optional)
+
+Projects provide logical grouping for clusters. Default project `avesha` is created automatically:
+
+```yaml
+projects:
+  - name: "avesha"
+    username: "admin"
+```
+
+---
+
+### Step 8: Configure Manifests and Commands (When `enable_custom_apps: true`)
+
+If you set `enable_custom_apps: true` for NVIDIA driver installation or MIG configuration:
+
+```yaml
+# Manifests for GPU quota and NVIDIA driver
+manifests:
+  - appname: "gpu-operator-quota"
+    use_global_kubeconfig: true
+    namespace: "egs-gpu-operator"
+    skip_installation: false
+    inline_yaml: |
+      apiVersion: v1
+      kind: ResourceQuota
+      metadata:
+        name: gpu-operator-quota
+        namespace: egs-gpu-operator
+      spec:
+        hard:
+          pods: "100"
+        scopeSelector:
+          matchExpressions:
+            - operator: In
+              scopeName: PriorityClass
+              values:
+                - system-node-critical
+                - system-cluster-critical
+
+  - appname: "nvidia-driver-installer"
+    use_global_kubeconfig: true
+    namespace: "kube-system"
+    skip_installation: false
+    manifest: "https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/master/nvidia-driver-installer/cos/daemonset-preloaded.yaml"
+
+# Commands for NVIDIA MIG configuration (when run_commands: true)
+commands:
+  - use_global_kubeconfig: true
+    skip_installation: false
+    namespace: kube-system
+    command_stream: |
+      kubectl create namespace egs-gpu-operator --dry-run=client -o yaml | kubectl apply -f - || true
+      kubectl get nodes -o json | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' | xargs -I {} kubectl label nodes {} gke-no-default-nvidia-gpu-device-plugin=true cloud.google.com/gke-accelerator=true --overwrite || true
+```
+
+📖 See **[egs-installer-config.yaml](egs-installer-config.yaml#L417-L477)** for complete manifests and commands configuration.
+
+---
+
+### Step 9: Configure Monitoring Endpoints (Multi-Cluster)
+
+For multi-cluster setups, configure automatic endpoint fetching:
+
+```yaml
+# Global monitoring endpoint settings
+global_auto_fetch_endpoint: true               # Auto-fetch Prometheus/Grafana endpoints
+global_grafana_namespace: egs-monitoring
+global_grafana_service_type: ClusterIP         # Use LoadBalancer for multi-cluster
+global_grafana_service_name: prometheus-grafana
+global_prometheus_namespace: egs-monitoring
+global_prometheus_service_name: prometheus-kube-prometheus-prometheus
+global_prometheus_service_type: ClusterIP      # Use LoadBalancer for multi-cluster
+```
+
+⚠️ **Multi-Cluster Critical:** For multi-cluster setups where controller and workers are in different clusters, you **must** use `LoadBalancer` or `NodePort` service types. `ClusterIP` only works for single-cluster setups.
+
+---
+
+### Step 10: Additional Configuration Options (Optional)
+
+These optional settings are available in `egs-installer-config.yaml`:
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `global_image_pull_secret` | Image pull secret for private registries | `""` |
+| `precheck` | Run prechecks before installation | `true` |
+| `kubeslice_precheck` | Run KubeSlice-specific prechecks | `true` |
+| `verify_install` | Verify installations globally | `false` |
+| `verify_install_timeout` | Verification timeout (seconds) | `600` |
+| `use_local_charts` | Use local Helm charts | `true` |
+| `local_charts_path` | Path to local charts | `"charts"` |
+| `helm_flags` | Additional Helm flags | `"--debug"` |
+| `enable_troubleshoot` | Enable troubleshooting mode | `false` |
+
+📖 See **[egs-installer-config.yaml](egs-installer-config.yaml)** for all available options.
+
+---
+
+### Step 11: Run Installation
 
 ```bash
 ./egs-installer.sh --input-yaml egs-installer-config.yaml
 ```
 
-**📌 IMPORTANT NOTES:**
+---
 
-- **🔄 Configuration Changes:** If you make any changes to the configuration file after the initial installation, you must re-run the installation script to apply the changes.
-- **⬆️ Upgrades:** For EGS upgrades or configuration modifications, update your `egs-installer-config.yaml` file and re-run the installation script. The installer will handle upgrades automatically.
-- **✅ Verification:** Always verify the installation after making configuration changes to ensure all components are properly deployed.
+### Step 12: Access the EGS UI
+
+After successful installation, access the EGS UI:
+
+#### 1. Get the UI URL
+
+```bash
+# Get the UI service external IP/hostname
+kubectl get svc kubeslice-ui-proxy -n kubeslice-controller
+
+# Example output:
+# NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)
+# kubeslice-ui-proxy   LoadBalancer   10.x.x.x       <EXTERNAL-IP>    443:xxxxx/TCP
+```
+
+Access the UI at: `https://<EXTERNAL-IP>`
+
+#### 2. Get the Admin Token
+
+```bash
+# Get the admin token for login (use absolute path to kubeconfig)
+./fetch_egs_slice_token.sh -k /path/to/kubeconfig -p avesha -a -u admin
+```
+
+The script will output the admin token. Copy and paste it into the UI login screen.
+
+**Parameters:**
+- `-k /path/to/kubeconfig`: Absolute path to your kubeconfig file
+- `-p avesha`: Project name (default: `avesha`)
+- `-a`: Fetch admin token
+- `-u admin`: Username for the admin token
+
+#### 3. Quick Token Retrieval (Alternative)
+
+```bash
+# Direct token retrieval using kubectl
+kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.data.token}' | base64 -d
+```
+
+📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](docs/Slice-Admin-Token-README.md)**
+
+#### 4. EGS UI Screenshots
+
+After logging in, you'll have access to the following screens:
+
+<details>
+<summary><b>🔐 Login Page</b> - Enter your service account token to access EGS</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/01-egs-login.png" alt="EGS Login Page" width="100%">
+</details>
+
+<details>
+<summary><b>📊 Dashboard Overview</b> - GPU allocation and utilization at a glance</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/02-dashboard-overview.png" alt="Dashboard Overview" width="100%">
+</details>
+
+<details>
+<summary><b>💰 Cost Analysis</b> - GPU cost breakdown and utilization costs</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/03-dashboard-cost-analysis.png" alt="Cost Analysis" width="100%">
+</details>
+
+<details>
+<summary><b>🔧 GPU Infrastructure Health</b> - Power usage, temperature, and memory trends</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/04-dashboard-gpu-health.png" alt="GPU Infrastructure Health" width="100%">
+</details>
+
+<details>
+<summary><b>📈 Dashboard Metrics</b> - Workspace metrics and cluster visualization</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/05-dashboard-metrics.png" alt="Dashboard Metrics" width="100%">
+</details>
+
+<details>
+<summary><b>🖥️ Clusters</b> - Registered clusters with status and health</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/06-clusters.png" alt="Clusters" width="100%">
+</details>
+
+<details>
+<summary><b>📦 Inventory</b> - Managed GPU nodes across clusters</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/07-inventory.png" alt="Inventory" width="100%">
+</details>
+
+<details>
+<summary><b>🗂️ Workspaces</b> - Application workspaces and configurations</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/08-workspaces.png" alt="Workspaces" width="100%">
+</details>
+
+<details>
+<summary><b>👥 RBAC</b> - Role-based access control for workspaces</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/09-rbac.png" alt="RBAC" width="100%">
+</details>
+
+<details>
+<summary><b>📋 Resource Quotas</b> - Workspace resource limits and allocations</summary>
+<br>
+<img src="https://repo.egs.avesha.io/docs/images/10-resource-quotas.png" alt="Resource Quotas" width="100%">
+</details>
 
 ---
 
-### 🗑️ Uninstallation Steps
+## 🌐 Multi-Cluster Setup
 
-**⚠️ Important Note:**  
-The uninstallation script will delete **all resources** associated with EGS, including **slices**, **GPRs**, and **all custom resources provisioned by egs**. Use this script with caution, as it performs a complete cleanup of the egs setup.
+For multi-cluster deployments with workers in different clusters:
 
-**Run the Cleanup Script**  
-- Execute the uninstallation script using the following command:  
+### Key Configuration Differences
+
+| Setting | Single-Cluster | Multi-Cluster |
+|---------|----------------|---------------|
+| `use_global_kubeconfig` | `true` | `false` (per-worker) |
+| Worker `kubeconfig` | Empty (uses global) | Worker-specific path |
+| Prometheus endpoint | `*.svc.cluster.local` | LoadBalancer/NodePort IP |
+| Grafana endpoint | `*.svc.cluster.local` | LoadBalancer/NodePort IP |
+
+### Multi-Cluster Worker Configuration
+
+```yaml
+kubeslice_worker_egs:
+  - name: "worker-1"
+    use_global_kubeconfig: false               # Do NOT use global kubeconfig
+    kubeconfig: "worker-1-kubeconfig.yaml"     # Path to worker-1 specific kubeconfig
+    kubecontext: "worker-1-context"            # Context name in the kubeconfig file
+    skip_installation: false
+    specific_use_local_charts: true
+    namespace: "kubeslice-system"
+    release: "egs-worker"
+    chart: "kubeslice-worker-egs"
+    inline_values:
+      egs:
+        prometheusEndpoint: "http://<worker-1-prometheus-lb>:9090"  # External endpoint
+        grafanaDashboardBaseUrl: "http://<worker-1-grafana-lb>/d/Oxed_c6Wz"
+    # ... other values
+
+  - name: "worker-2"
+    use_global_kubeconfig: false               # Do NOT use global kubeconfig
+    kubeconfig: "worker-2-kubeconfig.yaml"     # Path to worker-2 specific kubeconfig
+    kubecontext: "worker-2-context"            # Context name in the kubeconfig file
+    skip_installation: false
+    specific_use_local_charts: true
+    namespace: "kubeslice-system"
+    release: "egs-worker-2"                    # Unique release name
+    chart: "kubeslice-worker-egs"
+    inline_values:
+      egs:
+        prometheusEndpoint: "http://<worker-2-prometheus-lb>:9090"  # External endpoint
+        grafanaDashboardBaseUrl: "http://<worker-2-grafana-lb>/d/Oxed_c6Wz"
+    # ... other values
+```
+
+### Adding Additional Workers
+
+To add more workers, follow these steps:
+
+**Step 1:** Add a new entry in `kubeslice_worker_egs` array with:
+- Unique `name` and `release` values
+- Worker-specific `kubeconfig` and `kubecontext`
+- Correct monitoring endpoints
+
+**Step 2:** Add corresponding `cluster_registration` entry:
+
+```yaml
+cluster_registration:
+  - cluster_name: "worker-1"
+    project_name: "avesha"
+    telemetry:
+      enabled: true
+      endpoint: "http://<worker-1-prometheus-lb>:9090"  # Must be accessible from controller
+      telemetryProvider: "prometheus"
+    geoLocation:
+      cloudProvider: "GCP"
+      cloudRegion: "us-west1"
+      
+  - cluster_name: "worker-2"
+    project_name: "avesha"
+    telemetry:
+      enabled: true
+      endpoint: "http://<worker-2-prometheus-lb>:9090"  # Must be accessible from controller
+      telemetryProvider: "prometheus"
+    geoLocation:
+      cloudProvider: "AWS"
+      cloudRegion: "us-east-1"
+```
+
+⚠️ **Critical:** For multi-cluster, Prometheus endpoints must be externally accessible (LoadBalancer/NodePort), not `*.svc.cluster.local`.
+
+📖 See **[Multi-Cluster Installation Example](multi-cluster-example.yaml)** for complete configuration.
+
+---
+
+## 🗑️ Uninstallation
+
+⚠️ **Warning:** This removes **all EGS resources** including slices, GPRs, and custom resources.
+
 ```bash
-  ./egs-uninstall.sh --input-yaml egs-installer-config.yaml
-  ```
+./egs-uninstall.sh --input-yaml egs-installer-config.yaml
+```
+
+---
+
+## 📋 Quick Reference
+
+### Installation Methods Comparison
+
+| Feature | Quick Installer | Config-Based |
+|---------|-----------------|--------------|
+| Setup Time | Minutes | Varies |
+| Configuration | Flags | YAML file |
+| Multi-cluster | ✅ Supported | ✅ Supported |
+| Version Control | Generated config | Full control |
+| Best For | PoC, new users | Production |
+
+### Common Operations
+
+| Operation | Command |
+|-----------|---------|
+| Full installation | `./egs-installer.sh --input-yaml egs-installer-config.yaml` |
+| Prerequisites only | `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml` |
+| Uninstall | `./egs-uninstall.sh --input-yaml egs-installer-config.yaml` |
+| Preflight check | `./egs-preflight-check.sh --kubeconfig ~/.kube/config` |
 
 ---
 
