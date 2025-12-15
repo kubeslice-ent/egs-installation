@@ -77,10 +77,16 @@ This section provides **copy-paste ready commands** for different cluster topolo
 > 📝 **Note:** Installs all components (PostgreSQL, Prometheus, GPU Operator, Controller, UI, Worker) on a single cluster.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"       # Path to your EGS license file
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export CLUSTER_NAME="my-cluster"             # Name for your cluster
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --kubeconfig ~/.kube/config \
-  --cluster-name my-cluster
+  --license-file $LICENSE_FILE \
+  --kubeconfig $KUBECONFIG_PATH \
+  --cluster-name $CLUSTER_NAME
 ```
 
 #### 2️⃣ Skip Prerequisites
@@ -88,10 +94,16 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Use this when PostgreSQL, Prometheus, and GPU Operator are already installed on the cluster.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"       # Path to your EGS license file
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export CLUSTER_NAME="my-cluster"             # Name for your cluster
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --kubeconfig ~/.kube/config \
-  --cluster-name my-cluster \
+  --license-file $LICENSE_FILE \
+  --kubeconfig $KUBECONFIG_PATH \
+  --cluster-name $CLUSTER_NAME \
   --skip-postgresql --skip-prometheus --skip-gpu-operator
 ```
 
@@ -100,8 +112,12 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > ⚠️ **Note:** This installs Worker on the **SAME cluster** where Controller/UI are already running. Use this when you want to add Worker capability to an existing Controller cluster.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
+  --kubeconfig $KUBECONFIG_PATH \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
 ```
 
@@ -116,11 +132,18 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Installs Controller/UI on cluster-1 and Worker on cluster-2 with all prerequisites.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+export WORKER_NAME="production-worker-1"                            # Name for the worker cluster
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
-  --worker-name production-worker-1
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --worker-name $WORKER_NAME
 ```
 
 #### 2️⃣ Skip All Prerequisites
@@ -128,11 +151,18 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Use this when PostgreSQL, Prometheus, and GPU Operator are already installed on **both** clusters.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+export WORKER_NAME="production-worker-1"                            # Name for the worker cluster
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
-  --worker-name production-worker-1 \
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --worker-name $WORKER_NAME \
   --skip-postgresql \
   --skip-controller-prometheus --skip-controller-gpu-operator \
   --skip-worker-prometheus --skip-worker-gpu-operator
@@ -143,11 +173,18 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Skips prerequisites on controller cluster but installs them on worker cluster.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+export WORKER_NAME="production-worker-1"                            # Name for the worker cluster
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
-  --worker-name production-worker-1 \
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --worker-name $WORKER_NAME \
   --skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator
 ```
 
@@ -162,13 +199,22 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Installs Controller/UI on cluster-1 and Workers on cluster-2 and cluster-3 with all prerequisites.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 cluster kubeconfig
+export WORKER1_NAME="production-worker-1"                           # Name for worker 1
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 cluster kubeconfig
+export WORKER2_NAME="production-worker-2"                           # Name for worker 2
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-name production-worker-1 \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-name production-worker-2
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-name $WORKER2_NAME
 ```
 
 #### 2️⃣ With Custom Contexts
@@ -176,16 +222,28 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Use this when your kubeconfig files have multiple contexts and you need to specify which context to use.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export CONTROLLER_CONTEXT="controller-ctx"                          # Controller cluster context
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 cluster kubeconfig
+export WORKER1_CONTEXT="worker1-ctx"                                # Worker 1 cluster context
+export WORKER1_NAME="production-worker-1"                           # Name for worker 1
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 cluster kubeconfig
+export WORKER2_CONTEXT="worker2-ctx"                                # Worker 2 cluster context
+export WORKER2_NAME="production-worker-2"                           # Name for worker 2
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --controller-context controller-ctx \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-context worker1-ctx \
-  --worker-name production-worker-1 \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-context worker2-ctx \
-  --worker-name production-worker-2
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --controller-context $CONTROLLER_CONTEXT \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-context $WORKER1_CONTEXT \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-context $WORKER2_CONTEXT \
+  --worker-name $WORKER2_NAME
 ```
 
 #### 3️⃣ Skip All Prerequisites
@@ -193,13 +251,22 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Use this when PostgreSQL, Prometheus, and GPU Operator are already installed on **all** clusters.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 cluster kubeconfig
+export WORKER1_NAME="production-worker-1"                           # Name for worker 1
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 cluster kubeconfig
+export WORKER2_NAME="production-worker-2"                           # Name for worker 2
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-name production-worker-1 \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-name production-worker-2 \
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-name $WORKER2_NAME \
   --skip-postgresql \
   --skip-controller-prometheus --skip-controller-gpu-operator \
   --skip-worker-prometheus --skip-worker-gpu-operator
@@ -216,15 +283,26 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Installs Controller/UI on cluster-1 and Workers on cluster-2, cluster-3, and cluster-4 with all prerequisites.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 (US East) kubeconfig
+export WORKER1_NAME="us-east-worker"                                # Name for worker 1
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 (US West) kubeconfig
+export WORKER2_NAME="us-west-worker"                                # Name for worker 2
+export WORKER3_KUBECONFIG="/path/to/worker3-kubeconfig.yaml"        # Worker 3 (EU West) kubeconfig
+export WORKER3_NAME="eu-west-worker"                                # Name for worker 3
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-name us-east-worker \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-name us-west-worker \
-  --worker-kubeconfig /path/to/worker3-kubeconfig.yaml \
-  --worker-name eu-west-worker
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-name $WORKER2_NAME \
+  --worker-kubeconfig $WORKER3_KUBECONFIG \
+  --worker-name $WORKER3_NAME
 ```
 
 #### 2️⃣ With Cloud Provider and Region
@@ -232,15 +310,26 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Specify cloud provider and region for geo-location tracking of each worker cluster.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 (US East) kubeconfig
+export WORKER1_NAME="us-east-worker"                                # Name for worker 1
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 (US West) kubeconfig
+export WORKER2_NAME="us-west-worker"                                # Name for worker 2
+export WORKER3_KUBECONFIG="/path/to/worker3-kubeconfig.yaml"        # Worker 3 (EU West) kubeconfig
+export WORKER3_NAME="eu-west-worker"                                # Name for worker 3
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-name us-east-worker \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-name us-west-worker \
-  --worker-kubeconfig /path/to/worker3-kubeconfig.yaml \
-  --worker-name eu-west-worker
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-name $WORKER2_NAME \
+  --worker-kubeconfig $WORKER3_KUBECONFIG \
+  --worker-name $WORKER3_NAME
 ```
 
 #### 3️⃣ Skip Prerequisites on Controller Only
@@ -248,15 +337,26 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Skips prerequisites on controller but installs them on all worker clusters.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 (US East) kubeconfig
+export WORKER1_NAME="us-east-worker"                                # Name for worker 1
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 (US West) kubeconfig
+export WORKER2_NAME="us-west-worker"                                # Name for worker 2
+export WORKER3_KUBECONFIG="/path/to/worker3-kubeconfig.yaml"        # Worker 3 (EU West) kubeconfig
+export WORKER3_NAME="eu-west-worker"                                # Name for worker 3
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file egs-license.yaml \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-name us-east-worker \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-name us-west-worker \
-  --worker-kubeconfig /path/to/worker3-kubeconfig.yaml \
-  --worker-name eu-west-worker \
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-name $WORKER2_NAME \
+  --worker-kubeconfig $WORKER3_KUBECONFIG \
+  --worker-name $WORKER3_NAME \
   --skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator
 ```
 
@@ -273,12 +373,19 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Registers the worker with the controller AND installs EGS Worker in one command.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/new-worker-kubeconfig.yaml"      # New worker cluster kubeconfig
+export CLUSTER_NAME="new-worker-1"                                  # Name for the new worker
+export PROJECT_NAME="avesha"                                        # Project name (default: avesha)
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/new-worker-kubeconfig.yaml \
-  --register-cluster-name new-worker-1 \
-  --register-project-name avesha
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --register-cluster-name $CLUSTER_NAME \
+  --register-project-name $PROJECT_NAME
 ```
 
 #### 2️⃣ With Telemetry Endpoint
@@ -286,15 +393,25 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Use this when the worker has an external Prometheus endpoint that the controller needs to access.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/new-worker-kubeconfig.yaml"      # New worker cluster kubeconfig
+export CLUSTER_NAME="new-worker-1"                                  # Name for the new worker
+export PROJECT_NAME="avesha"                                        # Project name (default: avesha)
+export TELEMETRY_ENDPOINT="http://prometheus.new-worker.example.com:9090"  # External Prometheus endpoint
+export CLOUD_PROVIDER="GCP"                                         # Cloud provider (GCP, AWS, Azure, etc.)
+export CLOUD_REGION="us-west1"                                      # Cloud region
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/new-worker-kubeconfig.yaml \
-  --register-cluster-name new-worker-1 \
-  --register-project-name avesha \
-  --telemetry-endpoint http://prometheus.new-worker.example.com:9090 \
-  --cloud-provider GCP \
-  --cloud-region us-west1
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --register-cluster-name $CLUSTER_NAME \
+  --register-project-name $PROJECT_NAME \
+  --telemetry-endpoint $TELEMETRY_ENDPOINT \
+  --cloud-provider $CLOUD_PROVIDER \
+  --cloud-region $CLOUD_REGION
 ```
 
 #### 3️⃣ Register Only (No Installation)
@@ -302,11 +419,17 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Only registers the worker with the controller. Use this when you want to install the worker separately later.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export CLUSTER_NAME="new-worker-1"                                  # Name for the new worker
+export PROJECT_NAME="avesha"                                        # Project name (default: avesha)
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --register-cluster-name new-worker-1 \
-  --register-project-name avesha
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --register-cluster-name $CLUSTER_NAME \
+  --register-project-name $PROJECT_NAME
 ```
 
 ---
@@ -428,26 +551,41 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash [OPTIONS]
 ### Example 1: Basic Installation (License in Current Directory)
 
 ```bash
-cd /home/user/egs-install
+# ============ CUSTOMIZE THESE VALUES ============
+export INSTALL_DIR="/home/user/egs-install"  # Directory for installation
+export KUBECONFIG_PATH="/home/user/.kube/config"  # Path to your kubeconfig
+
+# ============ RUN THE INSTALLER ============
+cd $INSTALL_DIR
 # Place egs-license.yaml in this directory
-export KUBECONFIG=/home/user/.kube/config
+export KUBECONFIG=$KUBECONFIG_PATH
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 ```
 
 ### Example 2: Specify License File Path
 
 ```bash
-export KUBECONFIG=/home/user/.kube/config
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="/home/user/.kube/config"  # Path to your kubeconfig
+export LICENSE_FILE="/path/to/my-license.yaml"   # Path to your license file
+
+# ============ RUN THE INSTALLER ============
+export KUBECONFIG=$KUBECONFIG_PATH
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file /path/to/my-license.yaml
+  --license-file $LICENSE_FILE
 ```
 
 ### Example 3: Custom Cluster Name
 
 ```bash
-export KUBECONFIG=/home/user/.kube/config
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="/home/user/.kube/config"  # Path to your kubeconfig
+export CLUSTER_NAME="production-cluster"          # Custom cluster name
+
+# ============ RUN THE INSTALLER ============
+export KUBECONFIG=$KUBECONFIG_PATH
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --cluster-name production-cluster
+  --cluster-name $CLUSTER_NAME
 ```
 
 ### Example 4: Skip Specific Components
@@ -455,16 +593,24 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 #### Skip PostgreSQL and GPU Operator
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
+  --kubeconfig $KUBECONFIG_PATH \
   --skip-postgresql --skip-gpu-operator
 ```
 
 #### Install only Controller and UI (skip prerequisites and worker)
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
+  --kubeconfig $KUBECONFIG_PATH \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-worker
 ```
 
@@ -475,8 +621,12 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** No license needed for prerequisites only.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
+  --kubeconfig $KUBECONFIG_PATH \
   --skip-postgresql --skip-controller --skip-ui --skip-worker
 ```
 
@@ -485,8 +635,12 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** No license needed for prerequisites only.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
+  --kubeconfig $KUBECONFIG_PATH \
   --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui --skip-worker
 ```
 
@@ -497,8 +651,12 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** No license needed if Controller is already installed.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
+  --kubeconfig $KUBECONFIG_PATH \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-worker
 ```
 
@@ -507,8 +665,12 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > ⚠️ **Note:** This installs Worker on the **SAME cluster** where Controller/UI are already running. Use this for single-cluster setups.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
+  --kubeconfig $KUBECONFIG_PATH \
   --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
 ```
 
@@ -523,9 +685,14 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Installs all prerequisites on all clusters.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG
 ```
 
 #### Skip PostgreSQL
@@ -533,9 +700,14 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** PostgreSQL is only on controller. Same flag for single & multi-cluster.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
   --skip-postgresql
 ```
 
@@ -544,9 +716,14 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Prerequisites already installed on controller cluster, install on workers.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
   --skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator
 ```
 
@@ -555,9 +732,14 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Prerequisites already installed on all clusters.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
   --skip-postgresql \
   --skip-controller-prometheus --skip-controller-gpu-operator \
   --skip-worker-prometheus --skip-worker-gpu-operator
@@ -568,10 +750,16 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Workers will be named `worker-1`, `worker-2` automatically.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 kubeconfig
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 kubeconfig
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-kubeconfig $WORKER2_KUBECONFIG
 ```
 
 #### Multiple Worker Clusters with Custom Names
@@ -579,12 +767,20 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Use `--worker-name` after each `--worker-kubeconfig` to set custom names.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 kubeconfig
+export WORKER1_NAME="production-worker-1"                           # Worker 1 name
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 kubeconfig
+export WORKER2_NAME="production-worker-2"                           # Worker 2 name
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-name production-worker-1 \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-name production-worker-2
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-name $WORKER2_NAME
 ```
 
 #### Multiple Workers with Custom Contexts
@@ -592,15 +788,26 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Use when kubeconfig files have multiple contexts.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export CONTROLLER_CONTEXT="controller-ctx"                          # Controller cluster context
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 kubeconfig
+export WORKER1_CONTEXT="worker1-ctx"                                # Worker 1 context
+export WORKER1_NAME="worker-1"                                      # Worker 1 name
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 kubeconfig
+export WORKER2_CONTEXT="worker2-ctx"                                # Worker 2 context
+export WORKER2_NAME="worker-2"                                      # Worker 2 name
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --controller-context controller-ctx \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-context worker1-ctx \
-  --worker-name worker-1 \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-context worker2-ctx \
-  --worker-name worker-2
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --controller-context $CONTROLLER_CONTEXT \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-context $WORKER1_CONTEXT \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-context $WORKER2_CONTEXT \
+  --worker-name $WORKER2_NAME
 ```
 
 ### Example 8: Register Worker Cluster with Controller
@@ -610,11 +817,17 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Registers the worker with the controller. Add `--worker-kubeconfig` to also install the worker.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export CLUSTER_NAME="worker-2"                                      # Name for the worker cluster
+export PROJECT_NAME="avesha"                                        # Project name (default: avesha)
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --register-cluster-name worker-2 \
-  --register-project-name avesha
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --register-cluster-name $CLUSTER_NAME \
+  --register-project-name $PROJECT_NAME
 ```
 
 #### Register with Telemetry Endpoint and Cloud Provider
@@ -622,15 +835,25 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** Use this for external Prometheus endpoints and geo-location tracking.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+export CLUSTER_NAME="worker-3"                                      # Name for the worker cluster
+export PROJECT_NAME="avesha"                                        # Project name (default: avesha)
+export TELEMETRY_ENDPOINT="http://prometheus.example.com:9090"      # External Prometheus endpoint
+export CLOUD_PROVIDER="GCP"                                         # Cloud provider (GCP, AWS, Azure)
+export CLOUD_REGION="us-west1"                                      # Cloud region
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
-  --register-cluster-name worker-3 \
-  --register-project-name avesha \
-  --telemetry-endpoint http://prometheus.example.com:9090 \
-  --cloud-provider GCP \
-  --cloud-region us-west1
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --register-cluster-name $CLUSTER_NAME \
+  --register-project-name $PROJECT_NAME \
+  --telemetry-endpoint $TELEMETRY_ENDPOINT \
+  --cloud-provider $CLOUD_PROVIDER \
+  --cloud-region $CLOUD_REGION
 ```
 
 #### Register Linode Worker
@@ -638,12 +861,19 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 > 📝 **Note:** For Linode clusters, cloud provider/region are automatically left empty.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"      # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/linode-worker-kubeconfig.yaml"       # Linode worker kubeconfig
+export CLUSTER_NAME="worker-linode-1"                                   # Name for the Linode worker
+export PROJECT_NAME="avesha"                                            # Project name (default: avesha)
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/linode-worker-kubeconfig.yaml \
-  --register-cluster-name worker-linode-1 \
-  --register-project-name avesha
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --register-cluster-name $CLUSTER_NAME \
+  --register-project-name $PROJECT_NAME
 ```
 
 ---
@@ -793,35 +1023,69 @@ These flags provide fine-grained control over prerequisites in multi-cluster mod
 4. EGS component flags (`--skip-controller`, `--skip-ui`, `--skip-worker`) always work the same way
 
 **Examples:**
+
 ```bash
-# Skip PostgreSQL (controller only - same flag for single & multi-cluster)
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker.yaml"          # Worker cluster kubeconfig
+
+# ============ EXAMPLE 1: Skip PostgreSQL ============
+# (controller only - same flag for single & multi-cluster)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller.yaml \
-  --worker-kubeconfig /path/to/worker.yaml \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
   --skip-postgresql
+```
 
-# Skip Prometheus on controller only (workers still get Prometheus)
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker.yaml"          # Worker cluster kubeconfig
+
+# ============ EXAMPLE 2: Skip Prometheus on Controller Only ============
+# (workers still get Prometheus)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller.yaml \
-  --worker-kubeconfig /path/to/worker.yaml \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
   --skip-controller-prometheus
+```
 
-# Skip Prometheus on workers only (controller still gets Prometheus)
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker.yaml"          # Worker cluster kubeconfig
+
+# ============ EXAMPLE 3: Skip Prometheus on Workers Only ============
+# (controller still gets Prometheus)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller.yaml \
-  --worker-kubeconfig /path/to/worker.yaml \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
   --skip-worker-prometheus
+```
 
-# Skip all prerequisites on controller, install on workers
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker.yaml"          # Worker cluster kubeconfig
+
+# ============ EXAMPLE 4: Skip All Prerequisites on Controller ============
+# (install prerequisites on workers only)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller.yaml \
-  --worker-kubeconfig /path/to/worker.yaml \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
   --skip-postgresql --skip-controller-prometheus --skip-controller-gpu-operator
+```
 
-# Skip Prometheus & GPU Operator everywhere (all clusters)
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker.yaml"          # Worker cluster kubeconfig
+
+# ============ EXAMPLE 5: Skip Prometheus & GPU Operator Everywhere ============
+# (all clusters)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller.yaml \
-  --worker-kubeconfig /path/to/worker.yaml \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
   --skip-controller-prometheus --skip-controller-gpu-operator \
   --skip-worker-prometheus --skip-worker-gpu-operator
 ```
@@ -863,29 +1127,61 @@ The Quick Installer supports installing multiple worker clusters in a single com
 
 ### Examples
 
+#### Two Workers with Default Names
+
+> 📝 **Note:** Workers will be named `worker-1`, `worker-2` automatically.
+
 ```bash
-# Two workers with default names (worker-1, worker-2)
-curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 kubeconfig
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 kubeconfig
 
-# Two workers with custom names
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-name production-worker-1 \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-name production-worker-2
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-kubeconfig $WORKER2_KUBECONFIG
+```
 
-# Three workers (mix of named and default)
+#### Two Workers with Custom Names
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 kubeconfig
+export WORKER1_NAME="production-worker-1"                           # Worker 1 name
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 kubeconfig
+export WORKER2_NAME="production-worker-2"                           # Worker 2 name
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker1-kubeconfig.yaml \
-  --worker-name worker-1 \
-  --worker-kubeconfig /path/to/worker2-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker3-kubeconfig.yaml \
-  --worker-name worker-3
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-name $WORKER2_NAME
+```
+
+#### Three Workers (Mix of Named and Default)
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 kubeconfig
+export WORKER1_NAME="worker-1"                                      # Worker 1 name
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 kubeconfig (auto-named)
+export WORKER3_KUBECONFIG="/path/to/worker3-kubeconfig.yaml"        # Worker 3 kubeconfig
+export WORKER3_NAME="worker-3"                                      # Worker 3 name
+
+# ============ RUN THE INSTALLER ============
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER1_KUBECONFIG \
+  --worker-name $WORKER1_NAME \
+  --worker-kubeconfig $WORKER2_KUBECONFIG \
+  --worker-kubeconfig $WORKER3_KUBECONFIG \
+  --worker-name $WORKER3_NAME
 ```
 
 ### Configuration
@@ -912,11 +1208,16 @@ When using `--register-worker` to add a new worker cluster:
 ### Backward Compatibility
 
 Single worker installations continue to work as before:
+
 ```bash
-# Single worker (still supported)
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+
+# ============ SINGLE WORKER (STILL SUPPORTED) ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG
 ```
 
 ---
@@ -977,46 +1278,70 @@ This is a Linode-specific requirement and is handled automatically.
 ### Example Workflows
 
 **Option 1: Register AND Install Worker (One Command - Recommended)**
-```bash
-# Register worker cluster with controller AND install worker in one command
-curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --register-worker \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
-  --register-cluster-name worker-2 \
-  --register-project-name avesha
 
-# That's it! The script will:
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+export CLUSTER_NAME="worker-2"                                      # Worker cluster name
+export PROJECT_NAME="avesha"                                        # Project name
+
+# ============ REGISTER AND INSTALL IN ONE COMMAND ============
+# The script will:
 # 1. Register worker-2 with the controller
 # 2. Automatically install the worker on worker-2 cluster
 # 3. Preserve existing workers (skip_installation=true)
 # 4. Set new worker: skip_installation=false (will install)
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --register-worker \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --register-cluster-name $CLUSTER_NAME \
+  --register-project-name $PROJECT_NAME
 ```
 
 **Option 2: Register Only (Without Installation)**
+
 ```bash
-# Register worker cluster WITHOUT installing (no --worker-kubeconfig)
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export CLUSTER_NAME="worker-2"                                      # Worker cluster name
+export PROJECT_NAME="avesha"                                        # Project name
+
+# ============ REGISTER ONLY (NO INSTALLATION) ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --register-cluster-name worker-2 \
-  --register-project-name avesha
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --register-cluster-name $CLUSTER_NAME \
+  --register-project-name $PROJECT_NAME
+```
 
-# Later, install the worker separately:
+```bash
+# ============ LATER: INSTALL THE WORKER SEPARATELY ============
+export KUBECONFIG_PATH="~/.kube/config"  # Path to worker kubeconfig
+
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
   --skip-postgresql --skip-prometheus --skip-gpu-operator \
   --skip-controller --skip-ui
 ```
 
 **Option 3: Register Without Installing (Even With Kubeconfig)**
+
 ```bash
-# Register but skip installation using --skip-worker flag
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"          # Worker cluster kubeconfig
+export CLUSTER_NAME="worker-2"                                      # Worker cluster name
+export PROJECT_NAME="avesha"                                        # Project name
+
+# ============ REGISTER BUT SKIP INSTALLATION ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
-  --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-  --worker-kubeconfig /path/to/worker-kubeconfig.yaml \
-  --register-cluster-name worker-2 \
-  --register-project-name avesha \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --register-cluster-name $CLUSTER_NAME \
+  --register-project-name $PROJECT_NAME \
   --skip-worker
 ```
 
@@ -1025,8 +1350,13 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 After registration, verify the cluster status:
 
 ```bash
-kubectl --kubeconfig /path/to/controller-kubeconfig.yaml \
-  get cluster.controller.kubeslice.io -n kubeslice-avesha
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
+export PROJECT_NAMESPACE="kubeslice-avesha"                         # Project namespace
+
+# ============ VERIFY CLUSTER REGISTRATION ============
+kubectl --kubeconfig $CONTROLLER_KUBECONFIG \
+  get cluster.controller.kubeslice.io -n $PROJECT_NAMESPACE
 ```
 
 ### Error Handling
@@ -1055,8 +1385,11 @@ If any validation fails, the installer displays a clear error message and exits.
 When installing Controller, the installer expects `egs-license.yaml` in the current directory by default:
 
 ```bash
-# License file in current directory
-cd /my/install/dir
+# ============ CUSTOMIZE THESE VALUES ============
+export INSTALL_DIR="/my/install/dir"  # Installation directory
+
+# ============ INSTALL WITH DEFAULT LICENSE LOCATION ============
+cd $INSTALL_DIR
 # Place egs-license.yaml here
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 ```
@@ -1066,8 +1399,12 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 You can specify a custom path (relative to current directory):
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export LICENSE_FILE="/path/to/egs-license.yaml"  # Custom license file path
+
+# ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file /path/to/egs-license.yaml
+  --license-file $LICENSE_FILE
 ```
 
 ### License Not Found
@@ -1186,8 +1523,9 @@ kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.da
 ls -la egs-license.yaml
 
 # Or specify custom path
+export LICENSE_FILE="/path/to/egs-license.yaml"
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --license-file /path/to/egs-license.yaml
+  --license-file $LICENSE_FILE
 ```
 
 ### Kubeconfig Not Accessible
@@ -1196,10 +1534,10 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 **Solution**:
 ```bash
-# Set KUBECONFIG environment variable
-export KUBECONFIG=/path/to/your/kubeconfig.yaml
+# ============ CUSTOMIZE THIS VALUE ============
+export KUBECONFIG="/path/to/your/kubeconfig.yaml"
 
-# Verify connection
+# ============ VERIFY CONNECTION ============
 kubectl get nodes
 ```
 
@@ -1226,16 +1564,25 @@ kubectl top nodes
 
 **Solution**:
 ```bash
-# Option 1: Install with Prometheus on worker clusters (recommended)
-curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-  --controller-kubeconfig /path/to/controller.yaml \
-  --worker-kubeconfig /path/to/worker.yaml
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="/path/to/controller.yaml"  # Controller kubeconfig
+export WORKER_KUBECONFIG="/path/to/worker.yaml"          # Worker kubeconfig
 
-# Option 2: If you skipped Prometheus on workers, install it manually
+# ============ OPTION 1: INSTALL WITH PROMETHEUS (RECOMMENDED) ============
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG
+```
+
+```bash
+# ============ CUSTOMIZE THIS VALUE ============
+export WORKER_KUBECONFIG="/path/to/worker.yaml"  # Worker kubeconfig
+
+# ============ OPTION 2: INSTALL PROMETHEUS MANUALLY ============
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm install prometheus prometheus-community/kube-prometheus-stack \
   --namespace egs-monitoring --create-namespace \
-  --kubeconfig /path/to/worker.yaml
+  --kubeconfig $WORKER_KUBECONFIG
 ```
 
 ### Dependency Errors
@@ -1265,10 +1612,14 @@ helm install prometheus prometheus-community/kube-prometheus-stack \
   ```
 - **Multi-Cluster Mode**: Use `--controller-kubeconfig` to specify the controller cluster:
   ```bash
-  # In multi-cluster mode, Controller may be in a different cluster
+  # ============ CUSTOMIZE THESE VALUES ============
+  export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"
+  export WORKER_KUBECONFIG="/path/to/worker-kubeconfig.yaml"
+  
+  # ============ IN MULTI-CLUSTER MODE ============
   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
-    --controller-kubeconfig /path/to/controller-kubeconfig.yaml \
-    --worker-kubeconfig /path/to/worker-kubeconfig.yaml
+    --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+    --worker-kubeconfig $WORKER_KUBECONFIG
   ```
 
 **Error**: `❌ ERROR: Worker installation requires UI to be installed.`
