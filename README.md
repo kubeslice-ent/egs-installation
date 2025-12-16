@@ -12,7 +12,7 @@
 | [📚 Documentation](#-documentation) | All documentation links and guides |
 | [🚀 Overview](#-overview) | Installation methods comparison |
 | [Getting Started](#getting-started) | Prerequisites and initial setup |
-| [⚡ Quick Installer](#-quick-installer) | Single-command installation |
+| [⚡ Quick Installer 🧪 (Beta)](#-quick-installer) | Single-command beta installation |
 | [📋 Config-Based Installer](#-config-based-installer) | YAML configuration-based installation |
 | [🛠️ Config-Based Installation Steps](#️-config-based-installation-steps) | Step-by-step configuration guide |
 | [🌐 Multi-Cluster Setup](#-multi-cluster-setup) | Multi-cluster deployment guide |
@@ -27,7 +27,7 @@
 | Category | Document | Description |
 |----------|----------|-------------|
 | **🔑 License** | [EGS License Setup](docs/EGS-License-Setup.md) | License configuration guide |
-| **⚡ Quick Start** | [Quick Install Guide](docs/Quick-Install-README.md) | Single-command installer with all options |
+| **⚡ Quick Start 🧪 (Beta)** | [Quick Install Guide](docs/Quick-Install-README.md) | Single-command beta installer with all options |
 | **📋 Configuration** | [Configuration Reference](docs/Configuration-README.md) | Config-based installer detailed reference |
 | **🌐 Multi-Cluster** | [Multi-Cluster Example](multi-cluster-example.yaml) | Complete multi-cluster YAML example |
 | **📋 Prerequisites** | [Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) | Controller cluster requirements |
@@ -49,7 +49,7 @@ The EGS Installer provides installation methods for deploying EGS components int
 
 | Method | Best For | Description | Documentation |
 |--------|----------|-------------|---------------|
-| **⚡ Quick Installer** | New users, PoC, simple setups | Single-command installer with auto-configuration, skip flags, and multi-cluster support | **[📖 Quick Install Guide](docs/Quick-Install-README.md)** |
+| **⚡ Quick Installer 🧪 (Beta)** | New users, PoC, simple setups | **Beta** single-command installer with auto-configuration, skip flags, and multi-cluster support | **[📖 Quick Install Guide](docs/Quick-Install-README.md)** |
 | **📋 Config-Based Installer** | Production, teams, advanced setups | Version-controlled YAML configuration for repeatable, auditable installs | **[📖 Configuration Reference](docs/Configuration-README.md)** |
 
 All methods leverage **Helm** for package management, **kubectl** for Kubernetes interaction, and **yq** for YAML parsing.
@@ -127,6 +127,8 @@ For clusters with namespace policies:
 ---
 
 ## ⚡ Quick Installer
+
+> 🧪 **Beta:** The Quick Installer is currently in **beta**. For production or advanced setups, prefer the **Config-Based Installer** below.
 
 > **New to EGS?** Start here with our single-command installer!
 
