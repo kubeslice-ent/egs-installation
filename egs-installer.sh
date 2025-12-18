@@ -196,7 +196,15 @@ get_lb_external_ip() {
         echo "$ip"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
-        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        
+        # Try to get ExternalIP first (IPv4 only)
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="ExternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        
+        # If ExternalIP is empty, fall back to InternalIP (IPv4 only)
+        if [ -z "$node_ip" ]; then
+            node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="InternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        fi
+        
         echo "$node_ip:$node_port"
     elif [ "$service_type" = "ClusterIP" ]; then
         cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
@@ -2076,7 +2084,15 @@ get_prometheus_external_ip() {
         echo "$ip:9090"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
-        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        
+        # Try to get ExternalIP first (IPv4 only)
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="ExternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        
+        # If ExternalIP is empty, fall back to InternalIP (IPv4 only)
+        if [ -z "$node_ip" ]; then
+            node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="InternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        fi
+        
         echo "$node_ip:$node_port"
     elif [ "$service_type" = "ClusterIP" ]; then
         cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
@@ -2126,7 +2142,15 @@ get_grafana_external_ip() {
         echo "$ip"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
-        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        
+        # Try to get ExternalIP first (IPv4 only)
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="ExternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        
+        # If ExternalIP is empty, fall back to InternalIP (IPv4 only)
+        if [ -z "$node_ip" ]; then
+            node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="InternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        fi
+        
         echo "$node_ip:$node_port"
     elif [ "$service_type" = "ClusterIP" ]; then
         cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
@@ -2137,8 +2161,6 @@ get_grafana_external_ip() {
         return 1
     fi
 }
-
-
 
 upgrade_cluster_registration(){
     echo "🚀 Starting cluster registration in controller cluster..."

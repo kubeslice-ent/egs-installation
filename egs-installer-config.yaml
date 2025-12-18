@@ -44,11 +44,11 @@ enable_autofetch_egsagent_endpoint_and_token: true # if False then, skip update 
 # Global monitoring endpoint settings
 global_auto_fetch_endpoint: true               # Enable automatic fetching of monitoring endpoints globally
 global_grafana_namespace: egs-monitoring        # Namespace where Grafana is globally deployed
-global_grafana_service_type: ClusterIP          # Service type for Grafana (accessible only within the cluster)
+global_grafana_service_type: NodePort          # Service type for Grafana (accessible only within the cluster)
 global_grafana_service_name: prometheus-grafana # Service name for accessing Grafana globally
 global_prometheus_namespace: egs-monitoring     # Namespace where Prometheus is globally deployed
 global_prometheus_service_name: prometheus-kube-prometheus-prometheus # Service name for accessing Prometheus globally
-global_prometheus_service_type: ClusterIP       # Service type for Prometheus (accessible only within the cluster)
+global_prometheus_service_type: NodePort       # Service type for Prometheus (accessible only within the cluster)
 
 # Precheck options
 precheck: true                                  # Run general prechecks before starting the installation
@@ -337,7 +337,7 @@ additional_apps:
     inline_values:
       prometheus:
         service:
-          type: ClusterIP                     # Service type for Prometheus
+          type: NodePort                     # Service type for Prometheus
         prometheusSpec:
           storageSpec: {}                     # Placeholder for storage configuration
           additionalScrapeConfigs:
@@ -375,7 +375,7 @@ additional_apps:
             enabled: true
             org_role: Viewer
         service:
-          type: ClusterIP                  # Service type for Grafana
+          type: NodePort                  # Service type for Grafana
         persistence:
           enabled: false                      # Disable persistence
           size: 1Gi                           # Default persistence size
