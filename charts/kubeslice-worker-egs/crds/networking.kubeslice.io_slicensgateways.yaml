@@ -521,6 +521,9 @@ spec:
               httpRoute:
                 description: HTTPRoute is the name of the created HTTPRoute
                 type: string
+              grpcRoute:
+                description: GRPCRoute is the name of the created GRPCRoute
+                type: string
               loadBalancerIP:
                 description: LoadBalancerIP is the external IP of the LoadBalancer
                   service (if applicable)
