@@ -41,7 +41,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      App: report-service
+      app: report-service
   namespaceSelector:
     matchNames:
       - kubeslice-controller
