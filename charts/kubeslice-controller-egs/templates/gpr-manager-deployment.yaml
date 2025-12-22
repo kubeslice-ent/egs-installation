@@ -78,6 +78,27 @@ webhooks:
     service:
       name: gpr-webhook-service
       namespace: {{ .Release.Namespace }}
+      path: /validate-gpr-kubeslice-io-v1alpha1-workloadplacement
+  failurePolicy: Fail
+  name: vworkloadplacement.kubeslice.io
+  rules:
+    - apiGroups:
+        - gpr.kubeslice.io
+      apiVersions:
+        - v1alpha1
+      operations:
+        - CREATE
+        - UPDATE
+      resources:
+        - workloadplacements
+  sideEffects: NoneOnDryRun
+- admissionReviewVersions:
+    - v1
+  clientConfig:
+    caBundle: {{ $caCertEnc }}
+    service:
+      name: gpr-webhook-service
+      namespace: {{ .Release.Namespace }}
       path: /validate-gpr-kubeslice-io-v1alpha1-gprtemplatebinding
   failurePolicy: Fail
   name: vgprtemplatebinding.kubeslice.io

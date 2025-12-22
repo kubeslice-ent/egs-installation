@@ -32,7 +32,7 @@ global:
 
 operator:
   image: worker-operator-ent-egs
-  tag: 1.15.4
+  tag: 1.15.5
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -229,7 +229,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.15.3
+  tag: 1.15.4
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -241,10 +241,10 @@ aiops:
   resources:
     limits:
       cpu: 500m
-      memory: 128Mi
+      memory: 1Gi
     requests:
-      cpu: 5m
-      memory: 64Mi
+      cpu: 20m
+      memory: 256Mi
   containerSecurityContext:
     runAsUser: 65536
     runAsGroup: 65536

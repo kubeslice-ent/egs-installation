@@ -39,14 +39,24 @@ spec:
           spec:
             description: WorkloadTemplateSpec defines the desired state of WorkloadTemplate
             properties:
+              autoPlacement:
+                description: AutoPlacement is a boolean that is a flag to enable auto
+                  placement for the Workload
+                type: boolean
               burstDuration:
                 description: |-
                   BurstDuration is the duration for which the workload will be bursted
-                  Must be in time duration format (e.g., "1m", "1h", "30s", "2h30m", "1h30m45s", "1.5h", "300ms")
-                  Valid time units: ns, us (or µs), ms, s, m, h
+                  Must be in time duration format (e.g., "1m", "1h", "30s", "2h30m", "1h30m45s", "1.5h", "300ms", "365d", "2d5h", "2d5h30m")
+                  Valid time units: ns, us (or µs), ms, s, m, h, d
                 maxLength: 100
-                pattern: ^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$
+                pattern: ^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h|d))+$
                 type: string
+              clusterNames:
+                description: ClusterNames is a list of cluster names to be used for
+                  the workload placement
+                items:
+                  type: string
+                type: array
               cmdExec:
                 description: CmdExec represents kubectl commands to be executed before
                   helm installation
@@ -68,6 +78,10 @@ spec:
                   DeletionPolicy represents the policy for deleting the workload
                   Valid values are: "Delete", "Retain"
                 type: string
+              enableBurst:
+                description: EnableBurst is a boolean that is a flag to enable burst
+                  to the clusters
+                type: boolean
               gprTemplates:
                 description: GPRTemplates is a list of GPR templates names
                 items:
@@ -84,10 +98,36 @@ spec:
                       description: Chart is the name of the Helm chart to be deployed
                       type: string
                     helmFlags:
-                      description: |-
-                        Additional Helm flags as a string (e.g., "--debug --dry-run --wait --atomic --timeout 5m")
-                        These flags will be appended to the helm command
-                      type: string
+                      description: HelmFlags contains Helm configuration options that
+                        map to ChartSpec fields
+                      properties:
+                        atomic:
+                          description: |-
+                            Atomic indicates whether to install resources atomically.
+                            'Wait' will automatically be set to true when using Atomic.
+                          type: boolean
+                        cleanupOnFail:
+                          description: CleanupOnFail indicates whether to cleanup
+                            the release on failure.
+                          type: boolean
+                        createNamespace:
+                          description: CreateNamespace indicates whether to create
+                            the namespace if it does not exist.
+                          type: boolean
+                        skipCRDs:
+                          description: SkipCRDs indicates whether to skip CRDs during
+                            installation.
+                          type: boolean
+                        timeout:
+                          description: |-
+                            Timeout configures the time to wait for any individual Kubernetes operation (like Jobs for hooks).
+                            Valid formats: "1h30m", "30m", "1h", "3600s", etc.
+                          type: string
+                        wait:
+                          description: Wait indicates whether to wait for the release
+                            to be deployed or not.
+                          type: boolean
+                      type: object
                     name:
                       description: name is the unique name of helm resource that maps
                         to workload step

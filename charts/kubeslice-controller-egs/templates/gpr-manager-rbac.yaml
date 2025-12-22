@@ -56,6 +56,7 @@ rules:
   - gprtemplates
   - gprtemplatebindings
   - workloadtemplates
+  - workloadplacements
   verbs:
   - create
   - delete
@@ -72,6 +73,7 @@ rules:
   - gprtemplates/finalizers
   - gprtemplatebindings/finalizers
   - workloadtemplates/finalizers
+  - workloadplacements/finalizers
   verbs:
   - update
 - apiGroups:
@@ -82,6 +84,7 @@ rules:
   - gprtemplates/status
   - gprtemplatebindings/status
   - workloadtemplates/status
+  - workloadplacements/status
   verbs:
   - get
   - patch
@@ -130,6 +133,19 @@ rules:
   - events
   verbs:
   - create
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - namespaces
+  - secrets
+  verbs:
+  - get
+  - list
+  - create
+  - watch
   - patch
   - update
 - apiGroups:

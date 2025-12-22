@@ -59,7 +59,7 @@ spec:
           {{- end }}
         - args:
             - --health-probe-bind-address=:8081
-            - --metrics-bind-address=:8080
+            - --metrics-bind-address=:8080 
             - --leader-elect
             - --gpu-monitoring-interval=1m
             - --workload-reconciler-interval=30s
@@ -68,6 +68,20 @@ spec:
           image: {{ include "kubeslice.image" (dict "imageRoot" .Values.aiops "global" .Values.global) }}
           imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.aiops.pullPolicy "global" .Values.global) }}
           env:
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  divisor: "0"
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  divisor: "0"
+                  resource: limits.cpu
+            - name: HELM_REPO_CACHE_PATH
+              value: /tmp/helm/cache/repository/
+            - name: HELM_REPO_CONFIG_PATH
+              value: /tmp/helm/config/
             - name: LOG_LEVEL
               value: {{ .Values.aiops.logLevel }}
             - name: DEV_MODE
@@ -123,6 +137,10 @@ spec:
           {{ toYaml .Values.aiops.containerSecurityContext | nindent 12 }}
           {{- end }}
           volumeMounts:
+            - mountPath: /tmp/helm/cache/repository
+              name: helm-cache-storage
+            - mountPath: /tmp/helm/config
+              name: helm-config-storage
             - mountPath: /var/run/secrets/kubernetes.io/hub-serviceaccount
               name: hub-secret
               readOnly: true
@@ -139,6 +157,10 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: 10
       volumes:
+        - emptyDir: {}
+          name: helm-cache-storage
+        - emptyDir: {}
+          name: helm-config-storage
         - name: aiops-config-volume
           configMap:
             name: aiops-config
