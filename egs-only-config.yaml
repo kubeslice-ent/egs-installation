@@ -125,7 +125,7 @@ kubeslice_ui_egs:
       apigw:
         env:
           - name: DCGM_METRIC_JOB_VALUE
-            value: nvidia-dcgm-exporter
+            value: gpu-metrics
       egsCoreApis:
         enabled: true                         # Enable EGS core APIs for the UI
         service:
