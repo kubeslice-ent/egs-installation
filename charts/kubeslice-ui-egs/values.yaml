@@ -61,7 +61,7 @@ kubeslice:
 
   ui:
     image: kubeslice-ui-ent-egs
-    tag: 1.15.4
+    tag: 1.15.5
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -101,7 +101,7 @@ kubeslice:
                     operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.15.4
+    tag: 1.15.5
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -249,11 +249,11 @@ kubeslice:
 
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 1.15.4
+    tag: 1.15.5
     pullPolicy: IfNotPresent
     env:
       - name: DCGM_METRIC_JOB_VALUE
-        value: nvidia-dcgm-exporter
+        value: gpu-metrics
     service:
       type: ClusterIP
     labels:
@@ -301,7 +301,7 @@ kubeslice:
   egsCoreApis:
     enabled: true
     image: egs-core-apis
-    tag: 1.14.4
+    tag: 1.14.5
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP

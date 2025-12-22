@@ -92,6 +92,10 @@ spec:
             value: {{ include "kubeslice.imagePullSecrets" . }}
           - name: ENABLE_SLICE_CHARGEBACK
             value: "true"
+          - name: ENABLE_MULTINET_RECONCILER
+            value: "false"
+          - name: ENABLE_VPC_SERVICE
+            value: "false"
           - name: EXCLUDED_NS
             value: '{{ .Values.operator.excludeNamespaces | join "," }}'
           - name: AVESHA_VL3_ROUTER_IMAGE

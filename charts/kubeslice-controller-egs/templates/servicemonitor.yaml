@@ -1,4 +1,6 @@
 {{- if .Values.serviceMonitor.enabled }}
+---
+# ServiceMonitor for kubeslice-controller-manager
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -26,5 +28,33 @@ spec:
       targetLabel: container_name
     - targetLabel: job
       replacement: nvidia-dcgm-exporter
+---
+# ServiceMonitor for kubetally-report-metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kubetally-report-metrics
+  namespace: {{ .Values.serviceMonitor.namespace }}
+  labels:
+    app.kubernetes.io/instance: kube-prometheus-stack
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      App: report-service
+  namespaceSelector:
+    matchNames:
+      - kubeslice-controller
+  endpoints:
+  - port: metrics
+    interval: 15s
+    path: /metrics
+    scheme: http
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod_name
+    - sourceLabels: [__meta_kubernetes_pod_container_name]
+      targetLabel: container_name
+    - targetLabel: job
+      replacement: nvidia-dcgm-exporter
 {{- end }}
-
