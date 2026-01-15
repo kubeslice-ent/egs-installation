@@ -54,8 +54,9 @@ spec:
             description: SliceNSGatewaySpec defines the desired state of SliceNSGateway
             properties:
               backends:
-                description: Backends defines the backend services with weights for
-                  load balancing
+                description: |-
+                  Backends defines the backend services with weights for load balancing
+                  Can be used instead of or in addition to ServiceExportName
                 items:
                   description: BackendConfig defines a backend service configuration
                   properties:
@@ -75,7 +76,7 @@ spec:
                       description: |-
                         LoadBalancingMode defines how to distribute traffic for this backend
                         RR: Round-robin across all endpoints (equal weight) - single backend with all ServiceImport endpoints
-                        Weighted: Use weights to distribute traffic - multiple backends with different weights
+                        Weighted: Use weights to distribute traffic - weights are automatically calculated based on pod/endpoint counts
                         If not specified, defaults to Weighted for backward compatibility
                       type: string
                     name:
@@ -141,23 +142,53 @@ spec:
                       - local
                       - remote
                       type: string
-                    weight:
-                      default: 100
-                      description: |-
-                        Weight defines the relative weight for load balancing
-                        Weights are relative (e.g., 70:30, 1:1:100)
-                        If not specified, defaults to 100
-                        Only used when LoadBalancingMode is Weighted (or not specified, defaulting to Weighted)
-                        Ignored when LoadBalancingMode is RR (all endpoints get equal weight)
-                      format: int32
-                      minimum: 0
-                      type: integer
                   required:
                   - name
                   - type
                   type: object
-                minItems: 1
                 type: array
+              circuitBreakerConfig:
+                description: |-
+                  CircuitBreakerConfig defines circuit breaker settings for backend connections
+                  These settings help handle parallel requests and prevent connection pool exhaustion
+                properties:
+                  maxConnections:
+                    default: 2048
+                    description: |-
+                      MaxConnections is the maximum number of connections that Envoy will establish to the backend
+                      Default: 1024
+                    format: int32
+                    maximum: 2147483647
+                    minimum: 0
+                    type: integer
+                  maxParallelRequests:
+                    default: 2048
+                    description: |-
+                      MaxParallelRequests is the maximum number of parallel requests that Envoy will make to the backend
+                      Default: 1024
+                    format: int32
+                    maximum: 2147483647
+                    minimum: 0
+                    type: integer
+                  maxParallelRetries:
+                    default: 3
+                    description: |-
+                      MaxParallelRetries is the maximum number of parallel retries that Envoy will make to the backend
+                      Default: 1024
+                    format: int32
+                    maximum: 2147483647
+                    minimum: 0
+                    type: integer
+                  maxPendingRequests:
+                    default: 2048
+                    description: |-
+                      MaxPendingRequests is the maximum number of pending requests that Envoy will queue to the backend
+                      Default: 1024
+                    format: int32
+                    maximum: 2147483647
+                    minimum: 0
+                    type: integer
+                type: object
               fqdn:
                 description: FQDN is the fully qualified domain name for external
                   access
@@ -175,9 +206,33 @@ spec:
                       AutoCreate enables automatic Gateway creation if not found
                       Defaults to false
                     type: boolean
+                  externalTrafficPolicy:
+                    default: Cluster
+                    description: |-
+                      ExternalTrafficPolicy specifies the external traffic policy for the Envoy Gateway service
+                      Valid options are: Local, Cluster
+                      Local: Preserves source IP, routes only to local endpoints
+                      Cluster: Routes traffic to all endpoints (may lose source IP)
+                      Defaults to Cluster if not specified
+                    enum:
+                    - Local
+                    - Cluster
+                    type: string
                   gatewayClassName:
                     description: GatewayClassName specifies the GatewayClass to use
                       when auto-creating
+                    type: string
+                  loggingLevel:
+                    default: warn
+                    description: |-
+                      LoggingLevel specifies the default logging level for Envoy Gateway
+                      Valid options are: debug, info, warn, error
+                      Defaults to warn if not specified
+                    enum:
+                    - debug
+                    - info
+                    - warn
+                    - error
                     type: string
                   name:
                     description: Name of the Gateway resource
@@ -188,6 +243,17 @@ spec:
                       Namespace of the Gateway resource
                       If empty, defaults to the same namespace as SliceNSGateway
                     type: string
+                  serviceType:
+                    default: LoadBalancer
+                    description: |-
+                      ServiceType specifies the Kubernetes Service type for the Envoy Gateway service when auto-creating
+                      Valid options are: LoadBalancer, ClusterIP, NodePort
+                      Defaults to LoadBalancer if not specified
+                    enum:
+                    - LoadBalancer
+                    - ClusterIP
+                    - NodePort
+                    type: string
                 required:
                 - name
                 type: object
@@ -195,6 +261,7 @@ spec:
                 description: |-
                   Ports defines the ports exposed by the service gateway
                   Defaults to port 8080 if not specified
+                  When ServiceExportName is provided, ports from ServiceImport.Spec.Ports will be used instead
                 items:
                   description: PortConfig defines port configuration
                   properties:
@@ -253,7 +320,7 @@ spec:
                             description: |-
                               LoadBalancingMode defines how to distribute traffic for this backend
                               RR: Round-robin across all endpoints (equal weight) - single backend with all ServiceImport endpoints
-                              Weighted: Use weights to distribute traffic - multiple backends with different weights
+                              Weighted: Use weights to distribute traffic - weights are automatically calculated based on pod/endpoint counts
                               If not specified, defaults to Weighted for backward compatibility
                             type: string
                           name:
@@ -319,17 +386,6 @@ spec:
                             - local
                             - remote
                             type: string
-                          weight:
-                            default: 100
-                            description: |-
-                              Weight defines the relative weight for load balancing
-                              Weights are relative (e.g., 70:30, 1:1:100)
-                              If not specified, defaults to 100
-                              Only used when LoadBalancingMode is Weighted (or not specified, defaulting to Weighted)
-                              Ignored when LoadBalancingMode is RR (all endpoints get equal weight)
-                            format: int32
-                            minimum: 0
-                            type: integer
                         required:
                         - name
                         - type
@@ -364,8 +420,32 @@ spec:
                             - value
                             type: object
                           type: array
+                        method:
+                          description: Method defines gRPC method/service matching
+                            criteria (for gRPC routes)
+                          properties:
+                            method:
+                              description: |-
+                                Method is the gRPC method name to match (e.g., "Ping")
+                                If empty, matches all methods in the service
+                              type: string
+                            service:
+                              description: |-
+                                Service is the gRPC service name to match (e.g., "yages.Echo")
+                                If empty, matches all services
+                              type: string
+                            type:
+                              default: exact
+                              description: Type defines the matching type (exact,
+                                regex)
+                              enum:
+                              - exact
+                              - regex
+                              type: string
+                          type: object
                         path:
-                          description: Path defines path matching criteria
+                          description: Path defines path matching criteria (for HTTP
+                            routes)
                           properties:
                             type:
                               default: prefix
@@ -396,13 +476,45 @@ spec:
                   - match
                   type: object
                 type: array
+              serviceExportName:
+                description: |-
+                  ServiceExportName is the name of the ServiceExport (which will be the same as ServiceImport name)
+                  The controller will dynamically create backends, headless services, and endpoint slices
+                  based on the ServiceImport endpoints. Routes will be created for each port in ServiceImport.Spec.Ports
+                type: string
+              serviceExportNamespace:
+                description: |-
+                  ServiceExportNamespace is the namespace of the ServiceExport/ServiceImport
+                  If empty, defaults to the same namespace as SliceNSGateway
+                type: string
               sliceName:
                 description: SliceName defines the name of the slice (workspace) for
                   this service gateway
                 minLength: 1
                 type: string
+              timeoutConfig:
+                description: |-
+                  TimeoutConfig defines timeout settings for HTTP requests
+                  These timeouts are applied to all HTTPRoute rules created by this SliceNSGateway
+                properties:
+                  backendRequestTimeout:
+                    description: |-
+                      BackendRequestTimeout specifies a timeout for an individual request from the gateway to a backend
+                      Format: Gateway API Duration string (e.g., "60s", "5m", "300s")
+                      Must be <= RequestTimeout if both are specified
+                      Default: implementation-specific (typically same as RequestTimeout)
+                    pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                    type: string
+                  requestTimeout:
+                    description: |-
+                      RequestTimeout specifies the maximum duration for a gateway to respond to an HTTP request
+                      Format: Gateway API Duration string (e.g., "60s", "5m", "300s")
+                      Default: 15s (Envoy Gateway default)
+                      Setting to "0s" disables the timeout (uses maximum possible value)
+                    pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                    type: string
+                type: object
             required:
-            - backends
             - gatewayRef
             - sliceName
             type: object
@@ -518,11 +630,11 @@ spec:
                 - namespace
                 - ready
                 type: object
-              httpRoute:
-                description: HTTPRoute is the name of the created HTTPRoute
-                type: string
               grpcRoute:
                 description: GRPCRoute is the name of the created GRPCRoute
+                type: string
+              httpRoute:
+                description: HTTPRoute is the name of the created HTTPRoute
                 type: string
               loadBalancerIP:
                 description: LoadBalancerIP is the external IP of the LoadBalancer
