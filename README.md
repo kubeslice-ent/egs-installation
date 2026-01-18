@@ -18,6 +18,7 @@
 | [🌐 Multi-Cluster Setup](#-multi-cluster-setup) | Multi-cluster deployment guide |
 | [🗑️ Uninstallation](#️-uninstallation) | How to uninstall EGS |
 | [📋 Quick Reference](#-quick-reference) | Commands and operations summary |
+| [🔧 Troubleshooting](#-troubleshooting) | Generate diagnostic bundles |
 | [📦 Airgap Deployment](#-airgap-deployment) | Offline/airgap installation |
 
 ---
@@ -37,6 +38,7 @@
 | **🔧 Operations** | [Slice & Admin Token](docs/Slice-Admin-Token-README.md) | Token retrieval guide |
 | **💰 Operations** | [Custom Pricing](docs/Custom-Pricing-README.md) | Custom pricing configuration |
 | **🔐 Security** | [Prometheus TLS Authentication](docs/Prometheus-TLS-Authentication.md) | TLS setup for Prometheus |
+| **🔧 Troubleshooting** | [Troubleshooting Guide](docs/Troubleshooting-README.md) | Generate diagnostic bundles for support |
 | **📦 Airgap** | [Airgap Image Management](airgap-image-push/README-airgap-images.md) | Airgap image pull and push |
 
 📚 **User Guide:** [docs.avesha.io/documentation/enterprise-egs](https://docs.avesha.io/documentation/enterprise-egs)
@@ -803,6 +805,47 @@ cluster_registration:
 | 2 | **Prerequisites only** | `./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml` |
 | 3 | **Full installation** | `./egs-installer.sh --input-yaml egs-installer-config.yaml` |
 | 4 | **Uninstall** | `./egs-uninstall.sh --input-yaml egs-installer-config.yaml` |
+
+---
+
+## 🔧 Troubleshooting
+
+> **Need help diagnosing issues?** Generate a comprehensive troubleshooting bundle with a single command!
+
+### Basic Bundle Generation
+
+```bash
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig ~/.kube/config
+```
+
+### Common Commands
+
+| Scenario | Command |
+|----------|---------|
+| **Basic bundle** | `curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh \| bash -s -- --kubeconfig ~/.kube/config` |
+| **With cluster name** | Add `--cluster-name "my-cluster"` |
+| **Skip logs (faster)** | Add `--skip-logs` |
+| **Upload to S3** | Add `--s3-bucket support-bucket --s3-region us-east-1` |
+| **Multi-cluster** | Run separately for each cluster with respective kubeconfig |
+
+### 📦 What's Collected
+
+| Category | Details |
+|----------|---------|
+| **Cluster Info** | Version, API resources, component statuses |
+| **Nodes** | Node details, labels, capacity, GPU info, taints |
+| **CRDs** | All EGS-related CRDs (controller, worker, networking, inventory, aiops, gpr, monitoring) |
+| **Namespaces** | All EGS namespaces (kubeslice-*, egs-*, project namespaces, slice namespaces) |
+| **Resources** | Pods, deployments, services, configmaps, events |
+| **Logs** | Container logs (current and previous) |
+| **Helm** | Helm releases and values |
+| **Storage** | PVs, PVCs, storage classes |
+| **Metrics** | Node and pod metrics (if metrics-server available) |
+
+📖 **For complete Troubleshooting documentation including multi-cluster collection, S3 upload, bundle structure, and all options:**
+
+### **[→ View Full Troubleshooting Guide](docs/Troubleshooting-README.md)**
 
 ---
 
