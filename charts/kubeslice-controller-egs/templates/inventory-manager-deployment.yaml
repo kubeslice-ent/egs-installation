@@ -43,7 +43,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
           - /manager
-        image: {{ include "kubeslice.image" (dict "image" .Values.egs.inventory.image "tag" .Values.egs.inventory.tag "registry" .Values.local.imageRegistry) }}
+        image: {{ include "kubeslice.image" (dict "image" .Values.egs.inventory.image "tag" .Values.egs.inventory.tag "registry" .Values.dev.imageRegistry) }}
         imagePullPolicy: "{{ .Values.egs.inventory.imagePullPolicy }}"
         env:
           - name: LOG_LEVEL
