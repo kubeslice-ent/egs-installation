@@ -1,8 +1,21 @@
 # 🔧 EGS Troubleshooting Bundle Generator
 
-> **Generate comprehensive diagnostic bundles for EGS deployments with a single command!**
+## Overview
 
-This guide covers the EGS Troubleshooting script (`egs-troubleshoot.sh`) that collects logs, configurations, CRDs, and cluster state for troubleshooting and support purposes.
+The EGS Troubleshooting script (`egs-troubleshoot.sh`) provides a **one-command diagnostic bundle generation** for EGS deployments. This guide is designed for users who need to collect logs, configurations, CRDs, and cluster state for troubleshooting and support purposes.
+
+---
+
+## ✨ Features
+
+- **🎯 One-Command Generation**: Generate diagnostic bundles with a single curl command
+- **🔍 Auto-Detection**: Automatically detects cluster type (Controller/Worker/Standalone)
+- **📝 Comprehensive Collection**: Collects all EGS-related resources, CRDs, logs, and configurations
+- **🤖 Smart Discovery**: Automatically discovers EGS namespaces (project namespaces, slice namespaces)
+- **⚡ Fast Collection**: Skip logs option for faster bundle generation
+- **☁️ S3 Upload**: Direct upload to AWS S3 with presigned URL generation
+- **📦 Organized Output**: Well-structured bundle with summary report
+- **🔄 Multi-Cluster**: Support for collecting from controller and worker clusters separately
 
 ---
 
@@ -10,43 +23,43 @@ This guide covers the EGS Troubleshooting script (`egs-troubleshoot.sh`) that co
 
 | Section | Description |
 |---------|-------------|
-| [Quick Start](#-quick-start) | Get started with basic bundle generation |
-| [Installation](#-installation) | How to run the troubleshooting script |
-| [Command Options](#-command-options) | All available options and flags |
-| [What's Collected](#-whats-collected) | Detailed list of collected resources |
-| [Multi-Cluster Collection](#-multi-cluster-collection) | Collecting from controller and workers |
-| [S3 Upload](#-s3-upload) | Upload bundles to AWS S3 |
-| [Bundle Structure](#-bundle-structure) | Understanding the output directory |
-| [Examples](#-examples) | Common usage examples |
-| [Troubleshooting the Script](#-troubleshooting-the-script) | Common issues and solutions |
+| [Quick Start](#quick-start) | Get started with basic bundle generation |
+| [Prerequisites](#prerequisites) | Required tools before running the script |
+| [Command Options](#command-options) | All available options and flags |
+| [What's Collected](#whats-collected) | Detailed list of collected resources |
+| [Multi-Cluster Collection](#multi-cluster-collection) | Collecting from controller and workers |
+| [S3 Upload](#s3-upload) | Upload bundles to AWS S3 |
+| [Bundle Structure](#bundle-structure) | Understanding the output directory |
+| [Examples](#examples) | Common usage examples |
+| [Troubleshooting the Script](#troubleshooting-the-script) | Common issues and solutions |
 
 ---
 
-## 🚀 Quick Start
+## 🚦 Quick Start
 
-### One-Liner (Recommended)
+### Simplest Bundle Generation
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+
+# ============ GENERATE THE BUNDLE ============
 curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/config
+  --kubeconfig $KUBECONFIG_PATH
 ```
 
-### Local Execution
-
-```bash
-# Clone the repository (if not already done)
-git clone https://github.com/kubeslice-ent/egs-installation
-cd egs-installation
-
-# Run the script
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config
-```
+**That's it!** The script will:
+1. ✅ Auto-detect your cluster type (Controller/Worker/Standalone)
+2. ✅ Discover all EGS-related namespaces
+3. ✅ Collect cluster information, nodes, CRDs, and resources
+4. ✅ Collect container logs (current and previous)
+5. ✅ Collect Helm releases and values
+6. ✅ Generate a summary report
+7. ✅ Create a compressed archive (`.tar.gz`)
 
 ---
 
-## 📦 Installation
-
-### Prerequisites
+## 📋 Prerequisites
 
 The script requires the following tools:
 
@@ -58,43 +71,6 @@ The script requires the following tools:
 | `gzip` | Compression | ✅ Yes |
 | `aws` | S3 upload | ⚪ Optional |
 | `helm` | Helm release info | ⚪ Optional |
-
-### Methods
-
-#### Method 1: Curl One-Liner (No Installation Required)
-
-```bash
-# Basic usage
-curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/config
-
-# With additional options
-curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
-  --cluster-name "my-cluster" \
-  --skip-logs
-```
-
-#### Method 2: Download and Run
-
-```bash
-# Download the script
-curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh -o egs-troubleshoot.sh
-
-# Make executable
-chmod +x egs-troubleshoot.sh
-
-# Run
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config
-```
-
-#### Method 3: From Repository
-
-```bash
-git clone https://github.com/kubeslice-ent/egs-installation
-cd egs-installation
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config
-```
 
 ---
 
@@ -111,6 +87,7 @@ cd egs-installation
 | `--context CONTEXT` | `-c` | Kubernetes context to use | Current context |
 | `--output-dir DIR` | `-o` | Output directory for the bundle | `./egs-troubleshoot-bundle-TIMESTAMP` |
 | `--namespace NS` | `-n` | Additional namespace to include | - |
+| `--cluster-name NAME` | - | Identifier for this cluster in the bundle | Auto-detected |
 
 ### Collection Options
 
@@ -131,13 +108,6 @@ cd egs-installation
 | `--s3-region REGION` | S3 bucket region | `us-east-1` |
 | `--s3-prefix PREFIX` | S3 key prefix for the bundle | - |
 | `--aws-profile PROFILE` | AWS profile to use | - |
-
-### Multi-Cluster Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--cluster-name NAME` | Identifier for this cluster in the bundle | Auto-detected |
-| `--add-kubeconfig PATH` | Additional kubeconfig for multi-cluster | - |
 
 ---
 
@@ -226,56 +196,102 @@ The script automatically discovers and collects from:
 
 ## 🌐 Multi-Cluster Collection
 
-For EGS deployments with multiple clusters (controller + workers), run the script separately on each cluster:
+For EGS deployments with multiple clusters (controller + workers), run the script separately on each cluster.
 
-### Controller Cluster
+---
+
+### 🔹 Scenario 1: Single Cluster Bundle
+
+**Use case:** Standalone cluster or collecting from one cluster at a time.
 
 ```bash
-# Collect from controller cluster
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export CLUSTER_NAME="my-cluster"             # Name for your cluster (optional)
+
+# ============ GENERATE THE BUNDLE ============
 curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/controller-kubeconfig.yaml \
-  --cluster-name "egs-controller"
+  --kubeconfig $KUBECONFIG_PATH \
+  --cluster-name $CLUSTER_NAME
 ```
 
-### Worker Clusters
+---
+
+### 🔹 Scenario 2: Controller Cluster Bundle
+
+**Use case:** Collect diagnostic data from the EGS controller cluster.
 
 ```bash
-# Worker 1
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="~/.kube/controller-kubeconfig.yaml"   # Controller kubeconfig path
+export CONTROLLER_NAME="egs-controller"                              # Controller cluster name
+
+# ============ GENERATE THE BUNDLE ============
 curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/worker1-kubeconfig.yaml \
+  --kubeconfig $CONTROLLER_KUBECONFIG \
+  --cluster-name $CONTROLLER_NAME
+```
+
+---
+
+### 🔹 Scenario 3: Worker Cluster Bundles
+
+**Use case:** Collect diagnostic data from worker clusters.
+
+#### Worker 1
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export WORKER1_KUBECONFIG="~/.kube/worker1-kubeconfig.yaml"   # Worker 1 kubeconfig path
+export WORKER1_NAME="worker-1"                                  # Worker 1 cluster name
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $WORKER1_KUBECONFIG \
+  --cluster-name $WORKER1_NAME
+```
+
+#### Worker 2
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export WORKER2_KUBECONFIG="~/.kube/worker2-kubeconfig.yaml"   # Worker 2 kubeconfig path
+export WORKER2_NAME="worker-2"                                  # Worker 2 cluster name
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $WORKER2_KUBECONFIG \
+  --cluster-name $WORKER2_NAME
+```
+
+---
+
+### 🔹 Scenario 4: Complete Multi-Cluster Collection
+
+**Use case:** Collect bundles from controller and all workers for comprehensive support.
+
+> 📝 **Note:** Run these commands sequentially. Each command generates a separate bundle for that cluster.
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export CONTROLLER_KUBECONFIG="~/.kube/controller.yaml"    # Controller kubeconfig
+export WORKER1_KUBECONFIG="~/.kube/worker1.yaml"          # Worker 1 kubeconfig
+export WORKER2_KUBECONFIG="~/.kube/worker2.yaml"          # Worker 2 kubeconfig
+
+# ============ CONTROLLER BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $CONTROLLER_KUBECONFIG \
+  --cluster-name "controller"
+
+# ============ WORKER 1 BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $WORKER1_KUBECONFIG \
   --cluster-name "worker-1"
 
-# Worker 2
+# ============ WORKER 2 BUNDLE ============
 curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/worker2-kubeconfig.yaml \
+  --kubeconfig $WORKER2_KUBECONFIG \
   --cluster-name "worker-2"
-```
-
-### Multi-Cluster with S3 Upload
-
-Upload all bundles to the same S3 bucket for easy sharing:
-
-```bash
-# Controller
-curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/controller.yaml \
-  --cluster-name "controller" \
-  --s3-bucket avesha-support-bundles \
-  --s3-region us-east-1
-
-# Worker 1
-curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/worker1.yaml \
-  --cluster-name "worker-1" \
-  --s3-bucket avesha-support-bundles \
-  --s3-region us-east-1
-
-# Worker 2
-curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/worker2.yaml \
-  --cluster-name "worker-2" \
-  --s3-bucket avesha-support-bundles \
-  --s3-region us-east-1
 ```
 
 ---
@@ -290,37 +306,101 @@ The script can automatically upload the generated bundle to an AWS S3 bucket for
 2. **IAM permissions** for `s3:PutObject` and optionally `s3:GetObject` (for presigned URLs)
 3. **S3 bucket** created and accessible
 
-### Basic S3 Upload
+---
+
+### 🔹 Basic S3 Upload
+
+> 📝 **Note:** Generates bundle and uploads directly to S3 bucket.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export S3_BUCKET="my-support-bucket"         # S3 bucket name
+export S3_REGION="us-west-2"                 # S3 bucket region
+
+# ============ GENERATE AND UPLOAD ============
 curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
-  --s3-bucket my-support-bucket \
-  --s3-region us-west-2
+  --kubeconfig $KUBECONFIG_PATH \
+  --s3-bucket $S3_BUCKET \
+  --s3-region $S3_REGION
 ```
 
-### S3 Upload with Prefix
+---
 
-Organize bundles by customer or environment:
+### 🔹 S3 Upload with Prefix
+
+> 📝 **Note:** Organize bundles by customer or environment using S3 prefixes.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig file
+export S3_BUCKET="support-bundles"               # S3 bucket name
+export S3_REGION="us-east-1"                     # S3 bucket region
+export S3_PREFIX="customer-xyz/production/"      # S3 key prefix for organization
+
+# ============ GENERATE AND UPLOAD ============
 curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
-  --s3-bucket support-bundles \
-  --s3-region us-east-1 \
-  --s3-prefix "customer-xyz/production/"
+  --kubeconfig $KUBECONFIG_PATH \
+  --s3-bucket $S3_BUCKET \
+  --s3-region $S3_REGION \
+  --s3-prefix $S3_PREFIX
 ```
 
-### S3 Upload with AWS Profile
+---
 
-Use a specific AWS profile:
+### 🔹 S3 Upload with AWS Profile
+
+> 📝 **Note:** Use a specific AWS profile for authentication.
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export S3_BUCKET="support-bundles"           # S3 bucket name
+export S3_REGION="us-east-1"                 # S3 bucket region
+export AWS_PROFILE_NAME="support-team"       # AWS profile name
+
+# ============ GENERATE AND UPLOAD ============
 curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/config \
-  --s3-bucket support-bundles \
-  --s3-region us-east-1 \
-  --aws-profile support-team
+  --kubeconfig $KUBECONFIG_PATH \
+  --s3-bucket $S3_BUCKET \
+  --s3-region $S3_REGION \
+  --aws-profile $AWS_PROFILE_NAME
+```
+
+---
+
+### 🔹 Multi-Cluster S3 Upload
+
+> 📝 **Note:** Upload all cluster bundles to the same S3 bucket for easy sharing.
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export S3_BUCKET="avesha-support-bundles"                          # S3 bucket name
+export S3_REGION="us-east-1"                                        # S3 bucket region
+export CONTROLLER_KUBECONFIG="~/.kube/controller.yaml"             # Controller kubeconfig
+export WORKER1_KUBECONFIG="~/.kube/worker1.yaml"                   # Worker 1 kubeconfig
+export WORKER2_KUBECONFIG="~/.kube/worker2.yaml"                   # Worker 2 kubeconfig
+
+# ============ CONTROLLER BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $CONTROLLER_KUBECONFIG \
+  --cluster-name "controller" \
+  --s3-bucket $S3_BUCKET \
+  --s3-region $S3_REGION
+
+# ============ WORKER 1 BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $WORKER1_KUBECONFIG \
+  --cluster-name "worker-1" \
+  --s3-bucket $S3_BUCKET \
+  --s3-region $S3_REGION
+
+# ============ WORKER 2 BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $WORKER2_KUBECONFIG \
+  --cluster-name "worker-2" \
+  --s3-bucket $S3_BUCKET \
+  --s3-region $S3_REGION
 ```
 
 ### Presigned URL
@@ -399,86 +479,159 @@ egs-troubleshoot-bundle-YYYYMMDD-HHMMSS/
 
 ### Example 1: Basic Bundle Generation
 
+> 📝 **Note:** Simplest way to generate a bundle.
+
 ```bash
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH
 ```
+
+---
 
 ### Example 2: Skip Logs for Faster Collection
 
+> 📝 **Note:** Use this when logs are not needed or for faster bundle generation.
+
 ```bash
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config --skip-logs
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --skip-logs
 ```
+
+---
 
 ### Example 3: Collect More Log Lines
 
+> 📝 **Note:** Increase log lines when detailed log analysis is needed.
+
 ```bash
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config --log-lines 5000
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export LOG_LINES="5000"                       # Number of log lines to collect
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --log-lines $LOG_LINES
 ```
+
+---
 
 ### Example 4: Include Secrets (Use with Caution)
 
-```bash
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config --include-secrets
-```
-
-### Example 5: Specific Context
+> ⚠️ **Warning:** Only use this when specifically requested by support. Secrets will be base64 encoded in the bundle.
 
 ```bash
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config --context production-cluster
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --include-secrets
 ```
+
+---
+
+### Example 5: Specific Kubernetes Context
+
+> 📝 **Note:** Use this when your kubeconfig has multiple contexts.
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig file
+export KUBE_CONTEXT="production-cluster"         # Kubernetes context to use
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --context $KUBE_CONTEXT
+```
+
+---
 
 ### Example 6: Custom Output Directory
 
+> 📝 **Note:** Specify where to save the bundle.
+
 ```bash
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config --output-dir /tmp/egs-bundle
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export OUTPUT_DIR="/tmp/egs-bundle"          # Custom output directory
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --output-dir $OUTPUT_DIR
 ```
+
+---
 
 ### Example 7: Add Additional Namespaces
 
+> 📝 **Note:** Include custom namespaces that aren't auto-discovered.
+
 ```bash
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config \
-  --namespace my-app-namespace \
-  --namespace another-namespace
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig file
+export EXTRA_NS_1="my-app-namespace"             # Additional namespace 1
+export EXTRA_NS_2="another-namespace"            # Additional namespace 2
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --namespace $EXTRA_NS_1 \
+  --namespace $EXTRA_NS_2
 ```
+
+---
 
 ### Example 8: Verbose Output for Debugging
 
+> 📝 **Note:** Enable verbose output to see detailed progress.
+
 ```bash
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config --verbose
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+
+# ============ GENERATE THE BUNDLE ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --verbose
 ```
 
-### Example 9: Complete Multi-Cluster Collection with S3
+---
+
+### Example 9: Complete Bundle with S3 Upload
+
+> 📝 **Note:** Generate bundle and upload to S3 for easy sharing.
 
 ```bash
-# Set common variables
-export S3_BUCKET="avesha-support-bundles"
-export S3_REGION="us-east-1"
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export CLUSTER_NAME="production-cluster"     # Cluster name
+export S3_BUCKET="avesha-support"            # S3 bucket name
+export S3_REGION="us-east-1"                 # S3 bucket region
 
-# Controller
-./egs-troubleshoot.sh \
-  --kubeconfig ~/.kube/controller.yaml \
-  --cluster-name "controller" \
-  --s3-bucket $S3_BUCKET \
-  --s3-region $S3_REGION
-
-# Worker 1
-./egs-troubleshoot.sh \
-  --kubeconfig ~/.kube/worker1.yaml \
-  --cluster-name "worker-1" \
-  --s3-bucket $S3_BUCKET \
-  --s3-region $S3_REGION
-
-# Worker 2
-./egs-troubleshoot.sh \
-  --kubeconfig ~/.kube/worker2.yaml \
-  --cluster-name "worker-2" \
+# ============ GENERATE AND UPLOAD ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --cluster-name $CLUSTER_NAME \
   --s3-bucket $S3_BUCKET \
   --s3-region $S3_REGION
 ```
 
 ---
 
-## 🔍 Troubleshooting the Script
+## 🐛 Troubleshooting the Script
 
 ### Common Issues
 
@@ -491,6 +644,8 @@ export S3_REGION="us-east-1"
 which kubectl
 kubectl version --client
 ```
+
+---
 
 #### Issue: "jq not found"
 
@@ -507,13 +662,7 @@ brew install jq
 sudo yum install jq
 ```
 
-#### Issue: "Permission denied"
-
-**Solution:** Ensure the script is executable.
-
-```bash
-chmod +x egs-troubleshoot.sh
-```
+---
 
 #### Issue: "Cannot connect to cluster"
 
@@ -527,6 +676,8 @@ kubectl --kubeconfig ~/.kube/config get nodes
 kubectl config get-contexts
 ```
 
+---
+
 #### Issue: "S3 upload failed"
 
 **Solution:** Verify AWS credentials and permissions.
@@ -539,16 +690,33 @@ aws sts get-caller-identity
 aws s3 ls s3://your-bucket/
 ```
 
+---
+
 #### Issue: "Bundle is too large"
 
 **Solution:** Skip logs or reduce log lines.
 
 ```bash
-# Skip logs entirely
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config --skip-logs
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
 
-# Or reduce log lines
-./egs-troubleshoot.sh --kubeconfig ~/.kube/config --log-lines 100
+# ============ SKIP LOGS ENTIRELY ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --skip-logs
+```
+
+Or reduce log lines:
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export LOG_LINES="100"                        # Reduced log lines
+
+# ============ GENERATE WITH FEWER LOGS ============
+curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --log-lines $LOG_LINES
 ```
 
 ---
@@ -567,7 +735,19 @@ If you encounter issues with EGS or need assistance:
 
 ---
 
-## 📄 Version History
+## 📚 Related Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Quick Install Guide](Quick-Install-README.html) | Single-command EGS installer |
+| [Configuration Reference](Configuration-README.html) | Config-based installer reference |
+| [EGS License Setup](EGS-License-Setup.html) | License configuration guide |
+| [Controller Prerequisites](EGS-Controller-Prerequisites.html) | Controller cluster requirements |
+| [Worker Prerequisites](EGS-Worker-Prerequisites.html) | Worker cluster requirements |
+
+---
+
+## 🔄 Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
