@@ -242,7 +242,7 @@ CURL ONE-LINER:
         --s3-region us-east-1
 
     # Note: The script is also available at:
-    # https://raw.githubusercontent.com/kubeslice-ent/egs-installation/main/egs-troubleshoot.sh
+    # https://repo.egs.avesha.io/egs-troubleshoot.sh
 
 EOF
 }
