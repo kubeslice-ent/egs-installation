@@ -813,19 +813,27 @@ cluster_registration:
 ### Basic Bundle Generation
 
 ```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+
+# ============ GENERATE THE BUNDLE ============
 curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
-  --kubeconfig ~/.kube/config
+  --kubeconfig $KUBECONFIG_PATH
 ```
 
 ### Common Commands
 
 | Scenario | Command |
 |----------|---------|
-| **Basic bundle** | `curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh \| bash -s -- --kubeconfig ~/.kube/config` |
+| **Basic bundle** | `curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh \| bash -s -- --kubeconfig $KUBECONFIG_PATH` |
 | **With cluster name** | Add `--cluster-name "my-cluster"` |
 | **Skip logs (faster)** | Add `--skip-logs` |
 | **Upload to S3** | Add `--s3-bucket support-bucket --s3-region us-east-1` |
+| **S3 with prefix** | Add `--s3-prefix "customer-name/"` |
+| **S3 with AWS profile** | Add `--aws-profile my-profile` |
 | **Multi-cluster** | Run separately for each cluster with respective kubeconfig |
+
+> **Prerequisites:** `kubectl`, `jq`, `tar`, `gzip` (required), `aws` CLI (optional for S3), `helm` (optional)
 
 ### 📦 What's Collected
 

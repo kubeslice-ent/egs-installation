@@ -1133,22 +1133,23 @@ EOF
 }
 
 create_bundle_archive() {
-    log_section "Creating Bundle Archive"
+    # Note: All log messages go to stderr so only the path is captured by $()
+    log_section "Creating Bundle Archive" >&2
     
     local bundle_name="${BUNDLE_PREFIX}-$(date +%Y%m%d-%H%M%S)"
     local archive_path="$(dirname "$OUTPUT_DIR")/${bundle_name}.tar.gz"
     
-    log_info "Creating archive: $archive_path"
+    log_info "Creating archive: $archive_path" >&2
     
     # Create tarball
     tar -czf "$archive_path" -C "$(dirname "$OUTPUT_DIR")" "$(basename "$OUTPUT_DIR")" 2>&1
     
     if [ -f "$archive_path" ]; then
         local size=$(du -h "$archive_path" | cut -f1)
-        log_info "✅ Bundle archive created: $archive_path ($size)"
+        log_info "✅ Bundle archive created: $archive_path ($size)" >&2
         echo "$archive_path"
     else
-        log_error "Failed to create archive"
+        log_error "Failed to create archive" >&2
         return 1
     fi
 }
