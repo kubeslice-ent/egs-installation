@@ -23,15 +23,15 @@ The EGS Troubleshooting script (`egs-troubleshoot.sh`) provides a **one-command 
 
 | Section | Description |
 |---------|-------------|
-| [Quick Start](#quick-start) | Get started with basic bundle generation |
-| [Prerequisites](#prerequisites) | Required tools before running the script |
-| [Command Options](#command-options) | All available options and flags |
-| [What's Collected](#whats-collected) | Detailed list of collected resources |
-| [Multi-Cluster Collection](#multi-cluster-collection) | Collecting from controller and workers |
-| [S3 Upload](#s3-upload) | Upload bundles to AWS S3 |
-| [Bundle Structure](#bundle-structure) | Understanding the output directory |
-| [Examples](#examples) | Common usage examples |
-| [Troubleshooting the Script](#troubleshooting-the-script) | Common issues and solutions |
+| [Quick Start](#-quick-start) | Get started with basic bundle generation |
+| [Prerequisites](#-prerequisites) | Required tools before running the script |
+| [Command Options](#️-command-options) | All available options and flags |
+| [What's Collected](#-whats-collected) | Detailed list of collected resources |
+| [Multi-Cluster Collection](#-multi-cluster-collection) | Collecting from controller and workers |
+| [S3 Upload](#️-s3-upload) | Upload bundles to AWS S3 |
+| [Bundle Structure](#-bundle-structure) | Understanding the output directory |
+| [Examples](#-examples) | Common usage examples |
+| [Troubleshooting the Script](#-troubleshooting-the-script) | Common issues and solutions |
 
 ---
 
@@ -721,20 +721,6 @@ curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
 
 ---
 
-## 📞 Support
-
-If you encounter issues with EGS or need assistance:
-
-1. **Generate a troubleshooting bundle** using this script
-2. **Upload to S3** or share the bundle with the support team
-3. **Contact Avesha Support** with the bundle and issue description
-
-📧 **Support:** support@avesha.io
-
-📚 **Documentation:** [docs.avesha.io/documentation/enterprise-egs](https://docs.avesha.io/documentation/enterprise-egs)
-
----
-
 ## 📚 Related Documentation
 
 | Document | Description |
@@ -744,14 +730,6 @@ If you encounter issues with EGS or need assistance:
 | [EGS License Setup](EGS-License-Setup.md) | License configuration guide |
 | [Controller Prerequisites](EGS-Controller-Prerequisites.md) | Controller cluster requirements |
 | [Worker Prerequisites](EGS-Worker-Prerequisites.md) | Worker cluster requirements |
-
----
-
-## 🔄 Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.15.5 | 2026-01-19 | Initial release with comprehensive EGS support |
 
 ---
 
