@@ -1314,8 +1314,16 @@ install_or_upgrade_helm_chart() {
         chart_name="$local_charts_path/$chart_name"
         echo "🗂️  Using local chart at path '$chart_name'..."
     elif [ -n "$repo_url" ]; then
-        manage_helm_repo "$repo_url" "$username" "$password"
-        chart_name="temp-repo/$chart_name"
+        # Check if the repo_url is an OCI registry
+        if [[ "$repo_url" =~ ^oci:// ]]; then
+            # For OCI registries, use the full OCI URL directly
+            chart_name="$repo_url"
+            echo "🗂️  Using OCI registry chart at '$chart_name'..."
+        else
+            # For regular Helm repositories, add the repo and use temp-repo prefix
+            manage_helm_repo "$repo_url" "$username" "$password"
+            chart_name="temp-repo/$chart_name"
+        fi
     fi
 
     # Create the namespace if it doesn't exist
@@ -1511,8 +1519,8 @@ EOF
     echo "✅ Helm chart '$release_name' processed successfully in namespace '$namespace'."
     echo ""
 
-    # Remove the temporary Helm repository if added
-    if [ "$use_local_charts_effective" != "true" ] && [ -n "$repo_url" ]; then
+    # Remove the temporary Helm repository if added (skip for OCI registries)
+    if [ "$use_local_charts_effective" != "true" ] && [ -n "$repo_url" ] && [[ ! "$repo_url" =~ ^oci:// ]]; then
         helm repo remove temp-repo
     fi
 

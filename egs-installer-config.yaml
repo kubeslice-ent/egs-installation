@@ -413,6 +413,32 @@ additional_apps:
     verify_install_timeout: 600                # Timeout for verification (in seconds)
     skip_on_verify_fail: false                 # Do not skip if verification fails
 
+  - name: "envoy-gateway"                      # Name of the application
+    skip_installation: false                   # Do not skip the installation of Envoy Gateway
+    use_global_kubeconfig: true                # Use global kubeconfig for Envoy Gateway
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "envoy-gateway-system"          # Namespace where Envoy Gateway will be installed
+    release: "eg"                              # Helm release name for Envoy Gateway
+    chart: "gateway-helm"                      # Helm chart name for Envoy Gateway
+    repo_url: "oci://docker.io/envoyproxy/gateway-helm" # OCI Helm repository URL for Envoy Gateway
+    version: ""                                # Leave empty to use latest version, or specify version like "v1.2.3"
+    specific_use_local_charts: false           # Use OCI registry, not local charts
+    values_file: ""                            # Path to an external values file, if any
+    #### Inline Helm Values for Envoy Gateway ####
+    inline_values:
+      config:
+        envoyGateway:
+          provider:
+            kubernetes:
+              deploy:
+                type: "GatewayNamespace"       # Configure deployment type as GatewayNamespace
+    helm_flags: "--create-namespace --debug"   # Additional Helm flags for this application's installation
+    verify_install: false                      # Verify the installation of Envoy Gateway
+    verify_install_timeout: 600                # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                  # Skip the step if verification fails
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+
 
 #### Define Custom Applications and Associated Manifests ####
 manifests:
