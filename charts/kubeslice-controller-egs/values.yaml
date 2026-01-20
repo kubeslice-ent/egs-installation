@@ -244,7 +244,7 @@ egs:
     # Image name for the queue-manager
     image: queue-manager
     # Image tag for the queue-manager
-    tag: 1.13.4-RELEASE-3249cec2
+    tag: 1.13.3
     imagePullPolicy: IfNotPresent
     service:
       name: egs-queue-manager
