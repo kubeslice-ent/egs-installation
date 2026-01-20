@@ -421,9 +421,9 @@ additional_apps:
     namespace: "envoy-gateway-system"          # Namespace where Envoy Gateway will be installed
     release: "eg"                              # Helm release name for Envoy Gateway
     chart: "gateway-helm"                      # Helm chart name for Envoy Gateway
-    repo_url: "oci://docker.io/envoyproxy/gateway-helm" # OCI Helm repository URL for Envoy Gateway
-    version: ""                                # Leave empty to use latest version, or specify version like "v1.2.3"
-    specific_use_local_charts: false           # Use OCI registry, not local charts
+    repo_url: ""                               # Empty for local charts
+    version: "1.6.2"                           # Version of the Envoy Gateway chart (matches pulled chart)
+    specific_use_local_charts: true            # Use local charts from charts directory
     values_file: ""                            # Path to an external values file, if any
     #### Inline Helm Values for Envoy Gateway ####
     inline_values:
