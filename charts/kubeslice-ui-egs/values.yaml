@@ -103,7 +103,7 @@ kubeslice:
                     operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.16.0-RELEASE-23118781
+    tag: 1.16.0-RELEASE-6e1fa0c1
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
