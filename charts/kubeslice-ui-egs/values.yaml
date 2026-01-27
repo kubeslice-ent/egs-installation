@@ -101,7 +101,7 @@ kubeslice:
                     operator: "DoesNotExist"
   uiv2:
     image: kubeslice-ui-v2-ent-egs
-    tag: 1.15.5
+    tag: 1.16.0
     pullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -249,7 +249,7 @@ kubeslice:
 
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 1.15.5
+    tag: 1.16.0
     pullPolicy: IfNotPresent
     env:
       - name: DCGM_METRIC_JOB_VALUE

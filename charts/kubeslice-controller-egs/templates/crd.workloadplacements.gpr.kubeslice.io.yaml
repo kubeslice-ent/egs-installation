@@ -81,6 +81,16 @@ spec:
                 description: enable burst; if it is enabled it will select all the
                   cluster in the workspace
                 type: boolean
+              enableEGS:
+                default: false
+                description: EnableEGS is a flag to enable EGS (GPU provisioning)
+                  for this WorkloadPlacement
+                type: boolean
+              enableRedistribute:
+                default: true
+                description: EnableRedistribute is a boolean that is a flag to enable
+                  workload distribution
+                type: boolean
               gprDetails:
                 description: GPRDetails is the details of the GPR to be used to create
                   the GPR
@@ -474,10 +484,62 @@ spec:
                       type: string
                   type: object
                 type: array
+              message:
+                description: Message is the message for the failure of the workload
+                  placement
+                type: string
+              observedClusterNames:
+                description: |-
+                  ObservedClusterNames tracks which clusters were last reconciled
+                  Used to detect additions to spec.ClusterNames for failed GPR redistribution
+                items:
+                  type: string
+                type: array
+              observedGeneration:
+                format: int64
+                type: integer
               placementStatus:
                 description: PlacementStatus is the status of the overall/global workload
                   placement
                 type: string
+              reason:
+                description: Reason is the reason for the failure of the workload
+                  placement
+                type: string
+              redistribution:
+                description: This is a trigger for Redistribution, It will be updated
+                  during auto eviction
+                items:
+                  properties:
+                    completedAt:
+                      description: CompletedAt is when this redistribution was completed
+                      format: date-time
+                      type: string
+                    gprName:
+                      description: GPRName is the name of the GPR being redistributed
+                      type: string
+                    originCluster:
+                      description: OriginCluster is the cluster where the GPR is currently
+                        running
+                      type: string
+                    phase:
+                      default: pending
+                      description: Phase of this redistribution
+                      type: string
+                    startedAt:
+                      description: StartedAt is when this redistribution was requested
+                      format: date-time
+                      type: string
+                    targetCluster:
+                      description: TargetCluster is the cluster where the GPR will
+                        be redistributed to
+                      type: string
+                    triggerRef:
+                      description: TriggerRef is the name of the action/component
+                        that requested this redistribution
+                      type: string
+                  type: object
+                type: array
             type: object
         type: object
     served: true

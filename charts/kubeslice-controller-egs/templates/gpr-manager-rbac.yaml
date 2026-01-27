@@ -92,6 +92,7 @@ rules:
 - apiGroups:
   - worker.kubeslice.io
   resources:
+  - gpuworkloads
   - workloadplacements
   - workerslicegpuprovisioningrequests
   verbs:

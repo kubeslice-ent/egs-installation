@@ -97,6 +97,7 @@ spec:
                 - Successful
                 - Failed
                 - Inprogress
+                - WaitingForRedistribution
                 type: string
               failedEvictionGprs:
                 items:

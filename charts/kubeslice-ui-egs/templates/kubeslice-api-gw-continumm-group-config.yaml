@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: continuum-groups-config
+  namespace: kubeslice-controller
+data:
+  continuumGroups: "[]"
+---
+
