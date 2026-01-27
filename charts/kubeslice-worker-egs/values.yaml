@@ -1,6 +1,3 @@
-dev:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
-
 global:
   # Centralized image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
@@ -35,7 +32,7 @@ global:
 
 operator:
   image: worker-operator-ent-egs
-  tag: 1.16.0-RELEASE-42cfa746 
+  tag: 1.16.0
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -232,7 +229,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.16.0-RELEASE-89438331
+  tag: 1.16.0
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -282,7 +279,7 @@ aiops:
 
 egsAgent:
   image: egs-agent
-  tag: 1.0.4-RELEASE-6de5d541
+  tag: 1.0.4
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-agent-access
@@ -330,6 +327,13 @@ egsAgent:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: NotIn
+                values:
+                - arm64
 
 egsGpuAgent:
   image: egs-gpu-agent
