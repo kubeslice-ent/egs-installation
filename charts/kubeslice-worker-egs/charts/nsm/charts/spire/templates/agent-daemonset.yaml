@@ -59,34 +59,45 @@ spec:
         - name: spire-agent
           image: {{ include "spire.imageRegistry" . }}/{{ .Values.spireAgent.imageRegistry }}:{{ .Values.spireAgent.imageTag }}
           args: ["-config", "/run/spire/config/agent.conf"]
+          # OpenShift Fix: Add privileged mode and MY_NODE_NAME using podIP
+          securityContext:
+            privileged: true
+          env:
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
           volumeMounts:
             - name: spire-config
               mountPath: /run/spire/config
               readOnly: true
             - name: spire-bundle
               mountPath: /run/spire/bundle
+            # OpenShift Fix: Mount path changed to match hostPath
             - name: spire-agent-socket
-              mountPath: /run/spire/sockets
+              mountPath: /var/lib/spire/sockets
               readOnly: false
             - name: spire-token
               mountPath: /var/run/secrets/tokens
           resources:
             requests:
               cpu: 30m
+          # OpenShift Fix: Updated probe paths to match new socket location
           livenessProbe:
             exec:
               command:
                 - /opt/spire/bin/spire-agent
                 - healthcheck
                 - -socketPath
-                - /run/spire/sockets/agent.sock
+                - /var/lib/spire/sockets/agent.sock
             failureThreshold: 2
             initialDelaySeconds: 15
             periodSeconds: 60
             timeoutSeconds: 3
           readinessProbe:
             exec:
-              command: ["/opt/spire/bin/spire-agent", "healthcheck", "-socketPath", "/run/spire/sockets/agent.sock", "--shallow"]
+              command: ["/opt/spire/bin/spire-agent", "healthcheck", "-socketPath", "/var/lib/spire/sockets/agent.sock", "--shallow"]
             initialDelaySeconds: 5
             periodSeconds: 5
       volumes:
@@ -96,9 +107,11 @@ spec:
         - name: spire-bundle
           configMap:
             name: spire-bundle
+        # OpenShift Fix: Use /var/lib/spire/sockets for writable hostPath on OpenShift
+        # Original was: /run/spire/sockets
         - name: spire-agent-socket
           hostPath:
-            path: /run/spire/sockets
+            path: /var/lib/spire/sockets
             type: DirectoryOrCreate
         - name: spire-token
           projected:

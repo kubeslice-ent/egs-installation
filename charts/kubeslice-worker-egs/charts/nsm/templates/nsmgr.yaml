@@ -106,7 +106,9 @@ spec:
       containers:
         - image: '{{ include "nsm.imageRegistry" . }}/{{ .Values.nsmgr.imageRegistry }}:{{ .Values.nsmgr.imageTag }}'
           imagePullPolicy: IfNotPresent
-          securityContext: 
+          # OpenShift Fix: Added privileged: true for SELinux socket access
+          securityContext:
+            privileged: true
           {{- if .Values.nsmgr.containerSecurityContext }}
           {{ toYaml .Values.nsmgr.containerSecurityContext | nindent 12 }}
           {{- end }}
@@ -114,8 +116,9 @@ spec:
           ports:
             - containerPort: 5001
           env:
+            # OpenShift Fix: Changed from /run/spire/sockets to /var/lib/spire/sockets
             - name: SPIFFE_ENDPOINT_SOCKET
-              value: unix:///run/spire/sockets/agent.sock
+              value: unix:///var/lib/spire/sockets/agent.sock
             - name: NSM_NAME
               valueFrom:
                 fieldRef:
@@ -153,8 +156,9 @@ spec:
           volumeMounts:
             - name: kubelet-socket
               mountPath: /var/lib/kubelet/device-plugins
+            # OpenShift Fix: Changed from /run/spire/sockets to /var/lib/spire/sockets
             - name: spire-agent-socket
-              mountPath: /run/spire/sockets
+              mountPath: /var/lib/spire/sockets
               readOnly: true
             - name: nsm-socket
               mountPath: /var/lib/networkservicemesh
@@ -210,10 +214,12 @@ spec:
             path: /var/lib/kubelet/device-plugins
             type: DirectoryOrCreate
           name: kubelet-socket
+        # OpenShift Fix: Changed from /run/spire/sockets to /var/lib/spire/sockets
+        # Also changed type from Directory to DirectoryOrCreate
         - name: spire-agent-socket
           hostPath:
-            path: /run/spire/sockets
-            type: Directory
+            path: /var/lib/spire/sockets
+            type: DirectoryOrCreate
         - name: nsm-socket
           hostPath:
             path: /var/lib/networkservicemesh

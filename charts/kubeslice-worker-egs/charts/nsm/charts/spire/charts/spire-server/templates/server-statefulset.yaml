@@ -89,10 +89,10 @@ spec:
             name: spire-server
         - name: spire-server-socket
           emptyDir: {}
-        - hostPath:
-            path: /run/spire/data
-            type: DirectoryOrCreate
-          name: spire-store
+        # OpenShift Fix: Use emptyDir instead of hostPath for CRC/OpenShift compatibility
+        # Original was: hostPath: { path: /run/spire/data, type: DirectoryOrCreate }
+        - name: spire-store
+          emptyDir: {}
         - name: spire-ca-certs
           secret:
             defaultMode: 420

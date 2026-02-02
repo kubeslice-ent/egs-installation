@@ -11,7 +11,8 @@ data:
           log_level = "DEBUG"
           server_address = "spire-server"
           server_port = "8081"
-          socket_path = "/run/spire/sockets/agent.sock"
+          # OpenShift Fix: Changed from /run/spire/sockets to /var/lib/spire/sockets
+          socket_path = "/var/lib/spire/sockets/agent.sock"
           trust_bundle_path = "/run/spire/bundle/bundle.crt"
           trust_domain = "k8s.nsm"
       }
