@@ -107,18 +107,34 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --skip-postgresql --skip-prometheus --skip-gpu-operator
 ```
 
-#### 3️⃣ Install Only Worker
+#### 3️⃣ Install without Worker
 
-> ⚠️ **Note:** This installs Worker on the **SAME cluster** where Controller/UI are already running. Use this when you want to add Worker capability to an existing Controller cluster.
+> 📝 **Note:** Installs all components (PostgreSQL, Prometheus, GPU Operator, Controller, UI) on a single cluster without worker.
 
 ```bash
 # ============ CUSTOMIZE THESE VALUES ============
-export KUBECONFIG_PATH="~/.kube/config"      # Path to your kubeconfig file
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig
 
 # ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --kubeconfig $KUBECONFIG_PATH \
-  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
+  --skip-worker
+```
+
+#### 4️⃣ Install Only Worker
+
+> 📝 **Note:** This installs Worker on the **SAME cluster** where Controller/UI are already running. Use this when you want to add Worker capability to an existing Controller cluster.
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig
+export CLUSTER_NAME="production-cluster"          # Custom cluster name
+
+# ============ RUN THE INSTALLER ============
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --kubeconfig $KUBECONFIG_PATH \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui \
+  --cluster-name $CLUSTER_NAME
 ```
 
 ---
@@ -662,16 +678,18 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 #### Install only Worker on Controller Cluster
 
-> ⚠️ **Note:** This installs Worker on the **SAME cluster** where Controller/UI are already running. Use this for single-cluster setups.
+> ⚠️ **Note:** This installs Worker on the **SAME cluster** where Controller/UI are already running. Use this when you want to add Worker capability to an existing Controller cluster.
 
 ```bash
 # ============ CUSTOMIZE THESE VALUES ============
 export KUBECONFIG_PATH="~/.kube/config"          # Path to your kubeconfig
+export CLUSTER_NAME="production-cluster"          # Custom cluster name
 
 # ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --kubeconfig $KUBECONFIG_PATH \
-  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui
+  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui \
+  --cluster-name $CLUSTER_NAME
 ```
 
 ### Example 7: Multi-Cluster Installation (Controller/UI in One Cluster, Worker in Another)
