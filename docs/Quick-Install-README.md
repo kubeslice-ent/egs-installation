@@ -133,7 +133,7 @@ export CLUSTER_NAME="production-cluster"          # Custom cluster name
 # ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --kubeconfig $KUBECONFIG_PATH \
-  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller --skip-ui \
+  --skip-postgresql --skip-prometheus --skip-gpu-operator --skip-controller \
   --cluster-name $CLUSTER_NAME
 ```
 
