@@ -1,3 +1,7 @@
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
+
 global:
   # Centralized image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
@@ -32,7 +36,7 @@ global:
 
 operator:
   image: worker-operator-ent-egs
-  tag: 1.16.0
+  tag: 1.16.0-RELEASE-1acdd3d0
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -337,7 +341,7 @@ egsAgent:
 
 egsGpuAgent:
   image: egs-gpu-agent
-  tag: 1.0.0
+  tag: 1.0.0-RELEASE-80d80e22
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-gpu-agent-access

@@ -105,6 +105,27 @@ webhooks:
         - spire
         - {{ .Release.Namespace | quote }}
         - {{ .Values.controllerNamespace | quote }}
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: {{ $caCertEnc }}
+    service:
+      name: kubeslice-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-networking-kubeslice-io-v1alpha1-slicensgateway
+  failurePolicy: Fail
+  name: mslicensgateway.kb.io
+  rules:
+  - apiGroups:
+    - networking.kubeslice.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - slicensgateways
+  sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
