@@ -6278,6 +6278,7 @@ rules:
       - sliceresourcequotaconfigs
       - slicerolebindings
       - sliceroletemplates
+      - slicensgateways
       - vpnkeyrotations
     verbs:
       - create
@@ -6301,6 +6302,7 @@ rules:
       - sliceresourcequotaconfigs/finalizers
       - slicerolebindings/finalizers
       - sliceroletemplates/finalizers
+      - slicensgateways/finalizers
       - vpnkeyrotations/finalizers
     verbs:
       - update
@@ -6318,6 +6320,7 @@ rules:
       - sliceresourcequotaconfigs/status
       - slicerolebindings/status
       - sliceroletemplates/status
+      - slicensgateways/status
       - vpnkeyrotations/status
     verbs:
       - get
@@ -6351,6 +6354,7 @@ rules:
       - workerslicenodeaffinities
       - workersliceresourcequotas
       - workerslicerolebindings
+      - workerslicensgateways
       - workersliceappserviceresourceusages
       - workerslicegpuprovisioningrequests  
       - gpuworkloads
@@ -6376,6 +6380,7 @@ rules:
       - workerslicenodeaffinities/finalizers
       - workersliceresourcequotas/finalizers
       - workerslicerolebindings/finalizers
+      - workerslicensgateways/finalizers
       - workersliceappserviceresourceusages/finalizers
       - workerslicegpuprovisioningrequests/finalizers
       - gpuworkloads/finalizers
@@ -6394,6 +6399,7 @@ rules:
       - workerslicenodeaffinities/status
       - workersliceresourcequotas/status
       - workerslicerolebindings/status
+      - workerslicensgateways/status
       - workersliceappserviceresourceusages/status
       - workerslicegpuprovisioningrequests/status
       - gpuworkloads/status

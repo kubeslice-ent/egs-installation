@@ -4,22 +4,22 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-  name: slicensgateways.networking.kubeslice.io
+  name: workerslicensgateways.worker.kubeslice.io
 spec:
-  group: networking.kubeslice.io
+  group: worker.kubeslice.io
   names:
-    kind: SliceNSGateway
-    listKind: SliceNSGatewayList
-    plural: slicensgateways
-    singular: slicensgateway
+    kind: WorkerSliceNSGateway
+    listKind: WorkerSliceNSGatewayList
+    plural: workerslicensgateways
+    singular: workerslicensgateway
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .spec.clusterName
+      name: Cluster
+      type: string
     - jsonPath: .spec.gatewayRef.name
       name: Gateway
-      type: string
-    - jsonPath: .spec.fqdn[0]
-      name: FQDN
       type: string
     - jsonPath: .status.phase
       name: Status
@@ -30,8 +30,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: SliceNSGateway is the Schema for multi-cluster service routing
-          across slice networks
+        description: WorkerSliceNSGateway is the Schema for the workerslicensgateways
+          API
         properties:
           apiVersion:
             description: |-
@@ -51,7 +51,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: SliceNSGatewaySpec defines the desired state of SliceNSGateway
+            description: WorkerSliceNSGatewaySpec defines the desired state of WorkerSliceNSGateway
             properties:
               appNamespace:
                 description: |-
@@ -106,7 +106,7 @@ spec:
                         namespace:
                           description: |-
                             Namespace of the Kubernetes Service
-                            If empty, defaults to the same namespace as SliceNSGateway
+                            If empty, defaults to the same namespace as WorkerSliceNSGateway
                           type: string
                         port:
                           description: Port is the port number of the service
@@ -129,7 +129,7 @@ spec:
                         namespace:
                           description: |-
                             Namespace of the ServiceImport
-                            If empty, defaults to the same namespace as SliceNSGateway
+                            If empty, defaults to the same namespace as WorkerSliceNSGateway
                           type: string
                         port:
                           description: Port is the port number of the service
@@ -196,9 +196,8 @@ spec:
                     type: integer
                 type: object
               clusterName:
-                description: |-
-                  ClusterName defines the name of the worker cluster where the gateway will be deployed
-                  This field is required for controller-managed SliceNSGateway
+                description: ClusterName identifies which cluster this resource belongs
+                  to
                 minLength: 1
                 type: string
               fqdn:
@@ -253,7 +252,7 @@ spec:
                   namespace:
                     description: |-
                       Namespace of the Gateway resource
-                      If empty, defaults to the same namespace as SliceNSGateway
+                      If empty, defaults to the same namespace as WorkerSliceNSGateway
                     type: string
                   serviceType:
                     default: LoadBalancer
@@ -356,7 +355,7 @@ spec:
                               namespace:
                                 description: |-
                                   Namespace of the Kubernetes Service
-                                  If empty, defaults to the same namespace as SliceNSGateway
+                                  If empty, defaults to the same namespace as WorkerSliceNSGateway
                                 type: string
                               port:
                                 description: Port is the port number of the service
@@ -379,7 +378,7 @@ spec:
                               namespace:
                                 description: |-
                                   Namespace of the ServiceImport
-                                  If empty, defaults to the same namespace as SliceNSGateway
+                                  If empty, defaults to the same namespace as WorkerSliceNSGateway
                                 type: string
                               port:
                                 description: Port is the port number of the service
@@ -502,7 +501,7 @@ spec:
               timeoutConfig:
                 description: |-
                   TimeoutConfig defines timeout settings for HTTP requests
-                  These timeouts are applied to all HTTPRoute rules created by this SliceNSGateway
+                  These timeouts are applied to all HTTPRoute rules created by this WorkerSliceNSGateway
                 properties:
                   backendRequestTimeout:
                     description: |-
@@ -528,7 +527,8 @@ spec:
             - sliceName
             type: object
           status:
-            description: SliceNSGatewayStatus defines the observed state of SliceNSGateway
+            description: WorkerSliceNSGatewayStatus defines the observed state of
+              WorkerSliceNSGateway
             properties:
               backends:
                 description: Backends represents the status of each backend
@@ -565,9 +565,6 @@ spec:
                   - type
                   type: object
                 type: array
-              clusterName:
-                description: ClusterName confirms which cluster this status is from
-                type: string
               conditions:
                 description: Conditions represent the latest available observations
                 items:

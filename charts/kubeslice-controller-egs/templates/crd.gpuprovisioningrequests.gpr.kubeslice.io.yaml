@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: gpuprovisioningrequests.gpr.kubeslice.io
 spec:
   group: gpr.kubeslice.io
@@ -65,6 +65,12 @@ spec:
               enableRDMA:
                 type: boolean
               enableSecondaryNetwork:
+                type: boolean
+              enableTimeSlicing:
+                description: |-
+                  EnableTimeSlicing enables time-slicing for this GPR
+                  When enabled, this GPR participates in round-robin GPU allocation with other time-sliced GPRs
+                  Time-slicing is only applicable for low priority GPRs with same GPU shape and memory
                 type: boolean
               enforceIdleTimeOut:
                 type: boolean
@@ -205,6 +211,11 @@ spec:
                 - Reserved
                 - Released
                 type: string
+              lastTimeSlotStart:
+                description: LastTimeSlotStart is the timestamp when the current time
+                  slot started
+                format: date-time
+                type: string
               lastTransitionTime:
                 format: date-time
                 type: string
@@ -249,6 +260,35 @@ spec:
                 type: integer
               startTimestamp:
                 format: date-time
+                type: string
+              timeSliceEvictedReason:
+                description: TimeSliceEvictedReason stores the reason for time-slice
+                  eviction
+                type: string
+              timeSliceGroupKey:
+                description: TimeSliceGroupKey identifies the time-slice group this
+                  GPR belongs to (cluster-instanceType-gpuShape-priority)
+                type: string
+              timeSlicingActive:
+                description: TimeSlicingActive indicates if this GPR is currently
+                  participating in time-slicing
+                type: boolean
+              timeSlotCount:
+                default: 0
+                description: TimeSlotCount tracks how many time slots this GPR has
+                  received
+                type: integer
+              timeSlotExpiredAt:
+                description: |-
+                  TimeSlotExpiredAt tracks when the time slot first expired without eviction
+                  This happens when there are no pending GPRs in the queue, allowing the GPR to continue running
+                  Used to properly track duration when pending GPRs appear later and eviction occurs
+                format: date-time
+                type: string
+              totalProvisionedDuration:
+                description: |-
+                  TotalProvisionedDuration tracks the cumulative time this GPR has been provisioned across all time slots
+                  This is compared against ExitDuration to determine if the GPR should complete
                 type: string
               workloadDetails:
                 items:
