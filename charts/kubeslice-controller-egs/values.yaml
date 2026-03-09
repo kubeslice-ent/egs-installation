@@ -335,7 +335,26 @@ egs:
               preference:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"                    
+                    operator: "DoesNotExist"
+
+  # EGS metrics ingestion: receives worker metrics, applies transformation (DCGM/Jetson -> EGS_*), exposes for api-gw/UI.
+  # User-configurable: enabled, image, tag, port. Default transformation (DCGM + Jetson) is bundled in the chart.
+  metricsIngestion:
+    enabled: false
+    imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+    image: saas-metrics-ingestion
+    tag: 0.3.0-SNAPSHOT-3f2834a8
+    service:
+      name: egs-metrics-ingestion
+      port: 8080
+    podDisruptionBudget:
+      enabled: false
+      minAvailable: 1
+    # Transformation: DCGM and Jetson -> EGS_* metrics. When enabled, uses chart default (files/metrics-transformation-egs.yaml) unless configData is set.
+    transformationConfig:
+      enabled: true
+      configMapName: egs-metrics-transformation
+      configData: ""  # override with custom YAML string to replace the chart default
 
 # ServiceMonitor configuration for Prometheus monitoring
 serviceMonitor:

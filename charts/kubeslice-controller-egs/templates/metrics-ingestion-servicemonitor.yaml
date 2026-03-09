@@ -1,0 +1,29 @@
+{{- if and .Values.serviceMonitor.enabled .Values.egs.metricsIngestion.enabled }}
+---
+# ServiceMonitor for egs-metrics-ingestion (scrapes transformed EGS metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: egs-metrics-ingestion
+  namespace: {{ .Values.serviceMonitor.namespace }}
+  labels:
+    app.kubernetes.io/instance: kube-prometheus-stack
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: egs-metrics-ingestion
+      component: monitoring
+      control-plane: metrics-ingestion-manager
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: http
+      path: /default/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      relabelings:
+        - targetLabel: job
+          replacement: egs-metrics-ingestion
+{{- end }}

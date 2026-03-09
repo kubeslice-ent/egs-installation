@@ -67,6 +67,9 @@ Usage: {{ include "kubeslice.image" (dict "imageRoot" .Values.operator "global" 
 */}}
 {{- define "kubeslice.image" -}}
 {{- $registry := .global.imageRegistry -}}
+{{- if .imageRoot.imageRegistry -}}
+{{- $registry = .imageRoot.imageRegistry -}}
+{{- end -}}
 {{- $repository := .imageRoot.image -}}
 {{- $tag := .imageRoot.tag -}}
 {{- if .global.imageTagOverrides -}}

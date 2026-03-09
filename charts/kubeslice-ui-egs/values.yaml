@@ -248,8 +248,9 @@ kubeslice:
                     operator: "DoesNotExist"
 
   apigw:
+    imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
     image: kubeslice-api-gw-ent-egs
-    tag: 1.17.0
+    tag: 1.18.0-SNAPSHOT-181b7634
     pullPolicy: IfNotPresent
     env:
       - name: DCGM_METRIC_JOB_VALUE

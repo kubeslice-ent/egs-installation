@@ -1,0 +1,620 @@
+# EGS normalized metrics: 1:1 mapping from DCGM and Jetson (jetson-stats exporter).
+# Downstream (worker-operator, api-gw, UI) should query EGS_* with job=egs-metrics-ingestion.
+metrics:
+  # ---- DCGM → EGS (full mapping) ----
+  - receiveName: "DCGM_FI_DEV_GPU_UTIL"
+    publishName: "EGS_GPU_UTILIZATION"
+    description: "NVIDIA GPU utilization percentage"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: cluster_name
+      - publishName: egs_gpu_id
+        receiveName: gpu_id
+      - publishName: egs_gpu_uuid
+        receiveName: gpu_uuid
+      - publishName: egs_device_id
+        receiveName: device
+      - publishName: egs_model_name
+        receiveName: modelName
+      - publishName: egs_hostname
+        receiveName: hostname
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "DCGM_FI_PROF_GR_ENGINE_ACTIVE"
+    publishName: "EGS_GPU_UTILIZATION"
+    description: "NVIDIA GPU graphics engine active (0-100%)"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: cluster_name
+      - publishName: egs_gpu_id
+        receiveName: gpu_id
+      - publishName: egs_gpu_uuid
+        receiveName: gpu_uuid
+      - publishName: egs_device_id
+        receiveName: device
+      - publishName: egs_model_name
+        receiveName: modelName
+      - publishName: egs_hostname
+        receiveName: hostname
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "DCGM_FI_DEV_GPU_TEMP"
+    publishName: "EGS_GPU_TEMPERATURE"
+    description: "NVIDIA GPU temperature in Celsius"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: cluster_name
+      - publishName: egs_gpu_id
+        receiveName: gpu_id
+      - publishName: egs_gpu_uuid
+        receiveName: gpu_uuid
+      - publishName: egs_device_id
+        receiveName: device
+      - publishName: egs_model_name
+        receiveName: modelName
+      - publishName: egs_hostname
+        receiveName: hostname
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "DCGM_FI_DEV_POWER_USAGE"
+    publishName: "EGS_GPU_POWER_USAGE"
+    description: "NVIDIA GPU power usage in watts"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: cluster_name
+      - publishName: egs_gpu_id
+        receiveName: gpu_id
+      - publishName: egs_gpu_uuid
+        receiveName: gpu_uuid
+      - publishName: egs_device_id
+        receiveName: device
+      - publishName: egs_model_name
+        receiveName: modelName
+      - publishName: egs_hostname
+        receiveName: hostname
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "DCGM_FI_DEV_FB_USED"
+    publishName: "EGS_GPU_USED_VRAM"
+    description: "NVIDIA GPU used frame buffer memory in MB"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: cluster_name
+      - publishName: egs_gpu_id
+        receiveName: gpu_id
+      - publishName: egs_gpu_uuid
+        receiveName: gpu_uuid
+      - publishName: egs_device_id
+        receiveName: device
+      - publishName: egs_model_name
+        receiveName: modelName
+      - publishName: egs_hostname
+        receiveName: hostname
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "DCGM_FI_DEV_FB_FREE"
+    publishName: "EGS_GPU_FREE_VRAM"
+    description: "NVIDIA GPU free frame buffer memory in MB"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: cluster_name
+      - publishName: egs_gpu_id
+        receiveName: gpu_id
+      - publishName: egs_gpu_uuid
+        receiveName: gpu_uuid
+      - publishName: egs_device_id
+        receiveName: device
+      - publishName: egs_model_name
+        receiveName: modelName
+      - publishName: egs_hostname
+        receiveName: hostname
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "DCGM_FI_DEV_MEM_COPY_UTIL"
+    publishName: "EGS_MEM_COPY_UTILIZATION"
+    description: "NVIDIA GPU memory copy utilization percentage"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: cluster_name
+      - publishName: egs_gpu_id
+        receiveName: gpu_id
+      - publishName: egs_gpu_uuid
+        receiveName: gpu_uuid
+      - publishName: egs_device_id
+        receiveName: device
+      - publishName: egs_model_name
+        receiveName: modelName
+      - publishName: egs_hostname
+        receiveName: hostname
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "DCGM_FI_DEV_MEMORY_TEMP"
+    publishName: "EGS_MEMORY_TEMPERATURE"
+    description: "NVIDIA GPU memory temperature in Celsius"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: cluster_name
+      - publishName: egs_gpu_id
+        receiveName: gpu_id
+      - publishName: egs_gpu_uuid
+        receiveName: gpu_uuid
+      - publishName: egs_device_id
+        receiveName: device
+      - publishName: egs_model_name
+        receiveName: modelName
+      - publishName: egs_hostname
+        receiveName: hostname
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  # ---- Jetson (jetson-stats exporter) → EGS ----
+  - receiveName: "jetson_gpu_usage_percent"
+    publishName: "EGS_GPU_UTILIZATION"
+    description: "Jetson GPU utilization percent"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_gpu_id
+        defaultValue: "0"
+      - publishName: egs_gpu_uuid
+        receiveName: egs_gpu_uuid
+      - publishName: egs_device_id
+        receiveName: egs_device_id
+      - publishName: egs_model_name
+        receiveName: egs_model_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "jetson_temperature_celsius"
+    publishName: "EGS_GPU_TEMPERATURE"
+    description: "Jetson temperature (all sensors; filter by label sensor=gpu for GPU temp)"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_gpu_id
+        defaultValue: "0"
+      - publishName: egs_gpu_uuid
+        receiveName: egs_gpu_uuid
+      - publishName: egs_device_id
+        receiveName: egs_device_id
+      - publishName: egs_model_name
+        receiveName: egs_model_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+      - publishName: sensor
+        receiveName: sensor
+
+  - receiveName: "jetson_total_power_mw"
+    publishName: "EGS_GPU_POWER_USAGE"
+    description: "Jetson total power in mW (stored as milliwatts)"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_gpu_id
+        defaultValue: "0"
+      - publishName: egs_gpu_uuid
+        receiveName: egs_gpu_uuid
+      - publishName: egs_device_id
+        receiveName: egs_device_id
+      - publishName: egs_model_name
+        receiveName: egs_model_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "jetson_gpu_power_mw"
+    publishName: "EGS_GPU_POWER_MW"
+    description: "Jetson GPU power rail in mW"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_gpu_id
+        defaultValue: "0"
+      - publishName: egs_gpu_uuid
+        receiveName: egs_gpu_uuid
+      - publishName: egs_device_id
+        receiveName: egs_device_id
+      - publishName: egs_model_name
+        receiveName: egs_model_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "jetson_soc_power_mw"
+    publishName: "EGS_SOC_POWER_MW"
+    description: "Jetson SOC power rail in mW"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_gpu_id
+        defaultValue: "0"
+      - publishName: egs_gpu_uuid
+        receiveName: egs_gpu_uuid
+      - publishName: egs_device_id
+        receiveName: egs_device_id
+      - publishName: egs_model_name
+        receiveName: egs_model_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "jetson_memory_usage_ratio"
+    publishName: "EGS_MEMORY_USAGE_RATIO"
+    description: "Jetson RAM usage ratio (0-1)"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "jetson_swap_usage_ratio"
+    publishName: "EGS_SWAP_USAGE_RATIO"
+    description: "Jetson swap usage ratio (0-1)"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "jetson_emc_utilization_percent"
+    publishName: "EGS_MEM_COPY_UTILIZATION"
+    description: "Jetson EMC (memory controller) utilization percent"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_gpu_id
+        defaultValue: "0"
+      - publishName: egs_gpu_uuid
+        receiveName: egs_gpu_uuid
+      - publishName: egs_device_id
+        receiveName: egs_device_id
+      - publishName: egs_model_name
+        receiveName: egs_model_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "jetson_cpu_usage_percent"
+    publishName: "EGS_CPU_USAGE_PERCENT"
+    description: "Jetson per-core CPU usage percent"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+      - publishName: core
+        receiveName: core
+
+  - receiveName: "jetson_gpu_active_pod"
+    publishName: "EGS_GPU_ACTIVE_POD"
+    description: "Jetson pod using GPU (1.0 = active)"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "jetson_gpu_pod_share_percent"
+    publishName: "EGS_GPU_POD_SHARE_PERCENT"
+    description: "Jetson estimated GPU share per pod"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container
+
+  - receiveName: "jetson_gpu_pods_active_total"
+    publishName: "EGS_GPU_PODS_ACTIVE_TOTAL"
+    description: "Jetson total GPU-active pods"
+    type: "gauge"
+    unitMultiplier: 1
+    labelTransformer:
+      - publishName: egs_job_name
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: job
+        defaultValue: "egs-metrics-ingestion"
+      - publishName: egs_cluster_name
+        receiveName: egs_cluster_name
+      - publishName: egs_hostname
+        receiveName: node
+      - publishName: egs_pod_name
+        receiveName: pod
+      - publishName: egs_namespace
+        receiveName: namespace
+      - publishName: egs_slice_name
+        receiveName: egs_slice_name
+      - publishName: egs_instance
+        receiveName: instance
+      - publishName: egs_container
+        receiveName: container

@@ -1,0 +1,29 @@
+{{- if and .Values.jetsonEgsStatsExporter.enabled .Values.jetsonEgsStatsExporter.serviceMonitor.enabled }}
+{{- $smNs := .Values.jetsonEgsStatsExporter.serviceMonitor.namespace }}
+{{- $targetNs := .Values.jetsonEgsStatsExporter.namespace | default .Release.Namespace }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: jetson-egs-stats-exporter
+  namespace: {{ $smNs }}
+  labels:
+    app: jetson-egs-stats-exporter
+    release: {{ .Values.jetsonEgsStatsExporter.serviceMonitor.releaseLabel }}
+spec:
+  selector:
+    matchLabels:
+      app: jetson-egs-stats-exporter
+      component: monitoring
+  namespaceSelector:
+    matchNames:
+      - {{ $targetNs }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      relabelings:
+        - targetLabel: job
+          replacement: jetson-egs-stats-exporter
+{{- end }}

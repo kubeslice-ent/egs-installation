@@ -1,0 +1,18 @@
+{{- if and .Values.egs.metricsIngestion.enabled (.Values.egs.metricsIngestion.podDisruptionBudget.enabled | default false) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.egs.metricsIngestion.service.name }}-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: egs-metrics-ingestion
+    component: monitoring
+    control-plane: metrics-ingestion-manager
+spec:
+  minAvailable: {{ .Values.egs.metricsIngestion.podDisruptionBudget.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      app: egs-metrics-ingestion
+      component: monitoring
+      control-plane: metrics-ingestion-manager
+{{- end }}

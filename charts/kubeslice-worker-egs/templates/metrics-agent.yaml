@@ -1,0 +1,169 @@
+{{- if .Values.metricsAgent.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-agent-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: metrics-agent
+data:
+  config.yaml: |
+    prometheus:
+      endpoint: {{ .Values.metricsAgent.prometheus.endpoint | quote }}
+      timeout: {{ .Values.metricsAgent.prometheus.timeout | default "30s" }}
+      interval: {{ .Values.metricsAgent.prometheus.interval | default "60s" }}
+    ingestion:
+      endpoint: {{ .Values.metricsAgent.ingestion.endpoint | quote }}
+      timeout: {{ .Values.metricsAgent.ingestion.timeout | default "60s" }}
+      batchSize: {{ .Values.metricsAgent.ingestion.batchSize | default 1000 }}
+      interval: {{ .Values.metricsAgent.ingestion.interval | default "10s" }}
+      maxQueueSize: {{ .Values.metricsAgent.ingestion.maxQueueSize | default 10000 }}
+      key: {{ .Values.metricsAgent.ingestion.key | default "" | quote }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metrics-agent-sa
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: metrics-agent
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metrics-agent-role
+  labels:
+    control-plane: metrics-agent
+rules:
+  - apiGroups: [""]
+    resources: [configmaps, pods, nodes, namespaces]
+    verbs: [get, list]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: [pods, nodes]
+    verbs: [get, list, watch]
+  - apiGroups: ["apps"]
+    resources: [deployments, statefulsets, daemonsets]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metrics-agent-rolebinding
+  labels:
+    control-plane: metrics-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metrics-agent-role
+subjects:
+  - kind: ServiceAccount
+    name: metrics-agent-sa
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-agent-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: metrics-agent
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.metricsAgent.service.port | default 8080 }}
+      targetPort: {{ .Values.metricsAgent.service.port | default 8080 }}
+  selector:
+    control-plane: metrics-agent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-agent
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: metrics-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: metrics-agent
+  template:
+    metadata:
+      labels:
+        control-plane: metrics-agent
+      annotations:
+        prometheus.io/port: {{ .Values.metricsAgent.service.port | default 8080 | quote }}
+        prometheus.io/scrape: "true"
+    spec:
+      serviceAccountName: metrics-agent-sa
+      imagePullSecrets:
+        - name: {{ include "kubeslice.imagePullSecrets" . }}
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: metrics-agent-config
+      containers:
+        - name: main
+          image: {{ include "kubeslice.image" (dict "imageRoot" .Values.metricsAgent "global" .Values.global) }}
+          imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" (.Values.metricsAgent.pullPolicy | default "IfNotPresent") "global" .Values.global) }}
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.metricsAgent.logLevel | default "INFO" | quote }}
+            - name: DEV_MODE
+              value: "false"
+            - name: CLUSTER_NAME
+              value: {{ .Values.cluster.name | quote }}
+            - name: AMDMetricsFieldPrefix
+              value: {{ .Values.metricsAgent.amd.metricsPrefix | default "" | quote }}
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: config
+              mountPath: /etc/metrics-agent
+          ports:
+            - containerPort: {{ .Values.metricsAgent.service.port | default 8080 }}
+              name: health
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.metricsAgent.service.port | default 8080 }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.metricsAgent.service.port | default 8080 }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+      securityContext:
+        runAsUser: 65536
+        runAsGroup: 65536
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 10
+      tolerations:
+        - operator: Exists
+{{- end }}

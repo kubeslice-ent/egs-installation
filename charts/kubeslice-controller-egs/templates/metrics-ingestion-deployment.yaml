@@ -1,0 +1,118 @@
+{{- $port := .Values.egs.metricsIngestion.service.port | int }}
+{{- $labels := dict "app" "egs-metrics-ingestion" "component" "monitoring" "control-plane" "metrics-ingestion-manager" }}
+{{- if .Values.egs.metricsIngestion.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- toYaml $labels | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.egs.metricsIngestion.service.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- toYaml $labels | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: {{ $port | quote }}
+        prometheus.io/scrape: "true"
+      labels:
+        {{- toYaml $labels | nindent 8 }}
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: "node.kubernetes.io/gpu"
+                    operator: "DoesNotExist"
+      containers:
+        - name: ingestion
+          securityContext:
+            runAsUser: 65536
+            runAsGroup: 65536
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            readOnlyRootFilesystem: true
+          image: {{ include "kubeslice.image" (dict "image" .Values.egs.metricsIngestion.image "tag" .Values.egs.metricsIngestion.tag "registry" (.Values.egs.metricsIngestion.imageRegistry | default .Values.global.imageRegistry) ) }}
+          imagePullPolicy: {{ .Values.egs.metricsIngestion.imagePullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: {{ $port }}
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          {{- if and .Values.egs.metricsIngestion.transformationConfig.enabled .Values.egs.metricsIngestion.transformationConfig.configMapName }}
+          volumeMounts:
+            - name: transformation-config
+              mountPath: /etc/egs-metrics-transformation
+              readOnly: true
+          {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ $port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              port: {{ $port }}
+              path: /health
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext:
+        runAsUser: 65536
+        runAsGroup: 65536
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      {{- include "kubeslice.imagePullSecrets" . | nindent 6 }}
+      schedulerName: default-scheduler
+      tolerations:
+        - operator: Exists
+      {{- if and .Values.egs.metricsIngestion.transformationConfig.enabled .Values.egs.metricsIngestion.transformationConfig.configMapName }}
+      volumes:
+        - name: transformation-config
+          configMap:
+            name: {{ .Values.egs.metricsIngestion.transformationConfig.configMapName }}
+      {{- end }}
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+{{- end }}
+---
+{{- if .Values.egs.metricsIngestion.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.egs.metricsIngestion.service.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- toYaml $labels | nindent 4 }}
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.egs.metricsIngestion.service.port }}
+      targetPort: {{ $port }}
+  selector:
+    {{- toYaml $labels | nindent 4 }}
+{{- end }}

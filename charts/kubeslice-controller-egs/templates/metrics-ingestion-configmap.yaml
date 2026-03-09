@@ -1,0 +1,19 @@
+{{- if and .Values.egs.metricsIngestion.enabled .Values.egs.metricsIngestion.transformationConfig.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.egs.metricsIngestion.transformationConfig.configMapName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: egs-metrics-ingestion
+    component: monitoring
+    control-plane: metrics-ingestion-manager
+data:
+  metrics-transformation.yaml: |
+{{- $configData := .Values.egs.metricsIngestion.transformationConfig.configData }}
+{{- if $configData }}
+{{ $configData | nindent 4 }}
+{{- else }}
+{{ .Files.Get "files/metrics-transformation-egs.yaml" | nindent 4 }}
+{{- end }}
+{{- end }}

@@ -208,7 +208,7 @@ Usage: {{ include "component.image" (dict "component" .Values.kubeslice.ui "glob
 {{- define "component.image" -}}
 {{- $component := .component | required "Component configuration is required" -}}
 {{- $global := .global | required "Global configuration is required" -}}
-{{- $registry := $global.imageRegistry | default "" -}}
+{{- $registry := $component.imageRegistry | default $global.imageRegistry | default "" -}}
 {{- $repository := $component.image | required "Component image is required" -}}
 {{- $tag := $component.tag | default "latest" -}}
 {{- if $registry -}}

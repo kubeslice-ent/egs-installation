@@ -1,0 +1,25 @@
+{{- if .Values.monitoring.jetsonServiceMonitor.enabled }}
+---
+# ServiceMonitor for Jetson GPU exporter on worker cluster.
+# Prometheus scrapes pods with app=jetson-gpu-exporter in the monitoring namespace.
+# Ensure the Jetson exporter Service has port name "metrics" and selector app: jetson-gpu-exporter.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: jetson-gpu-exporter
+  namespace: {{ .Values.monitoring.jetsonServiceMonitor.namespace }}
+  labels:
+    release: {{ .Values.monitoring.jetsonServiceMonitor.releaseLabel }}
+spec:
+  selector:
+    matchLabels:
+      app: jetson-gpu-exporter
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.monitoring.jetsonServiceMonitor.namespace }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+{{- end }}

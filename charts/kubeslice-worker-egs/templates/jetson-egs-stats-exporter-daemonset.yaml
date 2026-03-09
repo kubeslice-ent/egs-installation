@@ -1,0 +1,72 @@
+{{- if .Values.jetsonEgsStatsExporter.enabled }}
+{{- $ns := .Values.jetsonEgsStatsExporter.namespace | default .Release.Namespace }}
+{{- $name := "jetson-egs-stats-exporter" }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    app: {{ $name }}
+    component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        component: monitoring
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.jetsonEgsStatsExporter.service.port | quote }}
+        prometheus.io/path: "/metrics"
+    spec:
+      {{- with .Values.jetsonEgsStatsExporter.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      hostNetwork: false
+      hostPID: false
+      containers:
+        - name: exporter
+          image: {{ include "kubeslice.image" (dict "imageRoot" .Values.jetsonEgsStatsExporter "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.jetsonEgsStatsExporter.imagePullPolicy | default .Values.global.imagePullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.jetsonEgsStatsExporter.service.port }}
+              protocol: TCP
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      {{- with .Values.jetsonEgsStatsExporter.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      imagePullSecrets:
+        - name: {{ include "kubeslice.imagePullSecrets" . }}
+{{- end }}

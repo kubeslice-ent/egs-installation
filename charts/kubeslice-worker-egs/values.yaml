@@ -31,8 +31,9 @@ global:
     openshift: false
 
 operator:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
   image: worker-operator-ent-egs
-  tag: 1.17.0
+  tag: 1.16.0-SNAPSHOT-de931e7d
   pullPolicy: IfNotPresent
   logLevel: INFO
   env:
@@ -228,8 +229,9 @@ istio:
     tag: 1.16.1
 
 aiops:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
   image: kube-aiops-operator
-  tag: 1.16.0
+  tag: 1.16.1-SNAPSHOT-0f16036f
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -408,10 +410,53 @@ metrics:
   metricResolution: "15s"
   imagePullPolicy: IfNotPresent
 
+# Metrics agent: scrapes worker Prometheus (DCGM/Jetson), transforms and pushes EGS_* to controller egs-metrics-ingestion.
+# User-configurable: enabled, image, tag, endpoints, ingestion key, service port, AMD metrics prefix.
+metricsAgent:
+  enabled: false
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+  image: metrics-agent
+  tag: 1.0.0-SNAPSHOT-d8c13a5b
+  prometheus:
+    endpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+  ingestion:
+    endpoint: "http://egs-metrics-ingestion.kubeslice-controller.svc.cluster.local:8080"
+    key: ""  # set for authenticated ingestion
+  service:
+    port: 8080
+  amd:
+    metricsPrefix: ""
+
+# Jetson EGS stats exporter: DaemonSet on Jetson (arm64) nodes, exposes metrics for Prometheus.
+# Image: jetson-python-exporter:1.7
+jetsonEgsStatsExporter:
+  enabled: false
+  image: jetson-python-exporter
+  tag: "1.7"
+  # imageRegistry: ""  # optional; uses global.imageRegistry if not set
+  namespace: ""  # empty = same as release namespace (egs-monitoring typical when using shared monitoring ns)
+  service:
+    port: 9100
+  # Run only on Jetson (arm64) nodes
+  nodeSelector:
+    kubernetes.io/arch: arm64
+  # Optional: override with custom nodeSelector
+  # nodeSelector: {}
+  serviceMonitor:
+    enabled: true
+    namespace: egs-monitoring
+    releaseLabel: prometheus
+
 monitoring:
   podMonitor:
     enabled: false
     namespace: egs-monitoring
+  # ServiceMonitor for Jetson GPU exporter (worker cluster).
+  # Enable when Jetson exporter runs in monitoring namespace with app=jetson-gpu-exporter and port name "metrics".
+  jetsonServiceMonitor:
+    enabled: false
+    namespace: egs-monitoring
+    releaseLabel: prometheus
 
 rbacproxy:
   # Image name for the RBAC proxy
