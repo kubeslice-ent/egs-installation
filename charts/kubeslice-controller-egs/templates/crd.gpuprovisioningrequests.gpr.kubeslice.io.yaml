@@ -58,6 +58,8 @@ spec:
               enableAutoGpuSelection:
                 description: EnableAutoGpuSelection is a flag to enable auto gpu selection
                 type: boolean
+              enableDynamicNodePool:
+                type: boolean
               enableEviction:
                 type: boolean
               enableMig:
@@ -204,6 +206,12 @@ spec:
                 type: string
               evictionInProgress:
                 type: boolean
+              failedNodeRecoveryAttempts:
+                default: 0
+                description: |-
+                  FailedNodeRecoveryAttempts counts how many times node pool deletion + scale-up retry was performed.
+                  When this exceeds the controller's limit, GPR is marked Failed and reconciliation stops.
+                type: integer
               failureReason:
                 type: string
               internalState:
@@ -250,6 +258,23 @@ spec:
                       type: string
                   type: object
                 type: array
+              nodePoolDetails:
+                description: NodePoolDetails is a list of node pool details for the
+                  GPR
+                items:
+                  properties:
+                    cloudProvider:
+                      type: string
+                    clusterID:
+                      type: string
+                    nodeID:
+                      items:
+                        type: string
+                      type: array
+                    nodePoolID:
+                      type: string
+                  type: object
+                type: array
               numGPUsAllocated:
                 type: integer
               provisioningStatus:
@@ -258,6 +283,10 @@ spec:
                 type: string
               retryCount:
                 type: integer
+              scaleUpTriggered:
+                description: ScaleUpTriggered is a flag to indicate if the scale up
+                  has been triggered for the GPR
+                type: boolean
               startTimestamp:
                 format: date-time
                 type: string

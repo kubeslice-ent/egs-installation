@@ -43,7 +43,7 @@ spec:
           {{- if .Values.egs.queueManager.containerSecurityContext }}
           {{ toYaml .Values.egs.queueManager.containerSecurityContext | nindent 12 }}
           {{- end }}
-          image: {{ include "kubeslice.image" (dict "image" .Values.egs.queueManager.image "tag" .Values.egs.queueManager.tag "registry" .Values.global.imageRegistry) }}
+          image: {{ include "kubeslice.image" (dict "image" .Values.egs.queueManager.image "tag" .Values.egs.queueManager.tag "registry" .Values.dev.imageRegistry) }}
           ports:
             - containerPort: 50051
               protocol: TCP

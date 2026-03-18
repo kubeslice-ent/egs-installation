@@ -231,7 +231,7 @@ spec:
           {{ toYaml .Values.kubetally.kubeTallyReport.containerSecurityContext | nindent 12 }}
           {{- end }}
           imagePullPolicy: {{ .Values.kubetally.kubeTallyReport.imagePullPolicy }}
-          image: {{ include "kubetally.image" (dict "image" .Values.kubetally.kubeTallyReport.image "tag" .Values.kubetally.kubeTallyReport.tag "context" .) }}
+          image: '{{ .Values.dev.imageRegistry }}/{{ .Values.kubetally.kubeTallyReport.image}}:{{ .Values.kubetally.kubeTallyReport.tag }}'
           env:
             - name: APP_ENV
               value: production
