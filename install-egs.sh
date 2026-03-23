@@ -340,6 +340,10 @@ Multi-Cluster Mode (Auto-detected):
   Note: UI always uses the same kubeconfig/context as Controller (they're deployed together)
   Note: You can add multiple workers by specifying --worker-kubeconfig multiple times
 
+Advanced Override Options:
+  --controller-endpoint URL  Override the auto-detected controller cluster API endpoint (useful for Rancher or custom API server URLs)
+  --ui-service-type TYPE     Set UI proxy service type: LoadBalancer, NodePort, or ClusterIP (default: LoadBalancer)
+
 Worker Registration Mode:
   --register-worker          Register a worker cluster with controller (standalone mode)
   --controller-kubeconfig PATH  Path to controller cluster kubeconfig (required for --register-worker)
@@ -572,6 +576,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --controller-namespace)
             CONTROLLER_NAMESPACE="$2"
+            shift 2
+            ;;
+        --controller-endpoint)
+            CONTROLLER_ENDPOINT="$2"
+            shift 2
+            ;;
+        --ui-service-type)
+            UI_SERVICE_TYPE="$2"
             shift 2
             ;;
         --help|-h)
@@ -1444,6 +1456,24 @@ for ((i=0; i<WORKER_COUNT; i++)); do
     # Always update imageRegistry, yq should merge this with existing inline_values.global fields
     yq eval ".kubeslice_worker_egs[$i].inline_values.global.imageRegistry = \"$IMAGE_REGISTRY\"" -i egs-installer-config.yaml
 done
+
+# Override controller endpoint if provided (useful for Rancher or custom API server URLs)
+if [ -n "$CONTROLLER_ENDPOINT" ]; then
+    print_info "Overriding controller endpoint with: $CONTROLLER_ENDPOINT"
+    yq eval ".kubeslice_controller_egs.inline_values.kubeslice.controller.endpoint = \"$CONTROLLER_ENDPOINT\"" -i egs-installer-config.yaml
+    print_success "Controller endpoint set to: $CONTROLLER_ENDPOINT"
+fi
+
+# Override UI proxy service type if provided
+if [ -n "$UI_SERVICE_TYPE" ]; then
+    if [[ "$UI_SERVICE_TYPE" != "LoadBalancer" && "$UI_SERVICE_TYPE" != "NodePort" && "$UI_SERVICE_TYPE" != "ClusterIP" ]]; then
+        print_error "Invalid --ui-service-type: $UI_SERVICE_TYPE. Must be LoadBalancer, NodePort, or ClusterIP"
+        exit 1
+    fi
+    print_info "Setting UI proxy service type to: $UI_SERVICE_TYPE"
+    yq eval ".kubeslice_ui_egs.inline_values.kubeslice.uiproxy.service.type = \"$UI_SERVICE_TYPE\"" -i egs-installer-config.yaml
+    print_success "UI proxy service type set to: $UI_SERVICE_TYPE"
+fi
 
 # Update enable_custom_apps
 yq eval ".enable_custom_apps = $ENABLE_CUSTOM_APPS" -i egs-installer-config.yaml
