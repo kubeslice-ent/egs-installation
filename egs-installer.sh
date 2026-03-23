@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the script version
-SCRIPT_VERSION="1.15.3"
+SCRIPT_VERSION="1.17.0"
 
 # Check if the script is running in Bash
 if [ -z "$BASH_VERSION" ]; then
@@ -179,18 +179,39 @@ get_lb_external_ip() {
     service_type=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.type}')
 
     if [ "$service_type" = "LoadBalancer" ]; then
+        # Try to get IP first
         ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # If IP is empty, try to get hostname (common for AWS ELB)
+        if [ -z "$ip" ]; then
+            ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        fi
+        
+        # Check if we got either IP or hostname
+        if [ -z "$ip" ]; then
+            echo "Error: LoadBalancer has no external IP or hostname assigned yet" >&2
+            return 1
+        fi
+        
         echo "$ip"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
-        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        
+        # Try to get ExternalIP first (IPv4 only)
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="ExternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        
+        # If ExternalIP is empty, fall back to InternalIP (IPv4 only)
+        if [ -z "$node_ip" ]; then
+            node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="InternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        fi
+        
         echo "$node_ip:$node_port"
     elif [ "$service_type" = "ClusterIP" ]; then
         cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
         service_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].port}')
         echo "$cluster_ip:$service_port"
     else
-        echo "Unknown service type: $service_type"
+        echo "Unknown service type: $service_type" >&2
         return 1
     fi
 }
@@ -736,7 +757,7 @@ parse_yaml() {
     READD_HELM_REPOS=$(yq e '.readd_helm_repos' "$yaml_file")
 
     # Extract global imagePullSecrets settings
-    GLOBAL_IMAGE_PULL_SECRET_REPO=$(yq e '.global_image_pull_secret.repository' "$yaml_file")
+    GLOBAL_IMAGE_PULL_SECRET_REPO=$(yq e '.global_image_pull_secret.registry' "$yaml_file")
     GLOBAL_IMAGE_PULL_SECRET_USERNAME=$(yq e '.global_image_pull_secret.username' "$yaml_file")
     GLOBAL_IMAGE_PULL_SECRET_PASSWORD=$(yq e '.global_image_pull_secret.password' "$yaml_file")
     GLOBAL_IMAGE_PULL_SECRET_EMAIL=$(yq e '.global_image_pull_secret.email' "$yaml_file")
@@ -867,7 +888,7 @@ parse_yaml() {
 
     KUBESLICE_CONTROLLER_INLINE_VALUES=$(yq e '.kubeslice_controller_egs.inline_values // {}' "$yaml_file")
 
-    KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO=$(yq e '.kubeslice_controller_egs.imagePullSecrets.repository' "$yaml_file")
+    KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO=$(yq e '.kubeslice_controller_egs.imagePullSecrets.registry' "$yaml_file")
     if [ -z "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" ] || [ "$KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO" = "null" ]; then
         KUBESLICE_CONTROLLER_IMAGE_PULL_SECRET_REPO="$GLOBAL_IMAGE_PULL_SECRET_REPO"
     fi
@@ -965,7 +986,7 @@ parse_yaml() {
     KUBESLICE_UI_INGRESS_ENABLED=$(yq e '.kubeslice_ui_egs.inline_values.kubeslice.uiproxy.ingress.enabled // false' "$yaml_file")
     KUBESLICE_UI_INGRESS_HOST=$(yq e '.kubeslice_ui_egs.inline_values.kubeslice.uiproxy.ingress.hosts[0].host // "ui.kubeslice.com"' "$yaml_file")
 
-    KUBESLICE_UI_IMAGE_PULL_SECRET_REPO=$(yq e '.kubeslice_ui_egs.imagePullSecrets.repository' "$yaml_file")
+    KUBESLICE_UI_IMAGE_PULL_SECRET_REPO=$(yq e '.kubeslice_ui_egs.imagePullSecrets.registry' "$yaml_file")
     if [ -z "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" ] || [ "$KUBESLICE_UI_IMAGE_PULL_SECRET_REPO" = "null" ]; then
         KUBESLICE_UI_IMAGE_PULL_SECRET_REPO="$GLOBAL_IMAGE_PULL_SECRET_REPO"
     fi
@@ -1044,7 +1065,7 @@ parse_yaml() {
 
         WORKER_INLINE_VALUES=$(yq e ".kubeslice_worker_egs[$i].inline_values // {}" "$yaml_file")
 
-        WORKER_IMAGE_PULL_SECRET_REPO=$(yq e ".kubeslice_worker_egs[$i].imagePullSecrets.repository" "$yaml_file")
+        WORKER_IMAGE_PULL_SECRET_REPO=$(yq e ".kubeslice_worker_egs[$i].imagePullSecrets.registry" "$yaml_file")
         if [ -z "$WORKER_IMAGE_PULL_SECRET_REPO" ] || [ "$WORKER_IMAGE_PULL_SECRET_REPO" = "null" ]; then
             WORKER_IMAGE_PULL_SECRET_REPO="$GLOBAL_IMAGE_PULL_SECRET_REPO"
         fi
@@ -1677,7 +1698,7 @@ install_or_upgrade_helm_chart() {
     echo "$inline_values"
 
     # Extract the values from inline_values using yq
-    image_pull_secret_repo=$(echo "$inline_values" | yq e '.imagePullSecrets.repository' -)
+    image_pull_secret_repo=$(echo "$inline_values" | yq e '.imagePullSecrets.registry' -)
     image_pull_secret_username=$(echo "$inline_values" | yq e '.imagePullSecrets.username' -)
     image_pull_secret_password=$(echo "$inline_values" | yq e '.imagePullSecrets.password' -)
 
@@ -1755,12 +1776,25 @@ install_or_upgrade_helm_chart() {
 
     # Create inline values for imagePullSecrets
     if [ -n "$image_pull_secret_username_used" ] && [ -n "$image_pull_secret_password_used" ]; then
+        # Get email from inline values, passed parameter, or global values, default to empty if not provided
+        image_pull_secret_email_used=""
+        if [ -n "$image_pull_secret_email_inline" ] && [ "$image_pull_secret_email_inline" != "null" ]; then
+            image_pull_secret_email_used=$image_pull_secret_email_inline
+        elif [ -n "$image_pull_secret_email" ] && [ "$image_pull_secret_email" != "null" ]; then
+            image_pull_secret_email_used=$image_pull_secret_email
+        elif [ -n "$GLOBAL_IMAGE_PULL_SECRET_EMAIL" ] && [ "$GLOBAL_IMAGE_PULL_SECRET_EMAIL" != "null" ]; then
+            image_pull_secret_email_used=$GLOBAL_IMAGE_PULL_SECRET_EMAIL
+        fi
+        
         image_pull_secrets_inline=$(
             cat <<EOF
-imagePullSecrets:
-  repository: $image_pull_secret_repo_used
-  username: $image_pull_secret_username_used
-  password: $image_pull_secret_password_used
+global:
+  imagePullSecrets:
+    create: true
+    registry: $image_pull_secret_repo_used
+    username: $image_pull_secret_username_used
+    password: $image_pull_secret_password_used
+    email: "$image_pull_secret_email_used"
 EOF
         )
         echo "✅ Image pull secrets configured successfully with credentials."
@@ -2021,7 +2055,7 @@ get_prometheus_external_ip() {
     local service_type="$5"
 
     # Print the input values (redirected to stderr)
-    echo "🔧 get_lb_external_ip:" >&2
+    echo "🔧 get_prometheus_external_ip:" >&2
     echo "  🗂️  Kubeconfig: $kubeconfig" >&2
     echo "  🌐 Kubecontext: $kubecontext" >&2
     echo "  📦 Namespace: $namespace" >&2
@@ -2033,11 +2067,32 @@ get_prometheus_external_ip() {
     if [ "$service_type_existing" != "$service_type" ]; then
         echo "${service_name}.${namespace}.svc.cluster.local:9090"
     elif [ "$service_type" = "LoadBalancer" ]; then
+        # Try to get IP first
         ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # If IP is empty, try to get hostname (common for AWS ELB)
+        if [ -z "$ip" ]; then
+            ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        fi
+        
+        # Check if we got either IP or hostname
+        if [ -z "$ip" ]; then
+            echo "Error: LoadBalancer has no external IP or hostname assigned yet" >&2
+            return 1
+        fi
+        
         echo "$ip:9090"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
-        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        
+        # Try to get ExternalIP first (IPv4 only)
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="ExternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        
+        # If ExternalIP is empty, fall back to InternalIP (IPv4 only)
+        if [ -z "$node_ip" ]; then
+            node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="InternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        fi
+        
         echo "$node_ip:$node_port"
     elif [ "$service_type" = "ClusterIP" ]; then
         cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
@@ -2057,7 +2112,7 @@ get_grafana_external_ip() {
     local service_type="$5"
 
     # Print the input values (redirected to stderr)
-    echo "🔧 get_lb_external_ip:" >&2
+    echo "🔧 get_grafana_external_ip:" >&2
     echo "  🗂️  Kubeconfig: $kubeconfig" >&2
     echo "  🌐 Kubecontext: $kubecontext" >&2
     echo "  📦 Namespace: $namespace" >&2
@@ -2067,13 +2122,35 @@ get_grafana_external_ip() {
     service_type_existing=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.type}')
 
     if [ "$service_type_existing" != "$service_type" ]; then
-        echo "defined_service_type_is_not_correct"
+        echo "defined_service_type_is_not_correct" >&2
+        return 1
     elif [ "$service_type" = "LoadBalancer" ]; then
+        # Try to get IP first
         ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # If IP is empty, try to get hostname (common for AWS ELB)
+        if [ -z "$ip" ]; then
+            ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        fi
+        
+        # Check if we got either IP or hostname
+        if [ -z "$ip" ]; then
+            echo "Error: LoadBalancer has no external IP or hostname assigned yet" >&2
+            return 1
+        fi
+        
         echo "$ip"
     elif [ "$service_type" = "NodePort" ]; then
         node_port=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.ports[0].nodePort}')
-        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        
+        # Try to get ExternalIP first (IPv4 only)
+        node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="ExternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        
+        # If ExternalIP is empty, fall back to InternalIP (IPv4 only)
+        if [ -z "$node_ip" ]; then
+            node_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get nodes -o json | jq -r '.items[0].status.addresses[] | select(.type=="InternalIP") | .address' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+        fi
+        
         echo "$node_ip:$node_port"
     elif [ "$service_type" = "ClusterIP" ]; then
         cluster_ip=$(kubectl --kubeconfig "$kubeconfig" --context "$kubecontext" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.clusterIP}')
@@ -2509,6 +2586,10 @@ prepare_worker_values_file() {
         local controller_secret_file="$INSTALLATION_FILES_PATH/${secret_name}.yaml"
         local worker_endpoint
 
+        # Check for worker endpoint override from CLI (--worker-endpoint flag)
+        local worker_endpoint_override
+        worker_endpoint_override=$(yq e ".kubeslice_worker_egs[$worker_index].worker_endpoint_override // \"\"" "$EGS_INPUT_YAML")
+
         # Fetch the secret from the worker cluster
         echo "🔍 Fetching secret '$secret_name' from worker cluster..."
 
@@ -2546,8 +2627,11 @@ prepare_worker_values_file() {
                 exit 1
             fi
 
-            # Fetch the worker endpoint if not provided in inline values
-            if [ -z "$inline_endpoint" ] || [ "$inline_endpoint" == "null" ]; then
+            # Priority: 1) CLI override (--worker-endpoint) 2) inline_values 3) auto-detect
+            if [ -n "$worker_endpoint_override" ]; then
+                worker_endpoint="$worker_endpoint_override"
+                echo "✔️ Using CLI override for worker endpoint: $worker_endpoint"
+            elif [ -z "$inline_endpoint" ] || [ "$inline_endpoint" == "null" ]; then
                 echo "🔍 No endpoint found in inline values. Attempting to fetch the worker endpoint..."
                 worker_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
@@ -2565,15 +2649,20 @@ prepare_worker_values_file() {
         else
             echo "⚠️ Warning: Worker inline values are empty or not provided."
 
-            # Fetch the worker endpoint if inline values are empty or not provided
-            worker_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
-
-            if [ -z "$worker_endpoint" ]; then
-                echo "⚠️ Warning: Failed to fetch worker endpoint. Setting a default value.Pass the Worker K8s Cluster Api Server endpoint using inline values from input yaml "
-                exit 1
+            # Priority: 1) CLI override (--worker-endpoint) 2) auto-detect
+            if [ -n "$worker_endpoint_override" ]; then
+                worker_endpoint="$worker_endpoint_override"
+                echo "✔️ Using CLI override for worker endpoint: $worker_endpoint"
             else
                 worker_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
-                echo "✔️ Fetched worker endpoint: $worker_endpoint"
+
+                if [ -z "$worker_endpoint" ]; then
+                    echo "⚠️ Warning: Failed to fetch worker endpoint. Setting a default value.Pass the Worker K8s Cluster Api Server endpoint using inline values from input yaml "
+                    exit 1
+                else
+                    worker_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
+                    echo "✔️ Fetched worker endpoint: $worker_endpoint"
+                fi
             fi
         fi
 
