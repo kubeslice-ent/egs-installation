@@ -335,49 +335,6 @@ egsAgent:
                 values:
                 - arm64
 
-egsGpuAgent:
-  image: egs-gpu-agent
-  tag: 1.1.0
-  pullPolicy: IfNotPresent
-  logLevel: INFO
-  secretName: egs-gpu-agent-access
-  labels:
-    control-plane: egs-gpu-agent
-  annotations: {}
-  containerSecurityContext:
-    privileged: true
-  podSecurityContext: {}
-  resources:
-    limits:
-      cpu: 1
-      memory: 1Gi
-    requests:
-      cpu: 10m
-      memory: 10Mi
-  env:
-    - name: REMOTE_HE_INFO
-      value: "nvidia-dcgm.egs-gpu-operator.svc.cluster.local:5555"
-    - name: HEALTH_CHECK_INTERVAL
-      value: "15m"
-  tolerations:
-    - key: "nvidia.com/gpu"
-      operator: "Exists"
-      effect: "NoSchedule"
-    - key: "kubeslice.io/egs"
-      operator: "Equal"
-      value: "dedicated-node"
-      effect: "NoSchedule"
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: nvidia.com/gpu.product
-            operator: Exists
-          - key: kubeslice.io/managed-by-egs
-            operator: NotIn
-            values: ["false"]
-
 egs:
   prometheusEndpoint: ""
   grafanaDashboardBaseUrl: ""
