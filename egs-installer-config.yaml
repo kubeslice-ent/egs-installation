@@ -358,6 +358,7 @@ additional_apps:
               namespaces:
                 names:
                 - egs-gpu-operator
+                - gpu-operator
             relabel_configs:
             - source_labels: [__meta_kubernetes_endpoints_name]
               action: drop
