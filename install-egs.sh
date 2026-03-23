@@ -342,6 +342,7 @@ Multi-Cluster Mode (Auto-detected):
 
 Advanced Override Options:
   --controller-endpoint URL  Override the auto-detected controller cluster API endpoint (useful for Rancher or custom API server URLs)
+  --worker-endpoint URL      Override the auto-detected worker cluster API endpoint (can be specified multiple times, matches order of --worker-kubeconfig)
   --ui-service-type TYPE     Set UI proxy service type: LoadBalancer, NodePort, or ClusterIP (default: LoadBalancer)
 
 Worker Registration Mode:
@@ -580,6 +581,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --controller-endpoint)
             CONTROLLER_ENDPOINT="$2"
+            shift 2
+            ;;
+        --worker-endpoint)
+            WORKER_ENDPOINTS+=("$2")
             shift 2
             ;;
         --ui-service-type)
@@ -1462,6 +1467,20 @@ if [ -n "$CONTROLLER_ENDPOINT" ]; then
     print_info "Overriding controller endpoint with: $CONTROLLER_ENDPOINT"
     yq eval ".kubeslice_controller_egs.inline_values.kubeslice.controller.endpoint = \"$CONTROLLER_ENDPOINT\"" -i egs-installer-config.yaml
     print_success "Controller endpoint set to: $CONTROLLER_ENDPOINT"
+fi
+
+# Override worker endpoints if provided (useful for Rancher or custom API server URLs)
+if [ ${#WORKER_ENDPOINTS[@]} -gt 0 ]; then
+    WORKER_COUNT=$(yq eval '.kubeslice_worker_egs | length' egs-installer-config.yaml)
+    for ((i=0; i<${#WORKER_ENDPOINTS[@]}; i++)); do
+        if [ $i -lt $WORKER_COUNT ]; then
+            print_info "Overriding worker[$i] endpoint with: ${WORKER_ENDPOINTS[$i]}"
+            yq eval ".kubeslice_worker_egs[$i].inline_values.cluster.endpoint = \"${WORKER_ENDPOINTS[$i]}\"" -i egs-installer-config.yaml
+            print_success "Worker[$i] endpoint set to: ${WORKER_ENDPOINTS[$i]}"
+        else
+            print_warning "Worker endpoint at index $i has no matching worker in config (only $WORKER_COUNT workers configured). Skipping."
+        fi
+    done
 fi
 
 # Override UI proxy service type if provided

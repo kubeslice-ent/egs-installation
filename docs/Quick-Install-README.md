@@ -549,6 +549,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash [OPTIONS]
 | Option | Description | Default | Required |
 |--------|-------------|---------|----------|
 | `--controller-endpoint URL` | Override the auto-detected controller cluster API endpoint (useful for Rancher or custom API server URLs) | Auto-detected from kubeconfig | No |
+| `--worker-endpoint URL` | Override the auto-detected worker cluster API endpoint (can be specified multiple times, matches order of `--worker-kubeconfig`) | Auto-detected from kubeconfig | No |
 | `--ui-service-type TYPE` | Set UI proxy service type: `LoadBalancer`, `NodePort`, or `ClusterIP` | `LoadBalancer` | No |
 
 ---
@@ -1272,6 +1273,7 @@ The `--register-worker` feature allows you to register a worker cluster with an 
 - `--cloud-region NAME`: Cloud region (e.g., `us-west1`, `us-east-1`)
 - `--controller-namespace NAME`: Controller namespace (default: `kubeslice-controller`)
 - `--controller-endpoint URL`: Override the auto-detected controller API endpoint (useful for Rancher)
+- `--worker-endpoint URL`: Override the auto-detected worker API endpoint (can be specified multiple times)
 - `--ui-service-type TYPE`: Set UI proxy service type (`LoadBalancer`, `NodePort`, or `ClusterIP`)
 - `--skip-worker`: Skip worker installation (even if `--worker-kubeconfig` is provided)
 
