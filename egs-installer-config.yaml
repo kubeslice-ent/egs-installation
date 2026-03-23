@@ -118,7 +118,7 @@ kubeslice_controller_egs:
             # service options
             service:
               # minio service type
-              type: "LoadBalancer"
+              type: "NodePort"
     # ServiceMonitor configuration for Prometheus monitoring
     serviceMonitor:
       # Enable or disable ServiceMonitor deployment
@@ -153,7 +153,7 @@ kubeslice_ui_egs:
         url: http://prometheus-kube-prometheus-prometheus.egs-monitoring.svc.cluster.local:9090  # Prometheus URL for monitoring
       uiproxy:
         service:
-          type: LoadBalancer                  # Service type for the UI proxy
+          type: NodePort                  # Service type for the UI proxy
           ## if type selected to NodePort then set nodePort value if required
           # nodePort:
           # port: 443
