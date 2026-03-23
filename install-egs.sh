@@ -1475,7 +1475,7 @@ if [ ${#WORKER_ENDPOINTS[@]} -gt 0 ]; then
     for ((i=0; i<${#WORKER_ENDPOINTS[@]}; i++)); do
         if [ $i -lt $WORKER_COUNT ]; then
             print_info "Overriding worker[$i] endpoint with: ${WORKER_ENDPOINTS[$i]}"
-            yq eval ".kubeslice_worker_egs[$i].inline_values.cluster.endpoint = \"${WORKER_ENDPOINTS[$i]}\"" -i egs-installer-config.yaml
+            yq eval ".kubeslice_worker_egs[$i].worker_endpoint_override = \"${WORKER_ENDPOINTS[$i]}\"" -i egs-installer-config.yaml
             print_success "Worker[$i] endpoint set to: ${WORKER_ENDPOINTS[$i]}"
         else
             print_warning "Worker endpoint at index $i has no matching worker in config (only $WORKER_COUNT workers configured). Skipping."

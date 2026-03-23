@@ -2586,6 +2586,10 @@ prepare_worker_values_file() {
         local controller_secret_file="$INSTALLATION_FILES_PATH/${secret_name}.yaml"
         local worker_endpoint
 
+        # Check for worker endpoint override from CLI (--worker-endpoint flag)
+        local worker_endpoint_override
+        worker_endpoint_override=$(yq e ".kubeslice_worker_egs[$worker_index].worker_endpoint_override // \"\"" "$EGS_INPUT_YAML")
+
         # Fetch the secret from the worker cluster
         echo "🔍 Fetching secret '$secret_name' from worker cluster..."
 
@@ -2623,8 +2627,11 @@ prepare_worker_values_file() {
                 exit 1
             fi
 
-            # Fetch the worker endpoint if not provided in inline values
-            if [ -z "$inline_endpoint" ] || [ "$inline_endpoint" == "null" ]; then
+            # Priority: 1) CLI override (--worker-endpoint) 2) inline_values 3) auto-detect
+            if [ -n "$worker_endpoint_override" ]; then
+                worker_endpoint="$worker_endpoint_override"
+                echo "✔️ Using CLI override for worker endpoint: $worker_endpoint"
+            elif [ -z "$inline_endpoint" ] || [ "$inline_endpoint" == "null" ]; then
                 echo "🔍 No endpoint found in inline values. Attempting to fetch the worker endpoint..."
                 worker_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
 
@@ -2642,15 +2649,20 @@ prepare_worker_values_file() {
         else
             echo "⚠️ Warning: Worker inline values are empty or not provided."
 
-            # Fetch the worker endpoint if inline values are empty or not provided
-            worker_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
-
-            if [ -z "$worker_endpoint" ]; then
-                echo "⚠️ Warning: Failed to fetch worker endpoint. Setting a default value.Pass the Worker K8s Cluster Api Server endpoint using inline values from input yaml "
-                exit 1
+            # Priority: 1) CLI override (--worker-endpoint) 2) auto-detect
+            if [ -n "$worker_endpoint_override" ]; then
+                worker_endpoint="$worker_endpoint_override"
+                echo "✔️ Using CLI override for worker endpoint: $worker_endpoint"
             else
                 worker_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
-                echo "✔️ Fetched worker endpoint: $worker_endpoint"
+
+                if [ -z "$worker_endpoint" ]; then
+                    echo "⚠️ Warning: Failed to fetch worker endpoint. Setting a default value.Pass the Worker K8s Cluster Api Server endpoint using inline values from input yaml "
+                    exit 1
+                else
+                    worker_endpoint=$(get_api_server_url "$kubeconfig_path" "$kubecontext")
+                    echo "✔️ Fetched worker endpoint: $worker_endpoint"
+                fi
             fi
         fi
 
