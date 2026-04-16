@@ -54,8 +54,8 @@ spec:
             value: "{{ .Values.egs.inventory.defaultDynamicTotalGpuNodes }}"
           - name: LINODE_TOKEN
             valueFrom:
-              secretKeyRef:
-                name: egs-controller-secret
+              configMapKeyRef:
+                name: egs-controller-config
                 key: LINODE_TOKEN
           - name: QMGR_GRPC_ADDRESS
             value: "{{ .Values.egs.queueManager.service.name }}:{{ .Values.egs.queueManager.service.port }}"
