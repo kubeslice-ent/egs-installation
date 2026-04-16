@@ -50,6 +50,15 @@ spec:
             value: {{ .Values.egs.inventory.logLevel }}
           - name: DEV_MODE
             value: "false"
+          - name: DEFAULT_DYNAMIC_TOTAL_GPU_NODES
+            value: "{{ .Values.egs.inventory.defaultDynamicTotalGpuNodes }}"
+          - name: LINODE_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: egs-controller-secret
+                key: LINODE_TOKEN
+          - name: QMGR_GRPC_ADDRESS
+            value: "{{ .Values.egs.queueManager.service.name }}:{{ .Values.egs.queueManager.service.port }}"
         livenessProbe:
           httpGet:
             path: /healthz

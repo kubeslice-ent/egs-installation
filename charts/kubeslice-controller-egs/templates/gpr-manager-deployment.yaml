@@ -186,19 +186,57 @@ spec:
         - /manager
         env:
         - name: ENABLE_WEBHOOKS
-          value: "true"
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: ENABLE_WEBHOOKS
         - name: QMGR_GRPC_ADDRESS
-          value: "{{ .Values.egs.queueManager.service.name }}:{{ .Values.egs.queueManager.service.port }}"
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: QMGR_GRPC_ADDRESS
         - name: INVMGR_GRPC_ADDRESS
-          value: "{{ .Values.egs.inventory.service.name }}:{{ .Values.egs.inventory.service.port }}"
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: INVMGR_GRPC_ADDRESS
         - name: QMGR_CHECK_PERIOD
-          value: "{{ .Values.egs.gprManager.qmgrCheckPeriod }}"
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: QMGR_CHECK_PERIOD
         - name: MAX_DELAYED_COUNT
-          value: "{{ .Values.egs.gprManager.maxDelayedCount }}"
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: MAX_DELAYED_COUNT
         - name: WAIT_TIME_REFRESH_PERIOD
-          value: "{{ .Values.egs.gprManager.refreshWaitTimeInterval }}"
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: WAIT_TIME_REFRESH_PERIOD
         - name: WEBHOOK_CA_BUNDLE
           value: {{ $caCertEnc }}
+        - name: LINODE_TOKEN
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: LINODE_TOKEN
+        - name: ENABLE_DYNAMIC_NODE
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: ENABLE_DYNAMIC_NODE
+        - name: MAX_NODE_POOL_COUNT
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: MAX_NODE_POOL_COUNT
+        - name: DEFAULT_DYNAMIC_TOTAL_GPU_NODES
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: DEFAULT_DYNAMIC_TOTAL_GPU_NODES
         image: {{ include "kubeslice.image" (dict "image" .Values.egs.gprManager.image "tag" .Values.egs.gprManager.tag "registry" .Values.global.imageRegistry) }}
         imagePullPolicy: "{{ .Values.egs.gprManager.imagePullPolicy }}"
         livenessProbe:

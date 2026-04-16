@@ -7,14 +7,12 @@ metadata:
     component: cpu-workload-toleration-config
 data:
   config.yaml: |
-    # namespaces:
-    #   default: {}  # Empty means all workloads in this namespace get toleration
-    #   kube-system:
-    #     excludedWorkloads:
-    #       - kind: Deployment
-    #         name: kube-system-excluded
-    #       - kind: StatefulSet
-    #         name: kube-system-excluded
-    #       - kind: DaemonSet
-    #         name: kube-system-excluded
+    namespaces:
+      - "kube-system"
+      - "kubeslice-system"
+      - "kubeslice-controller"
+      - "gpu-operator"
+      - "monitoring"
+      - "egs-monitoring"
+      - "egs-gpu-operator"
 
