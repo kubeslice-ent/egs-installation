@@ -48,6 +48,26 @@ metadata:
   name: gpr-manager-manager-role
 rules:
 - apiGroups:
+  - inventory.kubeslice.io
+  resources:
+  - clustergpuallocations
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+  - update
+- apiGroups:
+  - inventory.kubeslice.io
+  resources:
+  - clustergpuallocations/status
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+  - update
+- apiGroups:
   - gpr.kubeslice.io
   resources:
   - gpuprovisioningrequests

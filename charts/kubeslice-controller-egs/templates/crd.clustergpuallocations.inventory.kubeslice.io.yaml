@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: clustergpuallocations.inventory.kubeslice.io
 spec:
   group: inventory.kubeslice.io
@@ -39,11 +39,51 @@ spec:
             type: object
           spec:
             description: ClusterGPUAllocationSpec defines the desired state of ClusterGPUAllocation
+            properties:
+              nodePollDetails:
+                description: NodePollDetails is the details of the node pool
+                properties:
+                  cloudProvider:
+                    description: CloudProvider is the cloud provider of the cluster
+                    type: string
+                  compartmentID:
+                    description: OKE cluster - compartment ID is the compartment ID
+                      of the OKE cluster
+                    type: string
+                  maxNodePools:
+                    description: max node pools that can be allocated to the cluster
+                    type: integer
+                  maxNodes:
+                    description: MaxNodes is the maximum number of nodes that can
+                      be allocated to the cluster
+                    type: integer
+                  nodePoolIDs:
+                    description: NodePoolIDs is the list of node pool IDs that are
+                      allocated to the cluster
+                    items:
+                      type: string
+                    type: array
+                  preferredInstances:
+                    description: PreferredInstances is the list of preferred instance
+                      types (e.g. "g2-gpu-rtx4000a1-m", "g1-gpu-rtx6000-1")
+                    items:
+                      type: string
+                    type: array
+                type: object
             type: object
           status:
             description: ClusterGPUAllocationStatus defines the observed state of
               ClusterGPUAllocation
             properties:
+              clusterDetails:
+                properties:
+                  cloudProvider:
+                    type: string
+                  endpoint:
+                    type: string
+                  region:
+                    type: string
+                type: object
               nodeInventory:
                 items:
                   properties:
@@ -120,7 +160,19 @@ spec:
                       type: string
                     nodeName:
                       type: string
+                    nodePoolId:
+                      type: string
                     region:
+                      type: string
+                    timeSinceNoUtilization:
+                      description: TimeSinceNoUtilization is set when all GPUs on
+                        the node are free; nil when there is utilization.
+                      format: date-time
+                      type: string
+                    timeSinceUnhealthy:
+                      description: TimeSinceUnhealthy is set when the node is unhealthy;
+                        nil when the node is healthy
+                      format: date-time
                       type: string
                     totalCPUs:
                       type: integer

@@ -81,7 +81,7 @@ kubetally:
 
   kubeTallyReport:
     image: kubetally-report
-    tag: 1.13.5
+    tag: 1.13.6
     imagePullPolicy: IfNotPresent
     labels:
       app: report-service
