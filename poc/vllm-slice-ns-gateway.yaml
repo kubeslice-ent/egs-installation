@@ -1,0 +1,38 @@
+#DOC URL - https://docs.avesha.io/documentation/enterprise-egs/1.17.0/admin-operations/workload-deployment/workspace-ns-gateway/
+apiVersion: networking.kubeslice.io/v1alpha1
+kind: SliceNSGateway
+metadata:
+  name: vllm-slicensgw     #REPLACE with custom name
+  namespace: vllm          #REPLACE with onboarded namespace
+spec:
+  clusterName: far-edge    #REPLACE clustername with LB
+  sliceName: tenant-1      #REPLACE slice name
+  gatewayRef:
+    name: vllm-gateway     #REPLACE with custom name
+    namespace: vllm        #REPLACE with onboarded namespace
+    autoCreate: true
+    gatewayClassName: envoy-gateway-class
+    serviceType: LoadBalancer
+    loggingLevel: warn
+  ports:
+    - name: http
+      port: 80
+      protocol: HTTP
+  timeoutConfig:
+    requestTimeout: "300s"
+    backendRequestTimeout: "300s"
+  backends:
+    - name: vllm-local
+      type: local
+      loadBalancingMode: Weighted
+      service:
+        name: vllm-llama3-engine-service
+        namespace: vllm
+        port: 80
+    - name: vllm-remote
+      type: remote
+      loadBalancingMode: Weighted
+      serviceImport:
+        name: vllm-llama3-engine-service
+        namespace: vllm
+        port: 8000

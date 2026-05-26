@@ -1,0 +1,21 @@
+# dual-stress.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fr2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stress
+  template:
+    metadata:
+      labels:
+        app: stress
+    spec:
+      containers:
+      - name: stress
+        image: davecomery/gpu-stress-test:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1

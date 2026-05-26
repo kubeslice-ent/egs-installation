@@ -1,0 +1,15 @@
+apiVersion: networking.kubeslice.io/v1beta1
+kind: ServiceExport
+metadata:
+  name: vllm-llama3-engine-service
+  namespace: vllm      #REPLACE with onboarded namespace
+spec:
+  slice: tenant-1  #REPLACE slice name
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: llama3
+      helm-release-name: vllm
+  ports:
+    - name: http
+      containerPort: 8000
+      protocol: TCP

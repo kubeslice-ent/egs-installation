@@ -1,0 +1,87 @@
+apiVersion: gpr.kubeslice.io/v1alpha1
+kind: WorkloadPlacement
+metadata:
+  name: wp-vllm1
+  namespace: kubeslice-avesha
+spec:
+  workspaceName: vllm-1
+  numPlacements: 1
+  # far-edge listed first — scheduler treats first entry as preferred
+  clusterNames:
+    - far-edge
+    - near-edge
+  enableEGS: true
+  enableRedistribute: true   # enables GPRAutoEviction to redistribute to near-edge
+  deletionPolicy: Delete
+  gprDetails:
+    priority: 50             # low range: 0–99
+    enableEviction: true
+    exitDuration: 24h0m0s
+    numberOfGPUs: 1
+    numberOfGPUNodes: 1
+    memoryPerGpu: 19
+    enableAutoGpuSelection: true
+    requeueOnFailure: true
+  manifestResources:
+    - name: vllm-svcexport
+      manifest:
+        apiVersion: networking.kubeslice.io/v1beta1
+        kind: ServiceExport
+        metadata:
+          name: vllm-llama3-engine-service
+          namespace: vllm
+        spec:
+          slice: tenant-1
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: llama3
+              helm-release-name: vllm
+          ports:
+            - name: http
+              containerPort: 8000  # actual vLLM listening port
+              servicePort: 80      # port exposed by ServiceImport on far-edge
+              protocol: TCP
+  helmConfig:
+    - chart: vllm/vllm-stack
+      name: vllm-app
+      releaseName: vllm
+      releaseNamespace: vllm
+      repoName: vllm
+      repoURL: https://vllm-project.github.io/production-stack
+      helmFlags:
+        timeout: 0h15m0s
+        wait: false
+        createNamespace: true
+      values:
+        routerSpec:
+          enableRouter: false
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: "1"
+              memory: 2Gi
+        servingEngineSpec:
+          modelSpec:
+            - env:
+                - name: VLLM_FLASHINFER_DISABLED
+                  value: "1"
+              hf_token: <HF_TOKEN>
+              modelURL: meta-llama/Llama-3.2-1B-Instruct
+              name: llama3
+              pvcStorage: 15Gi
+              replicaCount: 1
+              repository: vllm/vllm-openai
+              requestCPU: 2
+              requestGPU: 1
+              requestMemory: 4Gi
+              storageClass: linode-block-storage
+              tag: v0.10.1
+              vllmConfig:
+                maxModelLen: 4096
+  steps:
+    - name: vllm-svcexport
+      type: manifest
+    - name: vllm-app
+      type: helm
