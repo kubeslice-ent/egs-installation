@@ -185,7 +185,7 @@ EGS offers different license tiers:
 
 After successfully applying the license:
 
-1. **Install KubeSlice Controller**: Follow the [EGS Controller Prerequisites](EGS-Controller-Prerequisites.html) guide
+1. **Install KubeSlice Controller**: Follow the [EGS Controller Prerequisites](EGS-Controller-Prerequisites.md) guide
 2. **Configure Monitoring**: Set up Prometheus and PostgreSQL as outlined in the prerequisites
 3. **Deploy EGS Components**: Install the controller and worker components
 4. **Verify Operation**: Ensure all components are functioning with the applied license
@@ -193,8 +193,8 @@ After successfully applying the license:
 ## Additional Resources
 
 - [EGS Registration Portal](https://avesha.io/egs-registration)
-- [EGS Controller Prerequisites](EGS-Controller-Prerequisites.html)
-- [EGS Worker Prerequisites](EGS-Worker-Prerequisites.html)
+- [EGS Controller Prerequisites](EGS-Controller-Prerequisites.md)
+- [EGS Worker Prerequisites](EGS-Worker-Prerequisites.md)
 - [KubeSlice Documentation](https://docs.avesha.io)
 - [Avesha Support Portal](https://support.avesha.io)
 
