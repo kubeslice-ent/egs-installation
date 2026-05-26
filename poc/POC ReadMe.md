@@ -1,4 +1,8 @@
-#DOC URL - https://docs.avesha.io/documentation/enterprise-egs/1.17.0/
+## Workload Placement and Redistribution
+
+The following are the steps to deploy and redistribute workloads across tiers/clusters using EGS Workload Routing and Placement features.
+
+ ### DOC reference URL - https://docs.avesha.io/documentation/enterprise-egs/1.17.0/
 
 1. Create the `ai-ran` workspace by using the EGS Admin Portal and onboard the `ai-ran` namespace. 
    For more information, see: 
