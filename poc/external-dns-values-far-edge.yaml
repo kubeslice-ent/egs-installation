@@ -1,0 +1,47 @@
+provider:
+  name: aws
+
+# Watch LoadBalancer services; external-dns only publishes services that
+# carry the external-dns.alpha.kubernetes.io/hostname annotation.
+sources:
+  - service
+
+domainFilters:
+  - inference.smartscaler.io
+
+policy: upsert-only
+registry: txt
+txtOwnerId: "far-edge"    # must be unique per cluster
+txtPrefix: "far-edge"     # must be unique per cluster
+
+extraArgs:
+  - --aws-zone-type=public
+
+interval: 1m
+logLevel: info
+logFormat: text
+
+env:
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef:
+        key: AWS_ACCESS_KEY_ID
+        name: external-dns
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef:
+        key: AWS_SECRET_ACCESS_KEY
+        name: external-dns
+  - name: AWS_DEFAULT_REGION
+    value: us-east-1
+
+extraVolumes: []
+extraVolumeMounts: []
+
+rbac:
+  create: true
+serviceAccount:
+  create: true
+
+deploymentStrategy:
+  type: Recreate
