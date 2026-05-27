@@ -1,0 +1,17 @@
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: huggingface
+      args:
+        - --model_name=distilbert
+        - --model_id=distilbert/distilbert-base-uncased-finetuned-sst-2-english
+      resources:
+        limits:
+          cpu: "1"
+          memory: 4Gi
+          nvidia.com/gpu: "1"
+        requests:
+          cpu: "1"
+          memory: 2Gi
+          nvidia.com/gpu: "1"
