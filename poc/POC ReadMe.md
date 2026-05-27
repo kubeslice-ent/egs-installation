@@ -32,13 +32,14 @@ The following are the steps to deploy and redistribute workloads across tiers/cl
     see [Create a Workload Placement](https://docs.avesha.io/documentation/enterprise-egs/1.17.0/admin-operations/workload-deployment/workload-placement-ui/#create-a-workload-placement).
 
     a. Select Enable EGS & far-edge cluster
+   
     b. Add step-1: add the Helm values - refer to the`vllm-WorkloadPlacement-CR.yaml` file and use the `vllm-helm-values.yaml` file for values
     
     <img width="723" height="796" alt="image" src="https://github.com/user-attachments/assets/459cd008-4292-4c2d-9bb8-a00d617f412c" />
 
     c. Add step-2: add manifest - use the `vllm-serviceexport-manifest.yaml` file. 
 
-8. Create external DNS configuration: 
+9. Create external DNS configuration: 
 
     a. Create a secret using the following command for AWS route 53: 
 
@@ -65,7 +66,7 @@ The following are the steps to deploy and redistribute workloads across tiers/cl
        kubectl annotate svc vllm-gateway -n vllm external-dns.alpha.kubernetes.io/hostname=vllm.inference.smartscaler.io
        ```
 
-9. After the successful deployment of the workload placement, validate it using the following example command: 
+10. After the successful deployment of the workload placement, validate it using the following example command: 
 
     ```bash 
     curl -X POST "http://vllm.inference.smartscaler.io/v1/chat/completions" \
@@ -83,13 +84,13 @@ The following are the steps to deploy and redistribute workloads across tiers/cl
        }'
     ```
 
-10. In the 'ai-ran' workspace, create a fr2 WorkloadPlacement:select far-edge cluster, for step use the manifest file 'fr2-workload-placement.yaml' and auto gpu selection with Memory for GPR
+11. In the 'ai-ran' workspace, create a fr2 WorkloadPlacement:select far-edge cluster, for step use the manifest file 'fr2-workload-placement.yaml' and auto gpu selection with Memory for GPR
 
-11. On the `far-edge` cluster, as the high-priority GPR is provisioned on the `ai-ran` workspace, the low-priority GPR will be evicted on the `tenant-1` workspace.
+12. On the `far-edge` cluster, as the high-priority GPR is provisioned on the `ai-ran` workspace, the low-priority GPR will be evicted on the `tenant-1` workspace.
     
-12. Go to the `tenant-1` workspace and observe the workload will be redistributed to the `near-edge` cluster from the 'far-edge' cluster. 
+13. Go to the `tenant-1` workspace and observe the workload will be redistributed to the `near-edge` cluster from the 'far-edge' cluster. 
 
-13. After the successful deployment of the workload placement, validate it using the following example command on the `near-edge` cluster: 
+14. After the successful deployment of the workload placement, validate it using the following example command on the `near-edge` cluster: 
 
     ```bash 
     curl -X POST "http://vllm.inference.smartscaler.io/v1/chat/completions" \
