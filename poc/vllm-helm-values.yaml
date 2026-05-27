@@ -5,23 +5,24 @@ routerSpec:
       cpu: "2"
       memory: 4Gi
     requests:
-      cpu: "2"
-      memory: 4Gi
+      cpu: "1"
+      memory: 2Gi
+
 servingEngineSpec:
   modelSpec:
-    - env:
-        - name: VLLM_FLASHINFER_DISABLED
-          value: "1"
-      hf_token: <HF TOKEN>   # REPLACE HuggingFace token with access to meta-llama
-      modelURL: meta-llama/Llama-3.2-1B-Instruct
-      name: llama3
-      pvcStorage: 15Gi
-      replicaCount: 1
-      repository: vllm/vllm-openai
-      requestCPU: 2
-      requestGPU: 1
-      requestMemory: 4Gi
-      storageClass: linode-block-storage    # REPLACE Storage Class
-      tag: v0.10.1
-      vllmConfig:
-        maxModelLen: 4096
+  - name: llama3
+    env:
+    - name: VLLM_FLASHINFER_DISABLED
+      value: "1"
+    hf_token: <HF TOKEN>   # REPLACE HuggingFace token with access to meta-llama
+    modelURL: meta-llama/Llama-3.2-1B-Instruct
+    pvcStorage: 15Gi
+    replicaCount: 1
+    repository: vllm/vllm-openai
+    requestCPU: 2
+    requestGPU: 1
+    requestMemory: 4Gi
+    storageClass: linode-block-storage-retain
+    tag: v0.10.1
+    vllmConfig:
+      maxModelLen: 4096
