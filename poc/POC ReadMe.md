@@ -12,9 +12,9 @@ The following are the steps to deploy and redistribute workloads across tiers/cl
 
 2. Edit the policy settings of the `ai-ran` workspace, and set the high priority range and increase the Max Num Of Gpus. For more information, see [Edit Workspace Policies](https://docs.avesha.io/documentation/enterprise-egs/1.17.0/admin-operations/manage-workspaces/workspace-policies/#edit-workspace-policies).
    
-3. In the 'ai-ran' workspace, create an fr1 WorkloadPlacement on the far-edge cluster using the manifest file 'fr1-workload-placement.yaml'. see [Create a Workload Placement](https://docs.avesha.io/documentation/enterprise-egs/1.17.0/admin-operations/workload-deployment/workload-placement-ui/#create-a-workload-placement).
+3. In the 'ai-ran' workspace, create a fr1 WorkloadPlacement:select far-edge cluster, for step use the manifest file 'fr1-workload-placement.yaml' and auto gpu selection with Memory for GPR. see [Create a Workload Placement](https://docs.avesha.io/documentation/enterprise-egs/1.17.0/admin-operations/workload-deployment/workload-placement-ui/#create-a-workload-placement).
    
-4. In the 'ai-ran' workspace, create an fr1 WorkloadPlacement on the near-edge cluster using the manifest file 'fr1-workload-placement.yaml'.
+4. In the 'ai-ran' workspace, create a fr1 WorkloadPlacement:select near-edge cluster, for step use the manifest file 'fr1-workload-placement.yaml' and auto gpu selection with Memory for GPR. Verify the deployment on the AI workloads page.
    
 5. Create the `tenant-1` workspace by using the EGS Admin Portal and onboard the `vllm` namespace. And Edit the policy settings of the `tenant` workspace and increase the Max Num Of Gpus.
 
@@ -31,11 +31,12 @@ The following are the steps to deploy and redistribute workloads across tiers/cl
 7. Create a workload placement on the `far-edge` cluster by providing the Helm and manifest steps. For more information, 
     see [Create a Workload Placement](https://docs.avesha.io/documentation/enterprise-egs/1.17.0/admin-operations/workload-deployment/workload-placement-ui/#create-a-workload-placement).
 
-    a. For Helm, refer to the`vllm-WorkloadPlacement-CR.yaml` file and use the `vllm-helm-values.yaml` file for values.
+    a. Select Enable EGS & far-edge cluster
+    b. Add step-1: add the Helm values - refer to the`vllm-WorkloadPlacement-CR.yaml` file and use the `vllm-helm-values.yaml` file for values
     
     <img width="723" height="796" alt="image" src="https://github.com/user-attachments/assets/459cd008-4292-4c2d-9bb8-a00d617f412c" />
 
-    b. For manifest, use the `vllm-serviceexport-manifest.yaml` file. 
+    c. Add step-2: add manifest - use the `vllm-serviceexport-manifest.yaml` file. 
 
 8. Create external DNS configuration: 
 
@@ -82,12 +83,11 @@ The following are the steps to deploy and redistribute workloads across tiers/cl
        }'
     ```
 
-10. In the 'ai-ran' workspace, create an fr2 WorkloadPlacement on the near-edge cluster using the manifest file 'fr2-workload-placement.yaml'.
+10. In the 'ai-ran' workspace, create a fr2 WorkloadPlacement:select far-edge cluster, for step use the manifest file 'fr2-workload-placement.yaml' and auto gpu selection with Memory for GPR
 
-11. On the `far-edge` cluster, as the high-priority GPR is provisioned on the `ai-ran` workspace, the low-priority GPR will be 
-    evicted on the `tenant-1` workspace.
+11. On the `far-edge` cluster, as the high-priority GPR is provisioned on the `ai-ran` workspace, the low-priority GPR will be evicted on the `tenant-1` workspace.
     
-12. Go to the `tenant-1` workspace and observe the workload will be redistributed to the `near-edge` cluster from 'far-edge' cluster. 
+12. Go to the `tenant-1` workspace and observe the workload will be redistributed to the `near-edge` cluster from the 'far-edge' cluster. 
 
 13. After the successful deployment of the workload placement, validate it using the following example command on the `near-edge` cluster: 
 
