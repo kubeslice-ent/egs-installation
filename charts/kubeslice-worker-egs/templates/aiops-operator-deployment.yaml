@@ -65,7 +65,7 @@ spec:
             - --workload-reconciler-interval=30s
           command:
             - /manager
-          image: {{ include "kubeslice.image" (dict "imageRoot" .Values.aiops "global" .Values.global) }}
+          image: {{ include "kubeslice.image" (dict "imageRoot" .Values.aiops "global" .Values.dev) }}
           imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.aiops.pullPolicy "global" .Values.global) }}
           env:
             - name: GOMEMLIMIT
@@ -116,6 +116,12 @@ spec:
               value: "true"
             - name: HELM_INSTALLER_IMAGE
               value: "{{ .Values.global.imageRegistry }}/{{ .Values.workerInstaller.image }}:{{ .Values.workerInstaller.tag }}"
+            - name: INFERENCE_MODEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: inference-model-token
+                  key: token
+                  optional: true
           livenessProbe:
             httpGet:
               path: /healthz

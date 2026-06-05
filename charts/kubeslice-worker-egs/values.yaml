@@ -1,3 +1,7 @@
+dev:
+  # dev image registry configuration
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
 global:
   # Centralized image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
@@ -229,7 +233,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.16.1
+  tag: 1.17.0-RELEASE-5a680058
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
@@ -279,7 +283,7 @@ aiops:
 
 egsAgent:
   image: egs-agent
-  tag: 1.0.4
+  tag: 1.0.5-RELEASE-5dbea089
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-agent-access
