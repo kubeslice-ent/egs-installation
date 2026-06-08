@@ -68,6 +68,18 @@ CLOUD_PROVIDER=""
 CLOUD_REGION=""
 CONTROLLER_NAMESPACE="kubeslice-controller"
 
+# Project name for full installs (used in cluster_registration). Overridable via --project-name.
+PROJECT_NAME="avesha"
+
+# Worker endpoint overrides (array, matches order of --worker-kubeconfig)
+WORKER_ENDPOINTS=()
+
+# Behavior flags
+GENERATE_CONFIG_ONLY="false"   # --generate-config / --dry-run: build config then exit (no install)
+PRESERVE_CONFIG="false"        # --preserve-config: reuse an existing egs-installer-config.yaml as-is
+SKIP_DEPENDENCY_CHECK="false"  # --skip-dependency-check: bypass helm-based prerequisite detection
+LOCAL_REPO=""                  # --local-repo PATH: use a local installer checkout instead of git clone
+
 # GitHub repository details
 EGS_REPO="https://github.com/kubeslice-ent/egs-installation.git"
 EGS_BRANCH="main"
@@ -87,6 +99,76 @@ print_error() {
 
 print_warning() {
     echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+# ---------------------------------------------------------------------------
+# Cleanup handling
+# ---------------------------------------------------------------------------
+# Track temporary paths so they are always removed, even on Ctrl-C / error.
+CLEANUP_PATHS=()
+INSTALL_COMPLETE="false"
+
+register_cleanup_path() {
+    [ -n "$1" ] && CLEANUP_PATHS+=("$1")
+}
+
+cleanup() {
+    local exit_code=$?
+    # Restore the user's original kubectl context if we changed it (single-cluster mode)
+    if [ -n "${ORIGINAL_KUBE_CONTEXT:-}" ] && [ -n "${SWITCHED_CONTEXT:-}" ]; then
+        kubectl config use-context "$ORIGINAL_KUBE_CONTEXT" >/dev/null 2>&1 || true
+    fi
+    # Remove tracked temporary files/directories
+    for _p in "${CLEANUP_PATHS[@]}"; do
+        [ -n "$_p" ] && rm -rf "$_p" 2>/dev/null || true
+    done
+    if [ "$exit_code" -ne 0 ] && [ "$INSTALL_COMPLETE" != "true" ]; then
+        echo ""
+        print_warning "Installer exited early (code $exit_code). Temporary files were cleaned up."
+        print_info "Re-run the installer to retry; your cluster state was not rolled back."
+    fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# Back up an existing egs-installer-config.yaml before it gets overwritten/regenerated,
+# so a customer's local customizations are never silently destroyed on a re-run.
+backup_existing_config() {
+    if [ -f "$ORIGINAL_DIR/egs-installer-config.yaml" ]; then
+        local ts backup
+        ts=$(date +%Y%m%d-%H%M%S)
+        backup="$ORIGINAL_DIR/egs-installer-config.yaml.bak.$ts"
+        if cp "$ORIGINAL_DIR/egs-installer-config.yaml" "$backup" 2>/dev/null; then
+            print_warning "Existing egs-installer-config.yaml backed up to: $(basename "$backup")"
+        fi
+    fi
+}
+
+# Overwrite the working-directory config from the repo template, backing up any existing one first.
+install_repo_config() {
+    backup_existing_config
+    cp "$REPO_SRC/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+}
+
+# Detect whether a component is already present in the cluster.
+# Checks BOTH helm releases AND deployment/statefulset names by case-insensitive keyword,
+# so a non-standard helm release name (e.g. "my-postgres") doesn't cause a false negative
+# that blocks the install. Returns 0 if found, 1 otherwise.
+component_present() {
+    local pattern="$1"
+    local hargs=() kargs=()
+    if [ -n "${KUBECONFIG:-}" ]; then hargs+=(--kubeconfig "$KUBECONFIG"); kargs+=(--kubeconfig "$KUBECONFIG"); fi
+    if [ -n "${CURRENT_CONTEXT:-}" ] && [ "${CURRENT_CONTEXT:-}" != "multi-cluster" ]; then
+        hargs+=(--kube-context "$CURRENT_CONTEXT"); kargs+=(--context "$CURRENT_CONTEXT")
+    fi
+    if command -v helm >/dev/null 2>&1 && helm list -A "${hargs[@]}" 2>/dev/null | grep -qiE "$pattern"; then
+        return 0
+    fi
+    if kubectl "${kargs[@]}" get deploy,statefulset -A -o name 2>/dev/null | grep -qiE "$pattern"; then
+        return 0
+    fi
+    return 1
 }
 
 # Function to register worker cluster with controller
@@ -274,18 +356,21 @@ EOF
         echo ""
         print_info "Next steps:"
         print_info "1. To install EGS Worker on this cluster, run:"
-        print_info "   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\"
-        print_info "     --register-worker \\"
-        print_info "     --controller-kubeconfig <controller-kubeconfig> \\"
-        print_info "     --worker-kubeconfig <worker-kubeconfig> \\"
-        print_info "     --register-cluster-name $REGISTER_CLUSTER_NAME \\"
-        print_info "     --register-project-name $REGISTER_PROJECT_NAME"
+        cat <<EOF
+   curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \\
+     --register-worker \\
+     --controller-kubeconfig <controller-kubeconfig> \\
+     --worker-kubeconfig <worker-kubeconfig> \\
+     --register-cluster-name $REGISTER_CLUSTER_NAME \\
+     --register-project-name $REGISTER_PROJECT_NAME
+EOF
         echo ""
         print_info "   Note: All components (Controller, UI, Prerequisites) are automatically skipped when using --register-worker"
         print_info "2. Verify cluster status in the controller:"
         print_info "   kubectl --kubeconfig $CONTROLLER_KUBECONFIG get cluster.controller.kubeslice.io -n $PROJECT_NAMESPACE"
         echo ""
         # Exit if no worker kubeconfig provided
+        INSTALL_COMPLETE="true"
         exit 0
     fi
 }
@@ -305,7 +390,15 @@ Options:
   --kubeconfig PATH          Path to kubeconfig file (default: auto-detect, used for single-cluster mode)
   --context NAME             Kubernetes context to use (default: current-context, used for single-cluster mode)
   --cluster-name NAME        Cluster name (default: worker-1)
+  --project-name NAME        Project name for cluster registration on full installs (default: avesha)
   --help, -h                 Show this help message
+
+Behavior Flags:
+  --generate-config          Generate egs-installer-config.yaml and exit (no install). Alias: --dry-run
+  --dry-run                  Same as --generate-config
+  --preserve-config          Reuse an existing egs-installer-config.yaml as-is (do not regenerate/overwrite)
+  --skip-dependency-check    Bypass helm-based prerequisite detection (PostgreSQL/Controller/UI checks)
+  --local-repo PATH          Use a local egs-installation checkout instead of cloning from GitHub
 
 Common Skip Flags (works for both single & multi-cluster):
   --skip-postgresql          Skip PostgreSQL installation (controller only - PostgreSQL is never on workers)
@@ -559,6 +652,26 @@ while [[ $# -gt 0 ]]; do
             REGISTER_PROJECT_NAME="$2"
             shift 2
             ;;
+        --project-name)
+            PROJECT_NAME="$2"
+            shift 2
+            ;;
+        --generate-config|--dry-run)
+            GENERATE_CONFIG_ONLY="true"
+            shift
+            ;;
+        --preserve-config)
+            PRESERVE_CONFIG="true"
+            shift
+            ;;
+        --skip-dependency-check)
+            SKIP_DEPENDENCY_CHECK="true"
+            shift
+            ;;
+        --local-repo)
+            LOCAL_REPO="$2"
+            shift 2
+            ;;
         --telemetry-endpoint)
             TELEMETRY_ENDPOINT="$2"
             shift 2
@@ -609,15 +722,19 @@ echo "   Enterprise GPU Scheduler"
 echo "=============================================="
 echo ""
 
-# Check if git is installed
-if ! command -v git &> /dev/null; then
-    print_error "git is not installed. Please install git first."
-    exit 1
-fi
-
-# Check if kubectl is installed
-if ! command -v kubectl &> /dev/null; then
-    print_error "kubectl is not installed. Please install kubectl first."
+# Check all required tools up-front, BEFORE any side effects (clone/copy/config writes).
+# This avoids failing 30+ seconds in (after a git clone) just because yq or jq is missing.
+MISSING_TOOLS=()
+for _tool in git kubectl yq jq; do
+    command -v "$_tool" &> /dev/null || MISSING_TOOLS+=("$_tool")
+done
+if [ ${#MISSING_TOOLS[@]} -gt 0 ]; then
+    print_error "Required tool(s) not installed: ${MISSING_TOOLS[*]}"
+    print_info "Please install the missing tool(s) and re-run the installer:"
+    print_info "  - git      (repository download)"
+    print_info "  - kubectl  (cluster access)"
+    print_info "  - yq       (v4.44.2+, YAML config edits)"
+    print_info "  - jq       (v1.6+, JSON parsing)"
     exit 1
 fi
 
@@ -692,13 +809,18 @@ else
         print_info "Set KUBECONFIG to: $KUBECONFIG_PATH"
     fi
     
-    # Set context if provided
+    # Set context if provided.
+    # We remember the user's current context and restore it on exit (see cleanup trap),
+    # so running this installer does not permanently mutate the user's active kubeconfig context.
     if [ -n "$KUBE_CONTEXT" ]; then
-        print_info "Switching to context: $KUBE_CONTEXT"
-        kubectl config use-context "$KUBE_CONTEXT" &>/dev/null || {
+        ORIGINAL_KUBE_CONTEXT=$(kubectl config current-context 2>/dev/null || echo "")
+        print_info "Switching to context: $KUBE_CONTEXT (original context will be restored on exit)"
+        if ! kubectl config use-context "$KUBE_CONTEXT" 2>/dev/null; then
             print_error "Failed to switch to context: $KUBE_CONTEXT"
+            print_info "Verify the context exists: kubectl config get-contexts"
             exit 1
-        }
+        fi
+        SWITCHED_CONTEXT="true"
     fi
     
     # Check cluster connectivity
@@ -718,11 +840,7 @@ else
     print_success "Connected to cluster: $CURRENT_CONTEXT"
 fi
 
-# ORIGINAL_DIR is already set earlier (before register_worker_cluster if used)
-# If not set yet, set it now (shouldn't happen, but safety check)
-if [ -z "$ORIGINAL_DIR" ]; then
-    ORIGINAL_DIR="$(pwd)"
-fi
+# ORIGINAL_DIR was already set unconditionally before register_worker_cluster ran.
 
 # Check if Controller is being installed
 # License is only required for Controller, not for UI, Worker, or prerequisites (PostgreSQL, Prometheus, GPU Operator)
@@ -758,41 +876,66 @@ else
     print_info "License not required (Controller is not being installed)"
 fi
 
-# Clone repository internally
-print_info "Downloading EGS installer..."
+# Obtain the EGS installer artifacts.
+# REPO_SRC points at a directory containing charts/, egs-installer.sh, egs-installer-config.yaml, etc.
 TEMP_DIR=$(mktemp -d)
-cd "$TEMP_DIR"
+register_cleanup_path "$TEMP_DIR"
 
-if ! git clone --depth 1 --branch "$EGS_BRANCH" "$EGS_REPO" egs-installation 2>/dev/null; then
-    print_error "Failed to download EGS installer from branch: $EGS_BRANCH"
-    print_info "Trying main branch..."
-    EGS_BRANCH="main"
-    if ! git clone --depth 1 --branch "$EGS_BRANCH" "$EGS_REPO" egs-installation; then
-        print_error "Failed to download EGS installer"
-        rm -rf "$TEMP_DIR"
+if [ -n "$LOCAL_REPO" ]; then
+    # Use a local checkout instead of cloning (avoids network access + latency on every run).
+    if [ ! -d "$LOCAL_REPO" ] || [ ! -f "$LOCAL_REPO/egs-installer.sh" ]; then
+        print_error "--local-repo path is not a valid EGS installer checkout: $LOCAL_REPO"
+        print_info "Expected to find egs-installer.sh and charts/ inside that directory."
         exit 1
     fi
+    REPO_SRC="$(cd "$LOCAL_REPO" && pwd)"
+    print_success "Using local EGS installer checkout: $REPO_SRC"
+else
+    print_info "Downloading EGS installer..."
+    cd "$TEMP_DIR"
+    if ! git clone --depth 1 --branch "$EGS_BRANCH" "$EGS_REPO" egs-installation 2>/dev/null; then
+        print_error "Failed to download EGS installer from branch: $EGS_BRANCH"
+        print_info "Trying main branch..."
+        EGS_BRANCH="main"
+        if ! git clone --depth 1 --branch "$EGS_BRANCH" "$EGS_REPO" egs-installation; then
+            print_error "Failed to download EGS installer"
+            print_info "Tip: if you already have a local checkout, pass --local-repo /path/to/egs-installation"
+            exit 1
+        fi
+    fi
+    REPO_SRC="$TEMP_DIR/egs-installation"
+    print_success "Downloaded EGS installer"
 fi
-
-print_success "Downloaded EGS installer"
 
 # Copy necessary files to original directory
 print_info "Setting up installation in current directory..."
-cp -r "$TEMP_DIR/egs-installation/charts" "$ORIGINAL_DIR/" 2>/dev/null || {
+cp -r "$REPO_SRC/charts" "$ORIGINAL_DIR/" 2>/dev/null || {
     print_error "Failed to copy charts directory"
-    rm -rf "$TEMP_DIR"
     exit 1
 }
-cp "$TEMP_DIR/egs-installation/egs-installer.sh" "$ORIGINAL_DIR/"
-cp "$TEMP_DIR/egs-installation/egs-install-prerequisites.sh" "$ORIGINAL_DIR/"
-cp "$TEMP_DIR/egs-installation/egs-uninstall.sh" "$ORIGINAL_DIR/" 2>/dev/null || true
+cp "$REPO_SRC/egs-installer.sh" "$ORIGINAL_DIR/"
+cp "$REPO_SRC/egs-install-prerequisites.sh" "$ORIGINAL_DIR/"
+cp "$REPO_SRC/egs-uninstall.sh" "$ORIGINAL_DIR/" 2>/dev/null || true
+cp "$REPO_SRC/fetch_egs_slice_token.sh" "$ORIGINAL_DIR/" 2>/dev/null || true
 
 # Use egs-installer-config.yaml from repo as source of truth
-if [ ! -f "$TEMP_DIR/egs-installation/egs-installer-config.yaml" ]; then
+if [ ! -f "$REPO_SRC/egs-installer-config.yaml" ]; then
     print_error "egs-installer-config.yaml not found in repository"
-    rm -rf "$TEMP_DIR"
     exit 1
 fi
+
+# --preserve-config: keep an existing config exactly as-is and skip all regeneration.
+CONFIG_PRESERVED="false"
+if [ "$PRESERVE_CONFIG" = "true" ]; then
+    if [ -f "$ORIGINAL_DIR/egs-installer-config.yaml" ]; then
+        print_info "--preserve-config: using existing egs-installer-config.yaml as-is (skipping regeneration)"
+        CONFIG_PRESERVED="true"
+    else
+        print_warning "--preserve-config set but no existing egs-installer-config.yaml found; a new one will be generated"
+    fi
+fi
+
+if [ "$CONFIG_PRESERVED" != "true" ]; then
 
 # Save worker template from the repo config OR existing config
 # Copy repo config to a temporary location in working directory for yq to access
@@ -814,9 +957,9 @@ if [ "$REGISTER_WORKER" = "true" ] && [ -f "$ORIGINAL_DIR/egs-installer-config.y
 fi
 
 # If no template source yet, use repo config
-if [ -z "$TEMPLATE_SOURCE" ] && [ -f "$TEMP_DIR/egs-installation/egs-installer-config.yaml" ]; then
+if [ -z "$TEMPLATE_SOURCE" ] && [ -f "$REPO_SRC/egs-installer-config.yaml" ]; then
     # Copy repo config to working directory so yq can access it
-    cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$TEMP_REPO_CONFIG_COPY"
+    cp "$REPO_SRC/egs-installer-config.yaml" "$TEMP_REPO_CONFIG_COPY"
     TEMPLATE_SOURCE="$TEMP_REPO_CONFIG_COPY"
     print_info "Using repo config for worker template"
 fi
@@ -866,7 +1009,7 @@ if [ "$REGISTER_WORKER" = "true" ]; then
             WORKERS_PRESERVED_FROM_CONTROLLER="true"  # Mark as preserved
         else
             # Local config exists but has no workers - copy from repo
-            cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+            install_repo_config
             EXISTING_WORKERS=0
             WORKERS_PRESERVED_FROM_CONTROLLER="false"
         fi
@@ -887,7 +1030,7 @@ if [ "$REGISTER_WORKER" = "true" ]; then
             print_info "These workers will be preserved in the config"
             
             # Copy repo config as base
-            cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+            install_repo_config
             
             # Delete the default worker entry
             yq eval 'del(.kubeslice_worker_egs[])' -i "$ORIGINAL_DIR/egs-installer-config.yaml"
@@ -931,13 +1074,13 @@ if [ "$REGISTER_WORKER" = "true" ]; then
         else
             print_info "No existing workers found in controller cluster"
             # Copy repo config as is
-            cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+            install_repo_config
             EXISTING_WORKERS=0
         fi
     fi
 else
     # Normal mode: always copy from repo (ONLY if not in register-worker mode with existing workers)
-    cp "$TEMP_DIR/egs-installation/egs-installer-config.yaml" "$ORIGINAL_DIR/egs-installer-config.yaml"
+    install_repo_config
     EXISTING_WORKERS=0
     WORKERS_PRESERVED_FROM_CONTROLLER="false"
 fi
@@ -945,7 +1088,9 @@ fi
 # Clean up temp copy
 rm -f "$TEMP_REPO_CONFIG_COPY"
 
-# Cleanup temp directory (AFTER template is saved)
+fi  # end: if [ "$CONFIG_PRESERVED" != "true" ] (config generation block 1)
+
+# Cleanup temp directory (AFTER template is saved). The EXIT trap also covers this.
 rm -rf "$TEMP_DIR"
 print_success "Setup complete in: $ORIGINAL_DIR"
 
@@ -953,19 +1098,11 @@ print_success "Setup complete in: $ORIGINAL_DIR"
 cd "$ORIGINAL_DIR"
 
 # Make scripts executable
-chmod +x egs-installer.sh egs-install-prerequisites.sh 2>/dev/null || true
+chmod +x egs-installer.sh egs-install-prerequisites.sh egs-uninstall.sh fetch_egs_slice_token.sh 2>/dev/null || true
 
-# Check if yq is installed (required for config updates)
-if ! command -v yq &> /dev/null; then
-    print_error "yq is not installed. Please install yq (v4.44.2+) first."
-    exit 1
-fi
+# (yq and jq availability is validated at the top of the script, before any side effects.)
 
-# Check if jq is installed
-if ! command -v jq &> /dev/null; then
-    print_error "jq is not installed. Please install jq (v1.6+) first."
-    exit 1
-fi
+if [ "$CONFIG_PRESERVED" != "true" ]; then
 
 # Handle kubeconfigs based on mode
 if [ "$MULTI_CLUSTER" = "true" ]; then
@@ -1045,15 +1182,17 @@ if [ "$MULTI_CLUSTER" = "true" ]; then
         fi
     done
     
-    # Detect cloud provider and GPU nodes from first worker cluster (if available)
+    # Detect cloud provider and GPU nodes from first worker cluster (if available).
+    # Use explicit --kubeconfig/--context flags so we DON'T mutate the global KUBECONFIG env
+    # or the worker kubeconfig file's current-context as a side effect of detection.
     if [ ${#WORKER_KUBECONFIGS[@]} -gt 0 ]; then
         FIRST_WORKER_KUBECONFIG="${WORKER_KUBECONFIGS[0]}"
-        export KUBECONFIG="$FIRST_WORKER_KUBECONFIG"
+        DETECT_CMD="kubectl --kubeconfig $FIRST_WORKER_KUBECONFIG"
         if [ ${#WORKER_CONTEXTS_DETECTED[@]} -gt 0 ] && [ -n "${WORKER_CONTEXTS_DETECTED[0]}" ]; then
-            kubectl config use-context "${WORKER_CONTEXTS_DETECTED[0]}" &>/dev/null || true
+            DETECT_CMD="$DETECT_CMD --context ${WORKER_CONTEXTS_DETECTED[0]}"
         fi
-        CLOUD_PROVIDER_DETECTED=$(kubectl get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | cut -d: -f1 || echo "")
-        GPU_NODES=$(kubectl get nodes -o json 2>/dev/null | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l || echo "0")
+        CLOUD_PROVIDER_DETECTED=$($DETECT_CMD get nodes -o jsonpath='{.items[0].spec.providerID}' 2>/dev/null | cut -d: -f1 || echo "")
+        GPU_NODES=$($DETECT_CMD get nodes -o json 2>/dev/null | jq -r '.items[] | select(.status.capacity["nvidia.com/gpu"] != null) | .metadata.name' 2>/dev/null | wc -l || echo "0")
     else
         CLOUD_PROVIDER_DETECTED=""
         GPU_NODES="0"
@@ -1087,19 +1226,37 @@ else
             export KUBECONFIG="$ORIGINAL_DIR/$KUBECONFIG_RELATIVE"
         fi
     else
-        # Fallback
-        KUBECONFIG_RELATIVE="kubeconfig"
+        # KUBECONFIG env is not set to a readable file. Fall back to the default kubectl
+        # location ($HOME/.kube/config) rather than the bogus literal "kubeconfig",
+        # which would make the downstream scripts look for a non-existent file.
+        DEFAULT_KUBECONFIG="${HOME}/.kube/config"
+        if [ -f "$DEFAULT_KUBECONFIG" ]; then
+            KUBECONFIG_RELATIVE=$(basename "$DEFAULT_KUBECONFIG")
+            if ! cp "$DEFAULT_KUBECONFIG" "$ORIGINAL_DIR/$KUBECONFIG_RELATIVE"; then
+                print_error "Failed to copy default kubeconfig ($DEFAULT_KUBECONFIG) to work directory"
+                exit 1
+            fi
+            export KUBECONFIG="$ORIGINAL_DIR/$KUBECONFIG_RELATIVE"
+            print_success "Using default kubeconfig: $DEFAULT_KUBECONFIG (copied as $KUBECONFIG_RELATIVE)"
+        else
+            print_error "Could not determine a kubeconfig file."
+            print_info "KUBECONFIG is not set to a readable file and $DEFAULT_KUBECONFIG does not exist."
+            print_info "Pass --kubeconfig /path/to/kubeconfig explicitly."
+            exit 1
+        fi
     fi
 fi
 
-# Set GPU detection result
+# Set GPU detection result.
+# ENABLE_CUSTOM_APPS toggles EGS custom GPU apps (GPR/inventory) that require GPU nodes.
+# It is independent of the GPU Operator: we never auto-skip the GPU Operator based on
+# detection — that remains the user's choice via --skip-gpu-operator (or --skip-worker-gpu-operator).
 if [ "$GPU_NODES" -gt 0 ]; then
     print_success "Detected $GPU_NODES GPU node(s)"
     ENABLE_CUSTOM_APPS="true"
 else
-    print_warning "No GPU nodes detected."
+    print_warning "No GPU nodes detected (GPU-dependent custom apps disabled; GPU Operator still controlled by your flags)."
     ENABLE_CUSTOM_APPS="false"
-    # Don't automatically skip GPU Operator - let user decide via --skip-gpu-operator flag
 fi
 
 # Set cloud provider in config (exclude Linode - keep it empty for Linode clusters)
@@ -1378,17 +1535,14 @@ else
     yq eval ".global_kubeconfig = \"$KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
     yq eval ".global_kubecontext = \"$CURRENT_CONTEXT\"" -i egs-installer-config.yaml
     
-    # Update worker name if --cluster-name was explicitly provided
-    if [ -n "$CLUSTER_NAME" ] && [ "$CLUSTER_NAME" != "worker-1" ]; then
-        yq eval ".kubeslice_worker_egs[0].name = \"$CLUSTER_NAME\" | .kubeslice_worker_egs[0].name style=\"double\"" -i egs-installer-config.yaml
-        print_info "Updated worker name to: $CLUSTER_NAME"
-    elif [ "$CLUSTER_NAME" = "worker-1" ]; then
-        # Even if default, ensure the worker name is set (in case config has a different default)
-        EXISTING_WORKER_NAME=$(yq eval ".kubeslice_worker_egs[0].name" egs-installer-config.yaml 2>/dev/null | tr -d '"' | tr -d "'" | xargs)
-        if [ -z "$EXISTING_WORKER_NAME" ] || [ "$EXISTING_WORKER_NAME" = "null" ] || [ "$EXISTING_WORKER_NAME" = "empty" ]; then
-            yq eval ".kubeslice_worker_egs[0].name = \"$CLUSTER_NAME\" | .kubeslice_worker_egs[0].name style=\"double\"" -i egs-installer-config.yaml
-        fi
-    fi
+    # Normalize the single-cluster worker name to CLUSTER_NAME.
+    # The repo config template ships a placeholder worker name (e.g. "dc-cluster3"), and
+    # cluster_registration[0].cluster_name is always set to CLUSTER_NAME below. If we only
+    # overrode the worker name for non-default CLUSTER_NAME values, a default run (worker-1)
+    # would leave the worker entry named "dc-cluster3" while its registration said "worker-1",
+    # so the installed worker could never bind to its Cluster CR. Always set it explicitly.
+    yq eval ".kubeslice_worker_egs[0].name = \"$CLUSTER_NAME\" | .kubeslice_worker_egs[0].name style=\"double\"" -i egs-installer-config.yaml
+    print_info "Worker name set to: $CLUSTER_NAME"
     
     # Ensure use_global_kubeconfig is set for single-cluster mode
     yq eval ".kubeslice_worker_egs[0].use_global_kubeconfig = true" -i egs-installer-config.yaml
@@ -1424,31 +1578,53 @@ if [ "$REGISTER_WORKER" = "true" ] && [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0
         fi
     done
 else
-    # Normal mode: update the first cluster_registration entry
-    # Preserve existing cluster_name if it already exists and has a value
-    EXISTING_CLUSTER_NAME=$(yq eval ".cluster_registration[0].cluster_name // empty" egs-installer-config.yaml 2>/dev/null | tr -d '"' | tr -d "'" | xargs)
-    if [ -n "$EXISTING_CLUSTER_NAME" ] && [ "$EXISTING_CLUSTER_NAME" != "null" ] && [ "$EXISTING_CLUSTER_NAME" != "empty" ]; then
-        # Preserve existing cluster_name
-        print_info "Preserving existing cluster_registration.cluster_name: $EXISTING_CLUSTER_NAME"
+    # Normal mode (single- or multi-cluster): ensure EVERY worker gets a cluster_registration entry.
+    # Previously only cluster_registration[0] was updated, so workers 1,2,... in a multi-worker
+    # install were never registered with the controller.
+    REG_WORKER_NAMES=()
+    if [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]; then
+        # Multi-cluster: one registration per worker kubeconfig
+        for i in "${!WORKER_KUBECONFIG_RELATIVES[@]}"; do
+            if [ $i -lt ${#WORKER_NAMES[@]} ] && [ -n "${WORKER_NAMES[$i]}" ]; then
+                REG_WORKER_NAMES+=("${WORKER_NAMES[$i]}")
+            elif [ $i -eq 0 ] && [ -n "$CLUSTER_NAME" ] && [ "$CLUSTER_NAME" != "worker-1" ]; then
+                REG_WORKER_NAMES+=("$CLUSTER_NAME")
+            else
+                REG_WORKER_NAMES+=("worker-$((i+1))")
+            fi
+        done
     else
-        # Determine new cluster name
-        # Priority: 1) First worker name from array, 2) CLUSTER_NAME if not default, 3) Default
+        # Single-cluster: exactly one worker registration
         if [ ${#WORKER_NAMES[@]} -gt 0 ] && [ -n "${WORKER_NAMES[0]}" ]; then
-            FIRST_WORKER_NAME="${WORKER_NAMES[0]}"
-        elif [ -n "$CLUSTER_NAME" ] && [ "$CLUSTER_NAME" != "worker-1" ]; then
-            # Use CLUSTER_NAME if it's explicitly provided (not default)
-            FIRST_WORKER_NAME="$CLUSTER_NAME"
-        elif [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]; then
-            FIRST_WORKER_NAME="worker-1"
+            REG_WORKER_NAMES+=("${WORKER_NAMES[0]}")
         else
-            FIRST_WORKER_NAME="$CLUSTER_NAME"
+            REG_WORKER_NAMES+=("$CLUSTER_NAME")
         fi
-        yq eval ".cluster_registration[0].cluster_name = \"$FIRST_WORKER_NAME\"" -i egs-installer-config.yaml
     fi
-    
-    # Update cloud provider and region for the first entry
-    yq eval ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" -i egs-installer-config.yaml
-    yq eval ".cluster_registration[0].geoLocation.cloudRegion = \"$CLOUD_REGION\"" -i egs-installer-config.yaml
+
+    for i in "${!REG_WORKER_NAMES[@]}"; do
+        REG_NAME="${REG_WORKER_NAMES[$i]}"
+        if [ "$i" -eq 0 ]; then
+            # Update the first (template) entry, preserving an explicitly-customized cluster_name.
+            EXISTING_CLUSTER_NAME=$(yq eval ".cluster_registration[0].cluster_name // empty" egs-installer-config.yaml 2>/dev/null | tr -d '"' | tr -d "'" | xargs)
+            if [ -n "$EXISTING_CLUSTER_NAME" ] && [ "$EXISTING_CLUSTER_NAME" != "null" ] && [ "$EXISTING_CLUSTER_NAME" != "empty" ] && [ "$EXISTING_CLUSTER_NAME" != "worker-1" ]; then
+                print_info "Preserving existing cluster_registration[0].cluster_name: $EXISTING_CLUSTER_NAME"
+            else
+                yq eval ".cluster_registration[0].cluster_name = \"$REG_NAME\"" -i egs-installer-config.yaml
+            fi
+            yq eval ".cluster_registration[0].project_name = \"$PROJECT_NAME\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[0].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[0].geoLocation.cloudRegion = \"$CLOUD_REGION\"" -i egs-installer-config.yaml
+        else
+            # Additional workers: clone the template entry [0], then override identity/geo fields.
+            yq eval ".cluster_registration[$i] = .cluster_registration[0]" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$i].cluster_name = \"$REG_NAME\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$i].project_name = \"$PROJECT_NAME\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$i].geoLocation.cloudProvider = \"$CLOUD_PROVIDER\"" -i egs-installer-config.yaml
+            yq eval ".cluster_registration[$i].geoLocation.cloudRegion = \"$CLOUD_REGION\"" -i egs-installer-config.yaml
+            print_info "Added cluster_registration entry for worker: $REG_NAME"
+        fi
+    done
 fi
 
 # Update image registry
@@ -1755,7 +1931,13 @@ if [ "$REGISTER_WORKER" = "true" ]; then
     fi
 fi
 
-print_success "Configuration updated successfully!"
+fi  # end: if [ "$CONFIG_PRESERVED" != "true" ] (config generation block 2)
+
+if [ "$CONFIG_PRESERVED" = "true" ]; then
+    print_success "Using preserved configuration: $ORIGINAL_DIR/egs-installer-config.yaml"
+else
+    print_success "Configuration updated successfully!"
+fi
 echo ""
 
 # Copy license file to current directory if needed (only if license is required)
@@ -1774,12 +1956,26 @@ fi
 # Show configuration summary
 print_info "📁 Configuration saved to: $ORIGINAL_DIR/egs-installer-config.yaml"
 echo ""
+
+# --generate-config / --dry-run: stop here so the user can inspect the generated config
+# before any cluster-mutating actions (license apply / prerequisites / components).
+if [ "$GENERATE_CONFIG_ONLY" = "true" ]; then
+    INSTALL_COMPLETE="true"
+    print_success "Config generation complete (--generate-config / --dry-run)."
+    print_info "Review the generated config:   cat $ORIGINAL_DIR/egs-installer-config.yaml"
+    print_info "When ready, run the same command WITHOUT --generate-config,"
+    print_info "or run directly with the existing config:"
+    print_info "  ./egs-install-prerequisites.sh --input-yaml egs-installer-config.yaml"
+    print_info "  ./egs-installer.sh --input-yaml egs-installer-config.yaml"
+    exit 0
+fi
+
 print_info "🚀 Starting automated installation..."
 echo ""
 
-# Step 0: Apply EGS license (only if Controller is being installed)
+# Step 1: Apply EGS license (only if Controller is being installed)
 if [ "$NEEDS_LICENSE" = "true" ]; then
-    print_info "📜 Step 0/3: Applying EGS license..."
+    print_info "📜 Step 1/3: Applying EGS license..."
     print_success "Using license file: $LICENSE_FILE"
     print_info "Applying EGS license..."
     echo ""
@@ -1826,7 +2022,7 @@ if [ "$NEEDS_LICENSE" = "true" ]; then
         fi
     fi
 else
-    print_info "📜 Step 0/3: Skipping license application (Controller is not being installed)"
+    print_info "📜 Step 1/3: Skipping license application (Controller is not being installed)"
     echo ""
 fi
 
@@ -1849,7 +2045,7 @@ else
 fi
 
 if [ "$SHOULD_INSTALL_PREREQS" = "true" ]; then
-    print_info "📦 Step 1/3: Installing prerequisites (PostgreSQL, Prometheus, GPU Operator)..."
+    print_info "📦 Step 2/3: Installing prerequisites (PostgreSQL, Prometheus, GPU Operator)..."
     echo ""
     # Ensure KUBECONFIG is exported for the prerequisites script
     if [ -n "$KUBECONFIG" ]; then
@@ -1864,57 +2060,54 @@ if [ "$SHOULD_INSTALL_PREREQS" = "true" ]; then
         exit 1
     fi
 else
-    print_info "📦 Step 1/3: Skipping prerequisites (all skipped)"
+    print_info "📦 Step 2/3: Skipping prerequisites (all skipped)"
     echo ""
 fi
 
 # Step 2: Install EGS components (Controller, UI, Worker)
 # Dependency checks (relaxed for multi-cluster mode)
 # Note: Do dependency checks BEFORE calling egs-installer.sh to show warnings early
-if [ "$MULTI_CLUSTER" = "false" ]; then
+if [ "$MULTI_CLUSTER" = "false" ] && [ "$SKIP_DEPENDENCY_CHECK" = "true" ]; then
+    print_warning "⚠️  --skip-dependency-check: bypassing PostgreSQL/Controller/UI prerequisite detection."
+elif [ "$MULTI_CLUSTER" = "false" ]; then
     # Single-cluster mode: Strict dependency checks
     # Check if Controller is being installed without PostgreSQL (not allowed)
     # But first check if PostgreSQL is already installed in the cluster
     if [ "$SKIP_CONTROLLER" = "false" ] && [ "$SKIP_POSTGRESQL" = "true" ]; then
-        # Check if PostgreSQL is already installed
-        POSTGRESQL_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "postgresql|kt-postgresql" | wc -l || echo "0")
-        if [ "$POSTGRESQL_INSTALLED" -eq 0 ]; then
+        if ! component_present "postgres"; then
             print_error "❌ ERROR: Controller installation requires PostgreSQL to be installed."
-            print_error "Please install PostgreSQL first, or use --skip-controller to skip Controller installation."
-            print_error "Controller needs PostgreSQL for its database."
+            print_error "PostgreSQL was not detected (checked helm releases and deployments/statefulsets)."
+            print_error "Options: install PostgreSQL first, use --skip-controller, or — if PostgreSQL is"
+            print_error "running under a non-standard name — re-run with --skip-dependency-check."
             exit 1
         else
-            print_info "ℹ️  PostgreSQL is already installed in the cluster. Proceeding with Controller installation."
+            print_info "ℹ️  PostgreSQL detected in the cluster. Proceeding with Controller installation."
         fi
     fi
     
     # Check if Worker is being installed without Controller (not allowed)
     # But first check if Controller is already installed (for upgrade scenarios)
     if [ "$SKIP_WORKER" = "false" ] && [ "$SKIP_CONTROLLER" = "true" ]; then
-        # Check if Controller is already installed
-        CONTROLLER_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "egs-controller|kubeslice-controller" | wc -l || echo "0")
-        if [ "$CONTROLLER_INSTALLED" -eq 0 ]; then
+        if ! component_present "egs-controller|kubeslice-controller"; then
             print_error "❌ ERROR: Worker installation requires Controller to be installed."
-            print_error "Please install Controller first, or use --skip-worker to skip Worker installation."
-            print_error "Worker needs Controller CRDs and project registration to function."
+            print_error "Controller was not detected (checked helm releases and deployments/statefulsets)."
+            print_error "Options: install Controller first, use --skip-worker, or re-run with --skip-dependency-check."
             exit 1
         else
-            print_info "ℹ️  Controller is already installed in the cluster. Proceeding with Worker installation/upgrade."
+            print_info "ℹ️  Controller detected in the cluster. Proceeding with Worker installation/upgrade."
         fi
     fi
     
     # Check if Worker is being installed without UI (not allowed)
     # But first check if UI is already installed (for upgrade scenarios)
     if [ "$SKIP_WORKER" = "false" ] && [ "$SKIP_UI" = "true" ]; then
-        # Check if UI is already installed
-        UI_INSTALLED=$(helm list -A --kubeconfig "$KUBECONFIG" --kube-context "$CURRENT_CONTEXT" 2>/dev/null | grep -E "egs-ui|kubeslice-ui" | wc -l || echo "0")
-        if [ "$UI_INSTALLED" -eq 0 ]; then
+        if ! component_present "egs-ui|kubeslice-ui"; then
             print_error "❌ ERROR: Worker installation requires UI to be installed."
-            print_error "Please install UI first, or use --skip-worker to skip Worker installation."
-            print_error "Worker needs UI API gateway endpoint for egs-agent to function."
+            print_error "UI was not detected (checked helm releases and deployments/statefulsets)."
+            print_error "Options: install UI first, use --skip-worker, or re-run with --skip-dependency-check."
             exit 1
         else
-            print_info "ℹ️  UI is already installed in the cluster. Proceeding with Worker installation/upgrade."
+            print_info "ℹ️  UI detected in the cluster. Proceeding with Worker installation/upgrade."
         fi
     fi
 else
@@ -1931,9 +2124,10 @@ fi
 
 # Only run if at least one is not skipped
 if [ "$SKIP_CONTROLLER" = "false" ] || [ "$SKIP_UI" = "false" ] || [ "$SKIP_WORKER" = "false" ]; then
-    print_info "📦 Step 2/3: Installing EGS components (Controller, UI, Worker)..."
+    print_info "📦 Step 3/3: Installing EGS components (Controller, UI, Worker)..."
     echo ""
     if ./egs-installer.sh --input-yaml egs-installer-config.yaml; then
+        INSTALL_COMPLETE="true"
         print_success "✅ EGS installation completed successfully!"
         echo ""
         print_info "📁 Installation files are in: $ORIGINAL_DIR"
@@ -1944,7 +2138,8 @@ if [ "$SKIP_CONTROLLER" = "false" ] || [ "$SKIP_UI" = "false" ] || [ "$SKIP_WORK
         exit 1
     fi
 else
-    print_info "📦 Step 2/3: Skipping EGS components (all skipped)"
+    INSTALL_COMPLETE="true"
+    print_info "📦 Step 3/3: Skipping EGS components (all skipped)"
     echo ""
     print_success "✅ Installation completed (all components skipped)"
     exit 0
