@@ -27,19 +27,19 @@
 
 | Category | Document | Description |
 |----------|----------|-------------|
-| **🔑 License** | [EGS License Setup](docs/EGS-License-Setup.md) | License configuration guide |
-| **⚡ Quick Start 🧪 (Beta)** | [Quick Install Guide](docs/Quick-Install-README.md) | Single-command beta installer with all options |
-| **📋 Configuration** | [Configuration Reference](docs/Configuration-README.md) | Config-based installer detailed reference |
+| **🔑 License** | [EGS License Setup](docs/EGS-License-Setup.html) | License configuration guide |
+| **⚡ Quick Start 🧪 (Beta)** | [Quick Install Guide](docs/Quick-Install-README.html) | Single-command beta installer with all options |
+| **📋 Configuration** | [Configuration Reference](docs/Configuration-README.html) | Config-based installer detailed reference |
 | **🌐 Multi-Cluster** | [Multi-Cluster Example](multi-cluster-example.yaml) | Complete multi-cluster YAML example |
-| **📋 Prerequisites** | [Controller Prerequisites](docs/EGS-Controller-Prerequisites.md) | Controller cluster requirements |
-| **📋 Prerequisites** | [Worker Prerequisites](docs/EGS-Worker-Prerequisites.md) | Worker cluster requirements |
-| **🗂️ Setup** | [Namespace Creation](docs/Namespace-Creation-README.md) | Pre-create namespaces script |
-| **✅ Validation** | [Preflight Check](docs/EGS-Preflight-Check-README.md) | Pre-installation validation |
-| **🔧 Operations** | [Slice & Admin Token](docs/Slice-Admin-Token-README.md) | Token retrieval guide |
-| **💰 Operations** | [Custom Pricing](docs/Custom-Pricing-README.md) | Custom pricing configuration |
-| **🔐 Security** | [Prometheus TLS Authentication](docs/Prometheus-TLS-Authentication.md) | TLS setup for Prometheus |
-| **🔧 Troubleshooting** | [Troubleshooting Guide](docs/Troubleshooting-README.md) | Generate diagnostic bundles for support |
-| **📦 Airgap** | [Airgap Image Management](airgap-image-push/README-airgap-images.md) | Airgap image pull and push |
+| **📋 Prerequisites** | [Controller Prerequisites](docs/EGS-Controller-Prerequisites.html) | Controller cluster requirements |
+| **📋 Prerequisites** | [Worker Prerequisites](docs/EGS-Worker-Prerequisites.html) | Worker cluster requirements |
+| **🗂️ Setup** | [Namespace Creation](docs/Namespace-Creation-README.html) | Pre-create namespaces script |
+| **✅ Validation** | [Preflight Check](docs/EGS-Preflight-Check-README.html) | Pre-installation validation |
+| **🔧 Operations** | [Slice & Admin Token](docs/Slice-Admin-Token-README.html) | Token retrieval guide |
+| **💰 Operations** | [Custom Pricing](docs/Custom-Pricing-README.html) | Custom pricing configuration |
+| **🔐 Security** | [Prometheus TLS Authentication](docs/Prometheus-TLS-Authentication.html) | TLS setup for Prometheus |
+| **🔧 Troubleshooting** | [Troubleshooting Guide](docs/Troubleshooting-README.html) | Generate diagnostic bundles for support |
+| **📦 Airgap** | [Airgap Image Management](airgap-image-push/README-airgap-images.html) | Airgap image pull and push |
 
 📚 **User Guide:** [docs.avesha.io/documentation/enterprise-egs](https://docs.avesha.io/documentation/enterprise-egs)
 
@@ -51,8 +51,8 @@ The EGS Installer provides installation methods for deploying EGS components int
 
 | Method | Best For | Description | Documentation |
 |--------|----------|-------------|---------------|
-| **⚡ Quick Installer 🧪 (Beta)** | New users, PoC, simple setups | **Beta** single-command installer with auto-configuration, skip flags, and multi-cluster support | **[📖 Quick Install Guide](docs/Quick-Install-README.md)** |
-| **📋 Config-Based Installer** | Production, teams, advanced setups | Version-controlled YAML configuration for repeatable, auditable installs | **[📖 Configuration Reference](docs/Configuration-README.md)** |
+| **⚡ Quick Installer 🧪 (Beta)** | New users, PoC, simple setups | **Beta** single-command installer with auto-configuration, skip flags, and multi-cluster support | **[📖 Quick Install Guide](docs/Quick-Install-README.html)** |
+| **📋 Config-Based Installer** | Production, teams, advanced setups | Version-controlled YAML configuration for repeatable, auditable installs | **[📖 Configuration Reference](docs/Configuration-README.html)** |
 
 All methods leverage **Helm** for package management, **kubectl** for Kubernetes interaction, and **yq** for YAML parsing.
 
@@ -70,7 +70,7 @@ Complete the registration at [Avesha EGS Registration](https://avesha.io/egs-reg
 - Access credentials
 - Product license file (`egs-license.yaml`)
 
-📖 See **[EGS License Setup](docs/EGS-License-Setup.md)** for detailed instructions.
+📖 See **[EGS License Setup](docs/EGS-License-Setup.html)** for detailed instructions.
 
 #### 2. 🔧 Required Binaries
 
@@ -114,7 +114,7 @@ Validate your environment before installation:
 ./egs-preflight-check.sh --kubeconfig ~/.kube/config --kubecontext-list context1,context2
 ```
 
-📖 See **[Preflight Check Guide](docs/EGS-Preflight-Check-README.md)** for details.
+📖 See **[Preflight Check Guide](docs/EGS-Preflight-Check-README.html)** for details.
 
 #### 7. 🗂️ Pre-create Namespaces (Optional)
 
@@ -124,7 +124,7 @@ For clusters with namespace policies:
 ./create-namespaces.sh --input-yaml namespace-input.yaml --kubeconfig ~/.kube/config
 ```
 
-📖 See **[Namespace Creation Guide](docs/Namespace-Creation-README.md)** for details.
+📖 See **[Namespace Creation Guide](docs/Namespace-Creation-README.html)** for details.
 
 ---
 
@@ -157,7 +157,7 @@ Complete the registration process at [Avesha EGS Registration](https://avesha.io
 
 📖 **For complete Quick Installer documentation including topology examples, multi-cluster setup, worker registration, and all options:**
 
-### **[→ View Full Quick Install Guide](docs/Quick-Install-README.md)**
+### **[→ View Full Quick Install Guide](docs/Quick-Install-README.html)**
 
 ---
 
@@ -172,13 +172,13 @@ The Config-Based Installer uses `egs-installer.sh` with a managed `egs-installer
 - **Version-controlled, auditable** installation configurations
 - **Complex multi-cluster** setups with custom monitoring endpoints
 
-📖 **Detailed configuration documentation:** **[Configuration Reference](docs/Configuration-README.md)**
+📖 **Detailed configuration documentation:** **[Configuration Reference](docs/Configuration-README.html)**
 
 ---
 
 ## 🛠️ Config-Based Installation Steps
 
-> **Using Quick Installer?** See the **[Quick Install Guide](docs/Quick-Install-README.md)** instead.
+> **Using Quick Installer?** See the **[Quick Install Guide](docs/Quick-Install-README.html)** instead.
 
 ### Step 1: Configure Prerequisites
 
@@ -214,8 +214,8 @@ Run prerequisites installer:
 If you have Prometheus, GPU Operator, or PostgreSQL already running:
 
 - Set `enable_install_additional_apps: false`
-- See **[EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)** for Prometheus/PostgreSQL configuration
-- See **[EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.md)** for GPU Operator/monitoring configuration
+- See **[EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.html)** for Prometheus/PostgreSQL configuration
+- See **[EGS Worker Prerequisites](docs/EGS-Worker-Prerequisites.html)** for GPU Operator/monitoring configuration
 
 ---
 
@@ -277,7 +277,7 @@ kubeslice_controller_egs:
 | **Pre-existing PostgreSQL** | Update `postgresAddr`, `postgresPort`, `postgresUser`, `postgresPassword`, `postgresDB` with your values |
 | **Pre-created Secret** | Set `existingSecret: true`, leave other postgres fields empty, ensure secret exists in `kubeslice-controller` namespace |
 
-📖 See **[EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.md)** for detailed PostgreSQL setup.
+📖 See **[EGS Controller Prerequisites](docs/EGS-Controller-Prerequisites.html)** for detailed PostgreSQL setup.
 
 ---
 
@@ -667,7 +667,7 @@ The script will output the admin token. Copy and paste it into the UI login scre
 kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.data.token}' | base64 -d
 ```
 
-📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](docs/Slice-Admin-Token-README.md)**
+📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](docs/Slice-Admin-Token-README.html)**
 
 #### 4. EGS UI Screenshots
 
@@ -854,7 +854,7 @@ curl -fsSL https://repo.egs.avesha.io/egs-troubleshoot.sh | bash -s -- \
 
 📖 **For complete Troubleshooting documentation including multi-cluster collection, S3 upload, bundle structure, and all options:**
 
-### **[→ View Full Troubleshooting Guide](docs/Troubleshooting-README.md)**
+### **[→ View Full Troubleshooting Guide](docs/Troubleshooting-README.html)**
 
 ---
 
@@ -867,6 +867,6 @@ For airgap/offline deployments where clusters don't have internet access, EGS pr
 
 The scripts support both Docker Hub and private registries like Nexus, with auto-detection of registry type.
 
-👉 **For detailed instructions, see [Airgap Image Management Documentation](airgap-image-push/README-airgap-images.md)**
+👉 **For detailed instructions, see [Airgap Image Management Documentation](airgap-image-push/README-airgap-images.html)**
 
 ---
