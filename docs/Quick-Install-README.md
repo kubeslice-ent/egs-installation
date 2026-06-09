@@ -539,9 +539,103 @@ These flags make the installer safer to run repeatedly and easier to review befo
 | `--generate-config` (alias `--dry-run`) | Generate `egs-installer-config.yaml` and **exit before any cluster-mutating action** (no license apply, no installs). Use it to review the config first. | Off |
 | `--preserve-config` | Reuse an existing `egs-installer-config.yaml` as-is instead of regenerating it, so manual edits survive a re-run. | Off |
 | `--skip-dependency-check` | Bypass the helm/deployment-based PostgreSQL/Controller/UI prerequisite detection (for dependencies running under non-standard release names). | Off |
-| `--local-repo PATH` | Use a local `egs-installation` checkout instead of cloning from GitHub (air-gapped or pinned-version installs). | Clone from GitHub |
+| `--local-repo PATH` | Use a local `egs-installation` checkout instead of cloning from GitHub (air-gapped, pinned-version, or pre-merge `release-*` branch testing). See [Using a Local Checkout](#using-a-local-checkout---local-repo) for examples. | Clone from GitHub |
 
 > ✅ **Safe by default:** The installer performs a single up-front tool check and **aborts before any download** if `git`, `kubectl`, `yq`, or `jq` is missing. On any early exit a cleanup trap removes temporary files and restores your original `kubectl` context, so the cluster is never left half-switched. When a config is regenerated, the previous one is backed up to `egs-installer-config.yaml.bak.<timestamp>`.
+
+### Using a Local Checkout (`--local-repo`)
+
+By default the installer **clones the `main` branch** of `egs-installation` from GitHub at runtime and uses its `charts/`, `egs-installer.sh`, and `egs-installer-config.yaml`. `--local-repo PATH` makes it use an **existing local checkout instead of cloning** — essential for:
+
+- **Testing a specific branch/tag** (e.g. a `release-*` branch) *before* it merges to `main`.
+- **Air-gapped / offline installs** where the cluster host cannot reach GitHub.
+- **Pinned, reproducible installs** against an audited copy of the repo.
+
+**What to pass:** the **absolute path to the root of an `egs-installation` checkout** (a *directory*, not a file). The installer validates that the path exists and contains `egs-installer.sh`; it also needs `charts/` and `egs-installer-config.yaml` inside it.
+
+```text
+/root/egs-rel/                    ← pass THIS path to --local-repo
+├── egs-installer.sh              ✅ required (presence is validated)
+├── egs-installer-config.yaml     ✅ required (used as the config template)
+├── charts/                       ✅ required (these charts are what get deployed)
+│   ├── kubeslice-controller-egs/
+│   ├── kubeslice-ui-egs/
+│   └── kubeslice-worker-egs/
+├── egs-install-prerequisites.sh
+└── egs-uninstall.sh
+```
+
+When `--local-repo` is used, the installer prints `✅ Using local EGS installer checkout: <PATH>` and **skips the GitHub clone entirely** — so the chart version that gets deployed is whatever that checkout contains, not `main`.
+
+> ⚠️ **Pass the repo root, not a sub-path.** `--local-repo /root/egs-rel/charts` (too deep) or `--local-repo /root/egs-rel/install-egs.sh` (a file) will fail with `--local-repo path is not a valid EGS installer checkout`.
+
+#### Example A — Test a release branch before it merges to `main`
+
+> 📝 **Note:** Use this to validate `release-*` charts through the Quick Installer while `main` still ships the previous version. The chart version deployed comes from the checked-out branch.
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export RELEASE_BRANCH="release-v1.17.2"          # Branch/tag to test
+export LOCAL_REPO="/root/egs-rel"                # Where to clone it
+export KUBECONFIG_PATH="/etc/rancher/k3s/k3s.yaml"
+export LICENSE_FILE="egs-license.yaml"
+export CLUSTER_NAME="my-cluster"
+
+# ============ STEP 1: Clone the release branch locally ============
+git clone --depth 1 --branch "$RELEASE_BRANCH" \
+  https://github.com/kubeslice-ent/egs-installation.git "$LOCAL_REPO"
+
+# ============ STEP 2: Preview the config using the release charts (no install) ============
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --local-repo "$LOCAL_REPO" \
+  --kubeconfig "$KUBECONFIG_PATH" \
+  --license-file "$LICENSE_FILE" \
+  --cluster-name "$CLUSTER_NAME" \
+  --generate-config
+
+# ============ STEP 3: Install for real (re-run WITHOUT --generate-config) ============
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --local-repo "$LOCAL_REPO" \
+  --kubeconfig "$KUBECONFIG_PATH" \
+  --license-file "$LICENSE_FILE" \
+  --cluster-name "$CLUSTER_NAME"
+
+# ============ VERIFY: charts deployed at the release version ============
+helm list -A | grep -E "egs-controller|egs-ui|egs-worker"
+```
+
+#### Example B — Air-gapped / offline install (no GitHub at runtime)
+
+> 📝 **Note:** Stage the repo on the host beforehand; `--local-repo` then needs no network for the installer artifacts.
+
+```bash
+# ============ ON A MACHINE WITH INTERNET: package the repo ============
+git clone --depth 1 --branch release-v1.17.2 \
+  https://github.com/kubeslice-ent/egs-installation.git egs-installation
+tar -czf egs-installation.tgz egs-installation
+# ...transfer egs-installation.tgz AND install-egs.sh to the air-gapped host...
+
+# ============ ON THE AIR-GAPPED HOST: extract and install ============
+tar -xzf egs-installation.tgz -C /opt/          # creates /opt/egs-installation
+bash install-egs.sh \
+  --local-repo /opt/egs-installation \
+  --kubeconfig /etc/rancher/k3s/k3s.yaml \
+  --license-file egs-license.yaml \
+  --cluster-name my-cluster
+```
+
+#### Example C — Reuse an existing local checkout
+
+```bash
+# You already have the repo checked out (any branch you want to install from)
+cd /home/user/egs-installation
+git checkout release-v1.17.2
+
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --local-repo /home/user/egs-installation \
+  --kubeconfig ~/.kube/config \
+  --generate-config
+```
 
 ### Common Skip Flags (works for both single & multi-cluster)
 
