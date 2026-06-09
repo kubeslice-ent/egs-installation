@@ -199,7 +199,7 @@ egs:
     # Period for refreshing the GPRs
     refreshWaitTimeInterval: 300
     # enabling dynamic node provisioning for GPR Manager
-    enableDynamicNode: true
+    enableDynamicNode: false
     linodeToken: "" # Linode token for the gpr-manager to manage Linode instances
     maxNodePoolCount: 10 # Maximum number of node pools that can be created for dynamic node provisioning
     labels:
