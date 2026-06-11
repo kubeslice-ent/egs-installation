@@ -12,7 +12,7 @@ spec:
     namespace: vllm        #REPLACE with onboarded namespace
     autoCreate: true
     gatewayClassName: envoy-gateway-class
-    serviceType: LoadBalancer
+    serviceType: LoadBalancer  ## if type selected to ClusterIP then set ClusterIP value if required
     loggingLevel: warn
   ports:
     - name: http
