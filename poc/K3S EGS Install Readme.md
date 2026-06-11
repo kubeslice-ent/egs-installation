@@ -126,6 +126,8 @@ On the EGS login screen, paste the token into the **Service Account Token** fiel
 
 ---
 
+### DOC reference URL - https://docs.avesha.io/documentation/enterprise-egs/1.17.0/
+
 # Example Inference Deployments
 
 ## Option-1: Deploy inference endpoints using EGS workload placement with vllm framework
