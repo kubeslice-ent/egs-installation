@@ -64,7 +64,7 @@ spec:
         - --num-of-app-services-per-cr=50
         command:
         - /manager
-        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.operator "global" .Values.dev) }}
+        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.operator "global" .Values.global) }}
         imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.operator.pullPolicy "global" .Values.global) }}
         env:
           - name: PROMETHEUS_SERVICE_ENDPOINT
