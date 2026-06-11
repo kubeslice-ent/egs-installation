@@ -116,6 +116,12 @@ spec:
               value: "true"
             - name: HELM_INSTALLER_IMAGE
               value: "{{ .Values.global.imageRegistry }}/{{ .Values.workerInstaller.image }}:{{ .Values.workerInstaller.tag }}"
+            - name: INFERENCE_MODEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: inference-model-token
+                  key: token
+                  optional: true
           livenessProbe:
             httpGet:
               path: /healthz

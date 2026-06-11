@@ -30,6 +30,8 @@ The EGS Quick Installer provides a **one-command installation** experience for E
 2. **kubectl**: Configured and connected to your cluster
 3. **EGS License**: Valid license file (`egs-license.yaml` in current directory) - **Only required when installing Controller. Not required for UI, Worker, or prerequisites (PostgreSQL, Prometheus, GPU Operator).** In multi-cluster mode, the license is automatically applied to the controller cluster.
 4. **Required Tools**: `yq` (v4.44.2+), `helm` (v3.15.0+), `kubectl` (v1.23.6+), `jq` (v1.6+), `git`
+   - The installer checks these **up front and aborts before downloading anything** if `git`, `kubectl`, `yq`, or `jq` is missing.
+   - Reliable `yq` install (avoids snap's `/tmp` confinement): `curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_amd64 -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq`
 
 ### 📝 Registration Required
 
@@ -59,6 +61,21 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 5. ✅ Install PostgreSQL, Prometheus, GPU Operator (unless explicitly skipped)
 6. ✅ Install EGS Controller, UI, and Worker
 7. ✅ Display access information and tokens
+
+### Preview the Generated Config First (Recommended)
+
+Use `--generate-config` (alias `--dry-run`) to generate `egs-installer-config.yaml` and **stop before touching the cluster**. Review it, then re-run the same command without `--generate-config` to install.
+
+```bash
+# Generate and review the config WITHOUT installing anything
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --license-file egs-license.yaml \
+  --kubeconfig /path/to/kubeconfig \
+  --cluster-name my-cluster \
+  --generate-config
+
+cat egs-installer-config.yaml     # review, then re-run WITHOUT --generate-config to install
+```
 
 ---
 
@@ -307,18 +324,20 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 
 #### 2️⃣ With Cloud Provider and Region
 
-> 📝 **Note:** Specify cloud provider and region for geo-location tracking of each worker cluster.
+> 📝 **Note:** `--cloud-provider` and `--cloud-region` are **global** in a single full-install command — they are applied to **every** worker's `cluster_registration` entry. To give each worker a *distinct* provider/region, register the workers separately with `--register-worker` (which takes per-worker `--cloud-provider`/`--cloud-region`), as shown in *Adding a New Worker → With Telemetry Endpoint*.
 
 ```bash
 # ============ CUSTOMIZE THESE VALUES ============
 export LICENSE_FILE="egs-license.yaml"                           # Path to your EGS license file
 export CONTROLLER_KUBECONFIG="/path/to/controller-kubeconfig.yaml"  # Controller cluster kubeconfig
-export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 (US East) kubeconfig
+export WORKER1_KUBECONFIG="/path/to/worker1-kubeconfig.yaml"        # Worker 1 kubeconfig
 export WORKER1_NAME="us-east-worker"                                # Name for worker 1
-export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 (US West) kubeconfig
+export WORKER2_KUBECONFIG="/path/to/worker2-kubeconfig.yaml"        # Worker 2 kubeconfig
 export WORKER2_NAME="us-west-worker"                                # Name for worker 2
-export WORKER3_KUBECONFIG="/path/to/worker3-kubeconfig.yaml"        # Worker 3 (EU West) kubeconfig
+export WORKER3_KUBECONFIG="/path/to/worker3-kubeconfig.yaml"        # Worker 3 kubeconfig
 export WORKER3_NAME="eu-west-worker"                                # Name for worker 3
+export CLOUD_PROVIDER="GCP"                                         # Cloud provider, applied to ALL workers
+export CLOUD_REGION="us-west1"                                      # Cloud region, applied to ALL workers
 
 # ============ RUN THE INSTALLER ============
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
@@ -329,7 +348,9 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --worker-kubeconfig $WORKER2_KUBECONFIG \
   --worker-name $WORKER2_NAME \
   --worker-kubeconfig $WORKER3_KUBECONFIG \
-  --worker-name $WORKER3_NAME
+  --worker-name $WORKER3_NAME \
+  --cloud-provider $CLOUD_PROVIDER \
+  --cloud-region $CLOUD_REGION
 ```
 
 #### 3️⃣ Skip Prerequisites on Controller Only
@@ -461,6 +482,37 @@ The `--telemetry-endpoint` parameter specifies the **Prometheus endpoint for the
 
 ---
 
+### 🌐 Multi-Cluster Network Requirements
+
+In a multi-cluster setup the worker's EGS operator connects **back to the controller's Kubernetes API** to sync its `Cluster` and `WorkerSlice*` resources. Two independent reachability paths must therefore exist:
+
+| Path | Direction | Why it's needed |
+|------|-----------|-----------------|
+| **Worker → Controller API** | worker pods → `https://<controller-ip>:6443` | The worker operator reads/writes its resources in the controller's project namespace (`kubeslice-<project>`). |
+| **Controller → Worker telemetry** | controller → worker Prometheus | KubeTally / metrics collection (see *Telemetry Endpoint Explained* above). |
+
+**Controller endpoint embedded in the worker onboarding secret.** When a worker is registered, the controller mints a secret (`kubeslice-rbac-worker-<name>`) whose `controllerEndpoint` is taken from the controller's advertised API URL. On single-node **K3s/kubeadm** the controller kubeconfig server is often `https://127.0.0.1:6443`, which a **remote** worker cannot reach. Override it so the worker receives a routable address:
+
+```bash
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --license-file $LICENSE_FILE \
+  --controller-kubeconfig $CONTROLLER_KUBECONFIG \
+  --worker-kubeconfig $WORKER_KUBECONFIG \
+  --worker-name $WORKER_NAME \
+  --controller-endpoint https://<routable-controller-ip>:6443
+```
+
+> 🩺 **Symptom of an unreachable controller endpoint:** the worker chart deploys and the `kubeslice-operator` pod can even report `Ready` (its readiness probe is a local health check), but its `manager` container logs repeat the following and **reconciles never succeed**:
+>
+> ```
+> failed to get server groups: Get "https://<controller-ip>:6443/api":
+> dial tcp <controller-ip>:6443: connect: no route to host
+> ```
+>
+> The worker chart itself installed correctly — it simply cannot reach the controller API. Fix L3 reachability (routing / firewall / NAT) and/or set `--controller-endpoint` to an address the worker can route to. The same applies in reverse for the telemetry path.
+
+---
+
 ## 📋 Command Options
 
 ```bash
@@ -475,7 +527,115 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash [OPTIONS]
 | `--kubeconfig PATH` | Path to kubeconfig file | Auto-detect | No |
 | `--context NAME` | Kubernetes context to use | Current context | No |
 | `--cluster-name NAME` | Cluster name for registration | `worker-1` | No |
+| `--project-name NAME` | Project name used for cluster registration on full installs | `avesha` | No |
 | `--help, -h` | Show help message | - | No |
+
+### Behavior & Safety Flags
+
+These flags make the installer safer to run repeatedly and easier to review before mutating a cluster.
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--generate-config` (alias `--dry-run`) | Generate `egs-installer-config.yaml` and **exit before any cluster-mutating action** (no license apply, no installs). Use it to review the config first. | Off |
+| `--preserve-config` | Reuse an existing `egs-installer-config.yaml` as-is instead of regenerating it, so manual edits survive a re-run. | Off |
+| `--skip-dependency-check` | Bypass the helm/deployment-based PostgreSQL/Controller/UI prerequisite detection (for dependencies running under non-standard release names). | Off |
+| `--local-repo PATH` | Use a local `egs-installation` checkout instead of cloning from GitHub (air-gapped, pinned-version, or pre-merge `release-*` branch testing). See [Using a Local Checkout](#using-a-local-checkout---local-repo) for examples. | Clone from GitHub |
+
+> ✅ **Safe by default:** The installer performs a single up-front tool check and **aborts before any download** if `git`, `kubectl`, `yq`, or `jq` is missing. On any early exit a cleanup trap removes temporary files and restores your original `kubectl` context, so the cluster is never left half-switched. When a config is regenerated, the previous one is backed up to `egs-installer-config.yaml.bak.<timestamp>`.
+
+### Using a Local Checkout (`--local-repo`)
+
+By default the installer **clones the `main` branch** of `egs-installation` from GitHub at runtime and uses its `charts/`, `egs-installer.sh`, and `egs-installer-config.yaml`. `--local-repo PATH` makes it use an **existing local checkout instead of cloning** — essential for:
+
+- **Testing a specific branch/tag** (e.g. a `release-*` branch) *before* it merges to `main`.
+- **Air-gapped / offline installs** where the cluster host cannot reach GitHub.
+- **Pinned, reproducible installs** against an audited copy of the repo.
+
+**What to pass:** the **absolute path to the root of an `egs-installation` checkout** (a *directory*, not a file). The installer validates that the path exists and contains `egs-installer.sh`; it also needs `charts/` and `egs-installer-config.yaml` inside it.
+
+```text
+/root/egs-rel/                    ← pass THIS path to --local-repo
+├── egs-installer.sh              ✅ required (presence is validated)
+├── egs-installer-config.yaml     ✅ required (used as the config template)
+├── charts/                       ✅ required (these charts are what get deployed)
+│   ├── kubeslice-controller-egs/
+│   ├── kubeslice-ui-egs/
+│   └── kubeslice-worker-egs/
+├── egs-install-prerequisites.sh
+└── egs-uninstall.sh
+```
+
+When `--local-repo` is used, the installer prints `✅ Using local EGS installer checkout: <PATH>` and **skips the GitHub clone entirely** — so the chart version that gets deployed is whatever that checkout contains, not `main`.
+
+> ⚠️ **Pass the repo root, not a sub-path.** `--local-repo /root/egs-rel/charts` (too deep) or `--local-repo /root/egs-rel/install-egs.sh` (a file) will fail with `--local-repo path is not a valid EGS installer checkout`.
+
+#### Example A — Test a release branch before it merges to `main`
+
+> 📝 **Note:** Use this to validate `release-*` charts through the Quick Installer while `main` still ships the previous version. The chart version deployed comes from the checked-out branch.
+
+```bash
+# ============ CUSTOMIZE THESE VALUES ============
+export RELEASE_BRANCH="release-v1.17.2"          # Branch/tag to test
+export LOCAL_REPO="/root/egs-rel"                # Where to clone it
+export KUBECONFIG_PATH="/etc/rancher/k3s/k3s.yaml"
+export LICENSE_FILE="egs-license.yaml"
+export CLUSTER_NAME="my-cluster"
+
+# ============ STEP 1: Clone the release branch locally ============
+git clone --depth 1 --branch "$RELEASE_BRANCH" \
+  https://github.com/kubeslice-ent/egs-installation.git "$LOCAL_REPO"
+
+# ============ STEP 2: Preview the config using the release charts (no install) ============
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --local-repo "$LOCAL_REPO" \
+  --kubeconfig "$KUBECONFIG_PATH" \
+  --license-file "$LICENSE_FILE" \
+  --cluster-name "$CLUSTER_NAME" \
+  --generate-config
+
+# ============ STEP 3: Install for real (re-run WITHOUT --generate-config) ============
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --local-repo "$LOCAL_REPO" \
+  --kubeconfig "$KUBECONFIG_PATH" \
+  --license-file "$LICENSE_FILE" \
+  --cluster-name "$CLUSTER_NAME"
+
+# ============ VERIFY: charts deployed at the release version ============
+helm list -A | grep -E "egs-controller|egs-ui|egs-worker"
+```
+
+#### Example B — Air-gapped / offline install (no GitHub at runtime)
+
+> 📝 **Note:** Stage the repo on the host beforehand; `--local-repo` then needs no network for the installer artifacts.
+
+```bash
+# ============ ON A MACHINE WITH INTERNET: package the repo ============
+git clone --depth 1 --branch release-v1.17.2 \
+  https://github.com/kubeslice-ent/egs-installation.git egs-installation
+tar -czf egs-installation.tgz egs-installation
+# ...transfer egs-installation.tgz AND install-egs.sh to the air-gapped host...
+
+# ============ ON THE AIR-GAPPED HOST: extract and install ============
+tar -xzf egs-installation.tgz -C /opt/          # creates /opt/egs-installation
+bash install-egs.sh \
+  --local-repo /opt/egs-installation \
+  --kubeconfig /etc/rancher/k3s/k3s.yaml \
+  --license-file egs-license.yaml \
+  --cluster-name my-cluster
+```
+
+#### Example C — Reuse an existing local checkout
+
+```bash
+# You already have the repo checked out (any branch you want to install from)
+cd /home/user/egs-installation
+git checkout release-v1.17.2
+
+curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
+  --local-repo /home/user/egs-installation \
+  --kubeconfig ~/.kube/config \
+  --generate-config
+```
 
 ### Common Skip Flags (works for both single & multi-cluster)
 
@@ -548,9 +708,9 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash [OPTIONS]
 
 | Option | Description | Default | Required |
 |--------|-------------|---------|----------|
-| `--controller-endpoint URL` | Override the auto-detected controller cluster API endpoint (useful for Rancher or custom API server URLs) | Auto-detected from kubeconfig | No |
+| `--controller-endpoint URL` | Override the controller API endpoint that gets **embedded in each worker onboarding secret** (`controllerEndpoint`). Required when the controller kubeconfig server is `127.0.0.1`/`localhost` (single-node K3s/kubeadm) and workers run in another network; also useful for Rancher or custom API server URLs. See [Multi-Cluster Network Requirements](#-multi-cluster-network-requirements). | Auto-detected from kubeconfig | No |
 | `--worker-endpoint URL` | Override the auto-detected worker cluster API endpoint (can be specified multiple times, matches order of `--worker-kubeconfig`) | Auto-detected from kubeconfig | No |
-| `--ui-service-type TYPE` | Set UI proxy service type: `LoadBalancer`, `NodePort`, or `ClusterIP` | `LoadBalancer` | No |
+| `--ui-service-type TYPE` | Set UI proxy service type: `LoadBalancer`, `NodePort`, or `ClusterIP`. **The generated config ships `NodePort` by default** (verified on K3s/bare-metal); pass this flag to override (e.g. `LoadBalancer` on clusters with a cloud LB controller). Invalid values are rejected. | `NodePort` (from config template) | No |
 
 ---
 
@@ -919,11 +1079,15 @@ In multi-cluster mode, prerequisites are installed on EACH cluster:
 
 **Note**: The worker requires Prometheus CRDs (PodMonitor) to be installed. If you skip Prometheus on the worker cluster, you may encounter errors like `no matches for kind "PodMonitor"`.
 
-### Service Types (Single-Cluster Optimized)
+### Service Types
 
-- **Grafana**: `ClusterIP` (internal access only)
-- **Prometheus**: `ClusterIP` (internal access only)
-- **UI Proxy**: `LoadBalancer` (external access)
+The generated `egs-installer-config.yaml` provisions these service types (verified on a K3s single-cluster install):
+
+- **Grafana**: `NodePort`
+- **Prometheus**: `NodePort`
+- **UI Proxy**: `NodePort` on K3s / bare-metal (no cloud LoadBalancer); reachable at `https://<node-ip>:<nodePort>` — e.g. `kubectl get svc kubeslice-ui-proxy -n kubeslice-controller` shows `443:<nodePort>/TCP`.
+
+> 💡 On clusters that have a cloud LoadBalancer controller, pass `--ui-service-type LoadBalancer` to expose the UI via an external IP instead of a NodePort.
 
 ---
 
@@ -971,6 +1135,7 @@ current-directory/
 ├── egs-installer.sh             # Main installer script
 ├── egs-install-prerequisites.sh # Prerequisites installer
 ├── egs-uninstall.sh             # Uninstaller script
+├── fetch_egs_slice_token.sh     # Helper to fetch UI/admin login tokens
 ├── charts/                      # Helm charts directory
 └── egs-license.yaml             # Your license file (if placed here)
 ```
@@ -1272,7 +1437,7 @@ The `--register-worker` feature allows you to register a worker cluster with an 
 - `--cloud-provider NAME`: Cloud provider name (overrides auto-detection)
 - `--cloud-region NAME`: Cloud region (e.g., `us-west1`, `us-east-1`)
 - `--controller-namespace NAME`: Controller namespace (default: `kubeslice-controller`)
-- `--controller-endpoint URL`: Override the auto-detected controller API endpoint (useful for Rancher)
+- `--controller-endpoint URL`: Override the controller API endpoint embedded in the worker onboarding secret (`controllerEndpoint`) — set this to a routable address when the controller kubeconfig uses `127.0.0.1`/`localhost` and the worker is in another network; also useful for Rancher. **Note:** this flag is only applied when the **Controller is installed/upgraded** (it writes `kubeslice.controller.endpoint` into the controller's Helm values). In **`--register-worker`‑only** mode the controller already exists, so this flag has **no effect** — the `controllerEndpoint` minted into new worker secrets comes from the controller's existing advertised endpoint. To change it, re-run the installer against the controller with `--controller-endpoint`.
 - `--worker-endpoint URL`: Override the auto-detected worker API endpoint (can be specified multiple times)
 - `--ui-service-type TYPE`: Set UI proxy service type (`LoadBalancer`, `NodePort`, or `ClusterIP`)
 - `--skip-worker`: Skip worker installation (even if `--worker-kubeconfig` is provided)
@@ -1373,13 +1538,13 @@ kubectl --kubeconfig $CONTROLLER_KUBECONFIG \
 ### Error Handling
 
 The registration process validates:
-- ✅ Controller kubeconfig file exists and is accessible
-- ✅ Controller cluster connectivity
-- ✅ Worker cluster connectivity (if kubeconfig provided)
-- ✅ Project namespace exists in controller cluster
-- ✅ Required parameters are provided
+- ✅ Controller kubeconfig file exists and is accessible **(fatal if it fails)**
+- ✅ Controller cluster connectivity **(fatal if it fails)**
+- ⚠️ Worker cluster connectivity (if kubeconfig provided) — **non-fatal**: if the worker is unreachable the installer prints `⚠️ Cannot connect to worker cluster (non-fatal, continuing...)`, still registers the `Cluster` CR, and proceeds to worker installation. (Worker install itself will then fail later if the worker truly is unreachable.)
+- ✅ Project namespace exists in controller cluster **(fatal if missing)**
+- ✅ Required parameters are provided — e.g. `--register-cluster-name` is **required**; omitting it exits early with `❌ ERROR: --register-cluster-name is required for --register-worker`
 
-If any validation fails, the installer displays a clear error message and exits.
+Fatal validations display a clear error message and exit early (with temporary-file cleanup). Worker-connectivity is intentionally non-fatal so registration can complete before the worker is reachable.
 
 ---
 
@@ -1486,37 +1651,47 @@ If you need to retrieve the UI access details manually (e.g., after the script h
 #### 1. Get the UI URL
 
 ```bash
-# Get the UI service external IP/hostname
+# Get the UI service
 kubectl get svc kubeslice-ui-proxy -n kubeslice-controller
 
-# Example output:
+# Example output (cloud LoadBalancer):
 # NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)
 # kubeslice-ui-proxy   LoadBalancer   10.x.x.x       <EXTERNAL-IP>    443:xxxxx/TCP
+
+# Example output (K3s / bare-metal NodePort, verified):
+# NAME                 TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)
+# kubeslice-ui-proxy   NodePort   10.43.33.240   <none>        443:32568/TCP
 ```
 
-Access the UI at: `https://<EXTERNAL-IP>`
+Access the UI at:
+- **LoadBalancer:** `https://<EXTERNAL-IP>`
+- **NodePort:** `https://<node-ip>:<nodePort>` (e.g. `https://192.168.122.180:32568`). A `curl -sk -o /dev/null -w '%{http_code}' https://<node-ip>:<nodePort>` returns `302` (redirect to the login page), confirming the UI is serving.
 
-#### 2. Get the Admin Token
+#### 2. Get the Admin Token (recommended)
+
+The most reliable method — works with only `kubectl` and the controller kubeconfig:
 
 ```bash
-# Get the admin token for login (use absolute path to kubeconfig)
+# Direct token retrieval using kubectl (project namespace is kubeslice-<project>, default: kubeslice-avesha)
+kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.data.token}' | base64 -d
+```
+
+Copy the output and paste it into the UI login screen.
+
+#### 3. Helper Script (Alternative)
+
+```bash
+# The Quick Installer copies fetch_egs_slice_token.sh into your working directory
 ./fetch_egs_slice_token.sh -k /path/to/kubeconfig -p avesha -a -u admin
 ```
 
-The script will output the admin token. Copy and paste it into the UI login screen.
+> 📝 **Note:** `fetch_egs_slice_token.sh` is copied into your working directory by the Quick Installer (alongside `egs-installer.sh`, `egs-install-prerequisites.sh`, and `egs-uninstall.sh`), so it is ready to run after a Quick Install.
 
 **Parameters:**
 - `-k /path/to/kubeconfig`: Absolute path to your kubeconfig file
 - `-p avesha`: Project name (default: `avesha`)
 - `-a`: Fetch admin token
 - `-u admin`: Username for the admin token
-
-#### 3. Quick Token Retrieval (Alternative)
-
-```bash
-# Direct token retrieval using kubectl
-kubectl get secret kubeslice-rbac-rw-admin -n kubeslice-avesha -o jsonpath='{.data.token}' | base64 -d
-```
 
 📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](Slice-Admin-Token-README.md)**
 

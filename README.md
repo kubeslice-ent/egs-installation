@@ -146,9 +146,11 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 | Scenario | Command |
 |----------|---------|
 | **Single-cluster (full)** | `curl -fsSL https://repo.egs.avesha.io/install-egs.sh \| bash -s -- --license-file egs-license.yaml --kubeconfig ~/.kube/config` |
+| **Preview config (no install)** | Add `--generate-config` (alias `--dry-run`) to generate `egs-installer-config.yaml` and exit before any cluster change |
 | **Skip prerequisites** | Add `--skip-postgresql --skip-prometheus --skip-gpu-operator` |
 | **Multi-cluster** | Add `--controller-kubeconfig <ctrl.yaml> --worker-kubeconfig <wkr.yaml>` |
 | **Register worker** | `--register-worker --controller-kubeconfig <ctrl.yaml> --register-cluster-name <name> --register-project-name avesha` |
+| **Use local checkout / test a release branch** | Add `--local-repo <path>` to install from a local `egs-installation` checkout instead of cloning `main` (air-gapped or pre-merge `release-*` testing) |
 
 ### 📝 Registration Required
 
