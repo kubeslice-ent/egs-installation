@@ -43,46 +43,48 @@ The following are the steps to deploy and redistribute workloads across tiers/cl
 
     a. Create a secret using the following command for AWS route 53: 
 
-       ```bash 
-       kubectl create secret generic external-dns -n kube-system \
-       --from-literal=AWS_ACCESS_KEY_ID='<KEY>' \
-       --from-literal=AWS_SECRET_ACCESS_KEY='<SECRET>' \
-       --from-literal=AWS_DEFAULT_REGION='us-east-1'
-       ```
+```bash 
+kubectl create secret generic external-dns -n kube-system \
+--from-literal=AWS_ACCESS_KEY_ID='<KEY>' \
+--from-literal=AWS_SECRET_ACCESS_KEY='<SECRET>' \
+--from-literal=AWS_DEFAULT_REGION='us-east-1'
+```
+
     b. Install the external DNS Helm chart using the following command: 
 
-       ```bash 
-       helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
-       helm repo update
-       helm install external-dns external-dns/external-dns \
-       --namespace kube-system \
-       --version 1.20.0 \
-       -f external-dns-values-far-edge.yaml
-       ```
+
+```bash 
+helm repo add external-dns https://kubernetes-sigs.github.io/external-dns/
+helm repo update
+helm install external-dns external-dns/external-dns \
+--namespace kube-system \
+--version 1.20.0 \
+-f external-dns-values-far-edge.yaml
+```
     
     c. Annotate the Slice NS Gateway service using the following example command: 
 
-       ```bash 
-       kubectl annotate svc vllm-gateway -n vllm external-dns.alpha.kubernetes.io/hostname=vllm.inference.smartscaler.io
-       ```
+```bash 
+kubectl annotate svc vllm-gateway -n vllm external-dns.alpha.kubernetes.io/hostname=vllm.inference.smartscaler.io
+```
 
 10. After the successful deployment of the workload placement, validate it using the following example command: 
 
-    ```bash 
-    curl -X POST "http://vllm.inference.smartscaler.io/v1/chat/completions" \
-      -H "Content-Type: application/json" \
-      -d '{
-           "model": "meta-llama/Llama-3.2-1B-Instruct",
-           "messages": [
-             {
-              "role": "user",
-              "content": "Explain Kubernetes in simple terms"
-             }
-           ],
-          "temperature": 0.7, 
-          "max_tokens": 100
-       }'
-    ```
+```bash 
+curl -X POST "http://vllm.inference.smartscaler.io/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{
+       "model": "meta-llama/Llama-3.2-1B-Instruct",
+       "messages": [
+         {
+          "role": "user",
+          "content": "Explain Kubernetes in simple terms"
+         }
+       ],
+      "temperature": 0.7, 
+      "max_tokens": 100
+   }'
+```
 
 11. In the 'ai-ran' workspace, create a fr2 WorkloadPlacement:select far-edge cluster, for step use the manifest file 'fr2-workload-placement.yaml' and auto gpu selection with Memory for GPR
 
@@ -92,18 +94,18 @@ The following are the steps to deploy and redistribute workloads across tiers/cl
 
 14. After the successful deployment of the workload placement, validate it using the following example command on the `near-edge` cluster: 
 
-    ```bash 
-    curl -X POST "http://vllm.inference.smartscaler.io/v1/chat/completions" \
-      -H "Content-Type: application/json" \
-      -d '{
-           "model": "meta-llama/Llama-3.2-1B-Instruct",
-           "messages": [
-             {
-              "role": "user",
-              "content": "Explain Kubernetes in simple terms"
-             }
-           ],
-          "temperature": 0.7, 
-          "max_tokens": 100
-       }'
-    ```
+```bash 
+curl -X POST "http://vllm.inference.smartscaler.io/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{
+       "model": "meta-llama/Llama-3.2-1B-Instruct",
+       "messages": [
+         {
+          "role": "user",
+          "content": "Explain Kubernetes in simple terms"
+         }
+       ],
+      "temperature": 0.7, 
+      "max_tokens": 100
+   }'
+```
