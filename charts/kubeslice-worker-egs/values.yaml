@@ -229,7 +229,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.16.2
+  tag: 1.16.3
   pullPolicy: IfNotPresent
   logLevel: INFO
   labels:
