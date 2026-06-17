@@ -2411,17 +2411,31 @@ prepare_worker_values_file() {
 
         if [[ "$enable_autofetch_egsagent_endpoint_and_token" == "true" && -n "$enable_autofetch_egsagent_endpoint_and_token" ]]; then
 
-            if [ "$ENABLE_INSTALL_UI" = "true" ] && [ "$KUBESLICE_UI_SKIP_INSTALLATION" = "false" ]; then
-                
-                kubeconfig_path=$(yq e '.global_kubeconfig' "$EGS_INPUT_YAML")
-                kubecontext_path=$(yq e '.global_kubecontext' "$EGS_INPUT_YAML")
+            # Resolve the kubeslice-ui-proxy endpoint for the egsAgent.
+            #
+            # The egsAgent (egs-agent) connects back to the controller's UI proxy,
+            # so its endpoint must point at the kubeslice-ui-proxy Service on the
+            # controller cluster (the global kubeconfig).
+            #
+            # This must also work in --register-worker (separate worker cluster)
+            # mode. In that mode the UI is intentionally skipped in THIS run
+            # (ENABLE_INSTALL_UI=false / KUBESLICE_UI_SKIP_INSTALLATION=true), but
+            # the kubeslice-ui-proxy Service already exists on the controller
+            # cluster. We therefore key off the Service's existence rather than
+            # whether the UI is being installed in this run, otherwise the egsAgent
+            # endpoint is left empty and egs-agent crash-loops with
+            # "missing env variable, API_GW_ENDPOINT".
+            kubeconfig_path=$(yq e '.global_kubeconfig' "$EGS_INPUT_YAML")
+            kubecontext_path=$(yq e '.global_kubecontext' "$EGS_INPUT_YAML")
 
-                # Service details
-                namespace="$KUBESLICE_UI_NAMESPACE"
-                service_name="kubeslice-ui-proxy"
+            # Service details
+            namespace="${KUBESLICE_UI_NAMESPACE:-kubeslice-controller}"
+            service_name="kubeslice-ui-proxy"
 
-                # Get the service type
-                service_type_existing=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.type}')
+            # Get the service type (empty if the service does not exist on this cluster)
+            service_type_existing=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext_path" get svc -n "$namespace" "$service_name" -o jsonpath='{.spec.type}' 2>/dev/null || echo "")
+
+            if [ -n "$service_type_existing" ]; then
                 echo " existing service type is: $service_type_existing"
 
                 ui_proxy_url=""
@@ -2455,8 +2469,7 @@ prepare_worker_values_file() {
                     echo "🔗 ClusterIP service detected. Cluster IP and Port: $ui_proxy_url"
 
                 else
-                    echo "❌ Unsupported service type: $service_type_existing" >&2
-                    exit 1
+                    echo "⚠️  Unsupported kubeslice-ui-proxy service type: '$service_type_existing' - skipping egsAgent endpoint autofetch" >&2
                 fi
 
                 # Check if we have a valid URL
@@ -2464,11 +2477,10 @@ prepare_worker_values_file() {
                     echo "🔗 **Updating Kubeslice UI Proxy URL**: https://$ui_proxy_url in values file"
                     yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egsAgent.agentSecret.endpoint = \"https://$ui_proxy_url\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
                 else
-                    echo "❌ Error: Unable to retrieve a valid endpoint for kubeslice-ui-proxy"
-                    exit 1
+                    echo "⚠️  Unable to retrieve a valid kubeslice-ui-proxy endpoint - skipping egsAgent endpoint autofetch"
                 fi
             else
-                echo "⏩ **Kubeslice UI installation was skipped or disabled.**"
+                echo "⏩ kubeslice-ui-proxy service not found in namespace '$namespace' on the controller cluster - skipping egsAgent endpoint autofetch."
             fi
 
 
