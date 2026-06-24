@@ -40,6 +40,78 @@ continue_on_error() {
     fi
 }
 
+# Detect transient Kubernetes API errors (any distro: K3s, RKE, EKS, GKE, AKS, kubeadm, etc.).
+is_transient_kubectl_error() {
+    local msg="$1"
+    grep -qiE 'apiserver not ready|connection refused|no route to host|i/o timeout|timeout|temporary failure|TLS handshake timeout|EOF|ServiceUnavailable|too many requests|network is unreachable|dial tcp' <<<"$msg"
+}
+
+# Run kubectl with retries — the API server can be briefly unavailable during bulk uninstalls
+# (e.g. control-plane restarts on single-node clusters, throttling, transient network blips).
+kubectl_retry() {
+    local max_attempts="${KUBECTL_RETRY_MAX:-30}"
+    local delay="${KUBECTL_RETRY_DELAY:-10}"
+    local req_timeout="${KUBECTL_REQUEST_TIMEOUT:-60s}"
+    local attempt=1
+    local output rc
+
+    while [[ $attempt -le $max_attempts ]]; do
+        # --request-timeout caps any single call so a blocked admission webhook or a
+        # stuck API request can never hang the whole uninstall indefinitely.
+        output=$(kubectl --request-timeout="$req_timeout" "$@" 2>&1)
+        rc=$?
+        if [[ $rc -eq 0 ]]; then
+            [[ -n "$output" ]] && printf '%s\n' "$output"
+            return 0
+        fi
+        if is_transient_kubectl_error "$output" && [[ $attempt -lt $max_attempts ]]; then
+            echo "⚠️  kubectl transient error (attempt $attempt/$max_attempts). Retrying in ${delay}s..." >&2
+            echo "    $(echo "$output" | tail -1)" >&2
+            sleep "$delay"
+            attempt=$((attempt + 1))
+        else
+            echo "$output" >&2
+            return $rc
+        fi
+    done
+}
+
+# Prune stale/orphan pods in batches before bulk deletes (avoids API overload on any cluster).
+prune_stale_pods_in_namespace() {
+    local kubeconfig_path=$1
+    local kubecontext=$2
+    local ns=$3
+    local batch_size="${PRUNE_POD_BATCH_SIZE:-50}"
+    local max_rounds="${PRUNE_POD_MAX_ROUNDS:-300}"
+    local round=0
+    local stale_count
+
+    if ! kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" get namespace "$ns" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    stale_count=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" get pods -n "$ns" --no-headers 2>/dev/null \
+        | awk '$3 ~ /Unknown|Failed|Succeeded|Completed|Error/' | wc -l | tr -d ' ')
+    if [[ "${stale_count:-0}" -eq 0 ]]; then
+        return 0
+    fi
+
+    echo "🧹 Pruning $stale_count stale pod(s) in namespace '$ns' (batched for API-server stability)..." >&2
+
+    while [[ $round -lt $max_rounds ]]; do
+        mapfile -t pod_names < <(
+            kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" get pods -n "$ns" --no-headers 2>/dev/null \
+                | awk '$3 ~ /Unknown|Failed|Succeeded|Completed|Error/ {print $1}' | head -n "$batch_size"
+        )
+        [[ ${#pod_names[@]} -eq 0 ]] && break
+
+        kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+            delete pod -n "$ns" "${pod_names[@]}" --force --grace-period=0 --ignore-not-found=true >/dev/null || true
+        round=$((round + 1))
+        sleep 2
+    done
+}
+
 # Print introductory statement
 echo "========================================="
 echo "           EGS UnInstaller Script          "
@@ -266,10 +338,9 @@ validate_kubecontext() {
         exit 1
     fi
 
-    # Try to use the context to connect to the cluster
+    # Try to use the context to connect to the cluster (retry for transient API blips on any distro)
     local cluster_info
-    cluster_info=$(kubectl cluster-info --kubeconfig "$kubeconfig_path" --context "$kubecontext" 2>&1)
-    if [[ $? -ne 0 ]]; then
+    if ! cluster_info=$(kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" cluster-info 2>&1); then
         echo "❌ Error: Kubecontext '$kubecontext' is invalid or cannot connect to the cluster." >&2
         echo "Details: $cluster_info" >&2
         exit 1
@@ -1587,10 +1658,48 @@ uninstall_helm_chart_and_cleanup() {
 
 delete_kubernetes_objects() {
     echo "🚨 Deleting all Kubernetes objects in namespace '$namespace'" >&2
-    kubectl delete all --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
-    kubectl delete configmap --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
-    kubectl delete secret --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
-    kubectl delete serviceaccount --all --namespace "$namespace" --kubeconfig "$kubeconfig_path" --context $kubecontext --force --grace-period=0
+
+    # CRITICAL: remove kubeslice admission webhooks FIRST. Their backing services are
+    # already gone (helm uninstalled), so with failurePolicy=Fail every create/delete/list
+    # API call that matches a webhook blocks until it times out. That makes the subsequent
+    # 'delete all --all' appear to hang for many minutes. Deleting the webhook configs
+    # up front removes the admission blocker so the rest of the cleanup runs fast.
+    echo "🧹 Removing leftover kubeslice admission webhooks (unblocks API calls)..." >&2
+    for wh_kind in validatingwebhookconfigurations mutatingwebhookconfigurations; do
+        mapfile -t leftover_webhooks < <(
+            kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                get "$wh_kind" -o name 2>/dev/null \
+                | grep -iE 'kubeslice|gpr-|kubeslice-controller' || true
+        )
+        for wh in "${leftover_webhooks[@]}"; do
+            [[ -z "$wh" ]] && continue
+            kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                delete "$wh" --ignore-not-found=true --wait=false >/dev/null 2>&1 \
+                && echo "✔️  Deleted $wh" >&2 || true
+        done
+    done
+
+    # Prune thousands of stale pods from prior failed uninstalls before bulk delete (any cluster).
+    prune_stale_pods_in_namespace "$kubeconfig_path" "$kubecontext" "$namespace"
+
+    # These bulk deletes are best-effort: the namespace deletion (with finalizer clearing)
+    # is the real backstop. Bound the retries (RETRY_MAX=2) and use a short request-timeout
+    # so a transient block (e.g. admission webhook, slow discovery) can never make a single
+    # call loop for many minutes. Anything left over is still removed by delete_namespace.
+    local -x KUBECTL_RETRY_MAX=2
+    local -x KUBECTL_RETRY_DELAY=5
+    local -x KUBECTL_REQUEST_TIMEOUT=30s
+
+    # Delete workload controllers first (cascades to pods; fewer API calls than delete all --all).
+    kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+        delete deploy,sts,ds,job,cronjob --all -n "$namespace" --ignore-not-found=true --wait=false >/dev/null || true
+    sleep 3
+    prune_stale_pods_in_namespace "$kubeconfig_path" "$kubecontext" "$namespace"
+
+    kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+        delete all --all -n "$namespace" --force --grace-period=0 --wait=false --ignore-not-found=true || true
+    kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+        delete configmap,secret,serviceaccount --all -n "$namespace" --force --grace-period=0 --wait=false --ignore-not-found=true || true
 }
 
 
@@ -1691,19 +1800,37 @@ unregister_clusters_in_controller() {
         echo "🚀 Unregistering cluster '$cluster_name' from project '$project_name' within namespace '$namespace'" >&2
         echo "-----------------------------------------" >&2
 
-        kubectl delete cluster.controller.kubeslice.io "$cluster_name" --kubeconfig $kubeconfig_path $context_arg -n kubeslice-$project_name --force --grace-period=0 --wait=false
-        if [ $? -ne 0 ]; then
+        kubectl_retry --kubeconfig "$kubeconfig_path" $context_arg \
+            delete cluster.controller.kubeslice.io "$cluster_name" -n "kubeslice-$project_name" \
+            --force --grace-period=0 --wait=false --ignore-not-found=true >/dev/null || {
             echo "❌ Error: Failed to unregister cluster '$cluster_name' from project '$project_name'." >&2
             return 1
-        fi
+        }
 
         echo "🔍 Verifying cluster unregistration for '$cluster_name'..." >&2
-        if kubectl get cluster.controller.kubeslice.io "$cluster_name" -n kubeslice-$project_name --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-            echo "❌ Error: Cluster '$cluster_name' still exists in project '$project_name'." >&2
-            return 1
-        else
-            echo "✔️  Cluster '$cluster_name' unregistered successfully from project '$project_name'." >&2
-        fi
+        local unreg_attempt=1
+        local unreg_max=30
+        local unreg_delay=10
+        while kubectl_retry --kubeconfig "$kubeconfig_path" $context_arg \
+            get cluster.controller.kubeslice.io "$cluster_name" -n "kubeslice-$project_name" >/dev/null 2>&1; do
+            if [[ $unreg_attempt -ge $unreg_max ]]; then
+                echo "⚠️  Cluster '$cluster_name' still terminating — removing finalizers..." >&2
+                kubectl_retry --kubeconfig "$kubeconfig_path" $context_arg \
+                    patch cluster.controller.kubeslice.io "$cluster_name" -n "kubeslice-$project_name" \
+                    -p '{"metadata":{"finalizers":[]}}' --type=merge >/dev/null 2>&1 || true
+                sleep 5
+                if kubectl_retry --kubeconfig "$kubeconfig_path" $context_arg \
+                    get cluster.controller.kubeslice.io "$cluster_name" -n "kubeslice-$project_name" >/dev/null 2>&1; then
+                    echo "❌ Error: Cluster '$cluster_name' still exists in project '$project_name'." >&2
+                    return 1
+                fi
+                break
+            fi
+            echo "⏳ Waiting for cluster '$cluster_name' to be removed ($unreg_attempt/$unreg_max)..." >&2
+            sleep "$unreg_delay"
+            unreg_attempt=$((unreg_attempt + 1))
+        done
+        echo "✔️  Cluster '$cluster_name' unregistered successfully from project '$project_name'." >&2
 
         echo "-----------------------------------------" >&2
     done
@@ -1950,20 +2077,29 @@ delete_projects_in_controller() {
 
         # Retry loop for deletion
         for ((i = 1; i <= max_retries; i++)); do
-            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace --force --grace-period=0
-            if [ $? -eq 0 ]; then
+            kubectl delete project.controller.kubeslice.io "$project_name" --kubeconfig $kubeconfig_path $context_arg -n $namespace --force --grace-period=0 --wait=false
+            if ! kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
                 break
-            elif kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
-                if [ $i -lt $max_retries ]; then
-                    echo "⚠️  Warning: Failed to delete project '$project_name' in namespace '$namespace'. Retrying in $retry_delay seconds... ($i/$max_retries)" >&2
-                    sleep $retry_delay
-                else
-                    echo "❌ Error: Failed to delete project '$project_name' in namespace '$namespace' after $max_retries attempts." >&2 
-                    return 1
-                fi
+            fi
+            # The project carries 'controller.kubeslice.io/project-finalizer'. Once the
+            # controller is uninstalled nothing processes that finalizer, so the CR is
+            # stuck Terminating forever. Clear the finalizer so deletion can complete
+            # instead of looping until max_retries.
+            echo "🧹 Clearing finalizers on stuck project '$project_name'..." >&2
+            kubectl patch project.controller.kubeslice.io "$project_name" -n $namespace \
+                --kubeconfig $kubeconfig_path $context_arg \
+                -p '{"metadata":{"finalizers":null}}' --type=merge >/dev/null 2>&1 || true
+            sleep 2
+            if ! kubectl get project.controller.kubeslice.io "$project_name" -n $namespace --kubeconfig $kubeconfig_path $context_arg >/dev/null 2>&1; then
+                echo "✔️  Project '$project_name' deleted after clearing finalizers." >&2
+                break
+            fi
+            if [ $i -lt $max_retries ]; then
+                echo "⚠️  Warning: project '$project_name' still present. Retrying... ($i/$max_retries)" >&2
+                sleep $retry_delay
             else
-                echo "⚠️  Warning: Project '$project_name' not found in namespace '$namespace'. Proceeding to the next project." >&2
-                break
+                echo "❌ Error: Failed to delete project '$project_name' after $max_retries attempts." >&2
+                return 1
             fi
         done
 
@@ -1979,6 +2115,13 @@ delete_projects_in_controller() {
         webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
         continue_on_error cleanup_resources_and_webhooks "kubeslice-$project_name" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$kubeconfig_path" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
         echo "✔️ deletion of all objects Project '$project_name' completed." >&2
+
+        # Delete the project namespace itself (kubeslice-<project>). The controller
+        # creates it on project creation but nothing removes it on uninstall, so it
+        # lingers Active forever otherwise.
+        if [ "$SKIP_DELETE_NAMESPACE" != "true" ]; then
+            continue_on_error delete_namespace "kubeslice-$project_name" "$KUBESLICE_CONTROLLER_USE_GLOBAL_KUBECONFIG" "$kubeconfig_path" "$kubecontext"
+        fi
         echo "-----------------------------------------"
     done
     echo "✔️ Project deletion in controller cluster complete." >&2
@@ -2033,23 +2176,87 @@ delete_namespace() {
         "$specific_kubecontext")
     
 
+    # Clean up PVCs first. PVCs (e.g. kt-postgresql data volumes) carry the
+    # 'kubernetes.io/pvc-protection' finalizer and can get stuck in Terminating,
+    # surviving namespace deletion. A leftover PVC blocks a future reinstall
+    # because the new StatefulSet can't bind a PVC of the same name. Delete them
+    # explicitly and clear finalizers so nothing is left behind.
+    if [[ "${SKIP_DELETE_PVCS:-false}" != "true" ]] \
+        && kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" get namespace "$namespace" >/dev/null 2>&1; then
+        local pvcs
+        pvcs=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+            get pvc -n "$namespace" -o name 2>/dev/null)
+        if [[ -n "$pvcs" ]]; then
+            echo "🧹 Cleaning up PVCs in namespace '$namespace' before deletion..." >&2
+            # Capture the bound PV (volumeName) for each PVC up front. Once the namespace
+            # is gone the PVC becomes orphaned, and a PV with reclaimPolicy=Delete cannot
+            # complete (its provisioner cleanup needs the PVC) — leaving PVC stuck
+            # Terminating and PV stuck Bound. We must delete the PVs explicitly too.
+            local bound_pvs=()
+            while read -r pvc; do
+                [[ -z "$pvc" ]] && continue
+                local vol
+                vol=$(kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                    -n "$namespace" get "$pvc" -o jsonpath='{.spec.volumeName}' 2>/dev/null)
+                [[ -n "$vol" ]] && bound_pvs+=("$vol")
+            done <<<"$pvcs"
+
+            kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                delete pvc --all -n "$namespace" --wait=false --ignore-not-found=true >/dev/null || true
+            # Clear finalizers on any PVC that is stuck Terminating.
+            while read -r pvc; do
+                [[ -z "$pvc" ]] && continue
+                if kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                    -n "$namespace" get "$pvc" >/dev/null 2>&1; then
+                    kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                        -n "$namespace" patch "$pvc" -p '{"metadata":{"finalizers":null}}' --type=merge >/dev/null 2>&1 \
+                        && echo "✔️  Cleared finalizers on $pvc" >&2 || true
+                fi
+            done <<<"$pvcs"
+
+            # Delete the bound PVs and clear their pv-protection finalizers so nothing is
+            # left Bound/Released after the namespace is gone.
+            for vol in "${bound_pvs[@]}"; do
+                [[ -z "$vol" ]] && continue
+                kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                    delete pv "$vol" --wait=false --ignore-not-found=true >/dev/null 2>&1 || true
+                if kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                    get pv "$vol" >/dev/null 2>&1; then
+                    kubectl --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                        patch pv "$vol" -p '{"metadata":{"finalizers":null}}' --type=merge >/dev/null 2>&1 \
+                        && echo "✔️  Cleared finalizers on pv/$vol" >&2 || true
+                fi
+            done
+        fi
+    fi
+
     # Attempt to delete the namespace
     echo "Attempting to delete namespace: $namespace"
-    kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext delete namespace "$namespace" --wait=false
+    if ! kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+        delete namespace "$namespace" --wait=false --ignore-not-found=true >/dev/null; then
+        echo "❌ Error: Failed to delete namespace '$namespace' (API unreachable)." >&2
+        return 1
+    fi
 
-    # Wait for a few seconds and check if the namespace is in terminating state
+    # Wait and check if the namespace is in terminating state
     sleep 5
-    if kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext get namespace "$namespace" -o jsonpath='{.status.phase}' 2>/dev/null | grep -q "Terminating"; then
+    local ns_phase
+    ns_phase=$(kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+        get namespace "$namespace" -o jsonpath='{.status.phase}' 2>/dev/null || echo "Gone")
+    if [[ "$ns_phase" == "Gone" || -z "$ns_phase" ]]; then
+        echo "Namespace $namespace deleted successfully."
+    elif grep -q "Terminating" <<<"$ns_phase"; then
         echo "Namespace $namespace is in a terminating state. Proceeding with force deletion."
 
-        # Remove the finalizer
-        kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext get namespace "$namespace" -o json \
+        kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+            get namespace "$namespace" -o json 2>/dev/null \
             | jq '.spec.finalizers = []' \
-            | kubectl --kubeconfig "$kubeconfig_path" --context $kubecontext replace --raw "/api/v1/namespaces/$namespace/finalize" -f -
+            | kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                replace --raw "/api/v1/namespaces/$namespace/finalize" -f - >/dev/null || true
 
         echo "Namespace $namespace has been forcefully deleted."
     else
-        echo "Namespace $namespace deleted successfully."
+        echo "Namespace $namespace delete initiated (phase: ${ns_phase:-unknown})."
     fi
 }
 
@@ -2181,6 +2388,28 @@ cleanup_resources_and_webhooks() {
         delete_validating_webhooks "$kubeconfig_path" "$kubecontext" "${webhooks[@]}"
     fi
 
+    # Delete the CustomResourceDefinitions for each API group (cluster-scoped; not
+    # removed by helm uninstall or by namespaced CR cleanup above). Skipping this
+    # leaves orphan kubeslice CRDs behind after uninstall.
+    if [[ "${SKIP_DELETE_CRDS:-false}" != "true" ]]; then
+        for api_group in "${api_groups[@]}"; do
+            echo "🧹 Deleting CRDs for API group: $api_group" >&2
+            mapfile -t crds_to_delete < <(
+                kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                    get crd -o name 2>/dev/null | grep -E "\.${api_group}$" || true
+            )
+            if [[ ${#crds_to_delete[@]} -eq 0 ]]; then
+                echo "⚠️  No CRDs found for API group: $api_group" >&2
+                continue
+            fi
+            for crd in "${crds_to_delete[@]}"; do
+                kubectl_retry --kubeconfig "$kubeconfig_path" --context "$kubecontext" \
+                    delete "$crd" --ignore-not-found=true --wait=false >/dev/null \
+                    && echo "✔️  Deleted $crd" >&2 || true
+            done
+        done
+    fi
+
     echo "🎉 Cleanup completed for namespace: $namespace" >&2
 }
 
@@ -2204,6 +2433,8 @@ SKIP_DELETE_NAMESPACE="false"
 SKIP_DELETE_K8S_OBJECTS="false"
 SKIP_DELETE_SLICES="false"
 SKIP_CLEANUP_CUSTOM_RESOURCE_WEBHOOKS="false"
+SKIP_DELETE_CRDS="false"
+SKIP_DELETE_PVCS="false"
 
 # Parse command-line arguments for options
 while [[ "$#" -gt 0 ]]; do
@@ -2251,6 +2482,12 @@ while [[ "$#" -gt 0 ]]; do
     --skip-cleanup-custom-resource-webhooks)
         SKIP_CLEANUP_CUSTOM_RESOURCE_WEBHOOKS="true"
         ;;
+    --skip-delete-crds)
+        SKIP_DELETE_CRDS="true"
+        ;;
+    --skip-delete-pvcs)
+        SKIP_DELETE_PVCS="true"
+        ;;
     --help)
         echo "Usage: $0 --input-yaml <yaml_file> [options]"  >&2
         echo "Options:"
@@ -2267,6 +2504,8 @@ while [[ "$#" -gt 0 ]]; do
         echo "  --skip-delete-k8s-objects                   Skip deleting Kubernetes objects after uninstallation."
         echo "  --skip-delete-slices                        Skip deleting slices in the controller cluster."
         echo "  --skip-cleanup-custom-resource-webhooks     Skip cleanup of API resources and webhooks."
+        echo "  --skip-delete-crds                          Skip deleting kubeslice CRDs after uninstallation."
+        echo "  --skip-delete-pvcs                          Skip deleting PVCs (and clearing stuck finalizers) in deleted namespaces."
         echo "  --help                                      Display this help message."
         exit 0
         ;;
@@ -2294,6 +2533,15 @@ if [ -n "$EGS_INPUT_YAML" ]; then
         parse_yaml "$EGS_INPUT_YAML"
         echo " calling validate_paths..."  >&2 
         validate_paths
+
+        # Pre-prune stale pods in EGS namespaces (prevents API-server overload on re-runs).
+        echo "🧹 Pre-uninstall: pruning stale pods in EGS namespaces..." >&2
+        for pre_ns in "$KUBESLICE_CONTROLLER_NAMESPACE" "$KUBESLICE_UI_NAMESPACE" \
+            $(yq e '.kubeslice_worker_egs[].namespace' "$EGS_INPUT_YAML" 2>/dev/null) \
+            $(yq e '.additional_apps[].namespace' "$EGS_INPUT_YAML" 2>/dev/null); do
+            [[ -z "$pre_ns" || "$pre_ns" == "null" ]] && continue
+            prune_stale_pods_in_namespace "$GLOBAL_KUBECONFIG" "$GLOBAL_KUBECONTEXT" "$pre_ns"
+        done
     else
         echo "❌ yq command not found. Please install yq to use the --input-yaml option."  >&2
         exit 1
@@ -2441,6 +2689,16 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ] && [ "$SKIP_WORKER_UNINSTALL" != "true"
          fi
          if [ "$SKIP_DELETE_NAMESPACE" != "true" ]; then
         continue_on_error delete_namespace "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
+            # The worker chart also creates the kubeslice-nsm-webhook-system namespace,
+            # which is NOT the worker's main namespace and otherwise lingers Active
+            # forever. Remove it if present. (Only kubeslice-owned namespaces are
+            # touched here; shared infra like istio-system/spire is intentionally left.)
+            for aux_ns in kubeslice-nsm-webhook-system; do
+                if kubectl --kubeconfig "$kubeconfig" ${kubecontext:+--context "$kubecontext"} \
+                    get namespace "$aux_ns" >/dev/null 2>&1; then
+                    continue_on_error delete_namespace "$aux_ns" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
+                fi
+            done
          fi
     done
 fi
