@@ -2678,7 +2678,9 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ] && [ "$SKIP_WORKER_UNINSTALL" != "true"
         continue_on_error uninstall_helm_chart_and_cleanup "$skip_installation" "$release_name" "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "$verify_install" "$verify_install_timeout" "$skip_on_verify_fail"
         if [ "$SKIP_CLEANUP_CUSTOM_RESOURCE_WEBHOOKS" != "true" ]; then
             echo "🚀 Cleaning up API resources and webhooks..."
-            api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io")
+            # spire.spiffe.io is included so the worker-installed SPIRE CRDs
+            # (clusterspiffeids, clusterfederatedtrustdomains) are removed too.
+            api_groups=("gpr.kubeslice.io" "inventory.kubeslice.io" "controller.kubeslice.io" "worker.kubeslice.io" "aiops.kubeslice.io" "networking.kubeslice.io" "spire.spiffe.io")
             webhooks=("gpr-validating-webhook-configuration" "kubeslice-controller-validating-webhook-configuration")
             continue_on_error cleanup_resources_and_webhooks "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext" "${api_groups[@]}" --webhooks "${webhooks[@]}"
         else
@@ -2689,11 +2691,16 @@ if [ "$ENABLE_INSTALL_WORKER" = "true" ] && [ "$SKIP_WORKER_UNINSTALL" != "true"
          fi
          if [ "$SKIP_DELETE_NAMESPACE" != "true" ]; then
         continue_on_error delete_namespace "$namespace" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
-            # The worker chart also creates the kubeslice-nsm-webhook-system namespace,
-            # which is NOT the worker's main namespace and otherwise lingers Active
-            # forever. Remove it if present. (Only kubeslice-owned namespaces are
-            # touched here; shared infra like istio-system/spire is intentionally left.)
-            for aux_ns in kubeslice-nsm-webhook-system; do
+            # The worker chart (preinstall-ensure-namespaces hook) also creates
+            # auxiliary namespaces that are NOT the worker's main namespace and would
+            # otherwise linger Active forever after uninstall:
+            #   - spire                         (SPIRE server/agent)
+            #   - kubeslice-nsm-webhook-system  (NSM admission webhook)
+            #   - kserve-localmodel-jobs        (only if kserve localmodel enabled)
+            # Everything the installer creates must be removed, so delete these if
+            # present. (istio-system is intentionally NOT touched: the chart only lists
+            # it in excludeNamespaces and does not create it.)
+            for aux_ns in spire kubeslice-nsm-webhook-system kserve-localmodel-jobs; do
                 if kubectl --kubeconfig "$kubeconfig" ${kubecontext:+--context "$kubecontext"} \
                     get namespace "$aux_ns" >/dev/null 2>&1; then
                     continue_on_error delete_namespace "$aux_ns" "$use_global_kubeconfig" "$kubeconfig" "$kubecontext"
