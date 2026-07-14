@@ -1135,6 +1135,14 @@ parse_yaml() {
     KUBESLICE_CLUSTER_REGISTRATIONS=()
     for ((i = 0; i < CLUSTER_REGISTRATION_COUNT; i++)); do
         CLUSTER_NAME=$(yq e ".cluster_registration[$i].cluster_name" "$yaml_file")
+        # Skip malformed/sparse cluster_registration entries that have no cluster_name.
+        # Such entries can be produced by legacy index-based writes (e.g. a telemetry-only
+        # entry). Registering them would create an invalid Cluster with metadata.name=null
+        # and fail with "resource name may not be empty".
+        if [ -z "$CLUSTER_NAME" ] || [ "$CLUSTER_NAME" = "null" ]; then
+            echo "⚠️  Skipping cluster_registration[$i]: missing cluster_name (malformed/sparse entry)"
+            continue
+        fi
         PROJECT_NAME=$(yq e ".cluster_registration[$i].project_name" "$yaml_file")
         TELEMETRY_ENABLED=$(yq e ".cluster_registration[$i].telemetry.enabled" "$yaml_file")
         TELEMETRY_ENDPOINT=$(yq e ".cluster_registration[$i].telemetry.endpoint" "$yaml_file")
@@ -2271,13 +2279,41 @@ prepare_worker_values_file() {
         echo "Worker data testing:"
         echo "$worker" | yq e '.' -
 
-        reg_cluster=$(yq e ".cluster_registration[$worker_index]" "$EGS_INPUT_YAML")
-        echo "cluster registration data ..."
-        echo "$reg_cluster" | yq e '.' -
+        # Resolve THIS worker's cluster_registration entry by NAME rather than by array
+        # position. kubeslice_worker_egs[] and cluster_registration[] are independent lists
+        # whose indices need not align (e.g. when preserved/imported workers have no
+        # registration entry). A blind positional read/write here previously (a) read the
+        # wrong cluster's telemetry and (b) created a brand-new sparse cluster_registration
+        # entry with only telemetry.endpoint (cluster_name=null) whenever worker_index
+        # exceeded the number of registrations - producing a "null" Cluster that fails the
+        # install. Match by name so we only ever touch an existing, correct entry.
+        reg_index=$(yq e ".cluster_registration | to_entries | map(select(.value.cluster_name == \"${worker_name}\")) | .[0].key" "$EGS_INPUT_YAML")
+        if [ -z "$reg_index" ] || [ "$reg_index" = "null" ]; then
+            # No registration entry matches this worker by name. Fall back to the positional
+            # entry ONLY if it exists AND already carries a non-null cluster_name; otherwise
+            # treat this worker as having no registration (never fabricate one).
+            positional_name=$(yq e ".cluster_registration[$worker_index].cluster_name" "$EGS_INPUT_YAML" 2>/dev/null)
+            if [ -n "$positional_name" ] && [ "$positional_name" != "null" ]; then
+                reg_index="$worker_index"
+            else
+                reg_index=""
+            fi
+        fi
+
         echo "installation path.."
         echo $INSTALLATION_FILES_PATH
-        cluster_name=$(yq e ".cluster_registration[$worker_index].cluster_name" "$EGS_INPUT_YAML")
-        project_name=$(yq e ".cluster_registration[$worker_index].project_name" "$EGS_INPUT_YAML")
+        if [ -n "$reg_index" ]; then
+            reg_cluster=$(yq e ".cluster_registration[$reg_index]" "$EGS_INPUT_YAML")
+            echo "cluster registration data (matched index $reg_index) ..."
+            echo "$reg_cluster" | yq e '.' -
+            cluster_name=$(yq e ".cluster_registration[$reg_index].cluster_name" "$EGS_INPUT_YAML")
+            project_name=$(yq e ".cluster_registration[$reg_index].project_name" "$EGS_INPUT_YAML")
+        else
+            echo "⚠️  No cluster_registration entry matches worker '${worker_name}' - telemetry/registration updates will be skipped for it."
+            reg_cluster=""
+            cluster_name=""
+            project_name=""
+        fi
 
 
 
@@ -2382,9 +2418,17 @@ prepare_worker_values_file() {
                 yq eval ".kubeslice_worker_egs[$worker_index].inline_values.egs.prometheusEndpoint = \"${prometheus_url}\" | del(.null)" --inplace "${EGS_INPUT_YAML}"
                 echo "Updated Prometheus endpoint for worker ${worker_name}: ${prometheus_url}"
 
-                yq eval ".cluster_registration[$worker_index].telemetry.endpoint = \"${prometheus_url}\"" --inplace "${EGS_INPUT_YAML}"
-                echo "Updated Prometheus endpoint for cluster  ${cluster_name}: ${prometheus_url}"
-                sed -i "s|endpoint: .*|endpoint: ${prometheus_url}|" "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml"
+                # Only update telemetry on an EXISTING, name-matched registration entry.
+                # Never write by raw worker_index (that would fabricate a null-named entry).
+                if [ -n "$reg_index" ] && [ -n "$cluster_name" ] && [ "$cluster_name" != "null" ]; then
+                    yq eval ".cluster_registration[$reg_index].telemetry.endpoint = \"${prometheus_url}\"" --inplace "${EGS_INPUT_YAML}"
+                    echo "Updated Prometheus endpoint for cluster  ${cluster_name}: ${prometheus_url}"
+                    if [ -f "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml" ]; then
+                        sed -i "s|endpoint: .*|endpoint: ${prometheus_url}|" "$INSTALLATION_FILES_PATH/${cluster_name}_cluster.yaml"
+                    fi
+                else
+                    echo "⏩ Skipping cluster telemetry endpoint update for worker '${worker_name}' (no matching cluster_registration entry)."
+                fi
 
                 echo "Waiting for Grafana service to get an IP or port for worker..."
                 external_ip=""

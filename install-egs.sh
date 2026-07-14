@@ -1043,6 +1043,14 @@ if [ "$REGISTER_WORKER" = "true" ]; then
                     print_info "Skipping existing cluster '$CLUSTER' (will be added as new worker)"
                     continue
                 fi
+
+                # Skip the shipped template placeholder "worker-1". It is the sample name in
+                # the repo config, never a real customer cluster, and importing it seeds a
+                # phantom worker (and a spurious Cluster CR) into the generated config.
+                if [ "$CLUSTER" = "worker-1" ] && [ "$REGISTER_CLUSTER_NAME" != "worker-1" ]; then
+                    print_info "Skipping template placeholder cluster 'worker-1' (not importing as a worker)"
+                    continue
+                fi
                 
                 # Load template for each existing cluster
                 if [ -f "$TEMP_WORKER_TEMPLATE" ]; then
@@ -1625,6 +1633,35 @@ else
             print_info "Added cluster_registration entry for worker: $REG_NAME"
         fi
     done
+fi
+
+# --- Bug fix: remove the shipped template placeholder "worker-1" (register-worker mode) ---
+# The repo config ships a sample worker/registration named "worker-1". In register-worker
+# mode this placeholder must never leak into a customer's generated config as a phantom
+# worker or a spurious Cluster CR. Drop it from BOTH lists unless the user is explicitly
+# registering a cluster literally named "worker-1".
+if [ "$REGISTER_WORKER" = "true" ] && [ "$REGISTER_CLUSTER_NAME" != "worker-1" ]; then
+    PLACEHOLDER_WORKERS=$(yq eval '[.kubeslice_worker_egs[] | select(.name == "worker-1")] | length' egs-installer-config.yaml 2>/dev/null || echo "0")
+    if [ "$PLACEHOLDER_WORKERS" -gt 0 ]; then
+        yq eval 'del(.kubeslice_worker_egs[] | select(.name == "worker-1"))' -i egs-installer-config.yaml
+        print_info "Removed $PLACEHOLDER_WORKERS placeholder worker entry(ies) named 'worker-1'"
+    fi
+    PLACEHOLDER_REGS=$(yq eval '[.cluster_registration[] | select(.cluster_name == "worker-1")] | length' egs-installer-config.yaml 2>/dev/null || echo "0")
+    if [ "$PLACEHOLDER_REGS" -gt 0 ]; then
+        yq eval 'del(.cluster_registration[] | select(.cluster_name == "worker-1"))' -i egs-installer-config.yaml
+        print_info "Removed $PLACEHOLDER_REGS placeholder cluster_registration entry(ies) named 'worker-1'"
+    fi
+fi
+
+# --- Bug fix: controller-only install (--skip-worker, single cluster) must not register the
+# controller's own cluster name as a worker cluster. Registering it creates a spurious
+# Cluster CR that later leaks into other installs as a phantom worker (and clutters
+# installation-files). Only applies when no worker kubeconfig was provided and we are not in
+# register-worker mode (where registration of the new worker is intentional).
+if [ "$SKIP_WORKER" = "true" ] && [ "$REGISTER_WORKER" != "true" ] && [ ${#WORKER_KUBECONFIGS[@]} -eq 0 ]; then
+    yq eval '.enable_cluster_registration = false' -i egs-installer-config.yaml
+    yq eval 'del(.cluster_registration[])' -i egs-installer-config.yaml
+    print_info "Controller-only install (--skip-worker): disabled cluster registration (no worker cluster to register)"
 fi
 
 # Update image registry
