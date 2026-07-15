@@ -1014,69 +1014,25 @@ if [ "$REGISTER_WORKER" = "true" ]; then
             WORKERS_PRESERVED_FROM_CONTROLLER="false"
         fi
     else
-        # No local config - check controller cluster for existing workers
-        print_info "No local config found - checking controller cluster for existing workers..."
-        CONTROLLER_CMD="kubectl --kubeconfig $CONTROLLER_KUBECONFIG"
-        if [ -n "$CONTROLLER_CONTEXT" ]; then
-            CONTROLLER_CMD="$CONTROLLER_CMD --context $CONTROLLER_CONTEXT"
-        fi
-        
-        # Check for cluster CRDs in the project namespace
-        PROJECT_NAMESPACE="kubeslice-$REGISTER_PROJECT_NAME"
-        EXISTING_CLUSTERS=$($CONTROLLER_CMD get cluster.controller.kubeslice.io -n "$PROJECT_NAMESPACE" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
-        
-        if [ -n "$EXISTING_CLUSTERS" ]; then
-            print_info "Found existing worker clusters in controller: $EXISTING_CLUSTERS"
-            print_info "These workers will be preserved in the config"
-            
-            # Copy repo config as base
-            install_repo_config
-            
-            # Delete the default worker entry
-            yq eval 'del(.kubeslice_worker_egs[])' -i "$ORIGINAL_DIR/egs-installer-config.yaml"
-            
-            # Add existing clusters as worker entries (using template structure)
-            CLUSTER_INDEX=0
-            for CLUSTER in $EXISTING_CLUSTERS; do
-                # Skip if this is the cluster we're currently registering (avoid duplicate)
-                if [ "$CLUSTER" = "$REGISTER_CLUSTER_NAME" ]; then
-                    print_info "Skipping existing cluster '$CLUSTER' (will be added as new worker)"
-                    continue
-                fi
-                
-                # Load template for each existing cluster
-                if [ -f "$TEMP_WORKER_TEMPLATE" ]; then
-                    print_info "Adding preserved worker: $CLUSTER at index $CLUSTER_INDEX"
-                    # Load the template structure
-                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX] = load(\"$TEMP_WORKER_TEMPLATE\")" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
-                    
-                    # Now update ALL specific fields for preserved workers (AFTER template load)
-                    # This ensures our values override any template defaults
-                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].name = \"$CLUSTER\" | .kubeslice_worker_egs[$CLUSTER_INDEX].name style=\"double\"" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
-                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].use_global_kubeconfig = true" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
-                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].kubeconfig = \"\" | .kubeslice_worker_egs[$CLUSTER_INDEX].kubeconfig style=\"double\"" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
-                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].kubecontext = \"\" | .kubeslice_worker_egs[$CLUSTER_INDEX].kubecontext style=\"double\"" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
-                    yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].skip_installation = true" -i "$ORIGINAL_DIR/egs-installer-config.yaml"
-                    
-                    # Double-check it was set correctly
-                    VERIFY_SKIP=$(yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].skip_installation" "$ORIGINAL_DIR/egs-installer-config.yaml" 2>/dev/null)
-                    VERIFY_USE_GLOBAL=$(yq eval ".kubeslice_worker_egs[$CLUSTER_INDEX].use_global_kubeconfig" "$ORIGINAL_DIR/egs-installer-config.yaml" 2>/dev/null)
-                    if [ "$VERIFY_SKIP" = "true" ] && [ "$VERIFY_USE_GLOBAL" = "true" ]; then
-                        print_info "✅ Preserved worker: $CLUSTER (skip_installation=true, use_global_kubeconfig=true, will not be reinstalled)"
-                    else
-                        print_warning "⚠️  Failed to set skip_installation for $CLUSTER (skip=$VERIFY_SKIP, use_global=$VERIFY_USE_GLOBAL)"
-                    fi
-                    CLUSTER_INDEX=$((CLUSTER_INDEX + 1))
-                fi
-            done
-            EXISTING_WORKERS=$CLUSTER_INDEX
-            print_info "Added $EXISTING_WORKERS preserved worker(s) from controller cluster"
-        else
-            print_info "No existing workers found in controller cluster"
-            # Copy repo config as is
-            install_repo_config
-            EXISTING_WORKERS=0
-        fi
+        # No local config found. Generate a clean, self-contained config for JUST the
+        # worker being registered.
+        #
+        # We deliberately do NOT import every cluster already registered on the controller
+        # as a worker entry. A targeted `--register-worker --register-cluster-name X` should
+        # only produce/act on the single cluster X the user named. Auto-importing all
+        # controller-registered clusters previously:
+        #   (a) listed unrelated clusters (e.g. other workers, even the controller) under
+        #       kubeslice_worker_egs in the new worker's config,
+        #   (b) generated their YAML under installation-files, and
+        #   (c) misaligned kubeslice_worker_egs[] with cluster_registration[], which
+        #       fabricated a null-named Cluster and made the 3rd/4th registration fatal.
+        # The controller already tracks every registered cluster independently, so nothing
+        # is lost by omitting them here. (Multi-worker preservation still works when you
+        # keep and re-use a local egs-installer-config.yaml — handled in the branch above.)
+        print_info "No local config found - generating a clean config for worker '$REGISTER_CLUSTER_NAME' only (existing controller clusters are left untouched)."
+        install_repo_config
+        EXISTING_WORKERS=0
+        WORKERS_PRESERVED_FROM_CONTROLLER="false"
     fi
 else
     # Normal mode: always copy from repo (ONLY if not in register-worker mode with existing workers)
@@ -1625,6 +1581,35 @@ else
             print_info "Added cluster_registration entry for worker: $REG_NAME"
         fi
     done
+fi
+
+# --- Bug fix: remove the shipped template placeholder "worker-1" (register-worker mode) ---
+# The repo config ships a sample worker/registration named "worker-1". In register-worker
+# mode this placeholder must never leak into a customer's generated config as a phantom
+# worker or a spurious Cluster CR. Drop it from BOTH lists unless the user is explicitly
+# registering a cluster literally named "worker-1".
+if [ "$REGISTER_WORKER" = "true" ] && [ "$REGISTER_CLUSTER_NAME" != "worker-1" ]; then
+    PLACEHOLDER_WORKERS=$(yq eval '[.kubeslice_worker_egs[] | select(.name == "worker-1")] | length' egs-installer-config.yaml 2>/dev/null || echo "0")
+    if [ "$PLACEHOLDER_WORKERS" -gt 0 ]; then
+        yq eval 'del(.kubeslice_worker_egs[] | select(.name == "worker-1"))' -i egs-installer-config.yaml
+        print_info "Removed $PLACEHOLDER_WORKERS placeholder worker entry(ies) named 'worker-1'"
+    fi
+    PLACEHOLDER_REGS=$(yq eval '[.cluster_registration[] | select(.cluster_name == "worker-1")] | length' egs-installer-config.yaml 2>/dev/null || echo "0")
+    if [ "$PLACEHOLDER_REGS" -gt 0 ]; then
+        yq eval 'del(.cluster_registration[] | select(.cluster_name == "worker-1"))' -i egs-installer-config.yaml
+        print_info "Removed $PLACEHOLDER_REGS placeholder cluster_registration entry(ies) named 'worker-1'"
+    fi
+fi
+
+# --- Bug fix: controller-only install (--skip-worker, single cluster) must not register the
+# controller's own cluster name as a worker cluster. Registering it creates a spurious
+# Cluster CR that later leaks into other installs as a phantom worker (and clutters
+# installation-files). Only applies when no worker kubeconfig was provided and we are not in
+# register-worker mode (where registration of the new worker is intentional).
+if [ "$SKIP_WORKER" = "true" ] && [ "$REGISTER_WORKER" != "true" ] && [ ${#WORKER_KUBECONFIGS[@]} -eq 0 ]; then
+    yq eval '.enable_cluster_registration = false' -i egs-installer-config.yaml
+    yq eval 'del(.cluster_registration[])' -i egs-installer-config.yaml
+    print_info "Controller-only install (--skip-worker): disabled cluster registration (no worker cluster to register)"
 fi
 
 # Update image registry
