@@ -327,13 +327,13 @@ egsAgent:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
                     operator: "DoesNotExist"
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/arch
-                operator: NotIn
-                values:
-                - arm64
+          # requiredDuringSchedulingIgnoredDuringExecution:
+          #   nodeSelectorTerms:
+          #   - matchExpressions:
+          #     - key: kubernetes.io/arch
+          #       operator: NotIn
+          #       values:
+          #       - arm64
 
 egsGpuAgent:
   image: egs-gpu-agent
