@@ -24,3 +24,4 @@ data:
     kube-system/nvidia-gpu-device-plugin-medium-ubuntu
     kube-system/nvidia-gpu-device-plugin-small-cos
     kube-system/nvidia-gpu-device-plugin-small-ubuntu
+    envoy-gateway-system/envoy-gateway
