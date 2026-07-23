@@ -2244,6 +2244,22 @@ prepare_worker_values_file() {
         worker=$(yq e ".kubeslice_worker_egs[$worker_index]" "$EGS_INPUT_YAML")
         worker_name=$(echo "$worker" | yq e '.name' -)
         skip_installation=$(echo "$worker" | yq e '.skip_installation' -)
+
+        # ── skip_installation guard ─────────────────────────────────────────────
+        # Workers flagged skip_installation=true are NOT install targets on this run
+        # (e.g. preserved / imported / phantom entries carried in the config). They
+        # have no "kubeslice-rbac-worker-<name>" secret on the controller, so
+        # continuing here would make this function run
+        #   kubectl get secret kubeslice-rbac-worker-<name> ...
+        # which returns NotFound and aborts the ENTIRE run before any real worker
+        # chart is installed. The install loop already honours skip_installation via
+        # install_or_upgrade_helm_chart(); mirror that here and skip values-file
+        # preparation for these workers so real workers install unaffected.
+        if [ "$skip_installation" = "true" ]; then
+            echo "⏩ Skipping worker values-file preparation for '$worker_name' (skip_installation=true)."
+            continue
+        fi
+
         use_global_kubeconfig=$(echo "$worker" | yq e '.use_global_kubeconfig' -)
         namespace=$(echo "$worker" | yq e '.namespace' -)
         release_name=$(echo "$worker" | yq e '.release' -)
