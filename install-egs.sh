@@ -45,6 +45,13 @@ SKIP_CONTROLLER_GPU_OPERATOR="false"
 SKIP_WORKER_PROMETHEUS="false"
 SKIP_WORKER_GPU_OPERATOR="false"
 
+# Envoy Gateway is required by the kubeslice worker-operator (it consumes the
+# EnvoyProxy CRD). It is therefore installed on EACH worker cluster by default in
+# multi-cluster / --register-worker mode so onboarding does not crash-loop.
+# Use --skip-worker-envoy / --skip-controller-envoy to opt out.
+SKIP_WORKER_ENVOY="false"
+SKIP_CONTROLLER_ENVOY="false"
+
 # Worker registration mode
 REGISTER_WORKER="false"
 CONTROLLER_KUBECONFIG=""
@@ -414,10 +421,14 @@ Multi-Cluster Mode Skip Flags (use these when installing on MULTIPLE clusters):
   Controller Cluster:
     --skip-controller-prometheus    Skip Prometheus on controller cluster
     --skip-controller-gpu-operator  Skip GPU Operator on controller cluster
+    --skip-controller-envoy         Skip Envoy Gateway on controller cluster
   
   Worker Cluster(s):
     --skip-worker-prometheus        Skip Prometheus on worker cluster(s)
     --skip-worker-gpu-operator      Skip GPU Operator on worker cluster(s)
+    --skip-worker-envoy             Skip Envoy Gateway on worker cluster(s)
+                                    (Envoy is installed on each worker by default;
+                                     it is required by the worker-operator)
   
   Note: In multi-cluster mode, use --skip-controller-* and --skip-worker-* flags
         instead of --skip-prometheus and --skip-gpu-operator
@@ -604,6 +615,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_CONTROLLER_GPU_OPERATOR="true"
             shift
             ;;
+        --skip-controller-envoy)
+            SKIP_CONTROLLER_ENVOY="true"
+            shift
+            ;;
         # Multi-cluster specific skip flags (worker clusters)
         --skip-worker-prometheus)
             SKIP_WORKER_PROMETHEUS="true"
@@ -611,6 +626,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skip-worker-gpu-operator)
             SKIP_WORKER_GPU_OPERATOR="true"
+            shift
+            ;;
+        --skip-worker-envoy)
+            SKIP_WORKER_ENVOY="true"
             shift
             ;;
         --register-worker)
@@ -1700,9 +1719,19 @@ if [ "$MULTI_CLUSTER" = "true" ] && [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]
         CONTROLLER_SKIP_GPU_OPERATOR="$SKIP_CONTROLLER_GPU_OPERATOR"
     fi
     
+    # Controller cluster: Envoy Gateway
+    # The controller already gets its own Envoy during controller install. When the
+    # controller is not being (re)installed in this run (e.g. --register-worker),
+    # skip re-touching the controller's Envoy to avoid needless upgrade/cert-gen churn.
+    CONTROLLER_SKIP_ENVOY="$SKIP_CONTROLLER_ENVOY"
+    if [ "$SKIP_CONTROLLER" = "true" ]; then
+        CONTROLLER_SKIP_ENVOY="true"
+    fi
+
     # Worker clusters: Use worker-specific flags only
     WORKER_SKIP_PROMETHEUS="$SKIP_WORKER_PROMETHEUS"
     WORKER_SKIP_GPU_OPERATOR="$SKIP_WORKER_GPU_OPERATOR"
+    WORKER_SKIP_ENVOY="$SKIP_WORKER_ENVOY"
     
     # Update controller cluster prerequisites (index 0 in additional_apps for each type)
     # PostgreSQL is ONLY on controller cluster
@@ -1725,6 +1754,13 @@ if [ "$MULTI_CLUSTER" = "true" ] && [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]
         yq eval '(.additional_apps[] | select(.name == "gpu-operator") | .skip_installation) = true' -i egs-installer-config.yaml
         print_warning "GPU Operator installation will be skipped on controller cluster"
     fi
+
+    # Skip the controller (template) envoy-gateway entry when requested / not installing controller
+    if [ "$CONTROLLER_SKIP_ENVOY" = "true" ]; then
+        yq eval '(.additional_apps | to_entries | map(select(.value.name == "envoy-gateway"))[0].key) as $idx | .additional_apps[$idx].skip_installation = true' -i egs-installer-config.yaml 2>/dev/null || \
+        yq eval '(.additional_apps[] | select(.name == "envoy-gateway") | .skip_installation) = true' -i egs-installer-config.yaml
+        print_warning "Envoy Gateway installation will be skipped on controller cluster"
+    fi
     
     # Get current counts for additional_apps, manifests, and commands
     CURRENT_ADDITIONAL_APPS_COUNT=$(yq eval '.additional_apps | length' egs-installer-config.yaml 2>/dev/null || echo "3")
@@ -1734,6 +1770,7 @@ if [ "$MULTI_CLUSTER" = "true" ] && [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]
     # Find template indices for gpu-operator and prometheus in additional_apps (from repo config)
     GPU_OP_TEMPLATE_IDX=$(yq eval '.additional_apps | to_entries | map(select(.value.name == "gpu-operator"))[0].key // 0' egs-installer-config.yaml 2>/dev/null || echo "0")
     PROM_TEMPLATE_IDX=$(yq eval '.additional_apps | to_entries | map(select(.value.name == "prometheus"))[0].key // 1' egs-installer-config.yaml 2>/dev/null || echo "1")
+    ENVOY_TEMPLATE_IDX=$(yq eval '.additional_apps | to_entries | map(select(.value.name == "envoy-gateway"))[0].key // 2' egs-installer-config.yaml 2>/dev/null || echo "2")
     
     # Find template indices for manifests (gpu-operator-quota and nvidia-driver-installer)
     GPU_QUOTA_TEMPLATE_IDX=$(yq eval '.manifests | to_entries | map(select(.value.appname == "gpu-operator-quota"))[0].key // 0' egs-installer-config.yaml 2>/dev/null || echo "0")
@@ -1757,7 +1794,8 @@ if [ "$MULTI_CLUSTER" = "true" ] && [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]
         print_info "Adding prerequisites for worker cluster: $WORKER_NAME"
         
         # ===== ADD GPU-OPERATOR FOR WORKER (copy from template) =====
-        GPU_OP_INDEX=$((CURRENT_ADDITIONAL_APPS_COUNT + i * 2))
+        # 3 additional_apps entries are added per worker: gpu-operator, prometheus, envoy-gateway
+        GPU_OP_INDEX=$((CURRENT_ADDITIONAL_APPS_COUNT + i * 3))
         
         # Copy the gpu-operator template entry to the new index
         yq eval ".additional_apps[$GPU_OP_INDEX] = .additional_apps[$GPU_OP_TEMPLATE_IDX]" -i egs-installer-config.yaml
@@ -1774,7 +1812,7 @@ if [ "$MULTI_CLUSTER" = "true" ] && [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]
         fi
         
         # ===== ADD PROMETHEUS FOR WORKER (copy from template) =====
-        PROM_INDEX=$((CURRENT_ADDITIONAL_APPS_COUNT + i * 2 + 1))
+        PROM_INDEX=$((CURRENT_ADDITIONAL_APPS_COUNT + i * 3 + 1))
         
         # Copy the prometheus template entry to the new index
         yq eval ".additional_apps[$PROM_INDEX] = .additional_apps[$PROM_TEMPLATE_IDX]" -i egs-installer-config.yaml
@@ -1788,6 +1826,25 @@ if [ "$MULTI_CLUSTER" = "true" ] && [ ${#WORKER_KUBECONFIG_RELATIVES[@]} -gt 0 ]
             print_warning "Prometheus will be skipped on worker: $WORKER_NAME"
         else
             print_success "Added Prometheus for worker: $WORKER_NAME (copied from template)"
+        fi
+
+        # ===== ADD ENVOY GATEWAY FOR WORKER (copy from template) =====
+        # Required by the kubeslice worker-operator (EnvoyProxy CRD). Installing it on
+        # each worker prevents the operator from crash-looping on missing CRDs.
+        ENVOY_INDEX=$((CURRENT_ADDITIONAL_APPS_COUNT + i * 3 + 2))
+
+        # Copy the envoy-gateway template entry to the new index
+        yq eval ".additional_apps[$ENVOY_INDEX] = .additional_apps[$ENVOY_TEMPLATE_IDX]" -i egs-installer-config.yaml
+        # Update only the kubeconfig-related fields so it targets the worker cluster
+        yq eval ".additional_apps[$ENVOY_INDEX].use_global_kubeconfig = false" -i egs-installer-config.yaml
+        yq eval ".additional_apps[$ENVOY_INDEX].kubeconfig = \"$WORKER_KUBECONFIG_RELATIVE\"" -i egs-installer-config.yaml
+        yq eval ".additional_apps[$ENVOY_INDEX].kubecontext = \"$WORKER_CTX\"" -i egs-installer-config.yaml
+        yq eval ".additional_apps[$ENVOY_INDEX].skip_installation = $WORKER_SKIP_ENVOY" -i egs-installer-config.yaml
+
+        if [ "$WORKER_SKIP_ENVOY" = "true" ]; then
+            print_warning "Envoy Gateway will be skipped on worker: $WORKER_NAME"
+        else
+            print_success "Added Envoy Gateway for worker: $WORKER_NAME (copied from template)"
         fi
         
         # ===== ADD MANIFESTS FOR WORKER (GPU Operator Quota - copy from template) =====
