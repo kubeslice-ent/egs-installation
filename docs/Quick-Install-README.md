@@ -1719,7 +1719,7 @@ Copy the output and paste it into the UI login screen.
 - `-a`: Fetch admin token
 - `-u admin`: Username for the admin token
 
-📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](Slice-Admin-Token-README.html)**
+📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](Slice-Admin-Token-README.md)**
 
 ---
 
@@ -1873,10 +1873,10 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 
 ## 📚 Related Documentation
 
-- 📋 [EGS License Setup](EGS-License-Setup.html) - How to obtain and configure your license
+- 📋 [EGS License Setup](EGS-License-Setup.md) - How to obtain and configure your license
 - 🛠️ [Full Installation Guide](../README.md#getting-started) - For multi-cluster and advanced setups
-- 📊 [Configuration Documentation](Configuration-README.html) - Detailed configuration options
-- ✅ [Preflight Check](EGS-Preflight-Check-README.html) - Validate your environment before installation
+- 📊 [Configuration Documentation](Configuration-README.md) - Detailed configuration options
+- ✅ [Preflight Check](EGS-Preflight-Check-README.md) - Validate your environment before installation
 - 🌐 [EGS User Guide](https://docs.avesha.io/documentation/enterprise-egs) - Complete product documentation
 
 ---
