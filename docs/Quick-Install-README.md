@@ -661,6 +661,7 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 |--------|-------------|---------|
 | `--skip-controller-prometheus` | Skip Prometheus on controller cluster | Install |
 | `--skip-controller-gpu-operator` | Skip GPU Operator on controller cluster | Install |
+| `--skip-controller-envoy` | Skip Envoy Gateway on controller cluster | Install |
 
 **Worker Cluster(s):**
 
@@ -668,6 +669,14 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
 |--------|-------------|---------|
 | `--skip-worker-prometheus` | Skip Prometheus on worker cluster(s) | Install |
 | `--skip-worker-gpu-operator` | Skip GPU Operator on worker cluster(s) | Install |
+| `--skip-worker-envoy` | Skip Envoy Gateway on worker cluster(s) | Install |
+
+> 🛡️ **Envoy Gateway is installed on every worker automatically.** The kubeslice
+> worker-operator depends on the `EnvoyProxy` CRD, so in multi-cluster and
+> `--register-worker` modes the installer now deploys Envoy Gateway on **each**
+> worker cluster (using that worker's kubeconfig) by default. This prevents the
+> worker-operator from crash-looping on a missing CRD. No extra flag is needed —
+> use `--skip-worker-envoy` only if you intentionally want to opt out.
 
 **Important**: 
 - `--skip-postgresql` works the same in both modes (PostgreSQL is only on controller)
@@ -1073,11 +1082,14 @@ In multi-cluster mode, prerequisites are installed on EACH cluster:
 **Worker Cluster(s):**
 1. **📊 Prometheus Stack** (Namespace: `egs-monitoring`) - *Can be skipped with `--skip-worker-prometheus`*
 2. **🎮 GPU Operator** (Namespace: `egs-gpu-operator`) - *Can be skipped with `--skip-worker-gpu-operator`*
-3. **📋 GPU Operator Quota** (Namespace: `egs-gpu-operator`) - *ResourceQuota for GPU pods*
-4. **🖥️ NVIDIA Driver Installer** (Namespace: `kube-system`) - *DaemonSet for GPU drivers*
-5. **⚙️ EGS Worker** (Namespace: `kubeslice-system`)
+3. **🛡️ Envoy Gateway** (Namespace: `envoy-gateway-system`) - *Required by the worker-operator (EnvoyProxy CRD); can be skipped with `--skip-worker-envoy`*
+4. **📋 GPU Operator Quota** (Namespace: `egs-gpu-operator`) - *ResourceQuota for GPU pods*
+5. **🖥️ NVIDIA Driver Installer** (Namespace: `kube-system`) - *DaemonSet for GPU drivers*
+6. **⚙️ EGS Worker** (Namespace: `kubeslice-system`)
 
 **Note**: The worker requires Prometheus CRDs (PodMonitor) to be installed. If you skip Prometheus on the worker cluster, you may encounter errors like `no matches for kind "PodMonitor"`.
+
+**Note**: Envoy Gateway is installed on each worker automatically (using the worker's kubeconfig) because the kubeslice worker-operator consumes the `EnvoyProxy` CRD. If you skip it with `--skip-worker-envoy`, the worker-operator will crash-loop on a missing CRD until Envoy Gateway is present.
 
 ### Service Types
 
@@ -1171,12 +1183,16 @@ These flags provide fine-grained control over prerequisites in multi-cluster mod
 **Controller Cluster Prerequisites:**
 - `--skip-controller-prometheus`: Skip Prometheus on controller cluster only
 - `--skip-controller-gpu-operator`: Skip GPU Operator on controller cluster only
+- `--skip-controller-envoy`: Skip Envoy Gateway on controller cluster only
 
 **Worker Cluster Prerequisites:**
 - `--skip-worker-prometheus`: Skip Prometheus on ALL worker clusters
 - `--skip-worker-gpu-operator`: Skip GPU Operator on ALL worker clusters
+- `--skip-worker-envoy`: Skip Envoy Gateway on ALL worker clusters ⚠️ *not recommended — the worker-operator requires the `EnvoyProxy` CRD and will crash-loop without it*
 
 **Note:** For PostgreSQL, use `--skip-postgresql` (same flag for both modes since PostgreSQL is only on controller)
+
+**Note:** Envoy Gateway is **installed by default on every worker** (and on the controller). This is why the example commands above do **not** pass `--skip-worker-envoy` — you only add it if you intentionally want to opt out. Do not add it to a normal install.
 
 **How Skip Flags Work in Multi-Cluster Mode:**
 
@@ -1188,6 +1204,9 @@ These flags provide fine-grained control over prerequisites in multi-cluster mod
 | `--skip-controller-prometheus --skip-worker-prometheus` | ❌ Prometheus Skipped | ❌ Prometheus Skipped |
 | `--skip-controller-gpu-operator` | ❌ GPU Op Skipped | ✅ GPU Op Installed |
 | `--skip-worker-gpu-operator` | ✅ GPU Op Installed | ❌ GPU Op Skipped |
+| `--skip-controller-envoy` | ❌ Envoy Skipped | ✅ Envoy Installed |
+| `--skip-worker-envoy` | ✅ Envoy Installed | ❌ Envoy Skipped (⚠️ worker-operator will crash-loop) |
+| *(no envoy flag — default)* | ✅ Envoy Installed | ✅ Envoy Installed |
 
 **Rules:**
 1. `--skip-postgresql` → Only affects controller (PostgreSQL is never on workers)
@@ -1466,8 +1485,9 @@ export PROJECT_NAME="avesha"                                        # Project na
 # The script will:
 # 1. Register worker-2 with the controller
 # 2. Automatically install the worker on worker-2 cluster
-# 3. Preserve existing workers (skip_installation=true)
-# 4. Set new worker: skip_installation=false (will install)
+# 3. Automatically install Envoy Gateway on worker-2 (required by the worker-operator)
+# 4. Preserve existing workers (skip_installation=true)
+# 5. Set new worker: skip_installation=false (will install)
 curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-worker \
   --controller-kubeconfig $CONTROLLER_KUBECONFIG \
@@ -1475,6 +1495,12 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash -s -- \
   --register-cluster-name $CLUSTER_NAME \
   --register-project-name $PROJECT_NAME
 ```
+
+> 🛡️ **Envoy Gateway is handled for you.** The command above installs Envoy Gateway
+> on the worker identified by `--worker-kubeconfig` automatically, so the
+> worker-operator finds the `EnvoyProxy` CRD locally and does not crash-loop. You do
+> **not** need to hand-edit `egs-installer-config.yaml` or pass `--preserve-config`
+> for this. Add `--skip-worker-envoy` only if you deliberately want to skip it.
 
 **Option 2: Register Only (Without Installation)**
 
@@ -1693,7 +1719,7 @@ Copy the output and paste it into the UI login screen.
 - `-a`: Fetch admin token
 - `-u admin`: Username for the admin token
 
-📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](Slice-Admin-Token-README.md)**
+📖 **For detailed token retrieval options:** See **[Slice & Admin Token Guide](Slice-Admin-Token-README.html)**
 
 ---
 
@@ -1847,10 +1873,10 @@ curl -fsSL https://repo.egs.avesha.io/install-egs.sh | bash
 
 ## 📚 Related Documentation
 
-- 📋 [EGS License Setup](EGS-License-Setup.md) - How to obtain and configure your license
+- 📋 [EGS License Setup](EGS-License-Setup.html) - How to obtain and configure your license
 - 🛠️ [Full Installation Guide](../README.md#getting-started) - For multi-cluster and advanced setups
-- 📊 [Configuration Documentation](Configuration-README.md) - Detailed configuration options
-- ✅ [Preflight Check](EGS-Preflight-Check-README.md) - Validate your environment before installation
+- 📊 [Configuration Documentation](Configuration-README.html) - Detailed configuration options
+- ✅ [Preflight Check](EGS-Preflight-Check-README.html) - Validate your environment before installation
 - 🌐 [EGS User Guide](https://docs.avesha.io/documentation/enterprise-egs) - Complete product documentation
 
 ---
