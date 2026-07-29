@@ -78,7 +78,14 @@ deployment:
       prometheus.io/port: '19001'
     labels: {}
     topologySpreadConstraints: []
-    tolerations: []
+    # EGS worker nodes are tainted (e.g. kubeslice.io/egs=dedicated-node:NoSchedule),
+    # so Envoy Gateway must tolerate them or it stays Pending.
+    tolerations:
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     nodeSelector: {}
 
 service:
@@ -120,7 +127,15 @@ certgen:
       labels: {}
     resources: {}
     affinity: {}
-    tolerations: []
+    # The certgen Job runs as a Helm pre-install/pre-upgrade hook. Without these
+    # tolerations it cannot schedule on tainted EGS nodes and the hook times out
+    # with "failed pre-install: timed out waiting for the condition".
+    tolerations:
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
     nodeSelector: {}
     ttlSecondsAfterFinished: 30
     securityContext:
