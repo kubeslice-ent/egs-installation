@@ -393,7 +393,7 @@ events:
   disabled: false
 
 kserve:
-  enabled: false
+  enabled: true
   # Inherits global configuration from parent chart automatically
   # KServe chart options
   kserve:
