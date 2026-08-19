@@ -11,7 +11,7 @@
 set -e
 
 # Script metadata
-SCRIPT_VERSION="1.15.5"
+SCRIPT_VERSION="1.18.0"
 SCRIPT_NAME="egs-troubleshoot.sh"
 BUNDLE_PREFIX="egs-troubleshoot-bundle"
 

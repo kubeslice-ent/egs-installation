@@ -61,7 +61,7 @@ spec:
       {{ toYaml .Values.kubeslice.apigw.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image: {{ include "component.image" (dict "component" .Values.kubeslice.apigw "global" .Values.global "context" .) }}
+        - image: {{ include "component.image" (dict "component" .Values.kubeslice.apigw "global" .Values.dev "context" .) }}
           imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" .Values.kubeslice.apigw "global" .Values.global "context" .) }}
           env:
             {{- if .Values.kubeslice.apigw.env }}

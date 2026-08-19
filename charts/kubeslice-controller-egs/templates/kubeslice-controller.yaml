@@ -6446,6 +6446,7 @@ rules:
       - gpuprovisioningrequests
       - gprtemplates
       - gprtemplatebindings
+      - inferencetiles
       - workspacepolicies
       - workloadplacements
       - workloadtemplates
@@ -6463,6 +6464,7 @@ rules:
       - gprtemplates/status
       - gprtemplatebindings/status
       - gpuprovisioningrequests/status
+      - inferencetiles/status
       - workloadtemplates/status
       - workloadplacements/status
     verbs:

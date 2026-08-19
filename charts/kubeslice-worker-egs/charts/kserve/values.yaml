@@ -1,15 +1,15 @@
 kserve:
-  version: v0.14.0
+  version: v0.14.1
   modelmeshVersion: v0.12.0
   agent:
     image: kserve-agent
-    tag: v0.14.0
+    tag: v0.14.1
   router:
     image: kserve-router
-    tag: v0.14.0
+    tag: v0.14.1
   storage:
     image: kserve-storage-initializer
-    tag: v0.14.0
+    tag: v0.14.1
 
     # security context for the default storage container
     containerSecurityContext:
@@ -235,7 +235,7 @@ kserve:
     image: kserve-controller
 
     # -- KServe controller contrainer image tag.
-    tag: v0.14.0
+    tag: v0.14.1
 
     # -- Reference to one or more secrets to be used when pulling images.
     # For more information, see [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
@@ -357,7 +357,7 @@ kserve:
             - ALL
     sklearnserver:
       image: kserve-sklearnserver
-      tag: v0.14.0
+      tag: v0.14.1
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -368,7 +368,7 @@ kserve:
             - ALL
     xgbserver:
       image: kserve-xgbserver
-      tag: v0.14.0
+      tag: v0.14.1
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -379,7 +379,7 @@ kserve:
             - ALL
     huggingfaceserver:
       image: kserve-huggingfaceserver
-      tag: v0.14.0
+      tag: v0.14.1
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -418,7 +418,7 @@ kserve:
             - ALL
     paddleserver:
       image: kserve-paddleserver
-      tag: v0.14.0
+      tag: v0.14.1
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -429,7 +429,7 @@ kserve:
             - ALL
     lgbserver:
       image: kserve-lgbserver
-      tag: v0.14.0
+      tag: v0.14.1
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
@@ -453,13 +453,13 @@ kserve:
             - ALL
     art:
       image: kserve-art-explainer
-      defaultVersion: v0.14.0
+      defaultVersion: v0.14.1
       imagePullSecrets: []
   localmodel:
       enabled: false
       controller:
         image: kserve-localmodel-controller
-        tag: v0.14.0
+        tag: v0.14.1
       jobNamespace: kserve-localmodel-jobs
       securityContext:
         FSGroup: 1000

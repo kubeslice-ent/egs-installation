@@ -113,7 +113,7 @@ spec:
               value: {{ .Values.kubeslice.controller.invmgrGrpcAddress }}
             - name: WEBHOOK_CA_BUNDLE
               value: {{ $caCertEnc }}
-          image: {{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.global.imageRegistry) }}
+          image: {{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.dev.imageRegistry) }}
           imagePullPolicy: '{{ .Values.kubeslice.controller.pullPolicy }}'
           livenessProbe:
             httpGet:

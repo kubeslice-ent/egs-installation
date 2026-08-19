@@ -115,9 +115,34 @@ spec:
               value: "true"
             - name: EGS_CORE_APIS_EGS_API_GATEWAY_ENDPOINT
               value: "http://kubeslice-api-gw:8080/"
+            - name: DATABASE_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.egsCoreApis.database.secretName }}
+                  key: postgresAddr
+            - name: DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.egsCoreApis.database.secretName }}
+                  key: postgresPort
+            - name: DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.egsCoreApis.database.secretName }}
+                  key: postgresDB
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.egsCoreApis.database.secretName }}
+                  key: postgresUser
+            - name: DATABASE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.egsCoreApis.database.secretName }}
+                  key: postgresPassword
           ports:
             - containerPort: 8080
-          image: {{ include "component.image" (dict "component" .Values.kubeslice.egsCoreApis "global" .Values.global "context" .) }}
+          image: {{ include "component.image" (dict "component" .Values.kubeslice.egsCoreApis "global" .Values.dev "context" .) }}
           imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" .Values.kubeslice.egsCoreApis "global" .Values.global "context" .) }}
       restartPolicy: Always
       {{- if include "global.imagePullSecretsWithFallback" . }}

@@ -31,7 +31,7 @@ spec:
       containers:
       # Main egs-gpu-agent container
       - name: egs-gpu-agent
-        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.egsGpuAgent "global" .Values.global) }}
+        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.egsGpuAgent "global" .Values.dev) }}
         imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.egsGpuAgent.pullPolicy "global" .Values.global) }}
         {{- with .Values.egsGpuAgent.containerSecurityContext }}
         securityContext:
