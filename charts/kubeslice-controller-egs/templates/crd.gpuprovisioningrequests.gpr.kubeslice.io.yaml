@@ -62,6 +62,8 @@ spec:
                 type: boolean
               enableEviction:
                 type: boolean
+              enableGPUCleanup:
+                type: boolean
               enableMig:
                 type: boolean
               enableRDMA:

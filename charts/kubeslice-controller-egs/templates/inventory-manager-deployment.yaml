@@ -59,6 +59,12 @@ spec:
                 key: LINODE_TOKEN
           - name: QMGR_GRPC_ADDRESS
             value: "{{ .Values.egs.queueManager.service.name }}:{{ .Values.egs.queueManager.service.port }}"
+          - name: GPU_CLEANUP_TIMEOUT_SECONDS
+            value: "{{ .Values.egs.inventory.gpuCleanupTimeoutSeconds }}"
+          {{- if .Values.egs.inventory.token }}
+          - name: INVENTORY_MANAGER_TOKEN
+            value: {{ .Values.egs.inventory.token | quote }}
+          {{- end }}
         livenessProbe:
           httpGet:
             path: /healthz

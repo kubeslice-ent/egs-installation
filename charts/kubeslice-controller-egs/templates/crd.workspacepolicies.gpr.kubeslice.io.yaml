@@ -68,11 +68,23 @@ spec:
               enableAutoEviction:
                 default: true
                 type: boolean
+              enableGPUCleanup:
+                description: |-
+                  EnableGPUCleanup enables orphaned GPU process cleanup for all GPRs in this workspace
+                  when they reach a terminal state. Default false (no cleanup). Individual GPRs can
+                  override this by setting their own enableGPUCleanup field.
+                type: boolean
               enableTimeSlicing:
                 default: false
                 description: |-
                   EnableTimeSlicing enables time-slicing for GPRs in this workspace
                   When enabled, low priority GPRs with same GPU shape can share GPU resources through time-slicing
+                type: boolean
+              enforcePolicy:
+                default: false
+                description: |-
+                  EnforcePolicy when true
+                  When false, validation is skipped.
                 type: boolean
               globalGPUConstraints:
                 description: Global GPU constraints applied to all clusters of the

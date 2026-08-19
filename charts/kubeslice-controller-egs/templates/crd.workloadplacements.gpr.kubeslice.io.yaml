@@ -103,6 +103,10 @@ spec:
                     description: EnableEviction is a boolean that is a flag to enable
                       eviction
                     type: boolean
+                  enableTimeSlicing:
+                    default: false
+                    description: EnableTimeSlicing enables time-slicing for the GPR.
+                    type: boolean
                   exitDuration:
                     description: ExitDuration is the duration for the GPR
                     type: string
@@ -443,6 +447,8 @@ spec:
                                 description: Version is the version of the resource.
                                 type: string
                             type: object
+                        required:
+                        - identifier
                         type: object
                       type: array
                     message:

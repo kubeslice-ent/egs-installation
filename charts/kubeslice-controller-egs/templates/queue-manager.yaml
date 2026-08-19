@@ -58,6 +58,8 @@ spec:
             value: "{{ .Values.egs.gprManager.maxDelayedCount }}"
           - name: APP_ENV
             value: "{{ .Values.egs.queueManager.appEnv }}"
+          - name: QUEUING_POLICY
+            value: "{{ .Values.egs.queueManager.queuingPolicy }}"
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst

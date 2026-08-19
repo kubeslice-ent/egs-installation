@@ -39,6 +39,8 @@ operator:
   tag: 1.18.0-RELEASE-fb34f30e
   pullPolicy: IfNotPresent
   logLevel: INFO
+  # Expiration (seconds) for slice-scoped ServiceAccount tokens minted via the TokenRequest API. Default 1 year.
+  sliceRbacSaTokenExpirationSeconds: 31536000
   env:
     - name: DCGM_EXPORTER_JOB_NAME
       value: gpu-metrics   
@@ -236,6 +238,12 @@ aiops:
   tag: 1.17.0-RELEASE-f22899b6
   pullPolicy: IfNotPresent
   logLevel: INFO
+  predictorIngressDomain: "example.com"
+  # nginx ingress auth-url for inference-tile ingresses; should point at egs-inference-auth-server's
+  # /validate endpoint (deployed on the controller cluster — needs to be reachable from this
+  # cluster's ingress controller, e.g. via a public endpoint). Left empty by default: no auth-url
+  # annotation is set on inference-tile ingresses until this is configured.
+  predictorAuthUrl: ""
   labels:
     control-plane: aiops-controller-manager
   annotations:
@@ -345,6 +353,16 @@ egsGpuAgent:
   pullPolicy: IfNotPresent
   logLevel: INFO
   secretName: egs-gpu-agent-access
+  gpuCleanupInterval: "5m"
+  gpuCleanupProcessAllowlist: "nv-hostengine,dcgmproftester,nvidia-dcgm"
+  projectNamespace: "kubeslice-controller"
+  # Address of the hub-side egs-inventory-manager gRPC endpoint (cross-cluster — this agent
+  # runs on the worker cluster, inventory-manager runs on the controller cluster). Left empty
+  # by default: MarkGPUCleaned reporting is skipped until this is set to a reachable address.
+  inventoryManagerAddr: ""
+  # Shared secret sent as the MarkGPUCleaned RPC's authorization header. Must match
+  # egs.inventory.token in the kubeslice-controller-egs chart.
+  inventoryManagerToken: ""
   labels:
     control-plane: egs-gpu-agent
   annotations: {}

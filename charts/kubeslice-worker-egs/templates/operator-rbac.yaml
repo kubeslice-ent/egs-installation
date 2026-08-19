@@ -695,6 +695,25 @@ rules:
       - list
       - watch
   - apiGroups:
+      - worker.kubeslice.io
+    resources:
+      - workerslicensgateways
+      - workerslicensgateways/status
+      - workerslicensgateways/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - worker.kubeslice.io
+    resources:
+      - slices
+      - workersliceconfigs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - gateway.envoyproxy.io
     resources:
       - envoyproxies

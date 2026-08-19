@@ -116,6 +116,12 @@ spec:
               value: "true"
             - name: HELM_INSTALLER_IMAGE
               value: "{{ .Values.global.imageRegistry }}/{{ .Values.workerInstaller.image }}:{{ .Values.workerInstaller.tag }}"
+            - name: PREDICTOR_INGRESS_DOMAIN
+              value: {{ .Values.aiops.predictorIngressDomain | quote }}
+            {{- if .Values.aiops.predictorAuthUrl }}
+            - name: PREDICTOR_AUTH_URL
+              value: {{ .Values.aiops.predictorAuthUrl | quote }}
+            {{- end }}
             - name: INFERENCE_MODEL_TOKEN
               valueFrom:
                 secretKeyRef:

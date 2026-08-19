@@ -98,6 +98,8 @@ spec:
             value: "false"
           - name: EXCLUDED_NS
             value: '{{ .Values.operator.excludeNamespaces | join "," }}'
+          - name: SLICE_RBAC_SA_TOKEN_EXPIRATION_SECONDS
+            value: "{{ .Values.operator.sliceRbacSaTokenExpirationSeconds | int }}"
           - name: AVESHA_VL3_ROUTER_IMAGE
             value: {{ include "kubeslice.image" (dict "imageRoot" .Values.router "global" .Values.global) }}
           - name: AVESHA_VL3_ROUTER_PULLPOLICY

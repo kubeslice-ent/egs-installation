@@ -237,6 +237,26 @@ spec:
             configMapKeyRef:
               name: egs-controller-config
               key: DEFAULT_DYNAMIC_TOTAL_GPU_NODES
+        - name: ENABLE_TIME_SLICING
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: ENABLE_TIME_SLICING
+        - name: TIME_SLICE_DURATION
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: TIME_SLICE_DURATION
+        - name: TIME_SLICE_CHECK_PERIOD
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: TIME_SLICE_CHECK_PERIOD
+        - name: NODE_IDLE_TIMEOUT_MINUTES
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: NODE_IDLE_TIMEOUT_MINUTES
         image: {{ include "kubeslice.image" (dict "image" .Values.egs.gprManager.image "tag" .Values.egs.gprManager.tag "registry" .Values.dev.imageRegistry) }}
         imagePullPolicy: "{{ .Values.egs.gprManager.imagePullPolicy }}"
         livenessProbe:
