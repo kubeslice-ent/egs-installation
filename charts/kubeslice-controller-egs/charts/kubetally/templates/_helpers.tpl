@@ -10,7 +10,7 @@ Usage: {{ include "kubetally.image" (dict "image" .Values.kubetally.component.im
 {{- define "kubetally.image" -}}
 {{- $registry := "" -}}
 {{- if .context.Values.global -}}
-{{- $registry = .context.Values.dev.imageRegistry -}}
+{{- $registry = .context.Values.global.imageRegistry -}}
 {{- end -}}
 {{- if $registry -}}
 {{ $registry }}/{{ .image }}:{{ .tag }}
