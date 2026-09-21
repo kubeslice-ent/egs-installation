@@ -50,6 +50,11 @@ spec:
                 type: boolean
               earlyRelease:
                 type: boolean
+              enableGPUCleanup:
+                description: |-
+                  EnableGPUCleanup enables orphaned GPU process cleanup after this GPR completes.
+                  Default false (no cleanup). Set true to enable cleanup for this GPR.
+                type: boolean
               enableRDMA:
                 type: boolean
               enableSecondaryNetwork:

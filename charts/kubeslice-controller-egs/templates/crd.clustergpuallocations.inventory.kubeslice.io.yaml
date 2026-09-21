@@ -93,6 +93,19 @@ spec:
                           allocationTimestamp:
                             format: date-time
                             type: string
+                          cleanupDeadline:
+                            description: CleanupDeadline is the timestamp after which
+                              a Cleaning slot is auto-released.
+                            format: date-time
+                            type: string
+                          cleanupState:
+                            description: CleanupState tracks the GPU slot cleanup
+                              lifecycle. Empty means Active.
+                            enum:
+                            - Active
+                            - Cleaning
+                            - Failed
+                            type: string
                           gprName:
                             type: string
                           profileName:

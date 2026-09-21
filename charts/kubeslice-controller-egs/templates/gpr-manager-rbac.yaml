@@ -75,6 +75,7 @@ rules:
   - gprautoevictions
   - gprtemplates
   - gprtemplatebindings
+  - inferencetiles
   - workloadtemplates
   - workloadplacements
   verbs:
@@ -92,6 +93,7 @@ rules:
   - gprautoevictions/finalizers
   - gprtemplates/finalizers
   - gprtemplatebindings/finalizers
+  - inferencetiles/finalizers
   - workloadtemplates/finalizers
   - workloadplacements/finalizers
   verbs:
@@ -103,6 +105,7 @@ rules:
   - gprautoevictions/status
   - gprtemplates/status
   - gprtemplatebindings/status
+  - inferencetiles/status
   - workloadtemplates/status
   - workloadplacements/status
   verbs:

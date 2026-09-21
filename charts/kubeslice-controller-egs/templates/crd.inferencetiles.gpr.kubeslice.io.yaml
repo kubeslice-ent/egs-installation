@@ -1,0 +1,155 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.5
+  name: inferencetiles.gpr.kubeslice.io
+spec:
+  group: gpr.kubeslice.io
+  names:
+    kind: InferenceTile
+    listKind: InferenceTileList
+    plural: inferencetiles
+    shortNames:
+    - itile
+    singular: inferencetile
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: InferenceTile is the Schema for the inferencetiles API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated. In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: InferenceTileSpec stores all fields required to recreate
+              an inference endpoint. Field names mirror CreateInferenceEndpointRequest
+              in egs-core-apis so the UI can pass tile data directly to the create
+              endpoint API.
+            properties:
+              burst:
+                description: Burst enables dynamic node provisioning for resource
+                  lookups.
+                type: boolean
+              clusterName:
+                description: ClusterName is the preferred cluster for deployment.
+                type: string
+              clusterPrecedence:
+                description: ClusterPrecedence is an ordered list of fallback clusters.
+                items:
+                  type: string
+                type: array
+              description:
+                type: string
+              displayName:
+                description: DisplayName is the human-readable name shown in the tile
+                  gallery.
+                maxLength: 64
+                type: string
+              gpuSpec:
+                description: InferenceTileGpuSpec captures GPU requirements for the
+                  tile, mirroring GpuSpec in egs-core-apis.
+                properties:
+                  enableTimeSlicing:
+                    type: boolean
+                  exitDuration:
+                    type: string
+                  gpuShape:
+                    type: string
+                  instanceType:
+                    type: string
+                  memoryPerGPU:
+                    type: integer
+                  numberOfGPUNodes:
+                    type: integer
+                  numberOfGPUs:
+                    type: integer
+                  priority:
+                    type: integer
+                type: object
+              modelSpec:
+                description: InferenceTileModelSpec captures model configuration.
+                  Field names match ModelSpec in egs-core-apis for direct UI passthrough.
+                properties:
+                  args:
+                    items:
+                      type: string
+                    type: array
+                  envs:
+                    description: Envs is a list of additional environment variables
+                      to inject into the model container.
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                  modelFramework:
+                    type: string
+                  modelName:
+                    type: string
+                  resources:
+                    description: InferenceTileResources captures CPU and memory resource
+                      requests.
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                    type: object
+                  storageURI:
+                    description: StorageURI matches the egs-core-apis json tag exactly.
+                    type: string
+                type: object
+              rawModelSpec:
+                description: RawModelSpec is a raw KServe InferenceService YAML,
+                  used as an alternative to ModelSpec.
+                type: string
+              sourceEndpointName:
+                description: SourceEndpointName is the inference endpoint this tile
+                  was created from. Used by the UI as the endpointName when recreating.
+                type: string
+              tags:
+                description: Tags are optional user-defined labels for filtering in
+                  the tile gallery.
+                items:
+                  type: string
+                type: array
+              workspaceName:
+                description: WorkspaceName is the workspace (slice) this tile belongs
+                  to.
+                type: string
+            required:
+            - displayName
+            - workspaceName
+            - sourceEndpointName
+            type: object
+          status:
+            description: InferenceTileStatus defines the observed state of InferenceTile.
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

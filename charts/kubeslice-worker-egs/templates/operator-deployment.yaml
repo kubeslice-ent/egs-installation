@@ -64,7 +64,7 @@ spec:
         - --num-of-app-services-per-cr=50
         command:
         - /manager
-        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.operator "global" .Values.global) }}
+        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.operator "global" .Values.dev) }}
         imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.operator.pullPolicy "global" .Values.global) }}
         env:
           - name: PROMETHEUS_SERVICE_ENDPOINT
@@ -98,6 +98,8 @@ spec:
             value: "false"
           - name: EXCLUDED_NS
             value: '{{ .Values.operator.excludeNamespaces | join "," }}'
+          - name: SLICE_RBAC_SA_TOKEN_EXPIRATION_SECONDS
+            value: "{{ .Values.operator.sliceRbacSaTokenExpirationSeconds | int }}"
           - name: AVESHA_VL3_ROUTER_IMAGE
             value: {{ include "kubeslice.image" (dict "imageRoot" .Values.router "global" .Values.global) }}
           - name: AVESHA_VL3_ROUTER_PULLPOLICY

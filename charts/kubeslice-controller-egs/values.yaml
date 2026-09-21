@@ -1,6 +1,9 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
 global:
   # Global image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
@@ -88,6 +91,8 @@ kubeslice:
   controller:
     # Log level for the controller
     logLevel: info
+    # Enable admission webhooks. Set to false to disable (e.g. for local/dev runs without cert-manager).
+    enableWebhooks: true
     # Inventory manager service address
     invmgrGrpcAddress: egs-inventory-manager:80
     # Prefix for RBAC resources created by KubeSlice
@@ -99,7 +104,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.17.1
+    tag: 1.18.0-RELEASE-41d8efe6
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -186,7 +191,7 @@ egs:
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: 1.15.0
+    tag: 1.16.0-RELEASE-315dab38
     imagePullPolicy: IfNotPresent
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60
@@ -198,6 +203,10 @@ egs:
     enableDynamicNode: false
     linodeToken: "" # Linode token for the gpr-manager to manage Linode instances
     maxNodePoolCount: 10 # Maximum number of node pools that can be created for dynamic node provisioning
+    enableTimeSlicing: true # Allow low-priority GPRs with the same GPU shape to share GPUs via time-slicing
+    timeSliceDuration: 600 # Time-slice duration in seconds
+    timeSliceCheckPeriod: 60 # Time-slicing check interval in seconds
+    nodeIdleTimeoutMinutes: 15 # Minutes an unused dynamically-provisioned node waits before scale-down
     labels:
       control-plane: gpr-controller-manager
     annotations:
@@ -245,13 +254,14 @@ egs:
     # Image name for the queue-manager
     image: queue-manager
     # Image tag for the queue-manager
-    tag: 1.13.7
+    tag: 1.14.0-RELEASE-2eb32e84
     imagePullPolicy: IfNotPresent
     service:
       name: egs-queue-manager
       port: 80
     # turn off reflection
     appEnv: "production"
+    queuingPolicy: "FIFO"
     labels:
       app: "queue-manager"
     annotations: {}
@@ -292,7 +302,7 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.14.7
+    tag: 1.15.0-RELEASE-3d52e34d
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
@@ -321,6 +331,11 @@ egs:
         type: RuntimeDefault
     linodeToken: "" # Linode token for the inventory-manager to list Linode instances
     defaultDynamicTotalGpuNodes: ""
+    gpuCleanupTimeoutSeconds: 120
+    # Shared secret required on the MarkGPUCleaned RPC. Must match egsGpuAgent.inventoryManagerToken
+    # in the kubeslice-worker-egs chart. Left empty by default: the RPC runs unauthenticated
+    # (with a startup warning) until this is set on both sides.
+    token: ""
     resources:
       limits:
         cpu: 500m
@@ -341,7 +356,54 @@ egs:
               preference:
                 matchExpressions:
                   - key: "node.kubernetes.io/gpu"
-                    operator: "DoesNotExist"                    
+                    operator: "DoesNotExist"
+
+  inferenceAuthServer:
+    # Validates inference-tile ingress auth requests (nginx auth-url) for kube-aiops-operator.
+    # Runs on the controller cluster; shares the KubeTally postgres instance credentials
+    # (global.kubeTally.postgresSecretName) and uses its own database (database.name).
+    enabled: true
+    image: egs-inference-auth-server
+    tag: latest
+    imagePullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+    labels:
+      app: egs-inference-auth-server
+      version: v1
+    annotations: {}
+    resources:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 64Mi
+    containerSecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+    podSecurityContext:
+      runAsUser: 65536
+      runAsGroup: 65536
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    tolerations:
+      - operator: "Exists"
+      - key: "kubeslice.io/egs"
+        operator: "Equal"
+        value: "dedicated-node"
+        effect: "NoSchedule"
+    database:
+      name: "egs-core-apis"
 
 # ServiceMonitor configuration for Prometheus monitoring
 serviceMonitor:

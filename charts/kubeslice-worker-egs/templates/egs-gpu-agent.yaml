@@ -31,7 +31,7 @@ spec:
       containers:
       # Main egs-gpu-agent container
       - name: egs-gpu-agent
-        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.egsGpuAgent "global" .Values.global) }}
+        image: {{ include "kubeslice.image" (dict "imageRoot" .Values.egsGpuAgent "global" .Values.dev) }}
         imagePullPolicy: {{ include "kubeslice.imagePullPolicy" (dict "pullPolicy" .Values.egsGpuAgent.pullPolicy "global" .Values.global) }}
         {{- with .Values.egsGpuAgent.containerSecurityContext }}
         securityContext:
@@ -52,6 +52,24 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: LOG_LEVEL
+          value: {{ .Values.egsGpuAgent.logLevel | quote }}
+        - name: GPU_CLEANUP_INTERVAL
+          value: {{ .Values.egsGpuAgent.gpuCleanupInterval | quote }}
+        - name: GPU_CLEANUP_PROCESS_ALLOWLIST
+          value: {{ .Values.egsGpuAgent.gpuCleanupProcessAllowlist | quote }}
+        - name: CLUSTER_NAME
+          value: {{ .Values.cluster.name | quote }}
+        - name: PROJECT_NAMESPACE
+          value: {{ .Values.egsGpuAgent.projectNamespace | quote }}
+        {{- if .Values.egsGpuAgent.inventoryManagerAddr }}
+        - name: INVENTORY_MANAGER_ADDR
+          value: {{ .Values.egsGpuAgent.inventoryManagerAddr | quote }}
+        {{- end }}
+        {{- if .Values.egsGpuAgent.inventoryManagerToken }}
+        - name: INVENTORY_MANAGER_TOKEN
+          value: {{ .Values.egsGpuAgent.inventoryManagerToken | quote }}
+        {{- end }}
 
       {{- with .Values.egsGpuAgent.affinity }}
       affinity:

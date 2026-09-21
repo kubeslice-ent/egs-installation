@@ -43,7 +43,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
           - /manager
-        image: {{ include "kubeslice.image" (dict "image" .Values.egs.inventory.image "tag" .Values.egs.inventory.tag "registry" .Values.global.imageRegistry) }}
+        image: {{ include "kubeslice.image" (dict "image" .Values.egs.inventory.image "tag" .Values.egs.inventory.tag "registry" .Values.dev.imageRegistry) }}
         imagePullPolicy: "{{ .Values.egs.inventory.imagePullPolicy }}"
         env:
           - name: LOG_LEVEL
@@ -59,6 +59,12 @@ spec:
                 key: LINODE_TOKEN
           - name: QMGR_GRPC_ADDRESS
             value: "{{ .Values.egs.queueManager.service.name }}:{{ .Values.egs.queueManager.service.port }}"
+          - name: GPU_CLEANUP_TIMEOUT_SECONDS
+            value: "{{ .Values.egs.inventory.gpuCleanupTimeoutSeconds }}"
+          {{- if .Values.egs.inventory.token }}
+          - name: INVENTORY_MANAGER_TOKEN
+            value: {{ .Values.egs.inventory.token | quote }}
+          {{- end }}
         livenessProbe:
           httpGet:
             path: /healthz
