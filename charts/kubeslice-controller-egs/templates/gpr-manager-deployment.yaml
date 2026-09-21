@@ -257,7 +257,12 @@ spec:
             configMapKeyRef:
               name: egs-controller-config
               key: NODE_IDLE_TIMEOUT_MINUTES
-        image: {{ include "kubeslice.image" (dict "image" .Values.egs.gprManager.image "tag" .Values.egs.gprManager.tag "registry" .Values.dev.imageRegistry) }}
+        - name: DEFAULT_MAX_MEMORY_PER_GPR
+          valueFrom:
+            configMapKeyRef:
+              name: egs-controller-config
+              key: DEFAULT_MAX_MEMORY_PER_GPR
+        image: {{ include "kubeslice.image" (dict "image" .Values.egs.gprManager.image "tag" .Values.egs.gprManager.tag "registry" .Values.global.imageRegistry) }}
         imagePullPolicy: "{{ .Values.egs.gprManager.imagePullPolicy }}"
         livenessProbe:
           httpGet:

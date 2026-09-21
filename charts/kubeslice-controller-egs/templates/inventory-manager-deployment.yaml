@@ -43,7 +43,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
           - /manager
-        image: {{ include "kubeslice.image" (dict "image" .Values.egs.inventory.image "tag" .Values.egs.inventory.tag "registry" .Values.dev.imageRegistry) }}
+        image: {{ include "kubeslice.image" (dict "image" .Values.egs.inventory.image "tag" .Values.egs.inventory.tag "registry" .Values.global.imageRegistry) }}
         imagePullPolicy: "{{ .Values.egs.inventory.imagePullPolicy }}"
         env:
           - name: LOG_LEVEL
@@ -51,7 +51,15 @@ spec:
           - name: DEV_MODE
             value: "false"
           - name: DEFAULT_DYNAMIC_TOTAL_GPU_NODES
-            value: "{{ .Values.egs.inventory.defaultDynamicTotalGpuNodes }}"
+            valueFrom:
+              configMapKeyRef:
+                name: egs-controller-config
+                key: DEFAULT_DYNAMIC_TOTAL_GPU_NODES
+          - name: DYNAMIC_NODE_PREFERRED_INSTANCES
+            valueFrom:
+              configMapKeyRef:
+                name: egs-controller-config
+                key: DYNAMIC_NODE_PREFERRED_INSTANCES
           - name: LINODE_TOKEN
             valueFrom:
               configMapKeyRef:

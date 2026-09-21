@@ -115,7 +115,7 @@ spec:
               value: {{ $caCertEnc }}
             - name: ENABLE_WEBHOOKS
               value: {{ .Values.kubeslice.controller.enableWebhooks | default true | quote }}
-          image: {{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.dev.imageRegistry) }}
+          image: {{ include "kubeslice.image" (dict "image" .Values.kubeslice.controller.image "tag" .Values.kubeslice.controller.tag "registry" .Values.global.imageRegistry) }}
           imagePullPolicy: '{{ .Values.kubeslice.controller.pullPolicy }}'
           livenessProbe:
             httpGet:

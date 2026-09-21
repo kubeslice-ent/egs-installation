@@ -142,7 +142,7 @@ spec:
                   key: postgresPassword
           ports:
             - containerPort: 8080
-          image: {{ include "component.image" (dict "component" .Values.kubeslice.egsCoreApis "global" .Values.dev "context" .) }}
+          image: {{ include "component.image" (dict "component" .Values.kubeslice.egsCoreApis "global" .Values.global "context" .) }}
           imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" .Values.kubeslice.egsCoreApis "global" .Values.global "context" .) }}
       restartPolicy: Always
       {{- if include "global.imagePullSecretsWithFallback" . }}

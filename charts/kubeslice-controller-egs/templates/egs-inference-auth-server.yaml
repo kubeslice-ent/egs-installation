@@ -49,9 +49,8 @@ spec:
           resources: {{ toYaml .Values.egs.inferenceAuthServer.resources | nindent 12 }}
           {{- end }}
           env:
-            # DB host/port/user/password are shared with KubeTally via the same
-            # postgres instance credentials; only the database name is specific
-            # to this service.
+            # DB host/port/user/name/password are all shared with KubeTally via
+            # the same postgres instance credentials secret.
             - name: DATABASE_ADDR
               valueFrom:
                 secretKeyRef:
@@ -73,7 +72,10 @@ spec:
                   name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}
                   key: postgresPassword
             - name: DATABASE_NAME
-              value: {{ .Values.egs.inferenceAuthServer.database.name | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.kubeTally.postgresSecretName | default "kubetally-db-credentials" }}
+                  key: postgresDB
           ports:
             - containerPort: 8080
       securityContext:

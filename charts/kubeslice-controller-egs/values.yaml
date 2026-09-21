@@ -1,9 +1,6 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-dev:
-  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
-
 global:
   # Global image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
@@ -104,7 +101,7 @@ kubeslice:
     # Image name for the KubeSlice controller
     image: kubeslice-controller-ent-egs
     # Image tag for the KubeSlice controller
-    tag: 1.18.0-RELEASE-41d8efe6
+    tag: 1.18.0
     # Image pull policy for the KubeSlice controller
     pullPolicy: IfNotPresent
     # Configuration for kubeTally, which handles chargeback and metrics
@@ -191,7 +188,7 @@ egs:
     # Image name for the gpr-manager
     image: gpr-manager
     # Image tag for the gpr-manager
-    tag: 1.16.0-RELEASE-315dab38
+    tag: 1.16.0
     imagePullPolicy: IfNotPresent
     # Period for checking if there is queue processing needed (in seconds)
     qmgrCheckPeriod: 60
@@ -207,6 +204,7 @@ egs:
     timeSliceDuration: 600 # Time-slice duration in seconds
     timeSliceCheckPeriod: 60 # Time-slicing check interval in seconds
     nodeIdleTimeoutMinutes: 15 # Minutes an unused dynamically-provisioned node waits before scale-down
+    defaultMaxMemoryPerGpr: 256 # Default max memory per GPU (in GB) for a new workspace policy; if unset, computed from cluster inventory
     labels:
       control-plane: gpr-controller-manager
     annotations:
@@ -254,7 +252,7 @@ egs:
     # Image name for the queue-manager
     image: queue-manager
     # Image tag for the queue-manager
-    tag: 1.14.0-RELEASE-2eb32e84
+    tag: 1.14.0
     imagePullPolicy: IfNotPresent
     service:
       name: egs-queue-manager
@@ -302,7 +300,7 @@ egs:
     # Image name for inventory-manager
     image: inventory-manager
     # Image tag for inventory-manager
-    tag: 1.15.0-RELEASE-3d52e34d
+    tag: 1.15.0
     imagePullPolicy: IfNotPresent
     logLevel: INFO
     service:
@@ -331,6 +329,10 @@ egs:
         type: RuntimeDefault
     linodeToken: "" # Linode token for the inventory-manager to list Linode instances
     defaultDynamicTotalGpuNodes: ""
+    # Comma-separated CSP instance-type IDs (e.g. "g2-gpu-rtx4000a1-l,g2-gpu-rtx4000a2-m") that
+    # dynamic-node provisioning is restricted to, applied uniformly to every CSP-enabled cluster
+    # this inventory-manager reconciles. Left empty, every CSP-returned instance type is allowed.
+    dynamicNodePreferredInstances: ""
     gpuCleanupTimeoutSeconds: 120
     # Shared secret required on the MarkGPUCleaned RPC. Must match egsGpuAgent.inventoryManagerToken
     # in the kubeslice-worker-egs chart. Left empty by default: the RPC runs unauthenticated
@@ -361,10 +363,10 @@ egs:
   inferenceAuthServer:
     # Validates inference-tile ingress auth requests (nginx auth-url) for kube-aiops-operator.
     # Runs on the controller cluster; shares the KubeTally postgres instance credentials
-    # (global.kubeTally.postgresSecretName) and uses its own database (database.name).
+    # and database (global.kubeTally.postgresSecretName).
     enabled: true
     image: egs-inference-auth-server
-    tag: latest
+    tag: 1.0.0
     imagePullPolicy: IfNotPresent
     service:
       type: ClusterIP
@@ -402,8 +404,6 @@ egs:
         operator: "Equal"
         value: "dedicated-node"
         effect: "NoSchedule"
-    database:
-      name: "egs-core-apis"
 
 # ServiceMonitor configuration for Prometheus monitoring
 serviceMonitor:
