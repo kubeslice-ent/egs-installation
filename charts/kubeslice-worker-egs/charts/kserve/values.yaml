@@ -407,7 +407,7 @@ kserve:
             - ALL
     pmmlserver:
       image: kserve-pmmlserver
-      tag: v0.14.0
+      tag: v0.14.1
       imagePullSecrets: []
       securityContext:
         allowPrivilegeEscalation: false
