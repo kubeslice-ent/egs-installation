@@ -1,6 +1,10 @@
 # Default values for k-native.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
+
 global:
   # Global image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
@@ -249,8 +253,14 @@ kubeslice:
 
   apigw:
     image: kubeslice-api-gw-ent-egs
-    tag: 1.18.0
+    tag: 1.19.0-RELEASE-a32f68b7
     pullPolicy: IfNotPresent
+    # Database used to store API keys for token-protected custom workload endpoints.
+    # Defaults to the same Postgres credentials Secret used by egs-core-apis.
+    workloadEndpointDatabase:
+      enabled: true
+      secretName: "kubetally-db-credentials"
+      ssl: false
     env:
       - name: DCGM_METRIC_JOB_VALUE
         value: gpu-metrics
@@ -356,7 +366,7 @@ kubeslice:
     pullPolicy: IfNotPresent
 
   prometheus:
-    url: http://prometheus-service:9090 #Prometheus URL for monitoring(should be specified if needed)
+    url: http://egs-monitoring-prometheus-server.egs-monitoring.svc.cluster.local #Prometheus URL for monitoring(should be specified if needed)
 
 egs:
   InventoryManagerAddress: egs-inventory-manager:80

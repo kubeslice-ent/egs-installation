@@ -1,3 +1,7 @@
+dev:
+  imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshadev
+
+
 global:
   # Centralized image registry configuration
   imageRegistry: harbor.saas1.smart-scaler.io/avesha/aveshasystems
@@ -231,7 +235,7 @@ istio:
 
 aiops:
   image: kube-aiops-operator
-  tag: 1.17.0
+  tag: 1.18.0-RELEASE-271aa76c
   pullPolicy: IfNotPresent
   logLevel: INFO
   predictorIngressDomain: "example.com"

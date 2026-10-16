@@ -32,16 +32,17 @@ spec:
             description: |-
               Kind is a string value representing the REST resource this object represents.
               Servers may infer this from the endpoint the client submits requests to.
-              Cannot be updated. In CamelCase.
+              Cannot be updated.
+              In CamelCase.
               More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
           spec:
-            description: InferenceTileSpec stores all fields required to recreate
-              an inference endpoint. Field names mirror CreateInferenceEndpointRequest
-              in egs-core-apis so the UI can pass tile data directly to the create
-              endpoint API.
+            description: |-
+              InferenceTileSpec stores all fields required to recreate an inference endpoint.
+              Field names and structure mirror CreateInferenceEndpointRequest in egs-core-apis
+              so the UI can pass the tile data directly to the create endpoint API.
             properties:
               burst:
                 description: Burst enables dynamic node provisioning for resource
@@ -84,8 +85,11 @@ spec:
                     type: integer
                 type: object
               modelSpec:
-                description: InferenceTileModelSpec captures model configuration.
-                  Field names match ModelSpec in egs-core-apis for direct UI passthrough.
+                description: |-
+                  InferenceTileModelSpec captures model configuration. Raw secret values are never stored here;
+                  the default platform HF token (AppConfig.ModelToken) is used at deploy time.
+                  Field names intentionally match ModelSpec in egs-core-apis so the UI can pass this directly
+                  to the CreateInferenceEndpoint API without any field name mapping.
                 properties:
                   args:
                     items:
@@ -95,6 +99,8 @@ spec:
                     description: Envs is a list of additional environment variables
                       to inject into the model container.
                     items:
+                      description: InferenceTileEnvVar defines a single environment
+                        variable as a name/value pair.
                       properties:
                         name:
                           type: string
@@ -123,12 +129,13 @@ spec:
                     type: string
                 type: object
               rawModelSpec:
-                description: RawModelSpec is a raw KServe InferenceService YAML,
-                  used as an alternative to ModelSpec.
+                description: RawModelSpec is a raw KServe InferenceService YAML, used
+                  as an alternative to ModelSpec.
                 type: string
               sourceEndpointName:
-                description: SourceEndpointName is the inference endpoint this tile
-                  was created from. Used by the UI as the endpointName when recreating.
+                description: |-
+                  SourceEndpointName is the inference endpoint this tile was created from.
+                  Used by the UI as the endpointName when recreating.
                 type: string
               tags:
                 description: Tags are optional user-defined labels for filtering in
@@ -142,8 +149,8 @@ spec:
                 type: string
             required:
             - displayName
-            - workspaceName
             - sourceEndpointName
+            - workspaceName
             type: object
           status:
             description: InferenceTileStatus defines the observed state of InferenceTile.

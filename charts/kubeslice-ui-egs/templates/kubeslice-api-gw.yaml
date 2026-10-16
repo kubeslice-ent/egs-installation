@@ -61,7 +61,7 @@ spec:
       {{ toYaml .Values.kubeslice.apigw.affinity | nindent 8 }}
       {{- end }}
       containers:
-        - image: {{ include "component.image" (dict "component" .Values.kubeslice.apigw "global" .Values.global "context" .) }}
+        - image: {{ include "component.image" (dict "component" .Values.kubeslice.apigw "global" .Values.dev "context" .) }}
           imagePullPolicy: {{ include "component.imagePullPolicy" (dict "component" .Values.kubeslice.apigw "global" .Values.global "context" .) }}
           env:
             {{- if .Values.kubeslice.apigw.env }}
@@ -96,6 +96,37 @@ spec:
               value: {{ .Values.egs.QueueManagerAddress }}
             - name: CORE_APIS_ENDPOINT
               value: {{ .Values.egs.CoreApisUrl }}
+          {{- if .Values.kubeslice.apigw.workloadEndpointDatabase.enabled }}
+            # Credential store for token-protected custom workload endpoints (workload-placement ingress).
+            # Reuses the inference credential database; see mesh-api-gateway-ent-egs/docs/workload-endpoints.md.
+            - name: DATABASE_ADDR
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.apigw.workloadEndpointDatabase.secretName }}
+                  key: postgresAddr
+            - name: DATABASE_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.apigw.workloadEndpointDatabase.secretName }}
+                  key: postgresPort
+            - name: DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.apigw.workloadEndpointDatabase.secretName }}
+                  key: postgresDB
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.apigw.workloadEndpointDatabase.secretName }}
+                  key: postgresUser
+            - name: DATABASE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.kubeslice.apigw.workloadEndpointDatabase.secretName }}
+                  key: postgresPassword
+            - name: DATABASE_SSL
+              value: {{ .Values.kubeslice.apigw.workloadEndpointDatabase.ssl | quote }}
+          {{- end }}
             - name: CONTROLLER_PROMETHEUS_TLS_ENABLED
               value: {{ .Values.egs.ControllerPrometheusTlsEnabled | quote   }}
           {{- if eq .Values.egs.ControllerPrometheusTlsEnabled "true" }}

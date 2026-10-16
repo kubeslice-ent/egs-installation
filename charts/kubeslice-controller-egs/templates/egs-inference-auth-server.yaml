@@ -39,7 +39,7 @@ spec:
       {{- end }}
       containers:
         - name: egs-inference-auth-server
-          image: {{ include "kubeslice.image" (dict "image" .Values.egs.inferenceAuthServer.image "tag" .Values.egs.inferenceAuthServer.tag "registry" .Values.global.imageRegistry) }}
+          image: {{ include "kubeslice.image" (dict "image" .Values.egs.inferenceAuthServer.image "tag" .Values.egs.inferenceAuthServer.tag "registry" .Values.dev.imageRegistry) }}
           imagePullPolicy: "{{ .Values.egs.inferenceAuthServer.imagePullPolicy }}"
           {{- if .Values.egs.inferenceAuthServer.containerSecurityContext }}
           securityContext:
