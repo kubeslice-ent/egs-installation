@@ -1,16 +1,22 @@
 ---
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.15.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: workloadplacements.gpr.kubeslice.io
 spec:
   group: gpr.kubeslice.io
   names:
+    categories:
+    - all
     kind: WorkloadPlacement
     listKind: WorkloadPlacementList
     plural: workloadplacements
+    shortNames:
+    - slicewp
+    - slicewps
     singular: workloadplacement
   scope: Namespaced
   versions:
@@ -264,6 +270,27 @@ spec:
                   - type
                   type: object
                 type: array
+              workspaceDataStoreRef:
+                description: |-
+                  WorkspaceDataStoreRef binds this workload to a WorkspaceDataStore. gpr-manager replaces
+                  __WORKSPACE_DATA_STORE_PVC_NAME__, __WORKSPACE_DATA_STORE_NAMESPACE__ and
+                  __WORKSPACE_DATA_STORE_STORAGE_CLASS_NAME__ in manifests, helm values and commands.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                  namespace:
+                    description: namespace of the WorkspaceDataStore. Defaults to
+                      the referencing object's namespace.
+                    type: string
+                  targetNamespace:
+                    description: |-
+                      targetNamespace is the namespace on the worker cluster the workload runs in, where the
+                      data store PVC is created. Defaults to the namespaces the manifests and helm releases target.
+                    type: string
+                required:
+                - name
+                type: object
               workspaceName:
                 description: WorkspaceName is the name of the workspace to place the
                   workload
@@ -293,18 +320,8 @@ spec:
                         4. Degraded represents the current state of workload does not match the desired
                         state for a certain period.
                       items:
-                        description: "Condition contains details for one aspect of
-                          the current state of this API Resource.\n---\nThis struct
-                          is intended for direct use as an array at the field path
-                          .status.conditions.  For example,\n\n\n\ttype FooStatus
-                          struct{\n\t    // Represents the observations of a foo's
-                          current state.\n\t    // Known .status.conditions.type are:
-                          \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
-                          +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    //
-                          +listType=map\n\t    // +listMapKey=type\n\t    Conditions
-                          []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\"
-                          patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
-                          \   // other fields\n\t}"
+                        description: Condition contains details for one aspect of
+                          the current state of this API Resource.
                         properties:
                           lastTransitionTime:
                             description: |-
@@ -346,12 +363,7 @@ spec:
                             - Unknown
                             type: string
                           type:
-                            description: |-
-                              type of condition in CamelCase or in foo.example.com/CamelCase.
-                              ---
-                              Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-                              useful (see .node.status.conditions), the ability to deconflict is important.
-                              The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                            description: type of condition in CamelCase or in foo.example.com/CamelCase.
                             maxLength: 316
                             pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                             type: string

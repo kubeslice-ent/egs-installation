@@ -1,0 +1,267 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.5
+  name: datastorebackends.gpr.kubeslice.io
+spec:
+  group: gpr.kubeslice.io
+  names:
+    kind: DataStoreBackend
+    listKind: DataStoreBackendList
+    plural: datastorebackends
+    shortNames:
+    - dsb
+    singular: datastorebackend
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.fsName
+      name: FS
+      type: string
+    - jsonPath: .spec.scope
+      name: Scope
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          DataStoreBackend is where a JuiceFS filesystem lives: a metadata engine and an object store.
+          Platform admins own it; WorkspaceDataStores reference it.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DataStoreBackendSpec defines where a JuiceFS filesystem lives.
+            properties:
+              format:
+                description: DataStoreBackendFormat controls `juicefs format`.
+                properties:
+                  blockSizeKiB:
+                    default: 4096
+                    format: int32
+                    type: integer
+                  compress:
+                    default: lz4
+                    enum:
+                    - none
+                    - lz4
+                    - zstd
+                    type: string
+                  enabled:
+                    default: true
+                    description: enabled runs `juicefs format` once. Disable it for
+                      a filesystem that was formatted elsewhere.
+                    type: boolean
+                  trashDays:
+                    default: 1
+                    format: int32
+                    type: integer
+                type: object
+              fsName:
+                description: fsName is the JuiceFS volume name. It is also the S3
+                  bucket name the gateway serves.
+                pattern: ^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$
+                type: string
+              mirrors:
+                description: |-
+                  mirrors copy this filesystem's data to regional buckets; clusters in a mirror's region read
+                  from it. Metadata stays central.
+                items:
+                  description: |-
+                    DataStoreMirror is a regional copy of the filesystem's data. It is synced on a schedule, so data
+                    written after the last sync can't be read from the mirror yet; mirrors suit read-mostly data such
+                    as model weights. The mirror bucket must accept the backend's access keys.
+                  properties:
+                    bucketURL:
+                      description: bucketURL is the regional bucket in the same form
+                        as the backend Secret's bucket.
+                      minLength: 1
+                      type: string
+                    clusterNames:
+                      description: clusterNames read from this mirror.
+                      items:
+                        type: string
+                      minItems: 1
+                      type: array
+                    name:
+                      description: name is unique within the backend.
+                      pattern: ^[a-z0-9]([-a-z0-9]{0,30}[a-z0-9])?$
+                      type: string
+                    readOnly:
+                      description: |-
+                        readOnly mounts the data store read-only on the mirror's clusters, so nothing is written
+                        that the mirror can't serve back. Defaults to true.
+                      type: boolean
+                    schedule:
+                      description: schedule is the cron schedule of the sync. Defaults
+                        to @hourly.
+                      type: string
+                  required:
+                  - bucketURL
+                  - clusterNames
+                  - name
+                  type: object
+                type: array
+              mount:
+                description: DataStoreBackendMount holds mount options shared by every
+                  PV of this backend.
+                properties:
+                  cacheSizeMiB:
+                    default: 102400
+                    description: cacheSizeMiB is the local cache size per mount pod.
+                    format: int64
+                    type: integer
+                  extraOptions:
+                    description: extraOptions are appended to the PV mountOptions.
+                      subdir= is rejected; it is always set by EGS.
+                    items:
+                      type: string
+                    type: array
+                type: object
+              scope:
+                default: Org
+                description: DataStoreBackendScope says who shares a backend's filesystem.
+                enum:
+                - Org
+                - Workspace
+                type: string
+              secretRef:
+                description: |-
+                  secretRef names a Secret in this namespace with keys name, metaurl, storage, bucket,
+                  access-key and secret-key.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
+              storage:
+                default: s3
+                description: storage is the object storage type passed to `juicefs
+                  format --storage`.
+                enum:
+                - s3
+                - minio
+                - oci
+                - gs
+                type: string
+              workerSecretRef:
+                description: |-
+                  workerSecretRef optionally names a Secret with the same keys whose metaurl and bucket use the
+                  addresses worker clusters reach, e.g. KubeSlice ServiceExport names on a dedicated JuiceFS slice
+                  (redis.egs-datastore.svc.slice.local). Worker mounts use it; jobs on the controller cluster keep
+                  secretRef. Both must point at the same filesystem.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
+            required:
+            - fsName
+            - secretRef
+            type: object
+          status:
+            description: DataStoreBackendStatus defines the observed state of DataStoreBackend.
+            properties:
+              formatted:
+                type: boolean
+              message:
+                type: string
+              metaEngine:
+                description: 'metaEngine is the metadata engine from the Secret''s
+                  metaurl: redis, postgres, mysql, tikv or etcd.'
+                type: string
+              mirrors:
+                description: mirrors reports each mirror's last sync.
+                items:
+                  description: DataStoreMirrorStatus is the last sync of one mirror.
+                  properties:
+                    lastRunPhase:
+                      description: lastRunPhase is Running, Succeeded or Failed.
+                      type: string
+                    lastScheduleTime:
+                      format: date-time
+                      type: string
+                    lastSuccessfulTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    name:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+              observedGeneration:
+                format: int64
+                type: integer
+              phase:
+                description: DataStoreBackendPhase represents the reconciliation phase
+                  of DataStoreBackend.
+                type: string
+              usage:
+                description: |-
+                  usage is the space and inodes used under each directory quota, read periodically with
+                  `juicefs quota list`. Workspace data stores copy their own row into their status.
+                items:
+                  description: |-
+                    DataStoreDirectoryUsage is one directory quota and what it uses. JuiceFS reports sizes rounded to
+                    two or three significant digits, so usedBytes is approximate.
+                  properties:
+                    capacityBytes:
+                      description: capacityBytes is the quota; 0 means unlimited.
+                      format: int64
+                      type: integer
+                    path:
+                      type: string
+                    usedBytes:
+                      format: int64
+                      type: integer
+                    usedInodes:
+                      format: int64
+                      type: integer
+                  required:
+                  - path
+                  type: object
+                type: array
+              usageUpdatedAt:
+                description: usageUpdatedAt is when usage was last read.
+                format: date-time
+                type: string
+              uuid:
+                description: uuid is the JuiceFS volume UUID read back after a successful
+                  format.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

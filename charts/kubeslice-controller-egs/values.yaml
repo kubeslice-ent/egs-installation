@@ -201,6 +201,13 @@ egs:
     linodeToken: "" # Linode token for the gpr-manager to manage Linode instances
     maxNodePoolCount: 10 # Maximum number of node pools that can be created for dynamic node provisioning
     enableTimeSlicing: true # Allow low-priority GPRs with the same GPU shape to share GPUs via time-slicing
+    # Workspace data store (JuiceFS). Images run the format, directory, gateway and import jobs.
+    dataStore:
+      juicefsImage: juicedata/mount:ce-v1.2.1
+      ingestImage: aveshasystems/egs-datastore-ingest:v0.1.0
+      # Ingress class and TLS secret for data store S3 gateways that set an ingressHost
+      ingressClass: ""
+      ingressTLSSecret: ""
     timeSliceDuration: 600 # Time-slice duration in seconds
     timeSliceCheckPeriod: 60 # Time-slicing check interval in seconds
     nodeIdleTimeoutMinutes: 15 # Minutes an unused dynamically-provisioned node waits before scale-down
