@@ -366,6 +366,36 @@ additional_apps:
             - source_labels: [__meta_kubernetes_pod_node_name]
               action: replace
               target_label: kubernetes_node
+          - job_name: egs-vllm-metrics
+            # vLLM token/latency metrics from EGS inference endpoint pods.
+            # Only pods carrying the gpr-id label (set by egs-core-apis) are scraped.
+            scrape_interval: 15s
+            metrics_path: /metrics
+            scheme: http
+            kubernetes_sd_configs:
+            - role: pod
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_gpr_id]
+              action: keep
+              regex: .+
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              action: keep
+              regex: vllm|kserve-container
+            - source_labels: [__meta_kubernetes_pod_ip]
+              target_label: __address__
+              replacement: $1:8080
+            - source_labels: [__meta_kubernetes_namespace]
+              target_label: namespace
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod
+            - source_labels: [__meta_kubernetes_pod_label_gpr_id]
+              target_label: gpr_id
+            - source_labels: [__meta_kubernetes_pod_label_workspace]
+              target_label: workspace
+            - source_labels: [__meta_kubernetes_pod_label_worker_cluster]
+              target_label: worker_cluster
+            - source_labels: [__meta_kubernetes_pod_label_serving_kserve_io_inferenceservice]
+              target_label: endpoint
       grafana:
         enabled: true                         # Enable Grafana
         grafana.ini:
