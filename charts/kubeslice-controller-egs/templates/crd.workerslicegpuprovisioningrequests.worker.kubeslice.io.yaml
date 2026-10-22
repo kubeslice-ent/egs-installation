@@ -220,6 +220,32 @@ spec:
               startTimestamp:
                 format: date-time
                 type: string
+              tokenUsage:
+                description: |-
+                  TokenUsage holds cumulative LLM token counts served by the inference workload(s) bound to
+                  this GPR. Counts are read from the inference server's Prometheus metrics (vLLM today) and
+                  only ever grow over the life of the GPR, so consumers derive per-interval usage from deltas.
+                properties:
+                  cachedPromptTokens:
+                    description: CachedPromptTokens is the cumulative number of prompt
+                      tokens served from the prefix (KV) cache.
+                    format: int64
+                    type: integer
+                  generationTokens:
+                    description: GenerationTokens is the cumulative number of output
+                      (decode) tokens generated.
+                    format: int64
+                    type: integer
+                  lastUpdated:
+                    description: LastUpdated is when the counts were last refreshed.
+                    format: date-time
+                    type: string
+                  promptTokens:
+                    description: PromptTokens is the cumulative number of input (prefill)
+                      tokens processed.
+                    format: int64
+                    type: integer
+                type: object
             required:
             - provisioningStatus
             type: object
