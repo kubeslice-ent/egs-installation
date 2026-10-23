@@ -273,6 +273,26 @@ spec:
                       tokens processed.
                     format: int64
                     type: integer
+                  interTokenLatencyCount:
+                    description: Number of inter-token latency observations.
+                    format: int64
+                    type: integer
+                  interTokenLatencyMsSum:
+                    description: Cumulative inter-token latency in milliseconds.
+                    format: int64
+                    type: integer
+                  successfulRequests:
+                    description: Cumulative number of requests that finished successfully.
+                    format: int64
+                    type: integer
+                  timeToFirstTokenCount:
+                    description: Number of time-to-first-token observations.
+                    format: int64
+                    type: integer
+                  timeToFirstTokenMsSum:
+                    description: Cumulative time to first token in milliseconds.
+                    format: int64
+                    type: integer
                 type: object
             required:
             - provisioningStatus
