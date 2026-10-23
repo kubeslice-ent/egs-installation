@@ -240,6 +240,34 @@ spec:
                     description: LastUpdated is when the counts were last refreshed.
                     format: date-time
                     type: string
+                  pods:
+                    description: |-
+                      Pods breaks the counts down by the inference pod that served them. Each entry is that
+                      pod's cumulative count; the GPR totals above can be larger (tokens from pods no longer
+                      listed, or counted while no per-pod baseline existed).
+                    items:
+                      description: PodTokenUsage is the cumulative token count served by
+                        one inference pod of a GPR.
+                      properties:
+                        cachedPromptTokens:
+                          format: int64
+                          type: integer
+                        generationTokens:
+                          format: int64
+                          type: integer
+                        name:
+                          description: Name is the pod name.
+                          type: string
+                        namespace:
+                          description: Namespace is the pod's namespace on the worker cluster.
+                          type: string
+                        promptTokens:
+                          format: int64
+                          type: integer
+                      required:
+                      - name
+                      type: object
+                    type: array
                   promptTokens:
                     description: PromptTokens is the cumulative number of input (prefill)
                       tokens processed.
