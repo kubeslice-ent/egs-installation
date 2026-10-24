@@ -281,6 +281,14 @@ spec:
                     description: Cumulative inter-token latency in milliseconds.
                     format: int64
                     type: integer
+                  kvCacheUsageSamples:
+                    description: Number of KV cache usage readings.
+                    format: int64
+                    type: integer
+                  kvCacheUsageSum:
+                    description: Cumulative sum of KV cache usage readings in basis points (10000 = 100%).
+                    format: int64
+                    type: integer
                   successfulRequests:
                     description: Cumulative number of requests that finished successfully.
                     format: int64
