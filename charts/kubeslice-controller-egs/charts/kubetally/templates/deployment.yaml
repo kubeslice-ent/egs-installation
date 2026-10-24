@@ -220,6 +220,7 @@ spec:
       {{ toYaml .Values.kubetally.kubeTallyReport.labels | nindent 8 }}
       {{- end }}
     spec:
+      serviceAccountName: kubetally-report
       {{- if .Values.kubetally.kubeTallyReport.tolerations }}
       tolerations: 
       {{ toYaml .Values.kubetally.kubeTallyReport.tolerations | nindent 8 }}
