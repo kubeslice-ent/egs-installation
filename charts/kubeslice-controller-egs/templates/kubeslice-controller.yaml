@@ -3370,55 +3370,6 @@ spec:
                                             type: string
                                         type: object
                                       type: array
-                                    llm:
-                                      description: LLM is the workload pod's LLM inference
-                                        usage, when it serves a model with vLLM.
-                                      properties:
-                                        cachedPromptTokens:
-                                          description: CachedPromptTokens is the number
-                                            of input tokens served from the prefix
-                                            (KV) cache.
-                                          format: int64
-                                          type: integer
-                                        generationTokens:
-                                          description: GenerationTokens is the number
-                                            of output (decode) tokens generated.
-                                          format: int64
-                                          type: integer
-                                        interTokenLatencyCount:
-                                          format: int64
-                                          type: integer
-                                        interTokenLatencyMsSum:
-                                          description: |-
-                                            InterTokenLatencyMsSum and InterTokenLatencyCount are the sum (milliseconds) and number of
-                                            inter-token latency observations; their ratio is the mean ITL.
-                                          format: int64
-                                          type: integer
-                                        kvCacheUsage:
-                                          description: KVCacheUsage is the share of
-                                            the KV cache in use when read (0-1, e.g.
-                                            "0.0204").
-                                          type: string
-                                        promptTokens:
-                                          description: PromptTokens is the number
-                                            of input (prefill) tokens processed.
-                                          format: int64
-                                          type: integer
-                                        successfulRequests:
-                                          description: SuccessfulRequests is the number
-                                            of requests that finished successfully.
-                                          format: int64
-                                          type: integer
-                                        timeToFirstTokenCount:
-                                          format: int64
-                                          type: integer
-                                        timeToFirstTokenMsSum:
-                                          description: |-
-                                            TimeToFirstTokenMsSum and TimeToFirstTokenCount are the sum (milliseconds) and number of
-                                            time-to-first-token observations; their ratio is the mean TTFT.
-                                          format: int64
-                                          type: integer
-                                      type: object
                                   type: object
                                 workloadKind:
                                   description: WorkloadKind is the kind of the workload

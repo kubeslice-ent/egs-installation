@@ -81,17 +81,6 @@ kubetally:
 
   kubeTallyReport:
     image: kubetally-report
-    # Where LLM token usage per GPR comes from. "workerslicegpr" (default): the totals
-    # kube-aiops-operator publishes on each WorkerSliceGPR. "prometheus": the
-    # kubeslice_controller_llm_* metrics the kubeslice controller exports from the workers' usage
-    # reports, the same way as kubeslice_controller_gpu_utilization, read from the controller's
-    # Prometheus (prometheusEndpoint, default: global.kubeTally.prometheusUrl). since (RFC 3339)
-    # is the first minute recorded that way; without it, recording resumes from the latest stored
-    # minute.
-    tokenUsage:
-      source: workerslicegpr
-      prometheusEndpoint: ""
-      since: ""
     tag: 1.14.0
     imagePullPolicy: IfNotPresent
     labels:
