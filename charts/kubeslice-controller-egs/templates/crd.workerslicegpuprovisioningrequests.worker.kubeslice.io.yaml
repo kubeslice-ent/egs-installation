@@ -220,6 +220,88 @@ spec:
               startTimestamp:
                 format: date-time
                 type: string
+              tokenUsage:
+                description: |-
+                  TokenUsage holds cumulative LLM token counts served by the inference workload(s) bound to
+                  this GPR. Counts are read from the inference server's Prometheus metrics (vLLM today) and
+                  only ever grow over the life of the GPR, so consumers derive per-interval usage from deltas.
+                properties:
+                  cachedPromptTokens:
+                    description: CachedPromptTokens is the cumulative number of prompt
+                      tokens served from the prefix (KV) cache.
+                    format: int64
+                    type: integer
+                  generationTokens:
+                    description: GenerationTokens is the cumulative number of output
+                      (decode) tokens generated.
+                    format: int64
+                    type: integer
+                  lastUpdated:
+                    description: LastUpdated is when the counts were last refreshed.
+                    format: date-time
+                    type: string
+                  pods:
+                    description: |-
+                      Pods breaks the counts down by the inference pod that served them. Each entry is that
+                      pod's cumulative count; the GPR totals above can be larger (tokens from pods no longer
+                      listed, or counted while no per-pod baseline existed).
+                    items:
+                      description: PodTokenUsage is the cumulative token count served by
+                        one inference pod of a GPR.
+                      properties:
+                        cachedPromptTokens:
+                          format: int64
+                          type: integer
+                        generationTokens:
+                          format: int64
+                          type: integer
+                        name:
+                          description: Name is the pod name.
+                          type: string
+                        namespace:
+                          description: Namespace is the pod's namespace on the worker cluster.
+                          type: string
+                        promptTokens:
+                          format: int64
+                          type: integer
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  promptTokens:
+                    description: PromptTokens is the cumulative number of input (prefill)
+                      tokens processed.
+                    format: int64
+                    type: integer
+                  interTokenLatencyCount:
+                    description: Number of inter-token latency observations.
+                    format: int64
+                    type: integer
+                  interTokenLatencyMsSum:
+                    description: Cumulative inter-token latency in milliseconds.
+                    format: int64
+                    type: integer
+                  kvCacheUsageSamples:
+                    description: Number of KV cache usage readings.
+                    format: int64
+                    type: integer
+                  kvCacheUsageSum:
+                    description: Cumulative sum of KV cache usage readings in basis points (10000 = 100%).
+                    format: int64
+                    type: integer
+                  successfulRequests:
+                    description: Cumulative number of requests that finished successfully.
+                    format: int64
+                    type: integer
+                  timeToFirstTokenCount:
+                    description: Number of time-to-first-token observations.
+                    format: int64
+                    type: integer
+                  timeToFirstTokenMsSum:
+                    description: Cumulative time to first token in milliseconds.
+                    format: int64
+                    type: integer
+                type: object
             required:
             - provisioningStatus
             type: object
