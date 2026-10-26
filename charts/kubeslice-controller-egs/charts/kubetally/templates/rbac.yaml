@@ -1,4 +1,5 @@
-# kubetally-report reads GPRs and WorkerSliceGPR status.tokenUsage (published by kube-aiops-operator)
+# kubetally-report reads GPRs (GPR details for token usage rows) and, with tokenUsage.source
+# "workerslicegpr", the WorkerSliceGPR status.tokenUsage totals published by kube-aiops-operator
 # to store LLM token usage per GPR in gpr_token_usage.
 apiVersion: v1
 kind: ServiceAccount
