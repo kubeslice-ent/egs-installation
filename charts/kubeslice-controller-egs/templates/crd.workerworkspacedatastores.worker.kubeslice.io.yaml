@@ -1,0 +1,285 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.5
+  name: workerworkspacedatastores.worker.kubeslice.io
+spec:
+  group: worker.kubeslice.io
+  names:
+    kind: WorkerWorkspaceDataStore
+    listKind: WorkerWorkspaceDataStoreList
+    plural: workerworkspacedatastores
+    shortNames:
+    - wwds
+    singular: workerworkspacedatastore
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.labels.cluster-name
+      name: Cluster
+      type: string
+    - jsonPath: .spec.pvcName
+      name: PVC
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          WorkerWorkspaceDataStore is one data store on one worker cluster, labelled cluster-name. The
+          cluster's kube-aiops-operator turns it into a Secret, a static PV and a PVC per namespace.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: WorkerWorkspaceDataStoreSpec is what one worker cluster needs
+              to mount a data store.
+            properties:
+              accessMode:
+                default: RWX
+                enum:
+                - RWX
+                - RWO
+                type: string
+              cacheActions:
+                description: |-
+                  cacheActions are warm-up and evict requests for this cluster's node caches. The worker runs
+                  each id once and reports it in status.cacheActions.
+                items:
+                  description: WorkerWorkspaceDataStoreCacheAction warms up or evicts
+                    the JuiceFS node cache for some paths.
+                  properties:
+                    action:
+                      enum:
+                      - Warmup
+                      - Evict
+                      type: string
+                    id:
+                      description: id is unique per request.
+                      minLength: 1
+                      type: string
+                    nodeSelector:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        nodeSelector picks the nodes whose cache changes. Empty means GPU nodes
+                        (nvidia.com/gpu.present=true), or every node when the cluster has none.
+                      type: object
+                    paths:
+                      description: paths are relative to the data store root; empty
+                        means the whole data store.
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - action
+                  - id
+                  type: object
+                type: array
+              capacity:
+                description: capacity is the PV and PVC size.
+                minLength: 1
+                type: string
+              fsName:
+                description: fsName is the JuiceFS volume name.
+                minLength: 1
+                type: string
+              gateway:
+                description: gateway runs the data store's S3 gateway on this cluster
+                  instead of the controller cluster.
+                properties:
+                  credentialsSecretRef:
+                    description: credentialsSecretRef names the gateway's access/secret
+                      key Secret in the hub project namespace.
+                    minLength: 1
+                    type: string
+                  image:
+                    type: string
+                  ingressClassName:
+                    type: string
+                  ingressHost:
+                    description: ingressHost exposes the gateway; the controller cluster
+                      reaches it there.
+                    minLength: 1
+                    type: string
+                  tlsSecretName:
+                    type: string
+                required:
+                - credentialsSecretRef
+                - ingressHost
+                type: object
+              mountOptions:
+                description: mountOptions for every PV. A subdir= entry is rejected
+                  by the worker operator.
+                items:
+                  type: string
+                type: array
+              namespaces:
+                description: namespaces to create the PVC in.
+                items:
+                  type: string
+                type: array
+              pvcName:
+                description: 'pvcName is the PVC created in every namespace: wds-<data
+                  store name>.'
+                minLength: 1
+                type: string
+              secretRef:
+                description: |-
+                  WorkerWorkspaceDataStoreSecretRef names the backend Secret in the hub project namespace. The
+                  worker operator copies it to kube-system under the same name.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
+              subdir:
+                description: subdir is always appended last to the PV mountOptions.
+                minLength: 1
+                type: string
+            required:
+            - capacity
+            - fsName
+            - pvcName
+            - secretRef
+            - subdir
+            type: object
+          status:
+            description: WorkerWorkspaceDataStoreStatus is written by the worker operator.
+            properties:
+              cache:
+                description: |-
+                  cache is how much of this data store each node holds in its JuiceFS cache, read from the
+                  mount pods' metrics.
+                items:
+                  description: WorkerWorkspaceDataStoreNodeCache is the cached bytes
+                    of this data store on one node.
+                  properties:
+                    cachedBytes:
+                      format: int64
+                      type: integer
+                    node:
+                      type: string
+                  required:
+                  - cachedBytes
+                  - node
+                  type: object
+                type: array
+              cacheActions:
+                description: cacheActions reports each requested warm-up or evict.
+                items:
+                  description: WorkerWorkspaceDataStoreCacheActionStatus is the outcome
+                    of one cache action on this cluster.
+                  properties:
+                    completionTime:
+                      format: date-time
+                      type: string
+                    failedNodes:
+                      format: int32
+                      type: integer
+                    id:
+                      type: string
+                    message:
+                      type: string
+                    nodes:
+                      description: nodes is how many nodes the action runs on.
+                      format: int32
+                      type: integer
+                    phase:
+                      description: phase is Running, Succeeded or Failed.
+                      type: string
+                    succeededNodes:
+                      format: int32
+                      type: integer
+                  required:
+                  - id
+                  - phase
+                  type: object
+                type: array
+              cacheUpdatedAt:
+                format: date-time
+                type: string
+              csi:
+                description: csi is the JuiceFS CSI driver state on this cluster.
+                  PVCs stay Pending until it is ready.
+                properties:
+                  nodes:
+                    description: nodes is the number of nodes the driver is registered
+                      on.
+                    format: int32
+                    type: integer
+                  ready:
+                    description: ready is true when the csi.juicefs.com CSIDriver
+                      exists and is registered on at least one node.
+                    type: boolean
+                  version:
+                    description: version of the JuiceFS CSI node plugin, from its
+                      DaemonSet's app.kubernetes.io/version label.
+                    type: string
+                required:
+                - ready
+                type: object
+              gateway:
+                description: gateway reports the S3 gateway this cluster runs, if
+                  any.
+                properties:
+                  message:
+                    type: string
+                  ready:
+                    type: boolean
+                required:
+                - ready
+                type: object
+              message:
+                type: string
+              namespaces:
+                items:
+                  description: WorkerWorkspaceDataStoreNamespaceStatus is the PVC
+                    state in one namespace.
+                  properties:
+                    message:
+                      type: string
+                    namespace:
+                      type: string
+                    phase:
+                      description: WorkerWorkspaceDataStoreVolumePhase is the state
+                        of one PVC on the worker cluster.
+                      type: string
+                    pvName:
+                      type: string
+                  required:
+                  - namespace
+                  type: object
+                type: array
+              observedGeneration:
+                format: int64
+                type: integer
+              secretSynced:
+                type: boolean
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

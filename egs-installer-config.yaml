@@ -440,6 +440,79 @@ additional_apps:
     skip_on_verify_fail: true                  # Skip the step if verification fails
     enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
 
+  - name: "juicefs-csi-driver"                 # JuiceFS CSI driver for workspace data stores (Global File System)
+    skip_installation: true                    # Opt-in: set to false to enable workspace data stores. Install it on EVERY worker cluster
+    use_global_kubeconfig: true                # Use global kubeconfig; for multi-cluster, add one entry per worker with its kubecontext
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext of the worker cluster; uses global context if empty
+    namespace: "kube-system"                   # The CSI driver reads data store Secrets from kube-system
+    release: "juicefs-csi-driver"              # Helm release name for the JuiceFS CSI driver
+    chart: "juicefs-csi-driver"                # Helm chart name for the JuiceFS CSI driver
+    repo_url: "https://juicedata.github.io/charts/" # Helm repository URL (used when not installing from local charts)
+    version: "0.33.0"                          # Pinned; kube-aiops-operator reports this version per cluster
+    specific_use_local_charts: true            # Use local charts from charts directory
+    values_file: ""                            # Path to an external values file, if any
+    #### Inline Helm Values for JuiceFS CSI ####
+    inline_values:
+      globalConfig:
+        enabled: true
+      controller:
+        envs:
+          - name: STORAGE_CLASS_SHARE_MOUNT    # Share one mount pod per filesystem across data store PVs on a node
+            value: "true"
+      node:
+        envs:
+          - name: STORAGE_CLASS_SHARE_MOUNT
+            value: "true"
+    helm_flags: "--wait --debug"               # Additional Helm flags for this application's installation
+    verify_install: true                       # Verify the installation of the JuiceFS CSI driver
+    verify_install_timeout: 600                # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                  # Skip the step if verification fails
+    enable_troubleshoot: false                 # Enable troubleshooting mode for additional logs and checks
+
+  - name: "egs-datastore-redis-ha"             # Production JuiceFS metadata: Redis with Sentinel (3 replicas, auth, persistence)
+    skip_installation: true                    # Opt-in. Install once, on the controller cluster (or any cluster every worker can reach)
+    use_global_kubeconfig: true                # Use global kubeconfig for this application
+    kubeconfig: ""                             # Path to the kubeconfig file specific to this application
+    kubecontext: ""                            # Kubecontext specific to this application; uses global context if empty
+    namespace: "egs-datastore"                 # Namespace for the metadata engine
+    release: "egs-datastore-redis"             # Helm release name
+    chart: "redis-ha"                          # Official Redis images with Sentinel and an HAProxy in front
+    repo_url: "https://dandydeveloper.github.io/charts"
+    version: "4.39.0"                          # Pinned chart version (Redis 8.8)
+    specific_use_local_charts: false           # Pulled from repo_url
+    values_file: ""                            # Path to an external values file, if any
+    #### Inline Helm Values for Redis HA ####
+    # Backend Secret metaurl for this deployment (JuiceFS talks to Sentinel and follows failover):
+    #   redis://:<password>@mymaster,egs-datastore-redis-redis-ha-announce-0.egs-datastore,egs-datastore-redis-redis-ha-announce-1.egs-datastore,egs-datastore-redis-redis-ha-announce-2.egs-datastore:26379/1
+    # Workers in other clusters need a reachable address (LoadBalancer or the haproxy service exposed over the slice).
+    inline_values:
+      replicas: 3
+      auth: true
+      existingSecret: egs-datastore-redis-auth # Create first: kubectl -n egs-datastore create secret generic egs-datastore-redis-auth --from-literal=auth=<password>
+      authKey: auth
+      sentinel:
+        auth: true
+        existingSecret: egs-datastore-redis-auth
+        authKey: auth
+      redis:
+        config:
+          maxmemory-policy: noeviction           # Required by JuiceFS: evicting metadata corrupts the filesystem
+          appendonly: "yes"
+          appendfsync: everysec
+      persistentVolume:
+        enabled: true
+        size: 20Gi                               # About 300 bytes of metadata per file; size for your file count
+      haproxy:
+        enabled: true
+        replicas: 2
+      hardAntiAffinity: true                     # One Redis per node
+    helm_flags: "--create-namespace --wait --timeout 10m --debug"
+    verify_install: true
+    verify_install_timeout: 600
+    skip_on_verify_fail: true
+    enable_troubleshoot: false
+
 
 #### Define Custom Applications and Associated Manifests ####
 manifests:
@@ -485,6 +558,187 @@ manifests:
     namespace: kube-system                    # Namespace for this application
 
     
+  - appname: egs-datastore-dev-backend        # Dev/POC only: Redis (JuiceFS metadata) + SeaweedFS S3 (JuiceFS data) on the controller cluster
+    manifest: ""                              # URL or path to the manifest file; if empty, inline YAML is used
+    overrides_yaml: ""                        # Path to an external YAML file with overrides, if any
+    inline_yaml: |                            # Not for production: Redis has no auth/TLS and the S3 keys are static. Change them before use.
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: egs-datastore
+      ---
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: s3-creds
+        namespace: egs-datastore
+      stringData:
+        s3.json: |
+          {"identities":[{"name":"egs","credentials":[{"accessKey":"egsdev","secretKey":"egsdev-s3-secret"}],
+            "actions":["Admin","Read","Write","List","Tagging"]}]}
+      ---
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: redis
+        namespace: egs-datastore
+      spec:
+        replicas: 1
+        selector: {matchLabels: {app: redis}}
+        template:
+          metadata: {labels: {app: redis}}
+          spec:
+            containers:
+            - name: redis
+              image: docker.io/library/redis:7-alpine
+              args: ["--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+              ports: [{containerPort: 6379}]
+              volumeMounts: [{name: data, mountPath: /data}]
+            volumes:
+            - name: data
+              persistentVolumeClaim: {claimName: redis-data}
+      ---
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata: {name: redis-data, namespace: egs-datastore}
+      spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 1Gi}}}
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata: {name: redis, namespace: egs-datastore}
+      spec:
+        selector: {app: redis}
+        ports: [{port: 6379}]
+      ---
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: s3
+        namespace: egs-datastore
+      spec:
+        replicas: 1
+        selector: {matchLabels: {app: s3}}
+        template:
+          metadata: {labels: {app: s3}}
+          spec:
+            containers:
+            - name: seaweedfs
+              image: docker.io/chrislusf/seaweedfs:latest
+              args: ["server", "-dir=/data", "-master.volumeSizeLimitMB=256", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweed/s3.json"]
+              ports: [{containerPort: 8333}]
+              volumeMounts:
+              - {name: data, mountPath: /data}
+              - {name: cfg, mountPath: /etc/seaweed}
+            volumes:
+            - name: data
+              persistentVolumeClaim: {claimName: s3-data}
+            - name: cfg
+              secret: {secretName: s3-creds, items: [{key: s3.json, path: s3.json}]}
+      ---
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata: {name: s3-data, namespace: egs-datastore}
+      spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 20Gi}}}
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata: {name: s3, namespace: egs-datastore}
+      spec:
+        selector: {app: s3}
+        ports: [{name: s3, port: 8333}]
+    use_global_kubeconfig: true               # Use global kubeconfig for this application (the controller cluster)
+    skip_installation: true                   # Opt-in: dev/POC backends only; production uses managed Redis and a real bucket
+    verify_install: false                     # Verify the installation of this application
+    verify_install_timeout: 300               # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                 # Skip if verification fails
+    namespace: egs-datastore                  # Namespace for this application
+    kubeconfig: ""                            # Path to the kubeconfig file specific to this application
+    kubecontext: ""                           # Kubecontext specific to this application; uses global context if empty
+
+  - appname: egs-datastore-backend            # DataStoreBackend: one JuiceFS filesystem that workspace data stores use
+    manifest: ""                              # URL or path to the manifest file; if empty, inline YAML is used
+    overrides_yaml: ""                        # Path to an external YAML file with overrides, if any
+    inline_yaml: |                            # Edit metaurl, bucket and keys for your Redis and bucket; the defaults match egs-datastore-dev-backend
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: juicefs-avesha-shared
+        namespace: kubeslice-avesha           # Project namespace: kubeslice-<project name>
+      stringData:
+        name: egs-fs-avesha
+        metaurl: redis://redis.egs-datastore.svc.cluster.local:6379/1   # Must be reachable from every worker cluster
+        storage: s3
+        bucket: http://s3.egs-datastore.svc.cluster.local:8333/egs-fs-avesha   # Must be reachable from every worker cluster
+        access-key: egsdev
+        secret-key: egsdev-s3-secret
+      ---
+      apiVersion: gpr.kubeslice.io/v1alpha1
+      kind: DataStoreBackend
+      metadata:
+        name: avesha-shared
+        namespace: kubeslice-avesha
+      spec:
+        scope: Org                            # Org: one filesystem per project, one subdir per workspace
+        fsName: egs-fs-avesha
+        storage: s3
+        secretRef:
+          name: juicefs-avesha-shared
+    use_global_kubeconfig: true               # Use global kubeconfig for this application (the controller cluster)
+    skip_installation: true                   # Opt-in: enable after the controller (data store CRDs) and the backends are installed
+    verify_install: false                     # Verify the installation of this application
+    verify_install_timeout: 300               # Timeout for verification (in seconds)
+    skip_on_verify_fail: true                 # Skip if verification fails
+    namespace: kubeslice-avesha               # Namespace for this application
+    kubeconfig: ""                            # Path to the kubeconfig file specific to this application
+    kubecontext: ""                           # Kubecontext specific to this application; uses global context if empty
+
+  - appname: egs-datastore-slice-exports      # Opt-in: serve JuiceFS metadata and data to workers over a dedicated slice
+    manifest: ""                              # URL or path to the manifest file; if empty, inline YAML is used
+    overrides_yaml: ""                        # Path to an external YAML file with overrides, if any
+    # Before enabling: create a slice (e.g. "egs-datastore") that includes the cluster running Redis and
+    # S3 and every worker that mounts data stores, and onboard the egs-datastore namespace to it.
+    # Then give the DataStoreBackend a workerSecretRef whose addresses use the slice names:
+    #   metaurl: redis://redis.egs-datastore.svc.slice.local:6379/1
+    #   bucket:  http://s3.egs-datastore.svc.slice.local:8333/egs-fs-avesha
+    # Worker mounts then reach Redis and S3 only over the slice overlay; controller-side jobs keep
+    # using secretRef. Run it on the cluster that hosts Redis and S3.
+    inline_yaml: |
+      apiVersion: networking.kubeslice.io/v1beta1
+      kind: ServiceExport
+      metadata:
+        name: redis
+        namespace: egs-datastore
+      spec:
+        slice: egs-datastore                  # REPLACE with the data slice name
+        selector:
+          matchLabels: {app: redis}
+        ports:
+          - name: redis
+            containerPort: 6379
+            protocol: TCP
+      ---
+      apiVersion: networking.kubeslice.io/v1beta1
+      kind: ServiceExport
+      metadata:
+        name: s3
+        namespace: egs-datastore
+      spec:
+        slice: egs-datastore                  # REPLACE with the data slice name
+        selector:
+          matchLabels: {app: s3}
+        ports:
+          - name: s3
+            containerPort: 8333
+            protocol: TCP
+    use_global_kubeconfig: true
+    skip_installation: true                   # Opt-in
+    verify_install: false
+    verify_install_timeout: 60
+    skip_on_verify_fail: true
+    namespace: egs-datastore
+    kubeconfig: ""
+    kubecontext: ""
+
 
 #### Define Commands to Execute ####
 commands:

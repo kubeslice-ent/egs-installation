@@ -1,0 +1,184 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.5
+  name: datastoreingestjobs.gpr.kubeslice.io
+spec:
+  group: gpr.kubeslice.io
+  names:
+    kind: DataStoreIngestJob
+    listKind: DataStoreIngestJobList
+    plural: datastoreingestjobs
+    shortNames:
+    - dsij
+    singular: datastoreingestjob
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.dataStoreRef.name
+      name: DataStore
+      type: string
+    - jsonPath: .spec.source.type
+      name: Source
+      type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          DataStoreIngestJob imports data from an external source into a WorkspaceDataStore. It runs on
+          the controller cluster and writes with `juicefs sync`, so it needs no FUSE and no GPU node.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DataStoreIngestJobSpec defines an import into a WorkspaceDataStore.
+            properties:
+              cancel:
+                description: cancel stops a running import. Files already copied are
+                  kept.
+                type: boolean
+              dataStoreRef:
+                description: LocalReference points at an object in the same namespace.
+                properties:
+                  name:
+                    minLength: 1
+                    type: string
+                required:
+                - name
+                type: object
+              destinationPath:
+                description: destinationPath is relative to the data store root, e.g.
+                  /models/hf/<org>--<repo>.
+                pattern: ^/([A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*)?$
+                type: string
+              schedule:
+                description: |-
+                  schedule re-runs the import on a cron schedule ("0 * * * *"), copying only new and changed
+                  files each time: a watched source folder. S3 and GitHub sources only.
+                type: string
+              source:
+                description: DataStoreIngestSource describes what to import.
+                properties:
+                  credentialsSecretRef:
+                    description: |-
+                      credentialsSecretRef names a Secret in this namespace. HuggingFace, GitHub and HTTP read key
+                      "token" (HTTP sends it as a bearer token); Docker and GHCR read "username" and "token";
+                      S3 reads "access-key" and "secret-key".
+                    properties:
+                      name:
+                        minLength: 1
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  endpoint:
+                    description: endpoint overrides the S3 endpoint for S3-compatible
+                      sources.
+                    type: string
+                  include:
+                    description: include limits the import to matching file patterns.
+                    items:
+                      type: string
+                    type: array
+                  revision:
+                    description: revision is a branch, tag or commit (HuggingFace,
+                      GitHub).
+                    type: string
+                  type:
+                    description: DataStoreIngestSourceType is where an ingest job
+                      reads from.
+                    enum:
+                    - S3
+                    - HuggingFace
+                    - GitHub
+                    - Docker
+                    - GHCR
+                    - HTTP
+                    type: string
+                  uri:
+                    description: |-
+                      uri is the source: s3://bucket/prefix for S3, <org>/<repo> for HuggingFace and GitHub
+                      (or https://github.com/<org>/<repo>), an image reference for Docker and GHCR
+                      (ghcr.io/<org>/<image>:<tag>), and a file URL for HTTP.
+                    minLength: 1
+                    type: string
+                required:
+                - type
+                - uri
+                type: object
+              suspend:
+                description: suspend pauses a scheduled import.
+                type: boolean
+            required:
+            - dataStoreRef
+            - destinationPath
+            - source
+            type: object
+          status:
+            description: DataStoreIngestJobStatus defines the observed state of DataStoreIngestJob.
+            properties:
+              bytesTransferred:
+                description: bytesTransferred is how much of the source has been copied
+                  so far.
+                format: int64
+                type: integer
+              completionTime:
+                format: date-time
+                type: string
+              jobName:
+                type: string
+              lastRunPhase:
+                description: DataStoreIngestJobPhase represents the state of an ingest
+                  job.
+                type: string
+              lastScheduleTime:
+                description: 'For scheduled imports: when the last run started and
+                  how it ended.'
+                format: date-time
+                type: string
+              lastSuccessfulTime:
+                format: date-time
+                type: string
+              message:
+                type: string
+              phase:
+                description: DataStoreIngestJobPhase represents the state of an ingest
+                  job.
+                type: string
+              startTime:
+                format: date-time
+                type: string
+              totalBytes:
+                description: totalBytes is the source size, or 0 when it isn't known
+                  before the copy (S3 sources).
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

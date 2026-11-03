@@ -6396,6 +6396,7 @@ rules:
       - gpuworkloads
       - workerclustergpuallocations
       - workloadplacements
+      - workerworkspacedatastores
     verbs:
       - create
       - delete
@@ -6421,6 +6422,7 @@ rules:
       - workerslicegpuprovisioningrequests/finalizers
       - gpuworkloads/finalizers
       - workloadplacements/finalizers
+      - workerworkspacedatastores/finalizers
     verbs:
       - update
   - apiGroups:
@@ -6440,6 +6442,7 @@ rules:
       - workerslicegpuprovisioningrequests/status
       - gpuworkloads/status
       - workloadplacements/status
+      - workerworkspacedatastores/status
     verbs:
       - get
       - list
@@ -6486,6 +6489,9 @@ rules:
       - workspacepolicies
       - workloadplacements
       - workloadtemplates
+      - workspacedatastores
+      - datastorebackends
+      - datastoreingestjobs
     verbs:
       - create
       - delete
@@ -6503,6 +6509,9 @@ rules:
       - inferencetiles/status
       - workloadtemplates/status
       - workloadplacements/status
+      - workspacedatastores/status
+      - datastorebackends/status
+      - datastoreingestjobs/status
     verbs:
       - get
       - list

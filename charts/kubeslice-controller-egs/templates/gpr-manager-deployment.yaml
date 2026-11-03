@@ -185,6 +185,14 @@ spec:
         command:
         - /manager
         env:
+        - name: JUICEFS_IMAGE
+          value: {{ .Values.egs.gprManager.dataStore.juicefsImage | quote }}
+        - name: DATASTORE_INGEST_IMAGE
+          value: {{ .Values.egs.gprManager.dataStore.ingestImage | quote }}
+        - name: DATASTORE_INGRESS_CLASS
+          value: {{ .Values.egs.gprManager.dataStore.ingressClass | quote }}
+        - name: DATASTORE_INGRESS_TLS_SECRET
+          value: {{ .Values.egs.gprManager.dataStore.ingressTLSSecret | quote }}
         - name: ENABLE_WEBHOOKS
           valueFrom:
             configMapKeyRef:
