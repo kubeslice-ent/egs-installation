@@ -216,6 +216,16 @@ dns:
                 values:
                 - gateway
 
+# Multi-network slices (overlayNetworkDeploymentMode: multi-network).
+# Turns on the worker operator's multinet reconcilers, which run a per-slice
+# Envoy Gateway in <slice>-multinet-gateway. Needs the Gateway API and Envoy
+# Gateway CRDs on the cluster (the EGS installer's envoy-gateway app ships them).
+# Off by default (EGS-628).
+multinet:
+  enabled: false
+  # Install even if the Envoy Gateway CRDs are not found on the cluster.
+  skipCrdCheck: false
+
 envoy:
   gateway:
     image: envoygateway
