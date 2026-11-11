@@ -93,7 +93,7 @@ spec:
           - name: ENABLE_SLICE_CHARGEBACK
             value: "true"
           - name: ENABLE_MULTINET_RECONCILER
-            value: "false"
+            value: {{ (.Values.multinet).enabled | default false | quote }}
           - name: ENABLE_VPC_SERVICE
             value: "false"
           - name: EXCLUDED_NS
