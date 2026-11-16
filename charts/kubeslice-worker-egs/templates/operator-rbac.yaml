@@ -722,6 +722,9 @@ rules:
       - backendtrafficpolicies
       - securitypolicies
       - backendtlspolicies
+      - envoyextensionpolicies
+      - backends
+      - httproutefilters
     verbs:
       - get
       - list
@@ -738,6 +741,8 @@ rules:
       - backendtrafficpolicies/status
       - securitypolicies/status
       - backendtlspolicies/status
+      - envoyextensionpolicies/status
+      - backends/status
     verbs:
       - update
   - apiGroups:
