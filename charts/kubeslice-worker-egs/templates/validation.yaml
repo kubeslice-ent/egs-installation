@@ -16,6 +16,20 @@ Additional validation for production readiness
 {{- end -}}
 
 {{/*
+Multi-network slices need the Envoy Gateway CRDs (EnvoyProxy, Gateway API) on this
+cluster; the EGS installer's envoy-gateway app ships them. Checked only when helm talks
+to a live cluster (lookup is empty under `helm template`). Set multinet.skipCrdCheck=true
+to install anyway.
+*/}}
+{{- if and (.Values.multinet).enabled (not (.Values.multinet).skipCrdCheck) -}}
+  {{- if lookup "v1" "Namespace" "" "kube-system" -}}
+    {{- if not (lookup "apiextensions.k8s.io/v1" "CustomResourceDefinition" "" "envoyproxies.gateway.envoyproxy.io") -}}
+      {{- fail "multinet.enabled=true needs the Envoy Gateway CRDs (envoyproxies.gateway.envoyproxy.io) on this cluster. Install the envoy-gateway app from the EGS installer first, or set multinet.skipCrdCheck=true." -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
 Validate that global imagePullSecrets configuration is consistent
 */}}
 {{- if and .Values.global.imagePullSecrets.create .Values.global.imagePullSecrets.existingSecret -}}
