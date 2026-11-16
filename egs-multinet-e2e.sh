@@ -212,7 +212,10 @@ for m in ${MODES//,/ }; do
                        || bad "multi-network client pod has extra containers ($containers)"
   fi
   wait_for "$W1 has ServiceImport echo in $ns" "$TIMEOUT" w1 -n "$ns" get serviceimport echo || true
-  url="http://echo.$ns.svc.slice.local:80/"
+  # single-network: the slice DNS name is the pod's overlay IP, so call the container port.
+  # multi-network: the Envoy gateway maps the exported servicePort (80) to the container port.
+  port=80; [ "$m" = single ] && port=8080
+  url="http://echo.$ns.svc.slice.local:$port/"
   wait_for "$(mode_value "$m"): $W1 client reaches $url" "$TIMEOUT" \
     w1 -n "$ns" exec client -- curl -fsS -m 5 -o /dev/null "$url" || true
 done
