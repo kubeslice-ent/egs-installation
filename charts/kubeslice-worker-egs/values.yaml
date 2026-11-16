@@ -226,13 +226,20 @@ multinet:
   # Install even if the Envoy Gateway CRDs are not found on the cluster.
   skipCrdCheck: false
 
+# Per-slice Envoy Gateway and proxy for multi-network slices. They must match the
+# Gateway API CRDs on the cluster: the installer's envoy-gateway app ships Envoy
+# Gateway v1.6.2 with Gateway API v1.4.1, and Envoy Gateway v1.0.3 crash-loops there
+# (it needs GRPCRoute v1alpha2). `registry` overrides global.imageRegistry for one
+# image; point it at your mirror for air-gapped installs.
 envoy:
   gateway:
-    image: envoygateway
-    tag: v1.0.3
+    registry: docker.io/envoyproxy
+    image: gateway
+    tag: v1.6.2
   proxy:
-    image: envoyproxy-distroless
-    tag: 1.30.4
+    registry: docker.io/envoyproxy
+    image: envoy
+    tag: distroless-v1.36.3
 
 istio:
   proxy:

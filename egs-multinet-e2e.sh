@@ -13,17 +13,19 @@
 # Usage:
 #   ./egs-multinet-e2e.sh --controller-kubeconfig ctrl.yaml --project kubeslice-avesha \
 #       --worker worker-1=w1.yaml --worker worker-2=w2.yaml [--keep] [--modes single,multi]
+#       [--prefix e2e] [--single-subnet 10.231.0.0/16] [--multi-subnet 10.232.0.0/16]
 #
 # Needs: bash, kubectl. Workers need multinet.enabled=true in the worker chart and the
 # Envoy Gateway CRDs (the EGS installer's envoy-gateway app).
 set -euo pipefail
 
 CTRL_KC="" PROJECT_NS="" PREFIX="e2e" KEEP=false TIMEOUT=600 MODES="single,multi"
+SINGLE_SUBNET="10.231.0.0/16" MULTI_SUBNET="10.232.0.0/16"
 SERVER_IMAGE="nginxinc/nginx-unprivileged:1.27-alpine" CLIENT_IMAGE="curlimages/curl:8.10.1"
 QOS_PROFILE="default"
 WORKERS=() KCS=()
 
-usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --controller-kubeconfig) CTRL_KC="$2"; shift 2 ;;
@@ -31,6 +33,8 @@ while [ $# -gt 0 ]; do
     --worker) WORKERS+=("${2%%=*}"); KCS+=("${2#*=}"); shift 2 ;;
     --prefix) PREFIX="$2"; shift 2 ;;
     --modes) MODES="$2"; shift 2 ;;
+    --single-subnet) SINGLE_SUBNET="$2"; shift 2 ;;
+    --multi-subnet) MULTI_SUBNET="$2"; shift 2 ;;
     --qos-profile) QOS_PROFILE="$2"; shift 2 ;;
     --server-image) SERVER_IMAGE="$2"; shift 2 ;;
     --client-image) CLIENT_IMAGE="$2"; shift 2 ;;
@@ -66,7 +70,7 @@ wait_for() {
 
 slice_name() { echo "${PREFIX}-$1"; }          # e2e-single / e2e-multi
 app_ns()     { echo "${PREFIX}-$1-app"; }
-subnet()     { [ "$1" = single ] && echo "10.231.0.0/16" || echo "10.232.0.0/16"; }
+subnet()     { [ "$1" = single ] && echo "$SINGLE_SUBNET" || echo "$MULTI_SUBNET"; }
 mode_value() { [ "$1" = single ] && echo "single-network" || echo "multi-network"; }
 
 cleanup() {

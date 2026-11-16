@@ -66,7 +66,7 @@ Construct the full image name with registry, repository, and tag
 Usage: {{ include "kubeslice.image" (dict "imageRoot" .Values.operator "global" .Values.global) }}
 */}}
 {{- define "kubeslice.image" -}}
-{{- $registry := .global.imageRegistry -}}
+{{- $registry := .imageRoot.registry | default .global.imageRegistry -}}
 {{- $repository := .imageRoot.image -}}
 {{- $tag := .imageRoot.tag -}}
 {{- if .global.imageTagOverrides -}}
