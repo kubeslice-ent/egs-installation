@@ -8,7 +8,9 @@
 #     Gateway exist and the gateway pods run on both workers
 #   - app pods: single-network pods get the NSM sidecar, multi-network pods do not
 #   - a client on worker 1 reaches a service exported (with ports) from worker 2
-#     at <svc>.<ns>.svc.slice.local
+#     (single-network: <svc>.<ns>.svc.slice.local on the container port, through the
+#     overlay sidecar; multi-network: <svc>.<ns>.svc.cluster.local on the service port,
+#     a local Service the operator points at the slice's Envoy gateway)
 #
 # Usage:
 #   ./egs-multinet-e2e.sh --controller-kubeconfig ctrl.yaml --project kubeslice-avesha \
@@ -25,7 +27,7 @@ SERVER_IMAGE="nginxinc/nginx-unprivileged:1.27-alpine" CLIENT_IMAGE="curlimages/
 QOS_PROFILE="default"
 WORKERS=() KCS=()
 
-usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --controller-kubeconfig) CTRL_KC="$2"; shift 2 ;;
@@ -214,8 +216,8 @@ for m in ${MODES//,/ }; do
   wait_for "$W1 has ServiceImport echo in $ns" "$TIMEOUT" w1 -n "$ns" get serviceimport echo || true
   # single-network: the slice DNS name is the pod's overlay IP, so call the container port.
   # multi-network: the Envoy gateway maps the exported servicePort (80) to the container port.
-  port=80; [ "$m" = single ] && port=8080
-  url="http://echo.$ns.svc.slice.local:$port/"
+  if [ "$m" = single ]; then url="http://echo.$ns.svc.slice.local:8080/"
+  else url="http://echo.$ns.svc.cluster.local:80/"; fi
   wait_for "$(mode_value "$m"): $W1 client reaches $url" "$TIMEOUT" \
     w1 -n "$ns" exec client -- curl -fsS -m 5 -o /dev/null "$url" || true
 done

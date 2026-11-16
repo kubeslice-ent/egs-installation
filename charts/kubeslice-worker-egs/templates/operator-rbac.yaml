@@ -713,6 +713,30 @@ rules:
       - get
       - list
       - watch
+  # Envoy Gateway v1.6 bulk-deletes its proxy objects; the operator grants this to each slice gateway
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+      - services
+      - configmaps
+    verbs:
+      - deletecollection
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - daemonsets
+    verbs:
+      - deletecollection
+  - apiGroups:
+      - autoscaling
+      - policy
+    resources:
+      - horizontalpodautoscalers
+      - poddisruptionbudgets
+    verbs:
+      - deletecollection
   - apiGroups:
       - gateway.envoyproxy.io
     resources:
