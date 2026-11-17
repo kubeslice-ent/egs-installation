@@ -220,6 +220,7 @@ spec:
       {{ toYaml .Values.kubetally.kubeTallyReport.labels | nindent 8 }}
       {{- end }}
     spec:
+      serviceAccountName: kubetally-report
       {{- if .Values.kubetally.kubeTallyReport.tolerations }}
       tolerations: 
       {{ toYaml .Values.kubetally.kubeTallyReport.tolerations | nindent 8 }}
@@ -273,6 +274,20 @@ spec:
               value: "{{.Values.global.kubeTally.priceUpdaterWorkers}}"
             - name: METRIC_COLLECTOR_PORT
               value: "18080"
+            {{- with .Values.kubetally.kubeTallyReport.tokenUsage }}
+            {{- if eq (.source | default "workerslicegpr") "prometheus" }}
+            - name: TOKEN_USAGE_SOURCE
+              value: prometheus
+            {{- if .prometheusEndpoint }}
+            - name: TOKEN_PROMETHEUS_ENDPOINT
+              value: {{ .prometheusEndpoint | quote }}
+            {{- end }}
+            {{- if .since }}
+            - name: TOKEN_PROMETHEUS_SINCE
+              value: {{ .since | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
           {{- if .Values.kubetally.kubeTallyReport.resources }}
           resources: 
           {{ toYaml .Values.kubetally.kubeTallyReport.resources | nindent 12 }}
