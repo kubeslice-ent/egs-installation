@@ -93,7 +93,9 @@ cleanup() {
 trap cleanup EXIT
 
 step "Preflight"
-for i in 0 1; do
+# Single-network needs neither the Envoy CRDs nor the multinet reconciler.
+case ",$MODES," in *,multi,*) ;; *) echo "  (single-network only: multinet prerequisites not needed)"; I_LIST="" ;; esac
+for i in ${I_LIST-0 1}; do
   kc="${KCS[$i]}" name="${WORKERS[$i]}"
   if wk "$kc" get crd envoyproxies.gateway.envoyproxy.io >/dev/null 2>&1; then
     ok "$name has the Envoy Gateway CRDs"
@@ -196,7 +198,7 @@ EOF
   ok "ServiceExport echo created in $ns on $W2 (port 80 -> 8080)"
   w1 -n "$ns" delete pod client --ignore-not-found --wait=true >/dev/null 2>&1 || true
   w1 -n "$ns" run client --image="$CLIENT_IMAGE" --restart=Never \
-    --dry-run=client -o yaml --command -- sleep 3600 | w1 apply -f - >/dev/null
+    --dry-run=client -o yaml --command -- sleep 86400 | w1 apply -f - >/dev/null
 done
 
 step "Checking sidecars and cross-cluster requests"
